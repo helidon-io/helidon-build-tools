@@ -15,12 +15,20 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Properties;
+
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -270,5 +278,31 @@ public class CommandParserTest {
         assertThat(resolver.params().get("verbose"), is(instanceOf(CommandParser.FlagParam.class)));
         assertThat(resolver.resolve(verboseFlag1), is(true));
         assertThat(resolver.resolve(verboseFlag2), is(true));
+    }
+
+    @Test
+    public void testArgsFileOptionWithExistingFile() throws URISyntaxException {
+        KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "flavor", "flavor", null, false);
+        CommandParameters cmd = new CommandParameters(param);
+
+        URI argsFilePath = getClass().getResource("args.txt").toURI();
+        CommandParser parser = CommandParser.create("command", "--args-file", Paths.get(argsFilePath).toString());
+        CommandParser.Resolver resolver = parser.parseCommand(cmd);
+
+        Map<String, CommandParser.Parameter> params = resolver.params();
+        assertThat(params.containsKey("help"), is(true));
+        assertThat(((CommandParser.KeyValueParam) params.get("flavor")).value(), is("se"));
+
+        Properties properties = resolver.properties();
+        assertThat(properties.get("foo"), is("bar"));
+    }
+
+    @Test
+    public void testArgsFileOptionWithIncorrectFile() {
+        UncheckedIOException e = assertThrows(
+                UncheckedIOException.class,
+                () -> CommandParser.create("command", "--args-file", "not_existing_file.txt")
+        );
+        assertThat(e.getMessage(), containsString("java.nio.file.NoSuchFileException: not_existing_file.txt"));
     }
 }

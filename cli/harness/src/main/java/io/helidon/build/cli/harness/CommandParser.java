@@ -16,6 +16,11 @@
 package io.helidon.build.cli.harness;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.ArgumentInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
@@ -75,7 +81,8 @@ public final class CommandParser {
         Properties properties = new Properties();
         Map<String, Parameter> params = new HashMap<>();
         String error = null;
-        List<String> argsList = mapArgs(args);
+        String[] processedArgs = preProcessArgs(args);
+        List<String> argsList = mapArgs(processedArgs);
         Iterator<String> it = argsList.iterator();
         while (it.hasNext()) {
             String rawArg = it.next();
@@ -110,6 +117,31 @@ public final class CommandParser {
             }
         }
         return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
+    }
+
+    static String[] preProcessArgs(String[] args) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if ("--args-file".equals(args[i]) && (i < args.length - 1)) {
+                String argsFile = args[i + 1];
+                result.addAll(readArgsFile(argsFile));
+                i++;
+            } else {
+                result.add(args[i]);
+            }
+        }
+        return result.toArray(new String[0]);
+    }
+
+    static List<String> readArgsFile(String argsFile) {
+        try {
+            return Files.lines(Path.of(argsFile))
+                        .filter(line -> !line.startsWith("#"))
+                        .flatMap(line -> Arrays.stream(line.split("\\s+")))
+                        .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     static List<String> mapArgs(String... args) {
