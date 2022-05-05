@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.function.Function;
 
 import org.apache.maven.execution.MavenSession;
@@ -32,6 +33,8 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.settings.Proxy;
+import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
@@ -54,6 +57,10 @@ import org.eclipse.aether.resolution.ArtifactResult;
 @Mojo(name = "stage", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
 public class StagerMojo extends AbstractMojo {
 
+    private static final String PROXY_HOST_PROP_SUFFIX = ".proxyHost";
+    private static final String PROXY_PORT_PROP_SUFFIX = ".proxyPort";
+    private static final String NON_PROXY_PROP_SUFFIX = ".nonProxyHosts";
+
     /**
      * Manager used to look up Archiver/UnArchiver implementations.
      */
@@ -65,6 +72,12 @@ public class StagerMojo extends AbstractMojo {
      */
     @Component
     private RepositorySystem repoSystem;
+
+    /**
+     * The Maven settings.
+     */
+    @Parameter(defaultValue = "${settings}", readonly = true)
+    private Settings settings;
 
     /**
      * The current Maven session.
@@ -150,6 +163,7 @@ public class StagerMojo extends AbstractMojo {
             factory = new StagingElementFactory();
         }
 
+        setProxyFromSettings();
         try {
             for (StagingAction action : StagingAction.fromConfiguration(directories, factory)) {
                 action.execute(context, dir);
@@ -193,6 +207,37 @@ public class StagerMojo extends AbstractMojo {
                 return null;
         }
         return null;
+    }
+
+    private void setProxyFromSettings() {
+        Properties sysProps = System.getProperties();
+        boolean httpProxy = false;
+        boolean httpsProxy = false;
+        for (Proxy proxy : settings.getProxies()) {
+            String protocol = proxy.getProtocol();
+            if ("http".equals(protocol)) {
+                if (!httpProxy) {
+                    httpProxy = true;
+                } else {
+                    continue;
+                }
+            } else if ("https".equals(protocol)) {
+                if (!httpsProxy) {
+                    httpsProxy = true;
+                } else {
+                    continue;
+                }
+            }
+            String hostProp = protocol + PROXY_HOST_PROP_SUFFIX;
+            if (!sysProps.containsKey(hostProp)) {
+                sysProps.setProperty(hostProp, proxy.getHost());
+                sysProps.setProperty(protocol + PROXY_PORT_PROP_SUFFIX, String.valueOf(proxy.getPort()));
+                sysProps.setProperty(protocol + NON_PROXY_PROP_SUFFIX, proxy.getNonProxyHosts());
+            }
+            if (httpProxy && httpsProxy) {
+                break;
+            }
+        }
     }
 
     /**

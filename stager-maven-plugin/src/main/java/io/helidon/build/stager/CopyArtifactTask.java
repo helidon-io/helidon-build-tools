@@ -56,6 +56,7 @@ final class CopyArtifactTask extends StagingTask {
         context.logInfo("Resolving %s", resolvedGav);
         Path artifact = context.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
+        Files.createDirectories(targetFile.getParent());
         context.logInfo("Copying %s to %s", artifact, targetFile);
         Files.copy(artifact, targetFile);
     }

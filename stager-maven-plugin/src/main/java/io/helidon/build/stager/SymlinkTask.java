@@ -55,6 +55,7 @@ final class SymlinkTask extends StagingTask {
         Path link = dir.resolve(resolveVar(target(), variables));
         Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, variables)));
         context.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
+        Files.createDirectories(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
     }
 
