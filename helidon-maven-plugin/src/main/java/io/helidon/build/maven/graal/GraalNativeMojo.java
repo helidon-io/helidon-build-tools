@@ -182,6 +182,9 @@ public class GraalNativeMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        Path outputPath = buildDirectory.toPath().resolve(finalName);
+        getLog().info("Building native image :" + outputPath.toAbsolutePath());
+
         getLog().debug("Skip: " + skipNativeImage);
         getLog().debug("Type: " + execMode);
         getLog().debug("Main class: " + mainClass);
@@ -204,7 +207,10 @@ public class GraalNativeMojo extends AbstractMojo {
         addStaticOrShared(command);
 
         String quoteToken = IS_WINDOWS && isWindowsScript(nativeImageCmd) ? "\"" : "";
-        addNativeImageTarget(command, quoteToken);
+
+        // Path is the directory
+        command.add("-H:Path=" + quoteToken + buildDirectory.getAbsolutePath() + quoteToken);
+
         addResources(command, quoteToken);
 
         if (reportExceptionStackTraces) {
@@ -243,6 +249,9 @@ public class GraalNativeMojo extends AbstractMojo {
             command.add(jarFile.getAbsolutePath());
         }
 
+        // -H:Name must be after -jar
+        command.add("-H:Name=" + quoteToken + finalName + quoteToken);
+
         if (context.useMain()) {
             command.add(mainClass);
         }
@@ -275,17 +284,6 @@ public class GraalNativeMojo extends AbstractMojo {
         if (!resources.isEmpty()) {
             command.add("-H:IncludeResources=" + quoteToken + resources + quoteToken);
         }
-    }
-
-    private void addNativeImageTarget(List<String> command, String quoteToken) {
-        Path outputPath = buildDirectory.toPath().resolve(finalName);
-        getLog().info("Building native image :" + outputPath.toAbsolutePath());
-
-        // Path is the directory
-        command.add("-H:Path=" + quoteToken + buildDirectory.getAbsolutePath() + quoteToken);
-
-        // Name is the filename
-        command.add("-H:Name=" + quoteToken + finalName + quoteToken);
     }
 
     private void addStaticOrShared(List<String> command) throws MojoExecutionException {
