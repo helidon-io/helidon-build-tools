@@ -38,6 +38,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Suppress download progress output during build [332](https://github.com/oracle/helidon-build-tools/issues/332) [568](https://github.com/oracle/helidon-build-tools/pull/568)
 - Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/pull/569) [576](https://github.com/oracle/helidon-build-tools/pull/576)
 
+## 2.3.4
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
 ## [2.3.3]
 
 ### Fixes
