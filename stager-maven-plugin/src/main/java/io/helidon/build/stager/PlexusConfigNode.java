@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
@@ -42,21 +41,40 @@ public class PlexusConfigNode {
     }
 
     /**
+     * Visitor.
+     */
+    public interface Visitor {
+        /**
+         * Visit a node.
+         * @param node node
+         */
+        void visitNode(PlexusConfigNode node);
+
+        /**
+         * Post visit a node.
+         * @param node node
+         */
+        void postVisitNode(PlexusConfigNode node);
+    }
+
+    /**
      * Visit this config node.
      *
      * @param visitor visitor
      */
-    void visit(Consumer<PlexusConfigNode> visitor) {
+    void visit(Visitor visitor) {
         LinkedList<PlexusConfigNode> stack = new LinkedList<>(children());
         int parentId = id;
+        visitor.visitNode(this);
         while (!stack.isEmpty()) {
             PlexusConfigNode node = stack.peek();
             if (node.id == parentId) {
                 // leaving node
                 parentId = node.parent.id;
                 stack.pop();
-                visitor.accept(node);
+                visitor.postVisitNode(node);
             } else {
+                visitor.visitNode(node);
                 List<PlexusConfigNode> children = node.children();
                 if (!children.isEmpty()) {
                     // entering node
@@ -67,10 +85,11 @@ public class PlexusConfigNode {
                     // leaf
                     parentId = node.parent.id;
                     stack.pop();
-                    visitor.accept(node);
+                    visitor.postVisitNode(node);
                 }
             }
         }
+        visitor.postVisitNode(this);
     }
 
     /**

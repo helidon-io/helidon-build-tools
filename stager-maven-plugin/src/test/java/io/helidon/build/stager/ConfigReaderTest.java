@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,15 @@
  */
 package io.helidon.build.stager;
 
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.github.mustachejava.util.DecoratedCollection;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
@@ -32,15 +36,19 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link StagingAction#fromConfiguration(PlexusConfiguration, StagingElementFactory)}.
+ * Tests {@link ConfigReader}.
  */
-class ConverterTest {
+class ConfigReaderTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testConverter() throws Exception {
-        Reader reader = new InputStreamReader(ConverterTest.class.getResourceAsStream("/testconfig.xml"));
-        PlexusConfiguration plexusConfiguration = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
-        List<StagingAction> actions = StagingAction.fromConfiguration(plexusConfiguration);
+        InputStream is = ConfigReaderTest.class.getResourceAsStream("/testconfig.xml");
+        assertThat(is, is(not(nullValue())));
+        Reader reader = new InputStreamReader(is);
+        PlexusConfiguration plexusConfig = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
+        ConfigReader configReader = new ConfigReader(new StagingElementFactory());
+        List<StagingAction> actions = configReader.read(new PlexusConfigNode(plexusConfig, null));
         assertThat(actions, is(not(nullValue())));
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0), is(instanceOf(StagingDirectory.class)));
@@ -167,39 +175,41 @@ class ConverterTest {
         assertThat(archiveTemplate1.templateVariables().get("cliVersion"), is(instanceOf(String.class)));
         assertThat(archiveTemplate1.templateVariables().get("cliVersion"), is("${cli.latest.version}"));
         assertThat(archiveTemplate1.templateVariables().containsKey("cliUpdateMessages"), is(true));
-        assertThat(archiveTemplate1.templateVariables().get("cliUpdateMessages"), is(instanceOf(List.class)));
+        assertThat(archiveTemplate1.templateVariables().get("cliUpdateMessages"), is(instanceOf(Collection.class)));
 
-        @SuppressWarnings("unchecked")
-        List<Object> cliUpdateMessages = (List<Object>) archiveTemplate1.templateVariables().get("cliUpdateMessages");
+        DecoratedCollection<Object> cliUpdateMessages = (DecoratedCollection<Object>) archiveTemplate1.templateVariables()
+                                                                                                       .get("cliUpdateMessages");
 
-        assertThat(cliUpdateMessages.size(), is(3));
-        assertThat(cliUpdateMessages.get(0), is(instanceOf(Map.class)));
-        assertThat(((Map) cliUpdateMessages.get(0)).size(), is(2));
-        assertThat(((Map) cliUpdateMessages.get(0)).containsKey("version"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(0)).get("version"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(0)).get("version"), is("2.0.0-M2"));
-        assertThat(((Map) cliUpdateMessages.get(0)).containsKey("message"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(0)).get("message"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(0)).get("message"), is("Major dev command enhancements"));
-
-        assertThat(cliUpdateMessages.get(1), is(instanceOf(Map.class)));
-        assertThat(((Map) cliUpdateMessages.get(1)).size(), is(2));
-        assertThat(((Map) cliUpdateMessages.get(1)).size(), is(2));
-        assertThat(((Map) cliUpdateMessages.get(1)).containsKey("version"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(1)).get("version"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(1)).get("version"), is("2.0.0-M4"));
-        assertThat(((Map) cliUpdateMessages.get(1)).containsKey("message"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(1)).get("message"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(1)).get("message"), is("Helidon archetype support"));
-
-        assertThat(cliUpdateMessages.get(2), is(instanceOf(Map.class)));
-        assertThat(((Map) cliUpdateMessages.get(2)).size(), is(2));
-        assertThat(((Map) cliUpdateMessages.get(2)).containsKey("version"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(2)).get("version"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(2)).get("version"), is("2.0.0-RC1"));
-        assertThat(((Map) cliUpdateMessages.get(2)).containsKey("message"), is(true));
-        assertThat(((Map) cliUpdateMessages.get(2)).get("message"), is(instanceOf(String.class)));
-        assertThat(((Map) cliUpdateMessages.get(2)).get("message"), is("Performance improvements"));
+        int index = 0;
+        for (Object cliUpdateMessage : cliUpdateMessages) {
+            Field valueField = cliUpdateMessage.getClass().getDeclaredField("value");
+            valueField.setAccessible(true);
+            Object item = valueField.get(cliUpdateMessage);
+            assertThat(item, is(instanceOf(Map.class)));
+            assertThat(((Map<String, Object>) item).size(), is(2));
+            assertThat(((Map<String, Object>) item).containsKey("version"), is(true));
+            assertThat(((Map<String, Object>) item).get("version"), is(instanceOf(String.class)));
+            assertThat(((Map<String, Object>) item).containsKey("message"), is(true));
+            assertThat(((Map<String, Object>) item).get("message"), is(instanceOf(String.class)));
+            switch (index) {
+                case 0:
+                    assertThat(((Map<String, Object>) item).get("version"), is("2.0.0-M2"));
+                    assertThat(((Map<String, Object>) item).get("message"), is("Major dev command enhancements"));
+                    break;
+                case 1:
+                    assertThat(((Map<String, Object>) item).get("version"), is("2.0.0-M4"));
+                    assertThat(((Map<String, Object>) item).get("message"), is("Helidon archetype support"));
+                    break;
+                case 2:
+                    assertThat(((Map<String, Object>) item).get("version"), is("2.0.0-RC1"));
+                    assertThat(((Map<String, Object>) item).get("message"), is("Performance improvements"));
+                    break;
+                default:
+                    throw new AssertionError("Invalid index: " + index);
+            }
+            index++;
+        }
+        assertThat(index, is(3));
 
         assertThat(tasks.get(9), is(instanceOf(TemplateTask.class)));
         TemplateTask template1 = (TemplateTask) tasks.get(9);

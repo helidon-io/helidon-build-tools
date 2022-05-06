@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
             if (unwrappedValue instanceof String) {
                 values.add((String) unwrappedValue);
             } else if (unwrappedValue instanceof List) {
-                for (Object o : (List) unwrappedValue) {
+                for (Object o : (List<?>) unwrappedValue) {
                     if (o instanceof String) {
                         values.add((String) o);
                     }
@@ -58,7 +58,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         maxIterations = n;
         iteration = 1;
         indexes = new int[iteratorVariables.size()];
-        entries = iteratorVariables.entrySet().toArray(new Map.Entry[iteratorVariables.size()]);
+        entries = iteratorVariables.entrySet().toArray(new Map.Entry[0]);
     }
 
     /**
@@ -66,6 +66,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
      *
      * @param variables base variables
      */
+    @SuppressWarnings("UnusedReturnValue")
     ActionIterator baseVariable(Map<String, String> variables) {
         baseVariables.putAll(variables);
         return this;
