@@ -7,6 +7,10 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.3.5
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
 ## 2.3.4
 
 This release of helidon-build-tools does not contain changes related to the Helidon CLI.
