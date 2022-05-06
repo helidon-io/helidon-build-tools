@@ -25,4 +25,5 @@ cli-data.zip
 .log
 .hola
 .hello
+.hbs
 HELIDON_THIRD_PARTY_LICENSES.xml

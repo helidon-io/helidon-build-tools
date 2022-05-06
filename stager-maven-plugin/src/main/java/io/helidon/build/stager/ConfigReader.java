@@ -98,9 +98,9 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
      */
     static final class Scope {
 
-        final String name;
-        final Scope parent;
-        final Map<String, Variable> variables;
+        private final String name;
+        private final Scope parent;
+        private final Map<String, Variable> variables;
 
         /**
          * Create a new scope.
@@ -129,6 +129,15 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
                 scope = scope.parent;
             }
             throw new IllegalArgumentException("Unresolved variable: " + name);
+        }
+
+        @Override
+        public String toString() {
+            return "Scope{"
+                    + "name='" + name + '\''
+                    + ", parent=" + parent != null ? parent.name : null
+                    + ", variables=" + variables
+                    + '}';
         }
     }
 }
