@@ -36,18 +36,19 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link StagingAction#fromConfiguration(PlexusConfiguration, StagingElementFactory)}.
+ * Tests {@link ConfigReader}.
  */
-class ConverterTest {
+class ConfigReaderTest {
 
     @Test
     @SuppressWarnings("unchecked")
     public void testConverter() throws Exception {
-        InputStream is = ConverterTest.class.getResourceAsStream("/testconfig.xml");
+        InputStream is = ConfigReaderTest.class.getResourceAsStream("/testconfig.xml");
         assertThat(is, is(not(nullValue())));
         Reader reader = new InputStreamReader(is);
-        PlexusConfiguration plexusConfiguration = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
-        List<StagingAction> actions = StagingAction.fromConfiguration(plexusConfiguration);
+        PlexusConfiguration plexusConfig = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
+        ConfigReader configReader = new ConfigReader(new StagingElementFactory());
+        List<StagingAction> actions = configReader.read(new PlexusConfigNode(plexusConfig, null));
         assertThat(actions, is(not(nullValue())));
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0), is(instanceOf(StagingDirectory.class)));

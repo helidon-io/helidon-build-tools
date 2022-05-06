@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 import java.nio.file.FileSystems
 import java.nio.file.Files
 
@@ -49,12 +48,12 @@ def file1 = archiveRoot.resolve("versions.json")
 assertExists(file1)
 assertEqual("""{
     "versions": [
-            3.0.0-SNAPSHOT,
-            2.5.0,
-            2.4.2,
-            2.4.0,
-            2.0.1,
-            2.0.0
+            "3.0.0-SNAPSHOT",
+            "2.5.0",
+            "2.4.2",
+            "2.4.0",
+            "2.0.1",
+            "2.0.0"
     ],
     "latest": "3.0.0-SNAPSHOT"
 }

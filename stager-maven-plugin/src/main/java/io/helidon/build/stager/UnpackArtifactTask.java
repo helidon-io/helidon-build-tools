@@ -92,6 +92,7 @@ final class UnpackArtifactTask extends StagingTask {
     }
 
     private ArtifactGAV resolveGAV(Map<String, String> variables) {
+        //noinspection DuplicatedCode
         ArtifactGAV resolvedGav = new ArtifactGAV(
                 resolveVar(gav.groupId(), variables),
                 resolveVar(gav.artifactId(), variables),
