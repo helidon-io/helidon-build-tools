@@ -44,7 +44,7 @@ assertEqual("""{
     ],
     "latest": "3.0.0-SNAPSHOT"
 }
-""", Files.readString(file1))
+""", Files.readString(file1).replaceAll("\r\n", "\n"))
 
 def file2 = stageDir.resolve("versions2.json")
 assertExists(file2)
@@ -55,4 +55,4 @@ assertEqual("""{
     ],
     "latest": "4.0.0-SNAPSHOT"
 }
-""", Files.readString(file2))
+""", Files.readString(file2).replaceAll("\r\n", "\n"))
