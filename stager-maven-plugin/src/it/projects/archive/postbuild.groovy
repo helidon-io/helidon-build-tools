@@ -57,4 +57,4 @@ assertEqual("""{
     ],
     "latest": "3.0.0-SNAPSHOT"
 }
-""", Files.readString(file1))
+""", Files.readString(file1).replaceAll("\r\n", "\n"))
