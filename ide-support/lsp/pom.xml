@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2022, 2022 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,45 +24,22 @@
         <artifactId>helidon-ide-support-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
+
     <groupId>io.helidon.ide-support.lsp</groupId>
     <artifactId>helidon-ide-support-lsp-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon LSP Project</name>
     <description>Helidon IDE Support Language Server Protocol Project</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j</artifactId>
+        </dependency>
+    </dependencies>
+
     <modules>
-        <module>jdt</module>
-        <module>io.helidon.lsp4mp.extension</module>
+        <module>io.helidon.lsp.server</module>
     </modules>
 
-    <repositories>
-        <repository>
-            <id>eclipse-p2-2019-06</id>
-            <layout>p2</layout>
-            <url>http://download.eclipse.org/releases/2019-06</url>
-        </repository>
-        <repository>
-            <id>jdt-ls-p2-0.52</id>
-            <layout>p2</layout>
-            <url>http://download.eclipse.org/jdtls/milestones/0.52.0/repository/</url>
-        </repository>
-        <repository>
-            <id>lsp4mp-p2-0.2.0</id>
-            <layout>p2</layout>
-            <url>http://download.eclipse.org/lsp4mp/releases/0.2.0/repository/</url>
-        </repository>
-        <repository>
-            <id>jboss-tools-p2-1.3.0</id>
-            <layout>p2</layout>
-            <url>https://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt/1.3.0-2016-10-26_18-05-00-B50/</url>
-        </repository>
-        <repository>
-            <id>jdt-ls</id>
-            <url>https://repo.eclipse.org/content/repositories/jdtls-releases/</url>
-        </repository>
-        <repository>
-            <id>lsp4mp</id>
-            <url>https://repo.eclipse.org/content/repositories/lsp4mp/</url>
-        </repository>
-    </repositories>
 </project>
