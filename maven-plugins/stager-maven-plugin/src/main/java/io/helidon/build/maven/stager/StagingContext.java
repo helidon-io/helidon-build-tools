@@ -16,12 +16,35 @@
 package io.helidon.build.maven.stager;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executor;
 
 /**
  * Staging context.
  */
+@SuppressWarnings("unused")
 interface StagingContext {
+
+    /**
+     * Constant for the readTimeout property.
+     */
+    String READ_TIMEOUT_PROP = "stager.readTimeout";
+
+    /**
+     * Constant for the connectTimeout property.
+     */
+    String CONNECT_TIMEOUT_PROP = "stager.connectTimeout";
+
+    /**
+     * Constant for the taskTimeout property.
+     */
+    String TASK_TIMEOUT_PROP = "stager.taskTimeout";
+
+    /**
+     * Constant for the maxRetries property.
+     */
+    String MAX_RETRIES = "stager.maxRetries";
 
     /**
      * Unpack the given archive to a target location.
@@ -31,7 +54,9 @@ interface StagingContext {
      * @param excludes exclude filters
      * @param includes include filters
      */
-    void unpack(Path archive, Path target, String excludes, String includes);
+    default void unpack(Path archive, Path target, String excludes, String includes) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Archive the given directory to a target archive.
@@ -41,7 +66,9 @@ interface StagingContext {
      * @param excludes  exclude filters
      * @param includes  include filters
      */
-    void archive(Path directory, Path target, String excludes, String includes);
+    default void archive(Path directory, Path target, String excludes, String includes) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Resolve a path in the project.
@@ -49,7 +76,9 @@ interface StagingContext {
      * @param path path to resolve
      * @return Path
      */
-    Path resolve(String path);
+    default Path resolve(String path) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Resolve the given GAV.
@@ -57,7 +86,9 @@ interface StagingContext {
      * @param gav the GAV to resolve
      * @return resolved artifact file
      */
-    Path resolve(ArtifactGAV gav);
+    default Path resolve(ArtifactGAV gav) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Create a temporary directory.
@@ -66,45 +97,104 @@ interface StagingContext {
      * @return created directory
      * @throws IOException if an IO error occurs
      */
-    Path createTempDirectory(String prefix) throws IOException;
+    default Path createTempDirectory(String prefix) throws IOException {
+        return Files.createTempDirectory(prefix);
+    }
 
     /**
      * Log an info message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    void logInfo(String msg, Object... args);
+    default void logInfo(String msg, Object... args) {
+        System.out.println("INFO: " + String.format(msg, args));
+    }
 
     /**
      * Log a warning message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
-    void logWarning(String msg, Object... args);
+    default void logWarning(String msg, Object... args) {
+        System.out.println("WARNING: " + String.format(msg, args));
+    }
 
     /**
      * Log an error message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
-    void logError(String msg, Object... args);
+    default void logError(String msg, Object... args) {
+        System.out.println("ERROR: " + String.format(msg, args));
+    }
+
+    default void logError(Throwable ex) {
+        logError(ex.toString());
+    }
+
+    default boolean isDebugEnabled() {
+        return false;
+    }
 
     /**
      * Log a debug message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
-    void logDebug(String msg, Object... args);
+    default void logDebug(String msg, Object... args) {
+        System.out.println("DEBUG: " + String.format(msg, args));
+    }
+
+    /**
+     * Get the executor.
+     *
+     * @return Executor
+     */
+    Executor executor();
+
+    /**
+     * Read timeout configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int readTimeout() {
+        return -1;
+    }
+
+    /**
+     * Connect timeout configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int connectTimeout() {
+        return -1;
+    }
+
+    /**
+     * Task timeout configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int taskTimeout() {
+        return -1;
+    }
+
+    /**
+     * Max retries configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int maxRetries() {
+        return -1;
+    }
 
     /**
      * Lookup a property.
+     *
      * @param name property name
      * @return property value or {@code null}
      */

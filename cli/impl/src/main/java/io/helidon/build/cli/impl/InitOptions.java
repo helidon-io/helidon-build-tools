@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.cli.harness.CommandFragment;
@@ -40,6 +41,8 @@ public final class InitOptions {
     private static final String PACKAGE_NAME_PROPERTY = "package";
     private static final String HELIDON_VERSION_PROPERTY = "helidonVersion";
     private static final String MAVEN_PROPERTY = "maven";
+    private static final List<String> OVERRIDES = List.of(GROUP_ID_PROPERTY, ARTIFACT_ID_PROPERTY,
+            PACKAGE_NAME_PROPERTY);
 
     /**
      * The default flavor.
@@ -49,7 +52,7 @@ public final class InitOptions {
     /**
      * The default archetype name.
      */
-    static final String DEFAULT_ARCHETYPE_NAME = "bare";
+    static final String DEFAULT_ARCHETYPE_NAME = "quickstart";
 
     private Flavor flavor;
     private String helidonVersion;
@@ -67,7 +70,6 @@ public final class InitOptions {
     private String groupId;
     private String artifactId;
     private String packageName;
-
 
     /**
      * Helidon flavors.
@@ -292,10 +294,34 @@ public final class InitOptions {
 
     /**
      * Whether batch mode is enabled.
+     *
      * @return {@code true} if batch mode.
      */
     boolean batch() {
         return batch;
+    }
+
+    /**
+     * Override the init options with the given properties.
+     *
+     * @param properties properties with overridable values
+     */
+    void applyOverrides(Map<String, String> properties) {
+        properties.keySet().stream().filter(OVERRIDES::contains).forEach(key -> {
+            String value = properties.get(key);
+            switch (key) {
+                case GROUP_ID_PROPERTY:
+                    groupId = value;
+                    break;
+                case ARTIFACT_ID_PROPERTY:
+                    artifactId = value;
+                    break;
+                case PACKAGE_NAME_PROPERTY:
+                    packageName = value;
+                    break;
+                default:
+            }
+        });
     }
 
     /**
@@ -329,7 +355,7 @@ public final class InitOptions {
                     case "init_flavor":
                         return "${flavor}";
                     case "init_archetype":
-                        return "${base}";
+                        return "${app-type}";
                     case "init_build":
                         return "${build-system}";
                     default:

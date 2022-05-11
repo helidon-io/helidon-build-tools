@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,59 +15,67 @@
 #
 
 backend:
-    name: "vuetify"
-    homePage: "home.adoc"
-    releases:
-        - "1.0"
-    navigation:
-      title: "Pet Project Documentation"
-      glyph:
-        type: "icon"
-        value: "import_contacts"
-      items:
-        - title: "Main Documentation"
-          pathprefix: "/about"
-          items:
-            - title: "About"
-              pathprefix: "/about"
-              glyph:
-                type: "icon"
-                value: "weekend"
-              items:
-                - includes:
-                    - "**/*.adoc"
-            - title: "Getting Started"
-              pathprefix: "/getting-started"
-              glyph:
-                type: "icon"
-                value: "weekend"
-              items:
-                - includes:
-                    - "**/*.adoc"
-            - title: "Let's code"
-              pathprefix: "/lets-code"
-              glyph:
-                type: "icon"
-                value: "weekend"
-              items:
-                -  includes:
-                     - "**/*.adoc"
-        - title: "Extra Resources"
-          items:
-              - title: "Google"
-                href: "https://google.com"
-              - title: "Amazon"
-                href: "https://amazon.com"
-        - title: "Github"
-          href: "https://github.com"
-    theme:
-        primary: "#1976D2"
-        secondary: "#424242"
-        accent: "#82B1FF"
-        error: "#FF5252"
-        info: "#2196F3"
-        success: "#4CAF50"
-        warning: "#FFC107"
-        toolbar.enabled: true
-        navmenu.enabled: true
-        navfooter.enabled: true
+  name: "vuetify"
+  homePage: "home.adoc"
+  releases:
+    - "1.0"
+  navigation:
+    type: "ROOT"
+    title: "Pet Project Documentation"
+    glyph:
+      type: "icon"
+      value: "import_contacts"
+    items:
+      - type: "GROUPS"
+        items:
+          - type: "GROUP"
+            title: "Main Documentation"
+            pathprefix: "/"
+            items:
+              - type: "MENU"
+                title: "About"
+                pathprefix: "/about"
+                glyph:
+                  type: "icon"
+                  value: "weekend"
+                includes:
+                  - "**/about*.adoc"
+              - type: "MENU"
+                title: "Getting Started"
+                pathprefix: "/getting-started"
+                glyph:
+                  type: "icon"
+                  value: "weekend"
+                excludes:
+                  - "**/start*.adoc"
+              - type: "MENU"
+                title: "Let's code"
+                pathprefix: "/lets-code"
+                glyph:
+                  type: "icon"
+                  value: "weekend"
+                includes:
+                  - "**/*.adoc"
+      - type: "MENU"
+        title: "Extra Resources"
+        items:
+          - type: "LINK"
+            title: "Google"
+            href: "https://google.com"
+          - type: "LINK"
+            title: "Amazon"
+            href: "https://amazon.com"
+      - type: "LINK"
+        title: "GitHub"
+        href: "https://github.com"
+  theme:
+    primary: "#1976D2"
+    secondary: "#424242"
+    accent: "#82B1FF"
+    error: "#FF5252"
+    info: "#2196F3"
+    success: "#4CAF50"
+    warning: "#FFC107"
+    toolbar.enabled: true
+    navmenu.enabled: true
+    navfooter.enabled: true

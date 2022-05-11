@@ -16,20 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import io.helidon.build.archetype.engine.v2.ast.Block;
-import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
-import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Model;
-import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Output;
-import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.Instance;
-import io.helidon.build.common.Strings;
-import io.helidon.build.common.VirtualFileSystem;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,18 +24,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
+import io.helidon.build.archetype.engine.v2.ast.Input;
+import io.helidon.build.archetype.engine.v2.ast.Model;
+import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.ast.Node.BuilderInfo;
+import io.helidon.build.archetype.engine.v2.ast.Output;
+import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.Instance;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.VirtualFileSystem;
+
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test helper.
  */
 public class TestHelper {
 
-    private static final Path SCRIPT_PATH = Path.of("test-helper.xml");
-    private static final ScriptLoader LOADER = ScriptLoader.create();
+    private static final BuilderInfo BUILDER_INFO = BuilderInfo.of(ScriptLoader.create(), Path.of("test-helper.xml"), null);
     private static final Instance<FileSystem> FS = new Instance<>(TestHelper::createTestFileSystem);
 
     private static FileSystem createTestFileSystem() {
@@ -94,8 +92,18 @@ public class TestHelper {
      * @param visitor visitor
      * @param script  script
      */
+    public static void walk(Validation.Visitor<Void> visitor, Script script) {
+        Walker.walk(new VisitorAdapter<>(null, null, null, visitor), script, null);
+    }
+
+    /**
+     * Walk the given script.
+     *
+     * @param visitor visitor
+     * @param script  script
+     */
     public static void walk(Input.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(visitor, null, null), script, null);
+        Walker.walk(new VisitorAdapter<>(visitor, null, null, null), script, null);
     }
 
     /**
@@ -105,7 +113,7 @@ public class TestHelper {
      * @param script  script
      */
     public static void walk(Output.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(null, visitor, null), script, null);
+        Walker.walk(new VisitorAdapter<>(null, visitor, null, null), script, null);
     }
 
     /**
@@ -115,7 +123,7 @@ public class TestHelper {
      * @param script  script
      */
     public static void walk(Model.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(null, null, visitor), script, null);
+        Walker.walk(new VisitorAdapter<>(null, null, visitor, null), script, null);
     }
 
     /**
@@ -126,7 +134,7 @@ public class TestHelper {
      * @return block builder
      */
     public static Block.Builder block(Block.Kind kind, Block.Builder... children) {
-        Block.Builder builder = Block.builder(LOADER, SCRIPT_PATH, null, kind);
+        Block.Builder builder = Block.builder(BUILDER_INFO, kind);
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
@@ -240,16 +248,32 @@ public class TestHelper {
     }
 
     /**
+     * Create a new step block builder.
+     *
+     * @param name    step name
+     * @param children nested children
+     * @return block builder
+     */
+    public static Block.Builder step(String name, Block.Builder... children) {
+        Block.Builder builder = Step.builder(BUILDER_INFO)
+                                    .attribute("name", Value.create(name));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
+    }
+
+    /**
      * Create an input option block builder.
      *
-     * @param name     option name
+     * @param id     input id
      * @param value    option value
      * @param children nested children
      * @return block builder
      */
-    public static Block.Builder inputOption(String name, String value, Block.Builder... children) {
-        Block.Builder builder = Input.builder(LOADER, SCRIPT_PATH, null, Block.Kind.OPTION)
-                                     .attributes(inputAttributes(name, value));
+    public static Block.Builder inputOption(String id, String value, Block.Builder... children) {
+        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.OPTION)
+                                     .attributes(inputAttributes(id, value));
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
@@ -259,53 +283,101 @@ public class TestHelper {
     /**
      * Create an input text block builder.
      *
-     * @param name         option name
+     * @param id           input id
      * @param defaultValue default value
+     * @param children     nested children
      * @return block builder
      */
-    public static Block.Builder inputText(String name, String defaultValue, Block.Builder... children) {
-        return inputBuilder(name, Block.Kind.TEXT, defaultValue, children);
+    public static Block.Builder inputText(String id, String defaultValue, Block.Builder... children) {
+        return inputText(id, defaultValue, "", children);
+    }
+
+    /**
+     * Create an input text block builder.
+     *
+     * @param id            input id
+     * @param defaultValue  default value
+     * @param validations   validations
+     * @param children      nested children
+     * @return block builder
+     */
+    public static Block.Builder inputText(String id, String defaultValue, String validations, Block.Builder... children) {
+        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.TEXT)
+                .attributes(inputAttributes(id, defaultValue, id))
+                .attribute("validations", DynamicValue.create(validations));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
     }
 
     /**
      * Create an input boolean block builder.
      *
-     * @param name         option name
+     * @param id         input id
      * @param defaultValue default value
      * @param children     nested children
      * @return block builder
      */
-    public static Block.Builder inputBoolean(String name, boolean defaultValue, Block.Builder... children) {
-        return inputBuilder(name, Block.Kind.BOOLEAN, String.valueOf(defaultValue), children);
+    public static Block.Builder inputBoolean(String id, boolean defaultValue, Block.Builder... children) {
+        return inputBuilder(id, Block.Kind.BOOLEAN, String.valueOf(defaultValue), children);
     }
 
     /**
      * Create an input enum block builder.
      *
-     * @param name         option name
+     * @param id           input id
      * @param defaultValue default value
      * @param children     nested children
      * @return block builder
      */
-    public static Block.Builder inputEnum(String name, String defaultValue, Block.Builder... children) {
-        return inputBuilder(name, Block.Kind.ENUM, defaultValue, children);
+    public static Block.Builder inputEnum(String id, String defaultValue, Block.Builder... children) {
+        return inputBuilder(id, Block.Kind.ENUM, defaultValue, children);
     }
 
     /**
      * Create an input list block builder.
      *
-     * @param name         option name
+     * @param id           input id
      * @param defaultValue default value
      * @param children     nested children
      * @return block builder
      */
-    public static Block.Builder inputList(String name, List<String> defaultValue, Block.Builder... children) {
-        return inputBuilder(name, Block.Kind.LIST, String.join(",", defaultValue), children);
+    public static Block.Builder inputList(String id, List<String> defaultValue, Block.Builder... children) {
+        return inputBuilder(id, Block.Kind.LIST, String.join(",", defaultValue), children);
     }
 
-    private static Block.Builder inputBuilder(String name, Block.Kind kind, String defaultValue, Block.Builder... children) {
-        Block.Builder builder = Input.builder(LOADER, SCRIPT_PATH, null, kind)
-                                     .attributes(inputAttributes(name, defaultValue, name));
+    /**
+     * Create a validation block builder.
+     *
+     * @param id            id
+     * @param description   description
+     * @param children      nested children
+     * @return block builder
+     */
+    public static Block.Builder validation(String id, String description, Block.Builder... children) {
+        Block.Builder builder = Validation.builder(BUILDER_INFO, Block.Kind.VALIDATION)
+                .attributes(validationAttributes(id, description));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
+    }
+
+    /**
+     * Create a regex block builder.
+     *
+     * @param value     regular expression
+     * @return block builder
+     */
+    public static Block.Builder regex(String value) {
+        return Validation.builder(BUILDER_INFO, Block.Kind.REGEX)
+                .value(value);
+    }
+
+    private static Block.Builder inputBuilder(String id, Block.Kind kind, String defaultValue, Block.Builder... children) {
+        Block.Builder builder = Input.builder(BUILDER_INFO, kind)
+                                     .attributes(inputAttributes(id, defaultValue, id));
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
@@ -313,7 +385,7 @@ public class TestHelper {
     }
 
     private static Block.Builder modelBuilder(String key, Block.Kind kind, int order, Block.Builder... children) {
-        Block.Builder builder = Model.builder(LOADER, SCRIPT_PATH, null, kind)
+        Block.Builder builder = Model.builder(BUILDER_INFO, kind)
                                      .attributes(Map.of("order", DynamicValue.create(String.valueOf(order))));
         if (key != null) {
             builder.attributes(Map.of("key", DynamicValue.create(key)));
@@ -324,16 +396,24 @@ public class TestHelper {
         return builder;
     }
 
-    private static Map<String, Value> inputAttributes(String name, String value) {
+    private static Map<String, Value> validationAttributes(String id, String description) {
         Map<String, Value> attributes = new HashMap<>();
-        attributes.put("name", DynamicValue.create(name));
+        attributes.put("id", DynamicValue.create(id));
+        attributes.put("description", DynamicValue.create(description));
+        return attributes;
+    }
+
+    private static Map<String, Value> inputAttributes(String id, String value) {
+        Map<String, Value> attributes = new HashMap<>();
+        attributes.put("id", DynamicValue.create(id));
         attributes.put("value", DynamicValue.create(value));
         return attributes;
     }
 
-    private static Map<String, Value> inputAttributes(String name, String defaultValue, String prompt) {
+    private static Map<String, Value> inputAttributes(String id, String defaultValue, String prompt) {
         Map<String, Value> attributes = new HashMap<>();
-        attributes.put("name", DynamicValue.create(name));
+        attributes.put("name", DynamicValue.create(id));
+        attributes.put("id", DynamicValue.create(id));
         attributes.put("default", DynamicValue.create(defaultValue));
         attributes.put("prompt", DynamicValue.create(prompt));
         return attributes;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Strings;
+
 /**
  * Internal model for variable value.
  *
  * @see VariableValue.SimpleValue
  * @see VariableValue.ListValue
- * @param <T> value type
  */
-interface VariableValue<T> extends StagingElement {
+interface VariableValue extends StagingElement {
 
     String ELEMENT_NAME = "value";
 
@@ -37,7 +38,7 @@ interface VariableValue<T> extends StagingElement {
      *
      * @return T
      */
-    T unwrap();
+    Object unwrap();
 
     @Override
     default String elementName() {
@@ -47,15 +48,12 @@ interface VariableValue<T> extends StagingElement {
     /**
      * Simple text value.
      */
-    class SimpleValue implements VariableValue<String> {
+    class SimpleValue implements VariableValue {
 
         private final String text;
 
         SimpleValue(String text) {
-            if (text == null || text.isEmpty()) {
-                throw new IllegalArgumentException("text is required");
-            }
-            this.text = text;
+            this.text = Strings.requireValid(text, "text is required");
         }
 
         @Override
@@ -67,7 +65,7 @@ interface VariableValue<T> extends StagingElement {
     /**
      * A value that holds a list of values.
      */
-    class ListValue implements VariableValue<List<Object>> {
+    class ListValue implements VariableValue {
 
         private final List<VariableValue> value;
 
@@ -91,12 +89,12 @@ interface VariableValue<T> extends StagingElement {
     /**
      * A value that holds a list of values.
      */
-    class MapValue implements VariableValue<Map<String, Object>> {
+    class MapValue implements VariableValue {
 
         private final Map<String, VariableValue> value;
 
         MapValue(List<Variable> value) {
-            if (this == null) {
+            if (value == null) {
                 this.value = Map.of();
             } else {
                 this.value = new HashMap<>();

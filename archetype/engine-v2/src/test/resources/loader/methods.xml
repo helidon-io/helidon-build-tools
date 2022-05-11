@@ -33,11 +33,11 @@
         </method>
     </methods>
     <inputs>
-        <enum name="colors" label="Colors">
-            <option value="red" label="Red">
+        <enum id="colors" name="Colors">
+            <option value="red" name="Red">
                 <call method="red" />
             </option>
-            <option value="blue" label="Blue">
+            <option value="blue" name="Blue">
                 <call method="blue" />
             </option>
         </enum>

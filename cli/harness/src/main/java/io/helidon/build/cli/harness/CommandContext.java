@@ -16,6 +16,7 @@
 
 package io.helidon.build.cli.harness;
 
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +26,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.harness.CommandModel.CommandInfo;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Requirements;
 import io.helidon.build.common.ansi.AnsiTextStyle;
 import io.helidon.build.common.logging.Log;
@@ -32,6 +34,7 @@ import io.helidon.build.common.logging.LogLevel;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Red;
 import static io.helidon.build.common.logging.LogLevel.ERROR;
 import static io.helidon.build.common.logging.LogLevel.INFO;
@@ -233,8 +236,8 @@ public final class CommandContext {
             }
         }
 
-        private void exit(String message, Throwable error, LogLevel level, int statusCode) {
-            String errorMessage = errorMessage(message, error);
+        private void exit(String message, Throwable thrown, LogLevel level, int statusCode) {
+            String errorMessage = errorMessage(message, thrown);
             if (errorMessage != null) {
                 if (LogLevel.isVerbose()) {
                     Log.info();
@@ -242,7 +245,12 @@ public final class CommandContext {
                 if (AnsiTextStyle.isStyled(message)) {
                     Log.info(message);
                 } else {
-                    Log.log(level, error, message);
+                    if (thrown != null && parser.globalResolver().resolve(GlobalOptions.ERROR_FLAG_INFO)) {
+                        PrintStream stdErr = richTextDisabled() ? STDERR : PrintStreams.apply(STDERR, Red::apply);
+                        thrown.printStackTrace(stdErr);
+                    } else {
+                        Log.log(level, thrown, message);
+                    }
                 }
                 if (LogLevel.isVerbose()) {
                     Log.info();
@@ -250,7 +258,7 @@ public final class CommandContext {
             }
             if (embedded) {
                 if (statusCode != 0) {
-                    throw new Error(AnsiTextStyle.strip(message), error);
+                    throw new Error(AnsiTextStyle.strip(message), thrown);
                 }
             } else {
                 System.exit(statusCode);
@@ -296,8 +304,19 @@ public final class CommandContext {
      *
      * @return InternalOptions, never {@code null}
      */
+    @SuppressWarnings("unused")
     public InternalOptions internalOptions() {
         return internalOptions;
+    }
+
+    /**
+     * Returns whether rich text should be disabled.
+     *
+     * @return {@code true} if rich text should not be used
+     */
+    boolean richTextDisabled() {
+        return parser.globalResolver().resolve(GlobalOptions.PLAIN_FLAG_INFO)
+                || internalOptions.richTextDisabled();
     }
 
     /**
@@ -545,6 +564,7 @@ public final class CommandContext {
             this.embedded = embedded;
             return (T) this;
         }
+
         /**
          * Build the command context instance.
          *

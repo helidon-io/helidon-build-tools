@@ -18,7 +18,7 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <presets>
         <text path="default.project.name">myproject</text>
@@ -29,41 +29,41 @@
         <text path="default.helidon.version">2.3.3</text>
     </p>
 
-    <step label="Customize Project">
+    <step name="Customize Project">
 
         <inputs>
-            <text name="project.name"
-                  label="Project name"
+            <text id="project.name"
+                  name="Project name"
                   optional="true"
                   default="${default.project.name}"
             />
 
-            <text name="project.groupId"
-                  label="Project groupId"
+            <text id="project.groupId"
+                  name="Project groupId"
                   optional="true"
                   default="${default.group.id}"
             />
 
-            <text name="project.artifactId"
-                  label="Project artifactId"
+            <text id="project.artifactId"
+                  name="Project artifactId"
                   optional="true"
                   default="${default.artifact.id}"
             />
 
-            <text name="project.version"
-                  label="Project version"
+            <text id="project.version"
+                  name="Project version"
                   optional="true"
                   default="${default.project.version}"
             />
 
-            <text name="package"
-                  label="Java package name"
+            <text id="package"
+                  name="Java package name"
                   optional="true"
                   default="${default.package.name}"
             />
 
-            <text name="helidon.version"
-                  label="Helidon version"
+            <text id="helidon.version"
+                  name="Helidon version"
                   optional="true"
                   default="${default.helidon.version}"
             />

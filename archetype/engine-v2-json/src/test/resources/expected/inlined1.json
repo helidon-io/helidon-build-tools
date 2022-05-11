@@ -4,7 +4,7 @@
   "children": [
     {
       "kind": "step",
-      "label": "Step1",
+      "name": "Step1",
       "id": "1",
       "children": [
         {
@@ -12,10 +12,8 @@
           "children": [
             {
               "kind": "boolean",
-              "label": "Boolean1",
-              "name": "boolean1",
-              "global": false,
-              "optional": false,
+              "name": "Boolean1",
+              "id": "boolean1",
               "default": false
             }
           ]

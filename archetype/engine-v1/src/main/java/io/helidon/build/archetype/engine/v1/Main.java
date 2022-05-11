@@ -55,6 +55,6 @@ public final class Main {
             System.err.println(outputDir + " exists");
             System.exit(1);
         }
-        new ArchetypeEngine(loader, Maps.fromProperties(System.getProperties())).generate(outputDir);
+        new ArchetypeEngine(loader, Maps.fromProperties(System.getProperties())).generate(outputDir.toPath());
     }
 }

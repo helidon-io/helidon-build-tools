@@ -17,9 +17,12 @@
 package io.helidon.build.archetype.engine.v2;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 /**
  * Batch input resolver.
@@ -47,29 +50,27 @@ public class BatchInputResolver extends InputResolver {
         return visit(input, context);
     }
 
-    private VisitResult visit(NamedInput input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        Value defaultValue = defaultValue(input, context);
-        if (input.isOptional()) {
-            if (defaultValue != null) {
-                context.push(input.name(), defaultValue, input.isGlobal());
-                if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
-                    return VisitResult.SKIP_SUBTREE;
+    private VisitResult visit(DeclaredInput input, Context context) {
+        ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
+        if (result == null) {
+            Value defaultValue = defaultValue(input, nextScope, context);
+            if (input.isOptional()) {
+                if (defaultValue != null) {
+                    context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
+                        result = VisitResult.SKIP_SUBTREE;
+                    } else {
+                        result = VisitResult.CONTINUE;
+                    }
+                } else {
+                    throw new UnresolvedInputException(nextScope.path(true));
                 }
-                return VisitResult.CONTINUE;
-            }
-        } else if (input instanceof Input.Enum){
-            // skip prompting if there is only one option with a default value
-            Input.Enum enumInput = (Input.Enum) input;
-            int defaultIndex = enumInput.optionIndex(defaultValue.asString());
-            if (enumInput.options().size() == 1 && defaultIndex >= 0) {
-                context.push(input.name(), defaultValue, input.isGlobal());
-                return VisitResult.CONTINUE;
+            } else if (input instanceof Input.Enum) {
+                throw new UnresolvedInputException(nextScope.path(true));
             }
         }
-        throw new UnresolvedInputException(context.path(input.name()));
+        context.pushScope(nextScope);
+        return result;
     }
 }

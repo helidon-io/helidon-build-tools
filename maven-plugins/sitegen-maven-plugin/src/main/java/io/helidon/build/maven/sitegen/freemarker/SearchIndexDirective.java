@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.maven.sitegen.Page;
-import io.helidon.build.maven.sitegen.SearchEntry;
+import io.helidon.build.maven.sitegen.models.Page;
+import io.helidon.build.maven.sitegen.models.SearchEntry;
 
-import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
-import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
-import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateScalarModel;
 import org.asciidoctor.ast.ContentNode;
@@ -38,33 +35,19 @@ import org.asciidoctor.ast.StructuralNode;
 /**
  * A freemarker directive to accumulate entries for the search index.
  */
-public class SearchIndexDirective implements TemplateDirectiveModel {
+public final class SearchIndexDirective extends ContentNodeDirective {
 
     private final List<SearchEntry> entries = new ArrayList<>();
 
     @Override
-    public void execute(Environment env,
-                        Map params,
-                        TemplateModel[] loopVars,
-                        TemplateDirectiveBody body)
+    void doExecute(ContentNode node, Map<?, ?> params, TemplateDirectiveBody body)
             throws TemplateException, IOException {
-
-        TemplateModel dataModel = env.getDataModel().get("this");
-        if (!(dataModel instanceof ContentNodeHashModel)) {
-            throw new TemplateModelException(
-                    "Data model is not a ContentNodeHashModel");
-        }
-        ContentNode node = ((ContentNodeHashModel) dataModel).getContentNode();
-        if (node == null) {
-            throw new TemplateModelException("'this' has a null content-node");
-        }
 
         String title = null;
         if (params.containsKey("title")) {
             Object titleParam = params.get("title");
             if (!(titleParam instanceof TemplateScalarModel)) {
-                throw new TemplateModelException(
-                        "The title parameter must be a string");
+                throw new TemplateModelException("The title parameter must be a string");
             }
             title = ((TemplateScalarModel) titleParam).getAsString();
         } else if (node instanceof StructuralNode) {
@@ -75,33 +58,21 @@ public class SearchIndexDirective implements TemplateDirectiveModel {
             throw new TemplateModelException("missing title");
         }
 
-        Object pageAttr = node.getDocument().getAttribute("page");
-        if (!(pageAttr instanceof Page)) {
-            throw new TemplateModelException(
-                    "document attribute page is not valid");
-        }
-        Page page = (Page) pageAttr;
-
-        if (body == null) {
-            throw new TemplateModelException("Body is null");
-        }
+        Page page = page(node);
         StringWriter writer = new StringWriter();
         body.render(writer);
-
-        SearchEntry entry = new SearchEntry(
-                page.getTargetPath(), stripHtmlMarkups(writer.toString()), title);
+        SearchEntry entry = SearchEntry.create(page.target(), stripHtmlMarkups(writer.toString()), title);
         entries.add(entry);
     }
 
     // TODO write a unit test for this
-    private static String stripHtmlMarkups(String content){
+    private static String stripHtmlMarkups(String content) {
         if (content == null) {
             return null;
         }
-        return content
-                .replaceAll("\\<.*?\\>", " ")
-                .replaceAll("\\\\n", "")
-                .replaceAll("\\s+", " ");
+        return content.replaceAll("\\<.*?\\>", " ")
+                      .replaceAll("\\\\n", "")
+                      .replaceAll("\\s+", " ");
     }
 
     /**
@@ -109,7 +80,7 @@ public class SearchIndexDirective implements TemplateDirectiveModel {
      *
      * @return the list of search index entries.
      */
-    public List<SearchEntry> getEntries() {
+    public List<SearchEntry> entries() {
         return entries;
     }
 }

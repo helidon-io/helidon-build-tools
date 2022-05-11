@@ -20,13 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Step1">
+    <step name="Step1">
         <inputs>
-            <enum name="enum1" label="Enum1">
-                <option value="enum1-value1" label="Enum1Value1">
+            <enum id="enum1" name="Enum1">
+                <option value="enum1-value1" name="Enum1Value1">
                     <exec src="script1.xml"/>
                 </option>
-                <option value="enum1-value2" label="Enum1Value2"/>
+                <option value="enum1-value2" name="Enum1Value2"/>
             </enum>
         </inputs>
     </step>

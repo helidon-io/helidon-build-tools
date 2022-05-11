@@ -74,6 +74,10 @@
             <artifactId>helidon-linker</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-java</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -103,6 +107,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
+                <configuration>
+                    <pomIncludes combine.self="override">
+                        <include>projects/report-test1/pom.xml</include>
+                        <include>projects/report-test2/pom.xml</include>
+                        <include>projects/report-test3/pom.xml</include>
+                    </pomIncludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -126,4 +137,22 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <configuration>
+                            <debug>true</debug>
+                            <pomIncludes>projects/*/pom.xml</pomIncludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

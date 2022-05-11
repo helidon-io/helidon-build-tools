@@ -15,10 +15,6 @@
  */
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-
 /**
  * Model block.
  */
@@ -277,14 +273,12 @@ public abstract class Model extends Block {
     /**
      * Create a new model block builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
-     * @param kind       block kind
+     * @param info builder info
+     * @param kind block kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-        return new Builder(loader, scriptPath, location, kind);
+    public static Builder builder(BuilderInfo info, Kind kind) {
+        return new Builder(info, kind);
     }
 
     /**
@@ -294,8 +288,8 @@ public abstract class Model extends Block {
 
         private String value;
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-            super(loader, scriptPath, location, kind);
+        private Builder(BuilderInfo info, Kind kind) {
+            super(info, kind);
         }
 
         @Override

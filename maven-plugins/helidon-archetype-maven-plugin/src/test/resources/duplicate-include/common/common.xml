@@ -18,13 +18,13 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
 
     <inputs>
-        <list name="build-system"
-              label="Select a build system">
-            <option value="maven" label="Apache Maven">
+        <list id="build-system"
+              name="Select a build system">
+            <option value="maven" name="Apache Maven">
                 <output>
                     <templates transformations="mustache">
                         <directory>.</directory>
@@ -34,7 +34,7 @@
                     </templates>
                 </output>
             </option>
-            <option value="gradle" label="Gradle"/>
+            <option value="gradle" name="Gradle"/>
         </list>
     </inputs>
 

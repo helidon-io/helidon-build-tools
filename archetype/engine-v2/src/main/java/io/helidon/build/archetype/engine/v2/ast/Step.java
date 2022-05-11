@@ -16,33 +16,29 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-
 /**
  * Step.
  */
 public class Step extends Block {
 
-    private final String label;
+    private final String name;
     private final String help;
     private final boolean optional;
 
     private Step(Builder builder) {
         super(builder);
-        label = builder.attribute("label", false).asString();
+        name = builder.attribute("name", false).asString();
         help = builder.attribute("help", false).asString();
         optional = builder.attribute("optional", false).asBoolean();
     }
 
     /**
-     * Get the step label.
+     * Get the step name.
      *
      * @return name
      */
-    public String label() {
-        return label;
+    public String name() {
+        return name;
     }
 
     /**
@@ -76,7 +72,7 @@ public class Step extends Block {
     @Override
     public String toString() {
         return "Step{"
-                + "label='" + label() + '\''
+                + "name='" + name() + '\''
                 + ", optional=" + isOptional()
                 + '}';
     }
@@ -84,13 +80,11 @@ public class Step extends Block {
     /**
      * Create a new Step block builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info builder info
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
-        return new Builder(loader, scriptPath, location);
+    public static Builder builder(BuilderInfo info) {
+        return new Builder(info);
     }
 
     /**
@@ -98,8 +92,8 @@ public class Step extends Block {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
-            super(loader, scriptPath, location, Kind.STEP);
+        private Builder(BuilderInfo info) {
+            super(info, Kind.STEP);
         }
 
         @Override

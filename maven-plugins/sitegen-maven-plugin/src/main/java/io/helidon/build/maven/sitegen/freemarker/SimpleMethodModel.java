@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
+
+import io.helidon.build.maven.sitegen.RenderingException;
 
 import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.TemplateMethodModelEx;
@@ -44,9 +46,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
      * @param object the object source on which the method will be invoked
      * @param methodName the name of the method to invoke
      */
-    public SimpleMethodModel(BeansWrapper objectWrapper,
-                             Object object,
-                             String methodName) {
+    public SimpleMethodModel(BeansWrapper objectWrapper, Object object, String methodName) {
         Objects.requireNonNull(objectWrapper);
         this.objectWrapper = objectWrapper;
         Objects.requireNonNull(object);
@@ -76,7 +76,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
         // get parameters and parameterTypes from args list
         int numArgs = arguments.size();
         Object[] parameters = new Object[numArgs];
-        Class[] parameterTypes = new Class[numArgs];
+        Class<?>[] parameterTypes = new Class[numArgs];
         for (int i = 0; i < numArgs; i++) {
             Object arg = arguments.get(i);
             if (arg instanceof TemplateModel) {
@@ -85,13 +85,12 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                 parameters[i] = null;
             } else {
                 throw new TemplateModelException(String.format(
-                        "Unkown parameter type for method invocation: object=%s, methodname=%s, parameter=%s",
+                        "Unknown parameter type for method invocation: object=%s, method=%s, parameter=%s",
                         object,
                         methodName,
                         arg));
             }
-            parameterTypes[i] = parameters[i] == null
-                    ? null : parameters[i].getClass();
+            parameterTypes[i] = parameters[i] == null ? null : parameters[i].getClass();
         }
 
         // find a method with matching parameters
@@ -104,7 +103,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                    || (paramsOffset == 1
                         && mParameterTypes[numArgs].isArray()))) {
                     // method params do not match
-                    // or has more more but the last param is not an array
+                    // or has more but the last param is not an array
                     continue;
                 }
                 boolean paramsMatch = true;
@@ -138,7 +137,7 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
         // throw an exception if no method found
         if (method == null) {
             throw new TemplateModelException(String.format(
-                    "Unable to find method to invoke: object=%s, methodname=%s, parameters=%s",
+                    "Unable to find method to invoke: object=%s, method=%s, parameters=%s",
                     object,
                     methodName,
                     arguments));
@@ -155,6 +154,10 @@ public class SimpleMethodModel implements TemplateMethodModelEx {
                 | IllegalAccessException
                 | IllegalArgumentException
                 | InvocationTargetException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof RenderingException) {
+                throw (RenderingException) cause;
+            }
             throw new TemplateModelException(String.format(
                     "Error during method invocation: object=%s, method=%s",
                     object, methodName),

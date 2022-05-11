@@ -16,9 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import java.util.function.Function;
 
 /**
  * Condition.
@@ -46,6 +44,15 @@ public final class Condition extends Node {
     }
 
     /**
+     * Get the raw expression.
+     *
+     * @return raw expression
+     */
+    public String rawExpression() {
+        return rawExpression;
+    }
+
+    /**
      * Get the "then" node.
      *
      * @return node
@@ -68,15 +75,40 @@ public final class Condition extends Node {
     }
 
     /**
+     * If the given node is an instance of {@link Condition}, evaluate the expression.
+     *
+     * @param node     node
+     * @param resolver variable resolver
+     * @return {@code true} if the node is not an instance of {@link Condition} or the expression result
+     */
+    public static boolean filter(Node node, Function<String, Value> resolver) {
+        if (node instanceof Condition) {
+            return ((Condition) node).expression().eval(resolver);
+        }
+        return true;
+    }
+
+    /**
+     * If the given node is an instance of {@link Condition}, unwrap the nested node or return the input node.
+     *
+     * @param node node
+     * @return Node
+     */
+    public static Node unwrap(Node node) {
+        if (node instanceof Condition) {
+            return ((Condition) node).then();
+        }
+        return node;
+    }
+
+    /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info builder info
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
-        return new Builder(loader, scriptPath, location);
+    public static Builder builder(BuilderInfo info) {
+        return new Builder(info);
     }
 
     /**
@@ -88,8 +120,8 @@ public final class Condition extends Node {
         private Expression expression;
         private Node.Builder<? extends Node, ?> then;
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
-            super(loader, scriptPath, location);
+        private Builder(BuilderInfo info) {
+            super(info);
         }
 
         /**

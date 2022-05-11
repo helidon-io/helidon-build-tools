@@ -21,11 +21,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.WeakHashMap;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -37,15 +37,20 @@ import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Method;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.ast.Node.BuilderInfo;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.xml.SimpleXMLParser;
 import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
+
+import static io.helidon.build.common.xml.SimpleXMLParser.processXmlEscapes;
 
 /**
  * Script loader.
@@ -54,7 +59,7 @@ import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
 public class ScriptLoader {
 
     private static final Map<FileSystem, ScriptLoader> LOADERS = new WeakHashMap<>();
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Random RANDOM = new Random();
 
     private final Map<Path, Script> scripts = new HashMap<>();
 
@@ -141,12 +146,15 @@ public class ScriptLoader {
     }
 
     private enum State {
+        VARIABLE,
         PRESET,
         INPUT,
         METHOD,
         EXECUTABLE,
         OUTPUT,
         MODEL,
+        REGEX,
+        VALIDATION,
         BLOCK
     }
 
@@ -165,7 +173,7 @@ public class ScriptLoader {
 
         private final ScriptLoader loader;
         private Path path;
-        private Location location;
+        private BuilderInfo info;
         private SimpleXMLParser parser;
         private String qName;
         private Map<String, Value> attrs;
@@ -192,15 +200,16 @@ public class ScriptLoader {
         public void startElement(String qName, Map<String, String> attrs) {
             this.qName = qName;
             this.attrs = Maps.mapValue(attrs, DynamicValue::create);
-            location = Location.of(path, parser.lineNumber(), parser.charNumber());
+            Location location = Location.of(path, parser.lineNumber(), parser.charNumber());
+            info = BuilderInfo.of(loader, path, location);
             ctx = stack.peek();
             if (ctx == null) {
                 if (!"archetype-script".equals(qName)) {
                     throw new XMLReaderException(String.format(
                             "Invalid root element '%s'. {file=%s, location=%s}",
-                            qName, path, path));
+                            qName, path, location));
                 }
-                scriptBuilder = Script.builder(loader, path);
+                scriptBuilder = Script.builder(info);
                 stack.push(new Context(State.EXECUTABLE, scriptBuilder));
             } else {
                 try {
@@ -208,11 +217,11 @@ public class ScriptLoader {
                 } catch (IllegalArgumentException ex) {
                     throw new XMLReaderException(String.format(
                             "Invalid element '%s'. { file=%s, location=%s }",
-                            qName, path, path), ex);
+                            qName, path, location), ex);
                 } catch (Throwable ex) {
                     throw new XMLReaderException(String.format(
                             "An unexpected error occurred. { file=%s, location=%s }",
-                            path, path), ex);
+                            path, location), ex);
                 }
             }
         }
@@ -253,6 +262,9 @@ public class ScriptLoader {
                 case PRESET:
                     processPreset();
                     break;
+                case VARIABLE:
+                    processVariable();
+                    break;
                 case INPUT:
                     processInput();
                     break;
@@ -262,6 +274,12 @@ public class ScriptLoader {
                 case MODEL:
                     processModel();
                     break;
+                case VALIDATION:
+                    processValidation();
+                    break;
+                case REGEX:
+                    processRegex();
+                    break;
                 default:
                     throw new XMLReaderException(String.format(
                             "Invalid state: %s. { element=%s }", ctx.state, qName));
@@ -269,7 +287,7 @@ public class ScriptLoader {
         }
 
         void processMethod() {
-            addChild(State.EXECUTABLE, Method.builder(loader, path, location));
+            addChild(State.EXECUTABLE, Method.builder(info));
         }
 
         boolean processExec() {
@@ -277,7 +295,7 @@ public class ScriptLoader {
                 case "exec":
                 case "source":
                 case "call":
-                    addChild(ctx.state, Invocation.builder(loader, path, location, invocationKind()));
+                    addChild(ctx.state, Invocation.builder(info, invocationKind()));
                     return true;
                 default:
                     return false;
@@ -307,7 +325,27 @@ public class ScriptLoader {
                     throw new XMLReaderException(String.format(
                             "Invalid input block: %s. { element=%s }", kind, qName));
             }
-            addChild(nextState, Input.builder(loader, path, location, kind));
+            addChild(nextState, Input.builder(info, kind));
+        }
+
+        void processValidation() {
+            Block.Kind kind = blockKind();
+            if (kind == Block.Kind.VALIDATION) {
+                addChild(State.REGEX, Validation.builder(info, blockKind()));
+                return;
+            }
+            throw new XMLReaderException(String.format(
+                    "Invalid validation block: %s. { element=%s }", kind, qName));
+        }
+
+        void processRegex() {
+            Block.Kind kind = blockKind();
+            if (kind == Block.Kind.REGEX) {
+                addChild(State.VALIDATION, Validation.builder(info, blockKind()));
+                return;
+            }
+            throw new XMLReaderException(String.format(
+                    "Invalid regex block: %s. { element=%s }", kind, qName));
         }
 
         void processPreset() {
@@ -318,14 +356,35 @@ public class ScriptLoader {
                 case TEXT:
                 case ENUM:
                 case LIST:
-                    builder = Preset.builder(loader, path, location, blockKind());
+                    builder = Preset.builder(info, blockKind());
                     break;
                 case VALUE:
-                    builder = Block.builder(loader, path, location, blockKind());
+                    builder = Block.builder(info, blockKind());
                     break;
                 default:
                     throw new XMLReaderException(String.format(
                             "Invalid preset block: %s. { element=%s }", kind, qName));
+
+            }
+            addChild(ctx.state, builder);
+        }
+
+        void processVariable() {
+            Block.Builder builder;
+            Block.Kind kind = blockKind();
+            switch (kind) {
+                case BOOLEAN:
+                case TEXT:
+                case ENUM:
+                case LIST:
+                    builder = Variable.builder(info, blockKind());
+                    break;
+                case VALUE:
+                    builder = Block.builder(info, blockKind());
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid variable block: %s. { element=%s }", kind, qName));
 
             }
             addChild(ctx.state, builder);
@@ -338,7 +397,7 @@ public class ScriptLoader {
             switch (kind) {
                 case INCLUDES:
                 case EXCLUDES:
-                    builder = Block.builder(loader, path, location, kind);
+                    builder = Block.builder(info, kind);
                     break;
                 case INCLUDE:
                 case EXCLUDE:
@@ -348,11 +407,11 @@ public class ScriptLoader {
                 case TEMPLATES:
                 case FILE:
                 case TEMPLATE:
-                    builder = Output.builder(loader, path, location, kind);
+                    builder = Output.builder(info, kind);
                     break;
                 case MODEL:
                     nextState = State.MODEL;
-                    builder = Block.builder(loader, path, location, kind);
+                    builder = Block.builder(info, kind);
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -369,7 +428,7 @@ public class ScriptLoader {
                 case MAP:
                 case VALUE:
                 case LIST:
-                    builder = Model.builder(loader, path, location, kind);
+                    builder = Model.builder(info, kind);
                     break;
                 default:
                     throw new XMLReaderException(String.format(
@@ -392,14 +451,17 @@ public class ScriptLoader {
                     break;
                 case METHOD:
                     nextState = State.EXECUTABLE;
-                    builder = Method.builder(loader, path, location);
+                    builder = Method.builder(info);
                     break;
                 case STEP:
                     nextState = State.EXECUTABLE;
-                    builder = Step.builder(loader, path, location);
+                    builder = Step.builder(info);
                     break;
                 case INPUTS:
                     nextState = State.INPUT;
+                    break;
+                case VARIABLES:
+                    nextState = State.VARIABLE;
                     break;
                 case PRESETS:
                     nextState = State.PRESET;
@@ -407,10 +469,13 @@ public class ScriptLoader {
                 case OUTPUT:
                     nextState = State.OUTPUT;
                     break;
+                case VALIDATIONS:
+                    nextState = State.VALIDATION;
+                    break;
                 default:
             }
             if (builder == null) {
-                builder = Block.builder(loader, path, location, kind);
+                builder = Block.builder(info, kind);
             }
             addChild(nextState, builder);
         }
@@ -419,9 +484,8 @@ public class ScriptLoader {
             builder.attributes(attrs);
             Value ifExpr = attrs.get("if");
             if (ifExpr != null) {
-                ctx.builder.addChild(Condition.builder(loader, path, location)
-                                              .expression(ifExpr.asString())
-                                              .then(builder));
+                String expr = processXmlEscapes(ifExpr.asString());
+                ctx.builder.addChild(Condition.builder(info).expression(expr).then(builder));
             } else {
                 ctx.builder.addChild(builder);
             }
@@ -443,7 +507,7 @@ public class ScriptLoader {
         private final String qName;
 
         ValueBuilder(Node.Builder<?, ?> parent, String qName) {
-            super(parent.loader(), parent.scriptPath(), null);
+            super(parent.info());
             this.parent = parent;
             this.qName = qName;
         }

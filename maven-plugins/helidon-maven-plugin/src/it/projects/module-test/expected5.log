@@ -1,0 +1,4 @@
+[DEBUG] Module: my.own.module/my.own.module.Main
+[DEBUG] Building module-path string
+[DEBUG] Built module-path: target/module-test-3.0.0-SNAPSHOT.jar
+[DEBUG] Built class-path: my/dummy/jar

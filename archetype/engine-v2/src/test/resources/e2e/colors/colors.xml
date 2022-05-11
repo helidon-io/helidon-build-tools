@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Colors">
+    <step name="Colors">
         <inputs>
-            <enum name="base" label="Select a palette">
-                <option value="custom" label="Custom palette">
+            <enum id="base" name="Select a palette">
+                <option value="custom" name="Custom palette">
                     <exec src="custom/custom.xml"/>
                 </option>
-                <option value="rainbow" label="Rainbow palette">
+                <option value="rainbow" name="Rainbow palette">
                     <exec src="rainbow/rainbow.xml"/>
                 </option>
             </enum>

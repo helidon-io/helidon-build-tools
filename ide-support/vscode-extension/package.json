@@ -35,43 +35,13 @@
     "onLanguage:java",
     "workspaceContains:**/src/main/resources/application.properties",
     "workspaceContains:**src/main/resources/META-INF/microprofile-config.properties",
+    "workspaceContains:**src/main/resources/META-INF/application.properties",
     "workspaceContains:**/src/main/resources/application.yaml",
     "workspaceContains:**/src/main/resources/application.yml",
-    "onLanguage:microprofile-properties",
-    "onLanguage:helidon-properties"
-  ],
-  "extensionDependencies": [
-    "redhat.vscode-microprofile",
-    "redhat.java"
+    "onLanguage:microprofile-properties"
   ],
   "main": "./target/dist/extension.js",
   "contributes": {
-    "javaExtensions": [
-      "./target/jars/io.helidon.jdt.extension.core.jar"
-    ],
-    "microprofile": {
-      "jarExtensions": [
-        "./target/jars/io.helidon.ls4mp.extension.jar"
-      ],
-      "documentSelector": [
-        {
-          "scheme": "file",
-          "language": "helidon-properties"
-        }
-      ]
-    },
-    "languages": [
-      {
-        "id": "helidon-properties",
-        "aliases": [
-          "Helidon properties"
-        ],
-        "filenames": [
-          "application.properties"
-        ],
-        "configuration": "./lang-configs/properties-config/language-configuration.json"
-      }
-    ],
     "configuration": [
       {
         "title": "Helidon support configuration",
@@ -131,27 +101,33 @@
     "@typescript-eslint/eslint-plugin": "^5.9.1",
     "@typescript-eslint/parser": "^5.9.1",
     "@vscode/test-electron": "^2.0.3",
+    "axios": "^1.2.1",
     "chai": "^4.3.0",
     "eslint": "^8.6.0",
     "glob": "^7.2.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^1.4.0",
-    "mocha": "^9.1.3",
+    "mocha": "^9.2.2",
     "sinon": "^9.2.4",
     "ts-loader": "^9.2.6",
     "ts-mock-imports": "^1.3.3",
     "tslint": "^6.1.3",
     "tslint-loader": "^3.5.4",
     "typescript": "^4.5.4",
-    "vsce": "~1.102.0",
+    "vsce": "^2.15.0",
     "vscode-test": "^1.3.0",
     "webpack": "^5.66.0",
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
     "command-exists": "^1.2.9",
+    "get-port": "^5.1.1",
     "strip-ansi": "^6.0.0",
+    "tcp-port-used": "^1.0.2",
     "tree-kill": "^1.2.2",
-    "vscode-uri": "^3.0.1"
+    "vscode-languageclient": "^5.1.1",
+    "vscode-uri": "^3.0.1",
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1"
   }
 }

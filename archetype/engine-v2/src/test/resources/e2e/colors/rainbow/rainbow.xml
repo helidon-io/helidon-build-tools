@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,8 +20,15 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
+    <methods>
+        <method name="colors-txt">
+            <output>
+                <file source="files/colors.txt" target="colors.txt" />
+            </output>
+        </method>
+    </methods>
     <presets>
-        <list path="theme.base.colors">
+        <list path="~theme.base.colors">
             <value>red</value>
             <value>orange</value>
             <value>yellow</value>
@@ -30,8 +37,10 @@
             <value>indigo</value>
             <value>violet</value>
         </list>
-        <text path="theme.base.palette-name">Rainbow</text>
+        <text path="~theme.base.palette-name">Rainbow</text>
     </presets>
+    <!-- create colors.txt before executing custom to test no overwriting -->
+    <call method="colors-txt" />
     <exec src="../custom/custom.xml"/>
     <output>
         <model>

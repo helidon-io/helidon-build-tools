@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import io.helidon.build.common.Strings;
 
 import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.util.DecoratedCollection;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Render a mustache template.
@@ -37,14 +41,10 @@ final class TemplateTask extends StagingTask {
     private final String source;
     private final Map<String, Object> templateVariables;
 
-    TemplateTask(ActionIterators iterators, String source, String target, List<Variable> variables) {
-        super(iterators, target);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("source is required");
-        }
-        this.source = source;
-        this.templateVariables = variables.stream()
-                                          .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
+    TemplateTask(ActionIterators iterators, Map<String, String> attrs, List<Variable> variables) {
+        super(ELEMENT_NAME, null, iterators, attrs);
+        this.source = Strings.requireValid(attrs.get("source"), "source is required");
+        this.templateVariables = variables.stream().collect(toMap(Variable::name, TemplateTask::mapValue));
     }
 
     /**
@@ -54,11 +54,6 @@ final class TemplateTask extends StagingTask {
      */
     String source() {
         return source;
-    }
-
-    @Override
-    public String elementName() {
-        return ELEMENT_NAME;
     }
 
     /**
@@ -71,14 +66,14 @@ final class TemplateTask extends StagingTask {
     }
 
     @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        String resolvedTarget = resolveVar(target(), variables);
-        String resolvedSource = resolveVar(source, variables);
-        Path sourceFile = context.resolve(resolvedSource);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedSource = resolveVar(source, vars);
+        Path sourceFile = ctx.resolve(resolvedSource);
         if (!Files.exists(sourceFile)) {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
-        Path targetFile = dir.resolve(resolvedTarget);
+        Path targetFile = dir.resolve(resolvedTarget).normalize();
         Files.createDirectories(targetFile.getParent());
         try (Reader reader = Files.newBufferedReader(sourceFile);
              Writer writer = Files.newBufferedWriter(targetFile,
@@ -89,12 +84,11 @@ final class TemplateTask extends StagingTask {
         }
     }
 
-    @Override
-    public String describe(Path dir, Map<String, String> variables) {
-        return ELEMENT_NAME + "{"
-                + "source=" + resolveVar(source, variables)
-                + ", target=" + resolveVar(target(), variables)
-                + ", vars" + templateVariables
-                + '}';
+    private static Object mapValue(Variable variable) {
+        VariableValue value = variable.value();
+        if (value instanceof VariableValue.ListValue) {
+            return new DecoratedCollection<>(((VariableValue.ListValue) value).unwrap());
+        }
+        return value.unwrap();
     }
 }

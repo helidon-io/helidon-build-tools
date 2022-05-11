@@ -46,6 +46,7 @@ class ScriptDeserializerTest {
         Script script = ScriptDeserializer.deserialize(Files.newInputStream(jsonFile));
 
         JsonObject archetypeJson = ScriptSerializer.serialize(script);
+        System.out.println(JsonFactory.toPrettyString(archetypeJson));
         assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
     }
 }

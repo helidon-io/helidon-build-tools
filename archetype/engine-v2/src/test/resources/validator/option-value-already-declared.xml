@@ -20,11 +20,11 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="A step">
+    <step name="A step">
         <inputs>
-            <enum name="my-enum" label="My Enum">
-                <option label="option1" value="option1"/>
-                <option label="option1.1" value="option1"/>
+            <enum id="my-enum" name="My Enum">
+                <option name="option1" value="option1"/>
+                <option name="option1.1" value="option1"/>
             </enum>
         </inputs>
     </step>

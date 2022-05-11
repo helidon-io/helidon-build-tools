@@ -8,11 +8,9 @@
         "children": [
           {
             "kind": "text",
-            "label": "Comment",
-            "name": "comment",
-            "global": false,
-            "optional": true,
-            "default": null
+            "name": "Comment",
+            "id": "comment",
+            "optional": true
           }
         ]
       }
@@ -21,7 +19,7 @@
   "children": [
     {
       "kind": "step",
-      "label": "Cake",
+      "name": "Cake",
       "id": "1",
       "children": [
         {
@@ -29,15 +27,13 @@
           "children": [
             {
               "kind": "enum",
-              "label": "Fruit",
-              "name": "fruit",
-              "global": false,
-              "optional": false,
+              "name": "Fruit",
+              "id": "fruit",
               "default": "berries",
               "children": [
                 {
                   "kind": "option",
-                  "label": "Berries",
+                  "name": "Berries",
                   "value": "berries",
                   "children": [
                     {
@@ -45,15 +41,13 @@
                       "children": [
                         {
                           "kind": "enum",
-                          "label": "Berry type",
-                          "name": "berry-type",
-                          "global": false,
-                          "optional": false,
+                          "name": "Berry type",
+                          "id": "berry-type",
                           "default": "raspberry",
                           "children": [
                             {
                               "kind": "option",
-                              "label": "Raspberry",
+                              "name": "Raspberry",
                               "value": "raspberry",
                               "children": [
                                 {
@@ -61,10 +55,8 @@
                                   "children": [
                                     {
                                       "kind": "boolean",
-                                      "label": "Organic",
-                                      "name": "organic",
-                                      "global": false,
-                                      "optional": false,
+                                      "name": "Organic",
+                                      "id": "organic",
                                       "default": true
                                     }
                                   ]
@@ -73,7 +65,7 @@
                             },
                             {
                               "kind": "option",
-                              "label": "Strawberry",
+                              "name": "Strawberry",
                               "value": "strawberry",
                               "children": [
                                 {
@@ -81,10 +73,8 @@
                                   "children": [
                                     {
                                       "kind": "boolean",
-                                      "label": "Frozen",
-                                      "name": "frozen",
-                                      "global": false,
-                                      "optional": false,
+                                      "name": "Frozen",
+                                      "id": "frozen",
                                       "default": true
                                     }
                                   ]
@@ -99,7 +89,7 @@
                 },
                 {
                   "kind": "option",
-                  "label": "Tropical",
+                  "name": "Tropical",
                   "value": "tropical",
                   "children": [
                     {
@@ -107,15 +97,13 @@
                       "children": [
                         {
                           "kind": "enum",
-                          "label": "Tropical type",
-                          "name": "tropical-type",
-                          "global": false,
-                          "optional": false,
+                          "name": "Tropical type",
+                          "id": "tropical-type",
                           "default": "mango",
                           "children": [
                             {
                               "kind": "option",
-                              "label": "Mango",
+                              "name": "Mango",
                               "value": "mango",
                               "children": [
                                 {
@@ -123,10 +111,8 @@
                                   "children": [
                                     {
                                       "kind": "boolean",
-                                      "label": "Fare trade",
-                                      "name": "fare-trade",
-                                      "global": false,
-                                      "optional": false,
+                                      "name": "Fare trade",
+                                      "id": "fare-trade",
                                       "default": true,
                                       "children": [
                                         {
@@ -141,7 +127,7 @@
                             },
                             {
                               "kind": "option",
-                              "label": "Banana",
+                              "name": "Banana",
                               "value": "banana",
                               "children": [
                                 {
@@ -149,10 +135,8 @@
                                   "children": [
                                     {
                                       "kind": "boolean",
-                                      "label": "Plantain",
-                                      "name": "plantain",
-                                      "global": false,
-                                      "optional": false,
+                                      "name": "Plantain",
+                                      "id": "plantain",
                                       "default": true
                                     }
                                   ]
@@ -175,7 +159,7 @@
         },
         {
           "kind": "step",
-          "label": "Customize cake",
+          "name": "Customize cake",
           "id": "2",
           "children": [
             {
@@ -183,10 +167,8 @@
               "children": [
                 {
                   "kind": "boolean",
-                  "label": "Frosting",
-                  "name": "frosting",
-                  "global": false,
-                  "optional": false,
+                  "name": "Frosting",
+                  "id": "frosting",
                   "default": true
                 }
               ]

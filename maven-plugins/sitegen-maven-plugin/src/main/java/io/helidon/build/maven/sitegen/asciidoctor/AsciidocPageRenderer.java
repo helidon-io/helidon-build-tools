@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,64 +16,55 @@
 
 package io.helidon.build.maven.sitegen.asciidoctor;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 
-import io.helidon.build.maven.sitegen.Page;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.maven.sitegen.Config;
+import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.PageRenderer;
-import io.helidon.build.maven.sitegen.RenderingContext;
-import io.helidon.build.maven.sitegen.SiteEngine;
+import io.helidon.build.maven.sitegen.models.Page;
 
-import static io.helidon.build.maven.sitegen.Helper.asString;
-import static io.helidon.build.maven.sitegen.Helper.checkNonNull;
-import static io.helidon.build.maven.sitegen.Helper.checkNonNullNonEmpty;
-import static io.helidon.build.maven.sitegen.Helper.checkValidDir;
-import static io.helidon.build.maven.sitegen.Page.Metadata;
+import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.Strings.requireValid;
+import static io.helidon.build.maven.sitegen.models.Page.Metadata;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of a {@link PageRenderer} for asciidoc documents.
  */
-public class AsciidocPageRenderer implements PageRenderer {
+public final class AsciidocPageRenderer implements PageRenderer {
+
+    private final AsciidocEngine asciidocEngine;
 
     /**
-     * Constant for the asciidoc file extension.
-     */
-    public static final String ADOC_EXT = "adoc";
-    private final String backendName;
-
-    /**
-     * Create a new instance of {@link AsciidocPageRenderer}.
+     * Create a new page renderer.
      *
-     * @param backendName the name of the backend
+     * @param asciidocEngine asciidocEngine
      */
-    public AsciidocPageRenderer(String backendName) {
-        this.backendName = backendName;
+    public AsciidocPageRenderer(AsciidocEngine asciidocEngine) {
+        this.asciidocEngine = Objects.requireNonNull(asciidocEngine, "asciidocEngine is null!");
     }
 
     @Override
-    public void process(Page page, RenderingContext ctx, File pagesdir, String ext) {
-        checkNonNull(page, "page");
-        checkNonNull(ctx, "ctx");
-        checkValidDir(pagesdir, "pagesdir");
-        checkNonNullNonEmpty(ext, "ext");
-        SiteEngine siteEngine = SiteEngine.get(backendName);
-        File target = new File(pagesdir, page.getTargetPath() + "." + ext);
-        siteEngine.asciidoc().render(page, ctx, target,
-                Map.of("page", page,
-                       "pages", ctx.getPages()));
+    public void process(Page page, Context ctx, Path outputDir, String ext) {
+        requireNonNull(page, "page is null!");
+        requireNonNull(ctx, "ctx is null!");
+        requireValid(ext, "ext is invalid!");
+        Path target = requireDirectory(outputDir).resolve(page.target() + "." + ext);
+        asciidocEngine.render(page, ctx, target);
     }
 
     @Override
-    public Metadata readMetadata(File source) {
-        checkNonNull(source, "source");
-        SiteEngine siteEngine = SiteEngine.get(backendName);
-        Map<String, Object> docHeader = siteEngine
-                .asciidoc().readDocumentHeader(source);
-        return new Metadata(
-                asString(docHeader.get("description")),
-                asString(docHeader.get("keywords")),
-                asString(docHeader.get("h1")),
-                asString(docHeader.get("doctitle")),
-                asString(docHeader.get("h1prefix")));
+    public boolean supports(Path source) {
+        return "adoc".equals(FileUtils.fileExt(source));
+    }
+
+    @Override
+    public Metadata readMetadata(Path source) {
+        requireNonNull(source, "source is null!");
+        Map<String, Object> docHeader = AsciidocHeaders.readDocumentHeader(source);
+        return Metadata.create(Config.create(docHeader, Map.of()));
     }
 }

@@ -29,6 +29,7 @@
 
     <properties>
         <mainClass>io.helidon.build.cli.impl.Helidon</mainClass>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
@@ -154,7 +155,6 @@
                         <configuration>
                             <outputDirectory>${project.build.directory}/libs</outputDirectory>
                             <includeScope>runtime</includeScope>
-                            <excludeScope>test</excludeScope>
                         </configuration>
                     </execution>
                 </executions>
@@ -202,8 +202,11 @@
                 <configuration>
                     <reuseForks>false</reuseForks>
                     <systemProperties>
-                        <helidon.test.version>2.2.2</helidon.test.version>
+                        <helidon.test.version>2.5.0</helidon.test.version>
                     </systemProperties>
+                    <environmentVariables>
+                        <formatEnv>%s</formatEnv>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

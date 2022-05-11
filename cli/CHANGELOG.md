@@ -7,6 +7,71 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0]
+
+This change entry describes **all** changes made for the 3.0.0 version ; it is an aggregation of the non GA 3.x entries below.
+
+### Fixes
+
+- Add --errors options to print the exception stack traces [702](https://github.com/oracle/helidon-build-tools/issues/702) [741](https://github.com/oracle/helidon-build-tools/pull/741)
+- Cli does not prompt input with external default in interactive mode [725](https://github.com/oracle/helidon-build-tools/issues/725) [733](https://github.com/oracle/helidon-build-tools/issues/733)
+- Init command uses v1 catalog for a 3.x Helidon version. [727](https://github.com/oracle/helidon-build-tools/issues/727) [728](https://github.com/oracle/helidon-build-tools/pull/728)
+- Interactive prompter display steps without prompting for any inputs. [735](https://github.com/oracle/helidon-build-tools/issues/735) [736](https://github.com/oracle/helidon-build-tools/issues/736)
+- Add support for argument file (primary used by init). [690](https://github.com/oracle/helidon-build-tools/issues/690) [704](https://github.com/oracle/helidon-build-tools/pull/704)
+- BuildCommand has no output [668](https://github.com/oracle/helidon-build-tools/issues/668) [671](https://github.com/oracle/helidon-build-tools/pull/671)
+- Process monitor rework (forward-port) [511](https://github.com/oracle/helidon-build-tools/pull/511)
+- Fix shutdown hooks in native-image (forward port) [520](https://github.com/oracle/helidon-build-tools/pull/520)
+- Suppress download progress output during build [332](https://github.com/oracle/helidon-build-tools/issues/332) [568](https://github.com/oracle/helidon-build-tools/pull/568)
+- Need to touch pom.xml twice for dev loop to process the change [429](https://github.com/oracle/helidon-build-tools/issues/429) [569](https://github.com/oracle/helidon-build-tools/pull/569) [576](https://github.com/oracle/helidon-build-tools/pull/576)
+
+### Changes
+
+- Validate Helidon version input. [628](https://github.com/oracle/helidon-build-tools/pull/628)
+- Handle `latest` file with multiple lines [633](https://github.com/oracle/helidon-build-tools/pull/633)
+- All archetype values can be passed as properties `-Dprop=value` [543](https://github.com/oracle/helidon-build-tools/issues/543)
+- Remove project name [590](https://github.com/oracle/helidon-build-tools/issues/590) [620](https://github.com/oracle/helidon-build-tools/pull/620)
+- Remove `project.directory` from the `.helidon` file [339](https://github.com/oracle/helidon-build-tools/issues/339) [620](https://github.com/oracle/helidon-build-tools/pull/620)
+- Clarify comments in generated user config [624](https://github.com/oracle/helidon-build-tools/pull/624)
+
+### Notable New Features
+
+- New V2 archetype engine to support Helidon 3.x and onward [550](https://github.com/oracle/helidon-build-tools/issues/550) [345](https://github.com/oracle/helidon-build-tools/issues/345)
+
+## [3.0.0-RC3]
+
+### Fixes
+
+- Add --errors options to print the exception stack traces [702](https://github.com/oracle/helidon-build-tools/issues/702) [741](https://github.com/oracle/helidon-build-tools/pull/741)
+
+## [3.0.0-RC2]
+
+### Fixes
+
+- Cli does not prompt input with external default in interactive mode [725](https://github.com/oracle/helidon-build-tools/issues/725) [733](https://github.com/oracle/helidon-build-tools/issues/733)
+- Init command uses v1 catalog for a 3.x Helidon version. [727](https://github.com/oracle/helidon-build-tools/issues/727) [728](https://github.com/oracle/helidon-build-tools/pull/728)
+- Interactive prompter display steps without prompting for any inputs. [735](https://github.com/oracle/helidon-build-tools/issues/735) [736](https://github.com/oracle/helidon-build-tools/issues/736)
+
+## [3.0.0-RC1]
+
+### Changes
+
+- Archetype Context and Expression updates [723](https://github.com/oracle/helidon-build-tools/pull/723)
+
+## 3.0.0-M5
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
+## [3.0.0-M4]
+
+### Changes
+
+- Archetype updates [712](https://github.com/oracle/helidon-build-tools/pull/712)
+
+### Fixes
+
+- Add support for argument file (primary used by init). [690](https://github.com/oracle/helidon-build-tools/issues/690) [704](https://github.com/oracle/helidon-build-tools/pull/704)
+- BuildCommand has no output [668](https://github.com/oracle/helidon-build-tools/issues/668) [671](https://github.com/oracle/helidon-build-tools/pull/671)
+
 ## [3.0.0-M3]
 
 ### Changes
@@ -196,6 +261,10 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[3.0.0-RC3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC2...3.0.0-RC3
+[3.0.0-RC2]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC1...3.0.0-RC2
+[3.0.0-RC1]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
+[3.0.0-M4]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M3...3.0.0-M4
 [3.0.0-M3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0-M3
 [3.0.0-M2]:   https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2/cli
 [2.3.3]:      https://github.com/oracle/helidon-build-tools/compare/2.3.2...2.3.3

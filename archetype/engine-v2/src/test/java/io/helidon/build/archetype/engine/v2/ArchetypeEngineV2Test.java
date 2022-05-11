@@ -38,11 +38,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class ArchetypeEngineV2Test {
 
+    // TODO test template overriding
+    //  i.e. a template with the same file path declared in two places
+    //  the first one to render wins (upper stack can override lower stack)
+
     @Test
     void testExternalDefault() {
         Path outputDir = e2eDir("testExternalDefault",
-                Map.of(
-                        "theme", "colors",
+                Map.of("theme", "colors",
                         "theme.base", "rainbow"),
                 Map.of("artifactId", "foo"));
         assertThat(outputDir.getFileName().toString(), startsWith("foo"));
@@ -163,8 +166,7 @@ class ArchetypeEngineV2Test {
     @Test
     void testExternalDefaultZip() throws IOException {
         Path outputDir = e2eZip("testExternalDefaultZip",
-                Map.of(
-                        "theme", "colors",
+                Map.of("theme", "colors",
                         "theme.base", "rainbow"),
                 Map.of("artifactId", "not-bar"));
         assertThat(outputDir.getFileName().toString(), startsWith("not-bar"));
@@ -388,13 +390,14 @@ class ArchetypeEngineV2Test {
         Path colorsFile = outputDir.resolve("colors.txt");
         assertThat(Files.exists(colorsFile), is(true));
         assertThat(readFile(colorsFile), is(""
-                + "Red\n"
-                + "Orange\n"
-                + "Yellow\n"
-                + "Green\n"
-                + "Blue\n"
-                + "Indigo\n"
-                + "Violet\n"));
+                + "Rainbow colors:\n"
+                + "- Red\n"
+                + "- Orange\n"
+                + "- Yellow\n"
+                + "- Green\n"
+                + "- Blue\n"
+                + "- Indigo\n"
+                + "- Violet\n"));
     }
 
     private void assertCustomColorsModernStyle(Path outputDir) throws IOException {

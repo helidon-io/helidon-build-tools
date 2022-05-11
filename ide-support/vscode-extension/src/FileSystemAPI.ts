@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,13 @@
 export class FileSystemAPI {
 
     static fs = require('fs');
+    static path = require('path');
 
     constructor() {
+    }
+
+    public static resolvePath(paths: string[]){
+        return this.path.resolve(...paths);
     }
 
     public static isPathExistsSync(path: string): boolean {

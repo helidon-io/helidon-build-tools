@@ -29,7 +29,7 @@ public class PlexusLogWriter extends LogWriter {
 
     @Override
     public void writeEntry(LogLevel level, Throwable thrown, String message, Object... args) {
-        Logger logger = PlexusLoggerHolder.LOGGER.get();
+        Logger logger = PlexusLoggerHolder.REF.get();
         if (logger == null) {
             // fallback to the default writer
             SystemLogWriter.INSTANCE.writeEntry(level, thrown, message, args);

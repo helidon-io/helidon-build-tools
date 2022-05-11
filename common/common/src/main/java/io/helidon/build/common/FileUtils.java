@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -30,12 +32,14 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
@@ -57,6 +61,8 @@ public final class FileUtils {
 
     private static final Map<String, String> FS_ENV = Map.of("create", "true");
     private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
+    private static final Path TMPDIR = Path.of(System.getProperty("java.io.tmpdir"));
+    private static final Random RANDOM = new Random();
 
 
     /**
@@ -213,8 +219,8 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> listFiles(Path directory, BiPredicate<Path, BasicFileAttributes> pathFilter, int maxDepth) {
-        try {
-            return Files.find(requireDirectory(directory), maxDepth, pathFilter).collect(Collectors.toList());
+        try (Stream<Path> pathStream = Files.find(requireDirectory(directory), maxDepth, pathFilter)) {
+            return pathStream.collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -238,9 +244,9 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> list(Path directory, final int maxDepth) {
-        try {
-            return Files.find(requireDirectory(directory), maxDepth, (path, attrs) -> true)
-                        .collect(Collectors.toList());
+        try (Stream<Path> pathStream = Files.find(requireDirectory(directory), maxDepth, (path, attrs) -> true)) {
+            return pathStream
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -369,6 +375,7 @@ public final class FileUtils {
     public static Path deleteDirectoryContent(Path directory) throws IOException {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {
+                //noinspection DuplicatedCode
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
                           .filter(file -> !file.equals(directory))
@@ -436,7 +443,10 @@ public final class FileUtils {
      * @return The last modified time.
      */
     public static long lastModifiedSeconds(Path file) {
-        return lastModifiedTime(file).to(TimeUnit.SECONDS);
+        if (Files.exists(file)) {
+            return lastModifiedTime(file).to(TimeUnit.SECONDS);
+        }
+        return 0;
     }
 
     /**
@@ -447,7 +457,10 @@ public final class FileUtils {
      */
     @SuppressWarnings("unused")
     public static long lastModifiedMillis(Path file) {
-        return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
+        if (Files.exists(file)) {
+            return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
+        }
+        return 0L;
     }
 
     /**
@@ -726,21 +739,22 @@ public final class FileUtils {
      */
     public static Path zip(Path zip, Path directory) {
         try (FileSystem fs = newZipFileSystem(zip)) {
-            Files.walk(directory)
-                 .sorted(Comparator.reverseOrder())
-                 .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                 .forEach(p -> {
-                     try {
-                         Path target = fs.getPath(directory.relativize(p).toString());
-                         Path parent = target.getParent();
-                         if (parent != null) {
-                             Files.createDirectories(parent);
-                         }
-                         Files.copy(p, target, REPLACE_EXISTING);
-                     } catch (IOException ioe) {
-                         throw new UncheckedIOException(ioe);
-                     }
-                 });
+            try (Stream<Path> entries = Files.walk(directory)) {
+                entries.sorted(Comparator.reverseOrder())
+                       .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                       .forEach(p -> {
+                           try {
+                               Path target = fs.getPath(directory.relativize(p).toString());
+                               Path parent = target.getParent();
+                               if (parent != null) {
+                                   Files.createDirectories(parent);
+                               }
+                               Files.copy(p, target, REPLACE_EXISTING);
+                           } catch (IOException ioe) {
+                               throw new UncheckedIOException(ioe);
+                           }
+                       });
+            }
             return zip;
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
@@ -759,20 +773,21 @@ public final class FileUtils {
                 Files.createDirectory(directory);
             }
             Path root = fs.getRootDirectories().iterator().next();
-            Files.walk(root)
-                    .filter(p -> !p.equals(root))
-                    .forEach(file -> {
-                        Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
-                        try {
-                            if (Files.isDirectory(file)) {
-                                Files.createDirectories(filePath);
-                            } else {
-                                Files.copy(file, filePath);
-                            }
-                        } catch (IOException ioe) {
-                            throw new UncheckedIOException(ioe);
-                        }
-                    });
+            try (Stream<Path> entries = Files.walk(root)) {
+                entries.filter(p -> !p.equals(root))
+                       .forEach(file -> {
+                           Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                           try {
+                               if (Files.isDirectory(file)) {
+                                   Files.createDirectories(filePath);
+                               } else {
+                                   Files.copy(file, filePath);
+                               }
+                           } catch (IOException ioe) {
+                               throw new UncheckedIOException(ioe);
+                           }
+                       });
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -801,6 +816,7 @@ public final class FileUtils {
         }
         FileSystem fileSystem;
         try {
+            //noinspection resource
             fileSystem = newFileSystem(uri, FS_ENV, classLoader);
         } catch (FileSystemAlreadyExistsException ex) {
             fileSystem = getFileSystem(uri);
@@ -816,5 +832,108 @@ public final class FileUtils {
     }
 
     private FileUtils() {
+    }
+
+    /**
+     * Get a resource as a {@link Path} instance.
+     *
+     * @param path  the resource path
+     * @param clazz class used to resolve the resource
+     * @return Path
+     * @throws IllegalArgumentException if the resource path is not found, or if the URI scheme is not supported
+     */
+    public static Path resourceAsPath(String path, Class<?> clazz) throws IllegalArgumentException {
+        // get classloader resource URL
+        URL templatesDirURL = clazz.getResource(path);
+        if (templatesDirURL == null) {
+            throw new IllegalArgumentException("resource not found: " + path);
+        }
+        // convert URL to Path
+        try {
+            return pathOf(templatesDirURL.toURI());
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Get the file extension for the given path.
+     *
+     * @param file path
+     * @return extension or {@code null}
+     */
+    public static String fileExt(Path file) {
+        String filename = file.getFileName().toString();
+        int index = filename.lastIndexOf(".");
+        return index < 0 ? null : filename.substring(index + 1);
+    }
+
+    /**
+     * Generate a random path in the system temp directory ({@code java.io.tmpdir}).
+     *
+     * @param prefix prefix, may be {@code null}
+     * @param suffix suffix, may be {@code null}
+     * @return new path
+     */
+    public static Path randomPath(String prefix, String suffix) {
+        return randomPath(TMPDIR, prefix, suffix);
+    }
+
+    /**
+     * Generate a random path in the given directory.
+     *
+     * @param dir    directory
+     * @param prefix prefix, may be {@code null}
+     * @param suffix suffix, may be {@code null}
+     * @return new path
+     */
+    public static Path randomPath(Path dir, String prefix, String suffix) {
+        String filename = prefix == null ? "" : prefix;
+        filename += Long.toUnsignedString(RANDOM.nextLong());
+        if (suffix != null) {
+            filename += suffix;
+        }
+        return dir.resolve(filename);
+    }
+
+    private static final long KB = 1024;
+    private static final long MB = KB * 1024;
+    private static final long GB = MB * 1024;
+    private static final long TB = GB * 1024;
+    private static final DecimalFormat DF = new DecimalFormat("0.00");
+
+    /**
+     * Get a size in bytes in units (E.g. 1024 bytes is "1 KB").
+     *
+     * @param size size in bytes
+     * @return size in units
+     */
+    public static String measuredSize(long size) {
+        if (size < KB) {
+            return size + " B";
+        }
+        if (size < MB) {
+            return (size / KB) + " KB";
+        }
+        if (size < GB) {
+            return DF.format(size / (double) MB) + " MB";
+        }
+        if (size < TB) {
+            return DF.format(size / (double) GB) + " GB";
+        }
+        return DF.format(size / (double) TB) + " GB";
+    }
+
+    /**
+     * Get the text file content as a list of strings by its URI.
+     *
+     * @param fileUri file URI
+     * @return content of the file
+     * @throws IOException        IOException
+     * @throws URISyntaxException URISyntaxException
+     */
+    public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
+        Path path = Paths.get(fileUri.getPath());
+        return Files.readAllLines(path);
     }
 }

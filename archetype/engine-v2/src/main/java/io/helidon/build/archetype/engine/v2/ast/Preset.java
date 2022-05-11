@@ -16,87 +16,22 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
 import java.util.List;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Preset.
  */
-public final class Preset extends Block {
+public final class Preset extends DeclaredValue {
 
-    private final Value value;
-    private final String path;
-    private final boolean resolvable;
-    private final boolean isTransient;
-
-    private Preset(Builder builder, List<String> values) {
-        super(builder);
-        this.path = builder.attribute("path", true).asString();
-        this.resolvable = !"false".equalsIgnoreCase(builder.attribute("resolvable", false).asString());
-        this.isTransient = builder.attribute("transient", false).asBoolean();
-        Block.Kind kind = builder.kind();
-        switch (kind) {
-            case BOOLEAN:
-                value = Value.create(Boolean.parseBoolean(builder.value()));
-                break;
-            case TEXT:
-            case ENUM:
-                value = Value.create(builder.value());
-                break;
-            case LIST:
-                value = Value.create(values);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown preset kind: " + kind);
-        }
-    }
-
-    /**
-     * Test if this preset can be resolved.
-     *
-     * @return {@code true} if it can be resolved, {@code false} otherwise
-     */
-    public boolean isResolvable() {
-        return resolvable;
-    }
-
-    /**
-     * Test if this preset is transient.
-     *
-     * @return {@code true} if transient, {@code false} otherwise
-     */
-    public boolean isTransient() {
-        return isTransient;
-    }
-
-    /**
-     * Get the input path.
-     *
-     * @return path
-     */
-    public String path() {
-        return path;
-    }
-
-    /**
-     * Get the value.
-     *
-     * @return value
-     */
-    public Value value() {
-        return value;
+    private Preset(DeclaredValue.Builder builder, List<String> values) {
+        super(builder, values);
     }
 
     @Override
     public String toString() {
         return "Preset{"
-                + "path='" + path + '\''
-                + ", optional=" + resolvable + '\''
-                + ", value=" + value + '\''
+                + "path='" + path() + '\''
+                + ", value=" + value() + '\''
                 + '}';
     }
 
@@ -108,35 +43,26 @@ public final class Preset extends Block {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
-     * @param kind       kind
+     * @param info builder info
+     * @param kind kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Block.Kind kind) {
-        return new Builder(loader, scriptPath, location, kind);
+    public static Builder builder(BuilderInfo info, Block.Kind kind) {
+        return new Builder(info, kind);
     }
 
     /**
      * Preset builder.
      */
-    public static final class Builder extends Block.Builder {
+    public static final class Builder extends DeclaredValue.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location, Block.Kind kind) {
-            super(loader, scriptPath, location, kind);
+        private Builder(BuilderInfo info, Block.Kind kind) {
+            super(info, kind);
         }
 
         @Override
-        protected Preset doBuild() {
-            if (kind() == Kind.LIST) {
-                // collapse the nested values and clear the nested builders
-                List<Node.Builder<? extends Node, ?>> nestedBuilders = nestedBuilders();
-                List<String> values = nestedBuilders.stream().map(Node.Builder::value).collect(toUnmodifiableList());
-                nestedBuilders.clear();
-                return new Preset(this, values);
-            }
-            return new Preset(this, null);
+        protected DeclaredValue doBuild(DeclaredValue.Builder builder, List<String> values) {
+            return new Preset(builder, values);
         }
     }
 }

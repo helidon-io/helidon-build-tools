@@ -20,6 +20,7 @@ import * as vscode from "vscode";
 export interface QuickPickItemExt extends QuickPickItem {
     children?: any;
     value?: string;
+    description?: string;
 }
 
 export interface QuickPickData {
@@ -29,6 +30,9 @@ export interface QuickPickData {
     currentStep: number;
     items: QuickPickItemExt[];
     selectedItems?: QuickPickItemExt[];
+    kind?: string;
+    path?: string;
+    id?: string;
 }
 
 // VS Code Helidon extension commands
@@ -59,4 +63,17 @@ export function getSubstringBetween(initString: string, startSubstring: string, 
     const startPosition = initString.lastIndexOf(startSubstring)+startSubstring.length;
     const endPosition = initString.lastIndexOf(endSubstring);
     return initString.substring(startPosition, endPosition).trim();
+}
+
+/**
+ * Test array equality.
+ * @param array1 {*}
+ * @param array2 {*}
+ * @return {boolean}
+ */
+export function arrayEquals (array1: any, array2: any): boolean {
+    return Array.isArray(array1) &&
+        Array.isArray(array2) &&
+        array1.length === array2.length &&
+        array1.every((value, index) => value === array2[index])
 }

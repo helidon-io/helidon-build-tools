@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.lsp.server.service.metadata;
+
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Information about values.
+ */
+public class ValueConfigMetadata extends ConfigMetadata {
+
+    private final String defaultValue;
+    private final List<ConfiguredType.AllowedValue> allowedValues;
+
+    /**
+     * Create a new instance.
+     *
+     * @param key           key
+     * @param defaultValue  defaultValue
+     * @param type          type
+     * @param description   description
+     * @param level         level
+     * @param content       content
+     * @param kind          kind
+     * @param allowedValues allowedValues
+     */
+    public ValueConfigMetadata(String key, String defaultValue, String type, String description, int level,
+                               Set<ConfigMetadata> content, ConfiguredOptionKind kind,
+                               List<ConfiguredType.AllowedValue> allowedValues) {
+        super(key, type, kind, description, level, content);
+        this.defaultValue = defaultValue;
+        this.allowedValues = allowedValues;
+    }
+
+    /**
+     * Get default value.
+     *
+     * @return default value.
+     */
+    public String defaultValue() {
+        return defaultValue;
+    }
+
+    /**
+     * Get allowed values.
+     *
+     * @return allowed values.
+     */
+    public List<ConfiguredType.AllowedValue> allowedValues() {
+        return allowedValues;
+    }
+}

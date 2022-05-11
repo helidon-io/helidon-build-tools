@@ -16,12 +16,11 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Block.
@@ -45,20 +44,13 @@ public class Block extends Node {
     /**
      * Create a new block.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info       builder info
      * @param attributes attributes map
      * @param kind       kind
      * @param children   children
      */
-    protected Block(ScriptLoader loader,
-                    Path scriptPath,
-                    Location location,
-                    Map<String, Value> attributes,
-                    Kind kind,
-                    List<Node> children) {
-        super(loader, scriptPath, location, attributes);
+    protected Block(BuilderInfo info, Map<String, Value> attributes, Kind kind, List<Node> children) {
+        super(info, attributes);
         this.kind = Objects.requireNonNull(kind, "kind is null");
         this.children = Objects.requireNonNull(children, "children is null");
     }
@@ -73,13 +65,48 @@ public class Block extends Node {
     }
 
     /**
+     * Get the nested nodes stream.
+     *
+     * @param filter first filter applied
+     * @return stream of nodes
+     */
+    public Stream<Node> children(Predicate<Node> filter) {
+        return children.stream().filter(filter).map(Condition::unwrap);
+    }
+
+    /**
+     * Get the nested nodes stream.
+     *
+     * @param filter first filter applied
+     * @param clazz  class filter
+     * @param <T>    node type
+     * @return stream of nodes
+     */
+    public <T> Stream<T> children(Predicate<Node> filter, Class<T> clazz) {
+        return children(filter).filter(clazz::isInstance).map(clazz::cast);
+    }
+
+    /**
+     * Get the nested nodes stream.
+     *
+     * @param filter1 first filter applied
+     * @param clazz   the type of nodes to include
+     * @param filter2 final filter applied
+     * @param <T>     node type
+     * @return stream of nodes
+     */
+    public <T> Stream<T> children(Predicate<Node> filter1, Class<T> clazz, Predicate<T> filter2) {
+        return children(filter1).filter(clazz::isInstance).map(clazz::cast).filter(filter2);
+    }
+
+    /**
      * Wrap this block with a new kind.
      *
      * @param kind kind
      * @return block
      */
     public Block wrap(Block.Kind kind) {
-        return new Block(loader(), scriptPath(), location(), attributes(), kind, List.of(this));
+        return new Block(BuilderInfo.of(this), attributes(), kind, List.of(this));
     }
 
     @Override
@@ -108,6 +135,17 @@ public class Block extends Node {
         }
 
         /**
+         * Visit a variable block.
+         *
+         * @param variable variable
+         * @param arg      visitor argument
+         * @return visit result
+         */
+        default VisitResult visitVariable(Variable variable, A arg) {
+            return visitAny(variable, arg);
+        }
+
+        /**
          * Visit an input block.
          *
          * @param input input
@@ -127,6 +165,50 @@ public class Block extends Node {
          */
         default VisitResult postVisitInput(Input input, A arg) {
             return postVisitAny(input, arg);
+        }
+
+        /**
+         * Visit a validation block.
+         *
+         * @param validation validation
+         * @param arg        visitor argument
+         * @return result
+         */
+        default VisitResult visitValidation(Validation validation, A arg) {
+            return visitAny(validation, arg);
+        }
+
+        /**
+         * Visit a validation block after traversing the nested nodes.
+         *
+         * @param validation validation
+         * @param arg        visitor argument
+         * @return result
+         */
+        default VisitResult postVisitValidation(Validation validation, A arg) {
+            return visitAny(validation, arg);
+        }
+
+        /**
+         * Visit a regex block.
+         *
+         * @param regex regular expression
+         * @param arg   visitor argument
+         * @return  result
+         */
+        default VisitResult visitRegex(Validation.Regex regex, A arg) {
+            return visitAny(regex, arg);
+        }
+
+        /**
+         * Visit a regex block after traversing the nested nodes.
+         *
+         * @param regex regular expression
+         * @param arg   visitor argument
+         * @return  result
+         */
+        default VisitResult postVisitRegex(Validation.Regex regex, A arg) {
+            return visitAny(regex, arg);
         }
 
         /**
@@ -324,6 +406,11 @@ public class Block extends Node {
         PRESETS,
 
         /**
+         * Variables.
+         */
+        VARIABLES,
+
+        /**
          * Output.
          */
         OUTPUT,
@@ -369,6 +456,21 @@ public class Block extends Node {
         TRANSFORMATION,
 
         /**
+         * Regular expression.
+         */
+        REGEX,
+
+        /**
+         * Validation.
+         */
+        VALIDATION,
+
+        /**
+         * Validations.
+         */
+        VALIDATIONS,
+
+        /**
          * REPLACE.
          */
         REPLACE,
@@ -407,14 +509,12 @@ public class Block extends Node {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
-     * @param kind       kind
+     * @param info builder info
+     * @param kind kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-        return new Builder(loader, scriptPath, location, kind);
+    public static Builder builder(BuilderInfo info, Kind kind) {
+        return new Builder(info, kind);
     }
 
     /**
@@ -427,13 +527,11 @@ public class Block extends Node {
         /**
          * Create a new builder.
          *
-         * @param loader     script loader
-         * @param scriptPath script path
-         * @param location   location
-         * @param kind       kind
+         * @param info builder info
+         * @param kind kind
          */
-        protected Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-            super(loader, scriptPath, location);
+        protected Builder(BuilderInfo info, Kind kind) {
+            super(info);
             this.kind = kind;
         }
 

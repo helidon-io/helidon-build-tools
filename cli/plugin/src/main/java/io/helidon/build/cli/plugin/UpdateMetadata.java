@@ -247,7 +247,7 @@ class UpdateMetadata extends Plugin {
 
     private void debugDownload(URL url, Map<String, String> headers, boolean conditional) {
         final String prefix = conditional ? "maybe " : "";
-        Log.debug("%sdownloading %s, headers=%s", prefix, url, headers);
+        Log.debug("%s downloading %s, headers=%s", prefix, url, headers);
     }
 
     private int status(URLConnection connection) throws IOException {
@@ -306,6 +306,7 @@ class UpdateMetadata extends Plugin {
 
     private static void deleteDirectoryContent(Path directory) throws IOException {
         Log.debug("deleting %s", directory);
+        //noinspection DuplicatedCode
         try (Stream<Path> stream = Files.walk(directory)) {
             stream.sorted(Comparator.reverseOrder())
                   .filter(file -> !file.equals(directory))

@@ -18,19 +18,19 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step label="Shapes">
+    <step name="Shapes">
         <inputs>
-            <enum name="shape" label="Select a shape">
-                <option value="circle" label="Circle"/>
-                <option value="triangle" label="Triangle" />
-                <option value="square" label="Square" />
+            <enum id="shape" name="Select a shape">
+                <option value="circle" name="Circle"/>
+                <option value="triangle" name="Triangle" />
+                <option value="square" name="Square" />
             </enum>
-            <text name="package" label="Java package" default="io.helidon.build.maven.archetype.tests"/>
-            <text name="groupId" label="Project groupId" default="io.helidon.build.maven.archetype.tests"/>
-            <text name="artifactId" label="Project artifactId" default="${shape}-project"/>
-            <text name="version" label="Project version" default="0.1-SNAPSHOT"/>
+            <text id="package" name="Java package" default="io.helidon.build.maven.archetype.tests"/>
+            <text id="groupId" name="Project groupId" default="io.helidon.build.maven.archetype.tests"/>
+            <text id="artifactId" name="Project artifactId" default="${shape}-project"/>
+            <text id="version" name="Project version" default="0.1-SNAPSHOT"/>
             <output>
                 <transformation id="packaged">
                     <replace regex="__pkg__" replacement="${package/\./\/}"/>

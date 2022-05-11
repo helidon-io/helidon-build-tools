@@ -30,6 +30,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
+import io.helidon.build.common.Strings;
 import io.helidon.build.common.Time;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
@@ -103,9 +104,7 @@ public final class InfoCommand extends BaseCommand {
             System.getProperties().keySet().stream().sorted().forEach(key -> {
                 String name = key.toString();
                 String value = System.getProperty(name);
-                value = value.replace("\n", "\\n");
-                value = value.replace("\r", "\\r");
-                value = value.replace("\b", "\\b");
+                value = Strings.replaceAll(value, "\n", "\\n", "\r", "\\r", "\b", "\\b");
                 systemProps.put(key.toString(), value);
             });
         }
@@ -234,6 +233,8 @@ public final class InfoCommand extends BaseCommand {
             appendLine("$(bold | %s)", header);
             appendLine();
             map.forEach((key, value) -> {
+                key = key.toString().replace("%", "%%");
+                value = value.toString().replace("%", "%%");
                 String padding = padding(PAD, maxKeyWidth, key.toString());
                 appendLine("%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
             });

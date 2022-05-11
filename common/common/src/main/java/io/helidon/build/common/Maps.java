@@ -16,6 +16,7 @@
 package io.helidon.build.common;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,13 +28,16 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
 /**
  * Map utilities.
  */
+@SuppressWarnings("unused")
 public class Maps {
 
     private Maps() {
@@ -101,7 +105,6 @@ public class Maps {
         return result;
     }
 
-
     /**
      * Map the given map values.
      *
@@ -131,6 +134,264 @@ public class Maps {
         return map.entrySet()
                   .stream()
                   .filter(e -> filter.test(e.getKey(), e.getValue()))
-                  .collect(toMap(Map.Entry::getKey, e -> mapper.apply(e.getValue())));
+                  .collect(toMap(Entry::getKey, e -> mapper.apply(e.getValue())));
+    }
+
+    /**
+     * Filter the given map.
+     *
+     * @param map    input map
+     * @param filter key predicate
+     * @param <K>    key type
+     * @param <V>    value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> filter) {
+        return map.entrySet()
+                  .stream()
+                  .filter(e -> filter.test(e.getKey(), e.getValue()))
+                  .collect(toMap(Entry::getKey, Entry::getValue));
+    }
+
+    /**
+     * Filter the given map.
+     *
+     * @param map input map
+     * @param key key to remove
+     * @param <K> key type
+     * @param <V> value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> filter(Map<K, V> map, K key) {
+        return filter(map, (BiPredicate<K, V>) (k, v) -> !k.equals(key));
+    }
+
+    /**
+     * Convert the given list of maps into a map of map keyed by the given key.
+     *
+     * @param maps input maps
+     * @param key  key
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return new map
+     */
+    public static <K, V> Map<V, List<Map<K, V>>> keyedBy(List<Map<K, V>> maps, K key) {
+        return maps.stream().collect(toMap(m -> m.get(key), m -> Lists.of(filter(m, key)), Lists::addAll));
+    }
+
+    /**
+     * Put a value in a map and return the map.
+     *
+     * @param map input map
+     * @param k   key
+     * @param v   value
+     * @param <K> key type
+     * @param <V> value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> put(Map<K, V> map, K k, V v) {
+        Map<K, V> res = new HashMap<>();
+        if (map != null) {
+            res.putAll(map);
+        }
+        res.put(k, v);
+        return res;
+    }
+
+    /**
+     * Concatenate the given maps.
+     *
+     * @param map1 input map 1
+     * @param map2 input map 2
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> putAll(Map<K, V> map1, Map<K, V> map2) {
+        Map<K, V> map = new HashMap<>();
+        map.putAll(map1);
+        map.putAll(map2);
+        return map;
+    }
+
+    /**
+     * Concatenate the given maps.
+     *
+     * @param maps input maps
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> putAll(List<Map<K, V>> maps) {
+        Map<K, V> map = new HashMap<>();
+        maps.forEach(map::putAll);
+        return map;
+    }
+
+    /**
+     * Concatenate the given maps.
+     *
+     * @param maps input maps
+     * @param map1 input map 1
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return new map
+     */
+    public static <K, V> List<Map<K, V>> putAll(List<Map<K, V>> maps, Map<K, V> map1) {
+        if (maps.isEmpty()) {
+            return Lists.of(map1);
+        }
+        maps.forEach(m -> m.putAll(map1));
+        return maps;
+    }
+
+    /**
+     * Add the given entry if absent in the maps.
+     *
+     * @param map   input map
+     * @param key   input key
+     * @param value input value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> putIfAbsent(Map<K, V> map, K key, V value) {
+        Map<K, V> copy = new HashMap<>(map);
+        copy.putIfAbsent(key, value);
+        return copy;
+    }
+
+    /**
+     * Add the given entry if absent in the maps.
+     *
+     * @param maps  input maps
+     * @param key   input key
+     * @param value input value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return new map
+     */
+    public static <K, V> List<Map<K, V>> putIfAbsent(List<Map<K, V>> maps, K key, V value) {
+        if (maps.isEmpty()) {
+            return Lists.of(Maps.of(key, value));
+        }
+        maps.forEach(m -> m.putIfAbsent(key, value));
+        return maps;
+    }
+
+    /**
+     * Create a new {@link HashMap} with the given entry.
+     *
+     * @param key   input key
+     * @param value input value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> of(K key, V value) {
+        Map<K, V> map = new HashMap<>();
+        map.put(key, value);
+        return map;
+    }
+
+    /**
+     * Get the given map as a list of entries.
+     *
+     * @param map input map
+     * @param <K> key type
+     * @param <V> value type
+     * @return list of entries
+     */
+    public static <K, V> List<Entry<K, V>> entries(Map<K, V> map) {
+        return new ArrayList<>(map.entrySet());
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries input entries
+     * @param <K>     key type
+     * @param <V>     value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> fromEntries(Collection<Entry<K, V>> entries) {
+        return fromEntries(entries.stream());
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries       input entries
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> fromEntries(Collection<Entry<K, V>> entries, BinaryOperator<V> mergeFunction) {
+        return fromEntries(entries.stream(), mergeFunction);
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries input entries
+     * @param <K>     key type
+     * @param <V>     value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> fromEntries(Stream<Entry<K, V>> entries) {
+        return entries.collect(toMap(Entry::getKey, Entry::getValue));
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries       input entries
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> fromEntries(Stream<Entry<K, V>> entries, BinaryOperator<V> mergeFunction) {
+        return entries.collect(toMap(Entry::getKey, Entry::getValue, mergeFunction));
+    }
+
+    /**
+     * Merge the maps in the given list.
+     *
+     * @param maps          maps to merge
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> merge(List<Map<K, V>> maps, BinaryOperator<V> mergeFunction) {
+        return Maps.fromEntries(Lists.flatMap(maps, Map::entrySet), mergeFunction);
+    }
+
+    /**
+     * Merge the maps in the given list.
+     *
+     * @param maps maps to merge
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> merge(List<Map<K, V>> maps) {
+        return Maps.fromEntries(Lists.flatMap(maps, Map::entrySet));
+    }
+
+    /**
+     * Compute non-existing keys in a map.
+     *
+     * @param map      map to update
+     * @param mappings map of key to mapping functions
+     * @param <K>      key type
+     * @param <V>      value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> computeIfAbsent(Map<K, V> map, Map<K, Function<K, V>> mappings) {
+        mappings.forEach(map::computeIfAbsent);
+        return map;
     }
 }

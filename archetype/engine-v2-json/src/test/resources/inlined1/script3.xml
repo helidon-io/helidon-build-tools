@@ -20,6 +20,6 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
     <inputs>
-        <boolean name="boolean1" label="Boolean1" />
+        <boolean id="boolean1" name="Boolean1" />
     </inputs>
 </archetype-script>

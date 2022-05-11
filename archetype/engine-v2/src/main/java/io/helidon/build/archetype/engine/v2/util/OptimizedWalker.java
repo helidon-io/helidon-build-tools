@@ -136,6 +136,7 @@ public class OptimizedWalker<T> implements Node.Visitor<Void> {
         return inlined.contains(node);
     }
 
+    // TODO skip variable and preset blocks that are not referenced
     private boolean isSkipped(Node node) {
         DeclaredBlock block = blocks.get(node);
         if (block != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.MergedModel.Value;
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 
 import com.github.mustachejava.Binding;
@@ -126,6 +127,18 @@ public class MustacheSupport implements TemplateSupport {
                 ListIterator<Object> it = scopes.listIterator(scopes.size());
                 while (it.hasPrevious()) {
                     Object scope = it.previous();
+                    if (scope instanceof MergedModel.Element) {
+                        MergedModel.Element<?> elt = (MergedModel.Element<?>) scope;
+                        switch (name) {
+                            case "first":
+                                return elt.first();
+                            case "last":
+                                return elt.last();
+                            case "index":
+                                return elt.index();
+                            default:
+                        }
+                    }
                     if (scope instanceof MergedModel.Node) {
                         result = ((MergedModel.Node) scope).get(name);
                         if (result != null) {
@@ -158,6 +171,9 @@ public class MustacheSupport implements TemplateSupport {
 
         @Override
         public String stringify(Object object) {
+            if (object instanceof MergedModel.Element) {
+                object = ((MergedModel.Element<?>) object).wrapped();
+            }
             if (object instanceof Value) {
                 return preprocess((Value) object);
             }
