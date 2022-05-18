@@ -6,7 +6,7 @@
   "children": [
     {
       "kind": "step",
-      "label": "Step1",
+      "name": "Step1",
       "id": "1",
       "children": [
         {
@@ -14,8 +14,8 @@
           "children": [
             {
               "kind": "boolean",
-              "label": "Boolean1",
-              "name": "boolean1",
+              "name": "Boolean1",
+              "id": "boolean1",
               "default": false,
               "children": [
                 {
@@ -23,8 +23,8 @@
                   "children": [
                     {
                       "kind": "boolean",
-                      "label": "Boolean2",
-                      "name": "boolean2",
+                      "name": "Boolean2",
+                      "id": "boolean2",
                       "default": false
                     }
                   ]

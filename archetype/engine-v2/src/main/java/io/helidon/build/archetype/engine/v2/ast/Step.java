@@ -21,24 +21,24 @@ package io.helidon.build.archetype.engine.v2.ast;
  */
 public class Step extends Block {
 
-    private final String label;
+    private final String name;
     private final String help;
     private final boolean optional;
 
     private Step(Builder builder) {
         super(builder);
-        label = builder.attribute("label", false).asString();
+        name = builder.attribute("name", false).asString();
         help = builder.attribute("help", false).asString();
         optional = builder.attribute("optional", false).asBoolean();
     }
 
     /**
-     * Get the step label.
+     * Get the step name.
      *
      * @return name
      */
-    public String label() {
-        return label;
+    public String name() {
+        return name;
     }
 
     /**
@@ -72,7 +72,7 @@ public class Step extends Block {
     @Override
     public String toString() {
         return "Step{"
-                + "label='" + label() + '\''
+                + "name='" + name() + '\''
                 + ", optional=" + isOptional()
                 + '}';
     }

@@ -20,21 +20,21 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
     <inputs>
-        <text name="input1" label="Text input" default="default#1" optional="true" prompt="Enter 1">
+        <text id="input1" name="Text input" description="A text input" default="default#1" optional="true" prompt="Enter 1">
             <help>Help 1</help>
         </text>
-        <boolean name="input2" label="Boolean input" default="true" prompt="Enter 2">
+        <boolean id="input2" name="Boolean input" description="A boolean input" default="true" prompt="Enter 2">
             <help>Help 2</help>
         </boolean>
-        <enum name="input3" label="Enum input" default="option3.1" prompt="Enter 3">
+        <enum id="input3" name="Enum input" description="An enum input" default="option3.1" prompt="Enter 3">
             <help>Help 3</help>
-            <option label="Option 3.1" value="option3.1" />
-            <option label="Option 3.2" value="option3.2" />
+            <option name="Option 3.1" value="option3.1" description="An option" />
+            <option name="Option 3.2" value="option3.2" description="Another option" />
         </enum>
-        <list name="input4" label="List input" default="item4.1,item4.2" prompt="Enter 4">
+        <list id="input4" name="List input" description="A list input" default="item4.1,item4.2" prompt="Enter 4">
             <help>Help 4</help>
-            <option label="Item 4.1" value="item4.1" />
-            <option label="Item 4.2" value="item4.2" />
+            <option name="Item 4.1" value="item4.1" description="An option" />
+            <option name="Item 4.2" value="item4.2" description="Another option" />
         </list>
         <exec src="more-inputs.xml" />
     </inputs>

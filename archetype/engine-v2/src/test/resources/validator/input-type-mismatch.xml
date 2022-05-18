@@ -20,17 +20,17 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Step">
+    <step name="Step">
         <inputs>
-            <enum name="enum1" label="Enum1">
-                <option label="Foo" value="foo">
+            <enum id="enum1" name="Enum1">
+                <option name="Foo" value="foo">
                     <inputs>
-                        <text name="duplicate" label="Duplicate"/>
+                        <text id="duplicate" name="Duplicate"/>
                     </inputs>
                 </option>
-                <option label="Bar" value="bar">
+                <option name="Bar" value="bar">
                     <inputs>
-                        <boolean name="duplicate" label="Duplicate"/>
+                        <boolean id="duplicate" name="Duplicate"/>
                     </inputs>
                 </option>
             </enum>

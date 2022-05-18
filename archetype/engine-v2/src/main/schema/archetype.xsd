@@ -729,12 +729,23 @@
         </xs:simpleContent>
     </xs:complexType>
 
-    <xs:attributeGroup name="label-group">
-        <xs:attribute name="label" type="xs:string" use="required">
+    <xs:attributeGroup name="name-group">
+        <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    Label: title for step or input components.
+                    Human readable name for step or input components.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="desc-group">
+        <xs:attribute name="description" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Input description (single line).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -777,11 +788,11 @@
     </xs:group>
 
     <xs:attributeGroup name="input-group">
-        <xs:attribute name="name" use="required">
+        <xs:attribute name="id" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    The input name. Must be unique among siblings.
+                    The input id. Must be unique among siblings.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -789,7 +800,7 @@
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    The prompt for this input. Defaults to the label if not defined.
+                    The prompt for this input. Defaults to the name if not defined.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -801,7 +812,8 @@
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
-        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:name-group"/>
+        <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
@@ -821,7 +833,8 @@
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
-        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:name-group"/>
+        <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:boolean">
@@ -853,14 +866,16 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attributeGroup ref="a:label-group"/>
+                        <xs:attributeGroup ref="a:name-group"/>
+                        <xs:attributeGroup ref="a:desc-group"/>
                         <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
-        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:name-group"/>
+        <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
@@ -892,7 +907,8 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
-                        <xs:attributeGroup ref="a:label-group"/>
+                        <xs:attributeGroup ref="a:name-group"/>
+                        <xs:attributeGroup ref="a:desc-group"/>
                         <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
@@ -901,7 +917,8 @@
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attributeGroup ref="a:input-group"/>
-        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:name-group"/>
+        <xs:attributeGroup ref="a:desc-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -959,7 +976,7 @@
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:if-group"/>
-        <xs:attributeGroup ref="a:label-group"/>
+        <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
     </xs:complexType>
 

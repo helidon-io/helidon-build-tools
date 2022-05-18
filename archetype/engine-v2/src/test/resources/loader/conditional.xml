@@ -24,10 +24,10 @@
         <boolean path="path1" if="true">true</boolean>
         <boolean path="path2" if="false">false</boolean>
     </presets>
-    <step label="Step 1" if="true">
+    <step name="Step 1" if="true">
         <help>Help about step 1</help>
         <inputs>
-            <boolean name="input1" label="Input 1">
+            <boolean id="input1" name="Input 1">
                 <output if="false">
                     <file source="file3.txt" target="file4.txt"/>
                 </output>

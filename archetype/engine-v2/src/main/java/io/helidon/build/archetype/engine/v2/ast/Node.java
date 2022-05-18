@@ -39,7 +39,7 @@ public abstract class Node {
     // TODO get the id from the script loader
     private static final AtomicInteger NEXT_ID = new AtomicInteger();
 
-    private final int id;
+    private final int uid;
     private final ScriptLoader loader;
     private final Path scriptPath;
     private final Location location;
@@ -65,7 +65,7 @@ public abstract class Node {
         this.scriptPath = info.scriptPath;
         this.location = info.location;
         this.attributes = requireNonNull(attributes, "attributes is null");
-        this.id = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
+        this.uid = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
     }
 
     /**
@@ -114,12 +114,12 @@ public abstract class Node {
     }
 
     /**
-     * Get the node id.
+     * Get the unique id.
      *
      * @return id
      */
-    public int nodeId() {
-        return id;
+    public int uid() {
+        return uid;
     }
 
     @Override
@@ -128,12 +128,12 @@ public abstract class Node {
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
         //  TODO use both id and loader
-        return id == node.id;
+        return uid == node.uid;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(uid);
     }
 
     /**

@@ -69,7 +69,7 @@ public abstract class DeclaredValue extends Block {
     /**
      * Declared value builder.
      */
-    public static abstract class Builder extends Block.Builder {
+    public abstract static class Builder extends Block.Builder {
 
         /**
          * Create a new builder.

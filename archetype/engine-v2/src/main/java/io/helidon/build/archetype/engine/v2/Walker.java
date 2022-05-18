@@ -122,15 +122,15 @@ public final class Walker<A> {
             traversing = false;
             Node node = stack.peek();
             Node parent = parents.peek();
-            int parentId = parent != null ? parent.nodeId() : 0;
-            int nodeId = node.nodeId();
+            int parentId = parent != null ? parent.uid() : 0;
+            int nodeId = node.uid();
             if (nodeId != parentId) {
                 result = accept(node, arg, true);
             } else {
                 if (node instanceof Block) {
                     result = accept(node, arg, false);
                 }
-                parentId = parents.pop().nodeId();
+                parentId = parents.pop().uid();
             }
             if (!traversing) {
                 stack.pop();
@@ -148,7 +148,7 @@ public final class Walker<A> {
         while (!stack.isEmpty()) {
             Node n = stack.peek();
             if (n instanceof Block) {
-                if (n.nodeId() == parentId) {
+                if (n.uid() == parentId) {
                     break;
                 }
                 stack.pop();

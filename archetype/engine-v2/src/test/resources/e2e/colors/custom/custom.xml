@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,23 +22,23 @@
 
     <exec src="../../common/common.xml"/>
     <inputs>
-        <text name="palette-name" label="Palette name" optional="true" default="My Palette"/>
-        <list name="colors" label="Select colors" optional="true" default="red,green,blue">
-            <option value="red" label="Red"/>
-            <option value="orange" label="Orange"/>
-            <option value="yellow" label="Yellow"/>
-            <option value="green" label="Green"/>
-            <option value="blue" label="Blue"/>
-            <option value="indigo" label="Indigo"/>
-            <option value="violet" label="Violet"/>
-            <option value="pink" label="Pink"/>
-            <option value="light-pink" label="LightPink"/>
-            <option value="cyan" label="Cyan"/>
-            <option value="light-salmon" label="LightSalmon"/>
-            <option value="coral" label="Coral"/>
-            <option value="tomato" label="Tomato"/>
-            <option value="lemon" label="Lemon"/>
-            <option value="khaki" label="Khaki"/>
+        <text id="palette-name" name="Palette name" optional="true" default="My Palette"/>
+        <list id="colors" name="Select colors" optional="true" default="red,green,blue">
+            <option value="red" name="Red"/>
+            <option value="orange" name="Orange"/>
+            <option value="yellow" name="Yellow"/>
+            <option value="green" name="Green"/>
+            <option value="blue" name="Blue"/>
+            <option value="indigo" name="Indigo"/>
+            <option value="violet" name="Violet"/>
+            <option value="pink" name="Pink"/>
+            <option value="light-pink" name="LightPink"/>
+            <option value="cyan" name="Cyan"/>
+            <option value="light-salmon" name="LightSalmon"/>
+            <option value="coral" name="Coral"/>
+            <option value="tomato" name="Tomato"/>
+            <option value="lemon" name="Lemon"/>
+            <option value="khaki" name="Khaki"/>
         </list>
     </inputs>
     <output>

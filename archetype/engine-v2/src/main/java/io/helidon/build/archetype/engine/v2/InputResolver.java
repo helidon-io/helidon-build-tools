@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
@@ -39,7 +39,7 @@ import io.helidon.build.common.GenericType;
  */
 public abstract class InputResolver implements Input.Visitor<Context> {
 
-    private final Deque<NamedInput> parents = new ArrayDeque<>();
+    private final Deque<DeclaredInput> parents = new ArrayDeque<>();
     private final Deque<Step> currentSteps = new ArrayDeque<>();
     private final Set<Step> visitedSteps = new HashSet<>();
 
@@ -65,23 +65,24 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * Invoked for every named input visit.
      *
      * @param input   input
+     * @param scope   scope
      * @param context context
      * @return visit result if a value already exists, {@code null} otherwise
      */
-    protected VisitResult onVisitInput(NamedInput input, Context context) {
+    protected VisitResult onVisitInput(DeclaredInput input, Context.Scope scope, Context context) {
         Step currentStep = currentSteps.peek();
         if (currentStep == null) {
-            throw new IllegalStateException("Invalid state, input not nested inside a step");
+            throw new IllegalStateException(input.location() + " Input not nested inside a step");
         }
-        parents.push(input);
         boolean global = input.isGlobal();
-        String path = context.path(input.name());
         if (global) {
-            if (!path.equals(input.name())) {
-                throw new IllegalStateException("Invalid state, input '" + path + "' cannot be global");
+            DeclaredInput parent = parents.peek();
+            if (parent != null && !parent.isGlobal()) {
+                throw new IllegalStateException(input.location() + " Parent input is not global");
             }
         }
-        Value value = context.get(path);
+        parents.push(input);
+        Value value = context.getValue(scope.id());
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -89,8 +90,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
             return null;
         }
-        input.validate(value, path);
-        context.push(path, global);
+        input.validate(value, scope.id());
         return input.visitValue(value);
     }
 
@@ -101,8 +101,8 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * @param context context
      * @return default value or {@code null} if none
      */
-    protected Value defaultValue(NamedInput input, Context context) {
-        Value defaultValue = context.defaultValue(input.name());
+    protected Value defaultValue(DeclaredInput input, Context context) {
+        Value defaultValue = context.defaultValue(input.id(), input.isGlobal());
         if (defaultValue == null) {
             defaultValue = input.defaultValue();
         }
@@ -126,8 +126,8 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         if (parents.isEmpty()) {
             throw new IllegalStateException("parents is empty");
         }
-        NamedInput parent = parents.peek();
-        Value inputValue = context.lookup("PARENT." + parent.name());
+        DeclaredInput parent = parents.peek();
+        Value inputValue = context.lookup("PARENT." + parent.id());
         if (inputValue != null) {
             return parent.visitOption(inputValue, option);
         }
@@ -136,11 +136,9 @@ public abstract class InputResolver implements Input.Visitor<Context> {
 
     @Override
     public VisitResult postVisitAny(Input input, Context context) {
-        if (input instanceof NamedInput) {
+        if (input instanceof DeclaredInput) {
             parents.pop();
-            if (!((NamedInput) input).isGlobal()) {
-                context.pop();
-            }
+            context.popScope();
         }
         return VisitResult.CONTINUE;
     }

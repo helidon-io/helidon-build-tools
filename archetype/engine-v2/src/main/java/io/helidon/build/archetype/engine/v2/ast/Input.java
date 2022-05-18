@@ -30,24 +30,35 @@ import static java.util.Collections.emptyList;
  */
 public abstract class Input extends Block {
 
-    private final String label;
+    private final String name;
+    private final String description;
     private final String help;
     private final String prompt;
 
     private Input(Input.Builder builder) {
         super(builder);
-        label = builder.attribute("label", false).asString();
+        name = builder.attribute("name", false).asString();
+        description = builder.attribute("description", false).asString();
         prompt = builder.attribute("prompt", false).asString();
         help = builder.attribute("help", false).asString();
     }
 
     /**
-     * Get the input label.
+     * Get the input name.
      *
-     * @return label
+     * @return name
      */
-    public String label() {
-        return label;
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Get the input description.
+     *
+     * @return description
+     */
+    public String description() {
+        return description;
     }
 
     /**
@@ -241,28 +252,28 @@ public abstract class Input extends Block {
     }
 
     /**
-     * Named input.
+     * Declared input.
      */
-    public abstract static class NamedInput extends Input {
+    public abstract static class DeclaredInput extends Input {
 
-        private final String name;
+        private final String id;
         private final boolean optional;
         private final boolean global;
 
-        private NamedInput(Input.Builder builder) {
+        private DeclaredInput(Input.Builder builder) {
             super(builder);
-            this.name = builder.attribute("name", true).asString();
+            this.id = builder.attribute("id", true).asString();
             this.optional = builder.attribute("optional", false).asBoolean();
             this.global = builder.attribute("global", false).asBoolean();
         }
 
         /**
-         * Get the input name.
+         * Get the input id.
          *
-         * @return name
+         * @return id
          */
-        public String name() {
-            return name;
+        public String id() {
+            return id;
         }
 
         /**
@@ -334,8 +345,8 @@ public abstract class Input extends Block {
 
         @Override
         public String toString() {
-            return "NamedInput{"
-                    + "name='" + name + '\''
+            return "DeclaredInput{"
+                    + "id='" + id + '\''
                     + ", optional=" + optional
                     + ", global=" + global
                     + '}';
@@ -384,7 +395,7 @@ public abstract class Input extends Block {
     /**
      * Text input.
      */
-    public static final class Text extends NamedInput {
+    public static final class Text extends DeclaredInput {
 
         private final String defaultValue;
 
@@ -412,8 +423,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputText{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
+                    + "id='" + id() + '\''
+                    + ", name='" + name() + '\''
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
@@ -424,7 +435,7 @@ public abstract class Input extends Block {
     /**
      * Boolean input.
      */
-    public static final class Boolean extends NamedInput {
+    public static final class Boolean extends DeclaredInput {
 
         private final boolean defaultValue;
 
@@ -503,8 +514,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputBoolean{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
+                    + "id='" + id() + '\''
+                    + ", name='" + name() + '\''
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
@@ -515,7 +526,7 @@ public abstract class Input extends Block {
     /**
      * Selection based input.
      */
-    public abstract static class Options extends NamedInput {
+    public abstract static class Options extends DeclaredInput {
 
         private Options(Input.Builder builder) {
             super(builder);
@@ -590,8 +601,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputList{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
+                    + "id='" + id() + '\''
+                    + ", name='" + name() + '\''
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + Arrays.toString(defaultValue) + '\''
@@ -624,9 +635,10 @@ public abstract class Input extends Block {
          * Get the index.
          *
          * @param optionName option name
+         * @param options    the options to process
          * @return index
          */
-        public int optionIndex(String optionName, java.util.List<Option> options) {
+        public static int optionIndex(String optionName, java.util.List<Option> options) {
             if (optionName == null) {
                 return -1;
             }
@@ -671,8 +683,8 @@ public abstract class Input extends Block {
         @Override
         public String toString() {
             return "InputEnum{"
-                    + "name='" + name() + '\''
-                    + ", label='" + label() + '\''
+                    + "id='" + id() + '\''
+                    + ", name='" + name() + '\''
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''

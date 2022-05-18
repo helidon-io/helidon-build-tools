@@ -131,11 +131,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
                     }
                 } else {
                     String value = String.valueOf(declaredValue.value().unwrap());
-                    if (kind == Block.Kind.ENUM) {
-                        builder.value(value);
-                    } else {
-                        builder.addChild(Block.builder(builderInfo, Block.Kind.VALUE).value(value));
-                    }
+                    builder.value(value);
                 }
             } else if (block instanceof Step) {
                 builder = Step.builder(builderInfo(block));
@@ -177,7 +173,7 @@ public class ClientCompiler implements Node.Visitor<Script> {
 
     private String methodName(DeclaredBlock block) {
         if (obfuscate) {
-            return String.valueOf(block.nodeId());
+            return String.valueOf(block.uid());
         } else {
             return block.blockName();
         }

@@ -89,7 +89,7 @@ class OutputGeneratorTest {
     @Test
     void testReplacement() throws IOException {
         Path outputDir = generate("generator/replacement.xml",
-                ctx -> ctx.put("package", Value.create("com.example"), true));
+                ctx -> ctx.setValue("package", Value.create("com.example"), ContextValue.ValueKind.EXTERNAL));
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));

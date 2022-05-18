@@ -34,7 +34,9 @@ class ContextTest {
     @Test
     void testLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false, true);
+        Context.Scope scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ContextValue.ValueKind.EXTERNAL);
 
         Value value;
 
@@ -61,10 +63,17 @@ class ContextTest {
     @Test
     void testLookupInScope() {
         Context context = Context.create();
-        context.push("foo", Value.TRUE, false, true);
-        context.push("bar", Value.TRUE, false, true);
-        context.push("color", Value.create("blue"), false, true);
-        context.pop();
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope = context.newScope("color", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("blue"), ContextValue.ValueKind.EXTERNAL);
+        context.popScope();
         Value value = context.lookup("color");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("blue"));
@@ -73,7 +82,7 @@ class ContextTest {
     @Test
     void testLookupInternalOnly() {
         Context context = Context.create();
-        context.put("foo", Value.create("foo-value"), true);
+        context.setValue("foo", Value.create("foo-value"), ContextValue.ValueKind.EXTERNAL);
 
         Value value;
 
@@ -101,8 +110,13 @@ class ContextTest {
     @Test
     void testRelativeLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false, true);
-        context.push("bar", Value.create("bar-value"), false, true);
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ContextValue.ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("bar-value"), ContextValue.ValueKind.EXTERNAL);
 
         Value value;
 
@@ -137,11 +151,16 @@ class ContextTest {
     }
 
     @Test
-    void testPopInput() {
+    void testPopScope() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false, true);
-        context.push("bar", Value.create("bar-value"), false, true);
-        context.pop();
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ContextValue.ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("bar-value"), ContextValue.ValueKind.EXTERNAL);
+        context.popScope();
 
         Value value;
 

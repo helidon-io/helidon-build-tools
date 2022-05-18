@@ -34,6 +34,7 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 
+import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
@@ -51,7 +52,7 @@ public class TerminalInputResolver extends InputResolver {
     private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (numbers separated by spaces or 'none')";
 
     private final InputStream in;
-    private String lastLabel;
+    private String lastName;
 
     /**
      * Create an interactive input resolver.
@@ -71,27 +72,27 @@ public class TerminalInputResolver extends InputResolver {
 
     @Override
     protected void onVisitStep(Step step, Context context) {
-        System.out.printf("%n| %s%n%n", step.label());
+        System.out.printf("%n| %s%n%n", step.name());
     }
 
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
             try {
                 Value defaultValue = defaultValue(input, context);
                 String defaultText = defaultValue != null ? BoldBlue.apply(Input.Boolean.asString(defaultValue)) : null;
-                String question = String.format("%s (yes/no)", Bold.apply(input.label()));
+                String question = String.format("%s (yes/no)", Bold.apply(input.name()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal(), true);
+                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (defaultValue == null || !defaultValue.asBoolean()) {
-                        return VisitResult.SKIP_SUBTREE;
+                        result = VisitResult.SKIP_SUBTREE;
+                    } else {
+                        result = VisitResult.CONTINUE;
                     }
-                    return VisitResult.CONTINUE;
+                    break;
                 }
                 boolean value;
                 try {
@@ -103,57 +104,66 @@ public class TerminalInputResolver extends InputResolver {
                     }
                     continue;
                 }
-                context.push(input.name(), Value.create(value), input.isGlobal(), true);
+                context.setValue(scope.id(), Value.create(value), ContextValue.ValueKind.USER);
                 if (!value) {
-                    return VisitResult.SKIP_SUBTREE;
+                    result = VisitResult.SKIP_SUBTREE;
+                } else {
+                    result = VisitResult.CONTINUE;
                 }
-                return VisitResult.CONTINUE;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitText(Input.Text input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        try {
-            String defaultValue = defaultValue(input, context).asString();
-            String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
-            String response = prompt(Bold.apply(input.label()), defaultText);
-            if (response == null || response.trim().length() == 0) {
-                context.push(input.name(), Value.create(defaultValue), input.isGlobal(), true);
-            } else {
-                context.push(input.name(), Value.create(response), input.isGlobal(), true);
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        if (result == null) {
+            try {
+                String defaultValue = defaultValue(input, context).asString();
+                String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
+                String response = prompt(Bold.apply(input.name()), defaultText);
+                ContextValue.ValueKind valueKind;
+                Value value;
+                if (response == null || response.trim().length() == 0) {
+                    value = Value.create(defaultValue);
+                    valueKind = ContextValue.ValueKind.DEFAULT;
+                } else {
+                    value = Value.create(response);
+                    valueKind = ContextValue.ValueKind.USER;
+                }
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            return VisitResult.CONTINUE;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitEnum(Input.Enum input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
             String response = null;
             try {
                 Value defaultValue = defaultValue(input, context);
                 List<Input.Option> options = input.options(context::filterNode);
-                int defaultIndex = input.optionIndex(defaultValue.asString(), options);
+                int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal(), true);
-                    return VisitResult.CONTINUE;
+                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    result = VisitResult.CONTINUE;
+                    break;
                 }
 
-                printLabel(input);
+                printName(input);
                 printOptions(options);
 
                 String defaultText = defaultIndex != -1
@@ -161,17 +171,21 @@ public class TerminalInputResolver extends InputResolver {
                         : null;
 
                 response = prompt(ENTER_SELECTION, defaultText);
-                lastLabel = input.label();
+                lastName = input.name();
+                Value value;
+                ContextValue.ValueKind valueKind;
                 if ((response == null || response.trim().length() == 0)) {
                     if (defaultIndex < 0) {
                         continue;
                     }
-                    context.push(input.name(), defaultValue, input.isGlobal(), true);
+                    value = defaultValue;
+                    valueKind = ContextValue.ValueKind.DEFAULT;
                 } else {
-                    Value value = Value.create(parseEnumResponse(response, options));
-                    context.push(input.name(), value, input.isGlobal(), true);
+                    value = Value.create(parseEnumResponse(response, options));
+                    valueKind = ContextValue.ValueKind.USER;
                 }
-                return VisitResult.CONTINUE;
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));
                 if (LogLevel.isDebug()) {
@@ -181,34 +195,38 @@ public class TerminalInputResolver extends InputResolver {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitList(Input.List input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
             String response = null;
             try {
                 List<Input.Option> options = input.options(context::filterNode);
 
-                printLabel(input);
+                printName(input);
                 printOptions(options);
 
                 Value defaultValue = defaultValue(input, context);
                 String defaultText = BoldBlue.apply(defaultResponse(defaultValue.asList(), options));
 
                 response = prompt(ENTER_LIST_SELECTION, defaultText);
-                lastLabel = input.label();
+                lastName = input.name();
+                Value value;
+                ContextValue.ValueKind valueKind;
                 if (response == null || response.trim().length() == 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal(), true);
+                    value = defaultValue;
+                    valueKind = ContextValue.ValueKind.DEFAULT;
                 } else {
-                    Value value = Value.create(parseListResponse(response, options));
-                    context.push(input.name(), value, input.isGlobal(), true);
+                    value = Value.create(parseListResponse(response, options));
+                    valueKind = ContextValue.ValueKind.USER;
                 }
-                return VisitResult.CONTINUE;
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));
                 if (LogLevel.isDebug()) {
@@ -218,12 +236,14 @@ public class TerminalInputResolver extends InputResolver {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
-    private void printLabel(Input input) {
-        String label = input.label();
-        if (label != null && !label.equals(lastLabel)) {
-            System.out.println(Bold.apply(label));
+    private void printName(Input input) {
+        String name = input.name();
+        if (name != null && !name.equals(lastName)) {
+            System.out.println(Bold.apply(name));
         }
     }
 
@@ -247,17 +267,17 @@ public class TerminalInputResolver extends InputResolver {
 
     private static String optionText(Input.Option option, int maxKeyWidth, int index) {
         String o = BoldBlue.apply(String.format("  (%d) %s ", index + 1, option.value()));
-        String label = option.label();
-        if (label != null && !label.isBlank()) {
-            return String.format("%s%s| %s", o, padding(" ", maxKeyWidth, option.value()), label);
+        String name = option.name();
+        if (name != null && !name.isBlank()) {
+            return String.format("%s%s| %s", o, padding(" ", maxKeyWidth, option.value()), name);
         }
         return o;
     }
 
-    private static int maxKeyWidth(List<String> labels) {
+    private static int maxKeyWidth(List<String> names) {
         int maxLen = 0;
-        for (String label : labels) {
-            int len = label.length();
+        for (String name : names) {
+            int len = name.length();
             if (len > maxLen) {
                 maxLen = len;
             }

@@ -61,8 +61,9 @@ class ScriptLoaderTest {
             public VisitResult visitText(Input.Text input, Void arg) {
                 switch (++index[0]) {
                     case 1:
-                        assertThat(input.name(), is("input1"));
-                        assertThat(input.label(), is("Text input"));
+                        assertThat(input.id(), is("input1"));
+                        assertThat(input.name(), is("Text input"));
+                        assertThat(input.description(), is("A text input"));
                         assertThat(input.help(), is("Help 1"));
                         assertThat(input.isOptional(), is(true));
                         assertThat(input.defaultValue(), is(not(nullValue())));
@@ -70,8 +71,9 @@ class ScriptLoaderTest {
                         assertThat(input.prompt(), is("Enter 1"));
                         break;
                     case 5:
-                        assertThat(input.name(), is("more-input1"));
-                        assertThat(input.label(), is("More input 1"));
+                        assertThat(input.id(), is("more-input1"));
+                        assertThat(input.name(), is("More input 1"));
+                        assertThat(input.description(), is("Another text input"));
                         assertThat(input.help(), is("More Help 1"));
                         assertThat(input.isOptional(), is(true));
                         assertThat(input.defaultValue(), is(not(nullValue())));
@@ -87,8 +89,9 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                 assertThat(++index[0], is(2));
-                assertThat(input.name(), is("input2"));
-                assertThat(input.label(), is("Boolean input"));
+                assertThat(input.id(), is("input2"));
+                assertThat(input.name(), is("Boolean input"));
+                assertThat(input.description(), is("A boolean input"));
                 assertThat(input.help(), is("Help 2"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.defaultValue().asBoolean(), is(true));
@@ -99,15 +102,18 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitEnum(Input.Enum input, Void arg) {
                 assertThat(++index[0], is(3));
-                assertThat(input.name(), is("input3"));
-                assertThat(input.label(), is("Enum input"));
+                assertThat(input.id(), is("input3"));
+                assertThat(input.name(), is("Enum input"));
+                assertThat(input.description(), is("An enum input"));
                 assertThat(input.help(), is("Help 3"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.options().size(), is(2));
                 assertThat(input.options().get(0).value(), is("option3.1"));
-                assertThat(input.options().get(0).label(), is("Option 3.1"));
+                assertThat(input.options().get(0).name(), is("Option 3.1"));
+                assertThat(input.options().get(0).description(), is("An option"));
                 assertThat(input.options().get(1).value(), is("option3.2"));
-                assertThat(input.options().get(1).label(), is("Option 3.2"));
+                assertThat(input.options().get(1).name(), is("Option 3.2"));
+                assertThat(input.options().get(1).description(), is("Another option"));
                 assertThat(input.defaultValue(), is(not(nullValue())));
                 assertThat(input.defaultValue().asString(), is("option3.1"));
                 assertThat(input.prompt(), is("Enter 3"));
@@ -117,14 +123,17 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitList(Input.List input, Void arg) {
                 assertThat(++index[0], is(4));
-                assertThat(input.name(), is("input4"));
-                assertThat(input.label(), is("List input"));
+                assertThat(input.id(), is("input4"));
+                assertThat(input.name(), is("List input"));
+                assertThat(input.description(), is("A list input"));
                 assertThat(input.help(), is("Help 4"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.options().get(0).value(), is("item4.1"));
-                assertThat(input.options().get(0).label(), is("Item 4.1"));
+                assertThat(input.options().get(0).name(), is("Item 4.1"));
+                assertThat(input.options().get(0).description(), is("An option"));
                 assertThat(input.options().get(1).value(), is("item4.2"));
-                assertThat(input.options().get(1).label(), is("Item 4.2"));
+                assertThat(input.options().get(1).name(), is("Item 4.2"));
+                assertThat(input.options().get(1).description(), is("Another option"));
                 assertThat(input.defaultValue().asList(), contains("item4.1", "item4.2"));
                 assertThat(input.prompt(), is("Enter 4"));
                 return VisitResult.CONTINUE;
@@ -141,8 +150,8 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                 assertThat(++index[0] <= 5, is(true));
-                assertThat(input.name(), is("input" + index[0]));
-                assertThat(input.label(), is("label" + index[0]));
+                assertThat(input.id(), is("input" + index[0]));
+                assertThat(input.name(), is("label" + index[0]));
                 return VisitResult.CONTINUE;
             }
         }, script);
@@ -616,7 +625,7 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitStep(Step step, Void arg) {
                 assertThat(++index[0], is(2));
-                assertThat(step.label(), is("Step 1"));
+                assertThat(step.name(), is("Step 1"));
                 assertThat(step.help(), is("Help about step 1"));
                 return VisitResult.CONTINUE;
             }
@@ -627,8 +636,8 @@ class ScriptLoaderTest {
                     @Override
                     public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                         assertThat(++index[0], is(3));
-                        assertThat(input.name(), is("input1"));
-                        assertThat(input.label(), is("Input 1"));
+                        assertThat(input.id(), is("input1"));
+                        assertThat(input.name(), is("Input 1"));
                         return VisitResult.CONTINUE;
                     }
                 }, arg);

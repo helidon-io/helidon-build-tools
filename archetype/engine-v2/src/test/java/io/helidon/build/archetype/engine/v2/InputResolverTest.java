@@ -59,7 +59,7 @@ public class InputResolverTest {
                         inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue"))))))).build();
 
         Context context = Context.create();
-        context.put("enum-input", Value.create("value2"), true);
+        context.setValue("enum-input", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("green"));
     }
@@ -74,7 +74,7 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.put("list-input", Value.create(List.of("value1", "value3")), true);
+        context.setValue("list-input", Value.create(List.of("value1", "value3")), ContextValue.ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("red", "blue"));
     }
@@ -86,7 +86,7 @@ public class InputResolverTest {
     void testDefaultValueSubstitutions() {
         Block block = step("step", inputText("text-input4", "${foo}").attribute("optional", Value.TRUE)).build();
         Context context = Context.create();
-        context.put("foo", Value.create("bar"), true);
+        context.setValue("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
         resolveInputs(block, context, null);
 
         Value value = context.lookup("text-input4");
@@ -100,7 +100,7 @@ public class InputResolverTest {
     void testExternalDefaultValueSubstitutions() {
         Block block = step("step", inputText("text-input5", "foo").attribute("optional", Value.TRUE)).build();
         Context context = Context.create(null, null, Map.of("text-input5", "${foo}"));
-        context.put("foo", Value.create("bar"), true);
+        context.setValue("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
         resolveInputs(block, context, null);
 
         Value value = context.lookup("text-input5");
@@ -128,7 +128,7 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.put("enum-input2", Value.create("VALUE2"), true);
+        context.setValue("enum-input2", Value.create("VALUE2"), ContextValue.ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("blue"));
     }
 
@@ -155,7 +155,7 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.put("list-input", Value.create(List.of("VALUE2", "VALUE3")), true);
+        context.setValue("list-input", Value.create(List.of("VALUE2", "VALUE3")), ContextValue.ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("green", "blue"));
     }
 
@@ -175,16 +175,16 @@ public class InputResolverTest {
 
     @Test
     void testGlobalInputs() {
-        Block.Builder nestedScope = inputEnum("nested-scope", "value1",
+        Block.Builder nested2 = inputEnum("nested2", "value1",
                 inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                 inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))));
 
-        Block.Builder scope = inputEnum("scope", "value1",
+        Block.Builder nested1 = inputEnum("nested1", "value1",
                 inputOption("option1", "value1", output(model(modelList("style", modelValue("plain"))))),
-                inputOption("option2", "value2", nestedScope));
+                inputOption("option2", "value2", nested2));
 
         Block.Builder nestedGlobal = inputEnum("nested-global", "value1",
-                inputOption("option1", "value1", scope))
+                inputOption("option1", "value1", nested1))
                 .attribute("global", Value.TRUE);
 
         Block global = step("step",
@@ -194,10 +194,10 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.put("global", Value.create("value1"), true);
-        context.put("nested-global", Value.create("value1"), true);
-        context.put("scope", Value.create("value2"), true);
-        context.put("scope.nested-scope", Value.create("value2"), true);
+        context.setValue("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("nested-global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("nested-global.nested1", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("nested-global.nested1.nested2", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
         List<String> resolvedInputs = resolveInputs(global, context);
         assertThat(resolvedInputs.size(), is(1));
         assertThat(resolvedInputs, contains("blue"));
@@ -208,24 +208,25 @@ public class InputResolverTest {
         Block.Builder invalidGlobal = inputEnum("invalid-global", "value1",
                 inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
                 inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
+                .attribute("optional", Value.TRUE)
                 .attribute("global", Value.TRUE);
 
-        Block.Builder nonGlobal = inputEnum("nested-global", "value1",
+        Block.Builder nested = inputEnum("nested", "value1",
                 inputOption("option1", "value1", invalidGlobal));
 
         Block global = step("step",
                 inputEnum("global", "value1",
-                        inputOption("option1", "value1", nonGlobal))
+                        inputOption("option1", "value1", nested))
                         .attribute("global", Value.TRUE))
                 .build();
 
         Context context = Context.create();
-        context.put("global", Value.create("value1"), true);
-        context.put("nested-global", Value.create("value1"), true);
+        context.setValue("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("global.nested", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
 
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
-        assertThat(ex.getCause().getMessage(), endsWith("input 'nested-global.invalid-global' cannot be global"));
+        assertThat(ex.getCause().getMessage(), endsWith("Parent input is not global"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {

@@ -82,7 +82,7 @@ public class ArchetypeEngineV2 {
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
-        context.ensureEmptyInputs();
+        context.ensureRootScope();
         onResolved.run();
 
         // resolve output directory
@@ -95,7 +95,7 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        context.ensureEmptyInputs();
+        context.ensureRootScope();
 
         return directory;
     }

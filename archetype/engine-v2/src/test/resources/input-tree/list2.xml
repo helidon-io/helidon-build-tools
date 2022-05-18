@@ -20,11 +20,11 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="colors">
+    <step name="colors">
         <inputs>
-            <list name="colors" label="Select colors">
-                <option value="red" label="Red"/>
-                <option value="orange" label="Orange"/>
+            <list id="colors" name="Select colors">
+                <option value="red" name="Red"/>
+                <option value="orange" name="Orange"/>
             </list>
         </inputs>
     </step>
