@@ -164,11 +164,15 @@ public final class Context {
     /**
      * Create a new scope.
      *
-     * @param id     id
-     * @param global global
+     * @param id     scope identifier, must be non {@code null}
+     * @param global {@code true} if the scope is global, {@code false} otherwise
      * @return scope
+     * @throws IllegalArgumentException if id is {@code null}
      */
     public Scope newScope(String id, boolean global) {
+        if (id == null) {
+            throw new IllegalArgumentException("Scope id is null");
+        }
         return new Scope(this.scope, id, global);
     }
 
@@ -232,7 +236,7 @@ public final class Context {
     }
 
     private static String path(Scope scope, String id) {
-        return scope.id != null ? scope.id + "." + id : id;
+        return scope.global ? id : scope.id + "." + id;
     }
 
     /**
@@ -242,7 +246,7 @@ public final class Context {
      * @return value key
      */
     public String resolveQuery(String query) {
-        String scopeId = scope.id() != null ? scope.id() : "";
+        String scopeId = scope.global ? "" : scope.id();
         String key;
         if (query.startsWith("ROOT.")) {
             key = query.substring(5);
@@ -291,17 +295,6 @@ public final class Context {
             }
             return String.valueOf(val.unwrap());
         });
-    }
-
-    /**
-     * Ensure that the current scope is the root scope.
-     *
-     * @throws IllegalStateException if the current scope is not the root scope
-     */
-    public void ensureRootScope() {
-        if (scope != Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
     }
 
     /**
@@ -362,6 +355,7 @@ public final class Context {
 
     /**
      * Context scope.
+     * Tree nodes for the context values.
      */
     public static final class Scope {
 
@@ -372,15 +366,13 @@ public final class Context {
 
         private final Scope parent;
         private final String id;
+        private final boolean global;
 
         private Scope(Scope parent, String id, boolean global) {
+            this.global = global;
             if (parent != null) {
                 this.parent = parent;
-                if (global) {
-                    this.id = id;
-                } else {
-                    this.id = path(parent, id);
-                }
+                this.id = global ? id : path(parent, id);
             } else {
                 this.parent = null;
                 this.id = null;
@@ -394,6 +386,16 @@ public final class Context {
          */
         public String id() {
             return id;
+        }
+
+        /**
+         * Test if this scope is global.
+         *
+         * @return {@code true} if the scope is global, {@code false} otherwise
+         */
+        @SuppressWarnings("unused")
+        public boolean isGlobal() {
+            return global;
         }
     }
 }

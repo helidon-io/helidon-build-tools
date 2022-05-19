@@ -44,6 +44,15 @@ public final class Condition extends Node {
     }
 
     /**
+     * Get the raw expression.
+     *
+     * @return raw expression
+     */
+    public String rawExpression() {
+        return rawExpression;
+    }
+
+    /**
      * Get the "then" node.
      *
      * @return node

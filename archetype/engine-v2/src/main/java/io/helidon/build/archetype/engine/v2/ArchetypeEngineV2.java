@@ -58,7 +58,8 @@ public class ArchetypeEngineV2 {
                          Map<String, String> externalDefaults,
                          Function<String, Path> directorySupplier) {
 
-        return generate(inputResolver, externalValues, externalDefaults, () -> {}, directorySupplier);
+        return generate(inputResolver, externalValues, externalDefaults, () -> {
+        }, directorySupplier);
     }
 
     /**
@@ -82,6 +83,9 @@ public class ArchetypeEngineV2 {
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
+        if (context.peekScope() != Context.Scope.ROOT) {
+            throw new IllegalStateException("Invalid scope");
+        }
         context.ensureRootScope();
         onResolved.run();
 
@@ -95,7 +99,9 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        context.ensureRootScope();
+        if (context.peekScope() != Context.Scope.ROOT) {
+            throw new IllegalStateException("Invalid scope");
+        }
 
         return directory;
     }

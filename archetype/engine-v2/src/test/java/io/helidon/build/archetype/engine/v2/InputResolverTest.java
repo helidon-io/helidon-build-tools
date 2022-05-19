@@ -196,8 +196,8 @@ public class InputResolverTest {
         Context context = Context.create();
         context.setValue("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
         context.setValue("nested-global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("nested-global.nested1", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("nested-global.nested1.nested2", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("nested1", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        context.setValue("nested1.nested2", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
         List<String> resolvedInputs = resolveInputs(global, context);
         assertThat(resolvedInputs.size(), is(1));
         assertThat(resolvedInputs, contains("blue"));
