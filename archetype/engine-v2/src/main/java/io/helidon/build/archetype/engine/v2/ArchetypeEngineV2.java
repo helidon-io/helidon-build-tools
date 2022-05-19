@@ -86,7 +86,6 @@ public class ArchetypeEngineV2 {
         if (context.peekScope() != Context.Scope.ROOT) {
             throw new IllegalStateException("Invalid scope");
         }
-        context.ensureRootScope();
         onResolved.run();
 
         // resolve output directory
