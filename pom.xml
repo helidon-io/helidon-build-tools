@@ -128,7 +128,7 @@
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
         <version.lib.graalvm-sdk>20.2.0</version.lib.graalvm-sdk>
         <version.lib.groovy>2.4.16</version.lib.groovy>
-        <version.lib.gson>2.8.5</version.lib.gson>
+        <version.lib.gson>2.8.9</version.lib.gson>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.helidon>2.2.2</version.lib.helidon>
         <version.lib.invoker>3.0.1</version.lib.invoker>
