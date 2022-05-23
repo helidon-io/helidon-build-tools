@@ -202,7 +202,7 @@
                 <configuration>
                     <reuseForks>false</reuseForks>
                     <systemProperties>
-                        <helidon.test.version>2.2.2</helidon.test.version>
+                        <helidon.test.version>2.5.0</helidon.test.version>
                     </systemProperties>
                 </configuration>
             </plugin>
