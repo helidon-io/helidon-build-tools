@@ -79,9 +79,6 @@ public class InputResolverTest {
         assertThat(resolveInputs(block, context), contains("red", "blue"));
     }
 
-    // TODO test control flow of options
-    //      i.e test InputResolver.visitOption
-
     @Test
     void testDefaultValueSubstitutions() {
         Block block = step("step", inputText("text-input4", "${foo}").attribute("optional", Value.TRUE)).build();

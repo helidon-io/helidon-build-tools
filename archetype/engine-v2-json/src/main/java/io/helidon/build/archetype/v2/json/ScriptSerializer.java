@@ -49,11 +49,6 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.util.ClientCompiler;
 
-// TODO don't include default attributes (global=false, optional=false etc)
-// TODO don't include input prompt (for cli only)
-// TODO bug with conditional preset
-// TODO bug with variable/preset null value
-
 /**
  * Script serializer.
  */
