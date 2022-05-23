@@ -16,10 +16,10 @@
 
 package io.helidon.build.common;
 
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -177,7 +177,7 @@ public class ConfigProperties {
      */
     public void load() {
         if (exists()) {
-            try (FileReader reader = new FileReader(file.toFile())) {
+            try (Reader reader = Files.newBufferedReader(file)) {
                 properties.load(reader);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -197,7 +197,7 @@ public class ConfigProperties {
      * @param comments The file comments. May be {@code null}.
      */
     public void store(String comments) {
-        try (FileWriter writer = new FileWriter(file.toFile())) {
+        try (Writer writer = Files.newBufferedWriter(file)) {
             properties.store(writer, comments);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

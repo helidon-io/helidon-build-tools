@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@ package io.helidon.build.archetype.engine.v1;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -214,7 +215,7 @@ public final class ArchetypeEngine implements Closeable {
      *
      * @param outputDirectory output directory
      */
-    public void generate(File outputDirectory) {
+    public void generate(Path outputDirectory) {
         try {
             for (Entry<String, List<Transformation>> entry : templates.entrySet()) {
                 String resourcePath = entry.getKey().substring(1);
@@ -223,9 +224,9 @@ public final class ArchetypeEngine implements Closeable {
                         throw new IllegalStateException(resourcePath + " not found");
                     }
                     Mustache m = mf.compile(new InputStreamReader(is), resourcePath);
-                    File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
-                    outputFile.getParentFile().mkdirs();
-                    try (FileWriter writer = new FileWriter(outputFile)) {
+                    Path outputFile = outputDirectory.resolve(transform(resourcePath, entry.getValue(), properties));
+                    Files.createDirectories(outputFile.getParent());
+                    try (Writer writer = Files.newBufferedWriter(outputFile)) {
                         m.execute(writer, properties).flush();
                     }
                 }
@@ -236,9 +237,9 @@ public final class ArchetypeEngine implements Closeable {
                     if (is == null) {
                         throw new IllegalStateException(resourcePath + " not found");
                     }
-                    File outputFile = new File(outputDirectory, transform(resourcePath, entry.getValue(), properties));
-                    outputFile.getParentFile().mkdirs();
-                    Files.copy(is, outputFile.toPath());
+                    Path outputFile = outputDirectory.resolve(transform(resourcePath, entry.getValue(), properties));
+                    Files.createDirectories(outputFile.getParent());
+                    Files.copy(is, outputFile);
                 }
             }
         } catch (IOException e) {

@@ -364,7 +364,7 @@ abstract class ArchetypeInvoker {
             }
 
             Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
-            engine.generate(projectDir.toFile());
+            engine.generate(projectDir);
 
             // Create config file that includes feature information
             ProjectConfig configFile = createProjectConfig(projectDir, helidonVersion);
