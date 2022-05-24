@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.inputEnum;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputOption;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputText;
+import static io.helidon.build.archetype.engine.v2.TestHelper.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -41,9 +42,14 @@ import static org.hamcrest.Matchers.nullValue;
  */
 class TerminalInputResolverTest {
 
+    // TODO test control flow
+    //  i.e. only traverse the right branches according to user input
+
+    // TODO test output rendering
+
     @Test
     void testBooleanWithEmptyResponse() {
-        Block block = inputBoolean("boolean-input1", true).build();
+        Block block = step("step", inputBoolean("boolean-input1", true)).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("boolean-input1");
@@ -55,7 +61,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testBooleanWithEmptyResponse2() {
-        Block block = inputBoolean("boolean-input2", false).build();
+        Block block = step("step", inputBoolean("boolean-input2", false)).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("boolean-input2");
@@ -67,7 +73,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputBoolean() {
-        Block block = inputBoolean("boolean-input3", true).build();
+        Block block = step("step", inputBoolean("boolean-input3", true)).build();
 
         Context context = prompt(block, "NO");
         Value value = context.lookup("boolean-input3");
@@ -79,9 +85,10 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputListWithEmptyResponse() {
-        Block block = inputList("list-input1", List.of("value1"),
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2")).build();
+        Block block = step("step",
+                inputList("list-input1", List.of("value1"),
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("list-input1");
@@ -93,9 +100,10 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputListWithEmptyResponseMultipleDefault() {
-        Block block = inputList("list-input2", List.of("value1", "value2"),
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2")).build();
+        Block block = step("step",
+                inputList("list-input2", List.of("value1", "value2"),
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("list-input2");
@@ -107,10 +115,11 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputList() {
-        Block block = inputList("list-input3", List.of(),
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2"),
-                inputOption("option3", "value3")).build();
+        Block block = step("step",
+                inputList("list-input3", List.of(),
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"),
+                        inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "1 3");
         Value value = context.lookup("list-input3");
@@ -122,10 +131,11 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputListResponseDuplicate() {
-        Block block = inputList("list-input4", List.of(),
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2"),
-                inputOption("option3", "value3")).build();
+        Block block = step("step",
+                inputList("list-input4", List.of(),
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"),
+                        inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "1 3 3 1");
         Value value = context.lookup("list-input4");
@@ -137,9 +147,10 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputEnumWithEmptyResponse() {
-        Block block = inputEnum("enum-input1", "value1",
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2")).build();
+        Block block = step("step",
+                inputEnum("enum-input1", "value1",
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("enum-input1");
@@ -151,8 +162,9 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputEnumWithSingleOptionAndDefault() {
-        Block block = inputEnum("enum-input1", "value1",
-                inputOption("option1", "value1")).build();
+        Block block = step("step",
+                inputEnum("enum-input1", "value1",
+                        inputOption("option1", "value1"))).build();
 
         Context context = prompt(block, "2");
         Value value = context.lookup("enum-input1");
@@ -164,10 +176,11 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputEnum() {
-        Block block = inputEnum("enum-input2", "value3",
-                inputOption("option1", "value1"),
-                inputOption("option2", "value2"),
-                inputOption("option3", "value3")).build();
+        Block block = step("step",
+                inputEnum("enum-input2", "value3",
+                        inputOption("option1", "value1"),
+                        inputOption("option2", "value2"),
+                        inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "2");
         Value value = context.lookup("enum-input2");
@@ -179,7 +192,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputTextWithEmptyResponseNoDefault() {
-        Block block = inputText("text-input1", null).build();
+        Block block = step("step", inputText("text-input1", null)).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("text-input1");
@@ -189,7 +202,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputTextWithEmptyResult() {
-        Block block = inputText("text-input2", "value1").build();
+        Block block = step("step", inputText("text-input2", "value1")).build();
 
         Context context = prompt(block, "");
         Value value = context.lookup("text-input2");
@@ -201,7 +214,7 @@ class TerminalInputResolverTest {
 
     @Test
     void testInputText() {
-        Block block = inputText("text-input3", "value1").build();
+        Block block = step("step", inputText("text-input3", "value1")).build();
 
         Context context = prompt(block, "not-value1");
         Value value = context.lookup("text-input3");

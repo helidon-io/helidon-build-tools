@@ -63,13 +63,21 @@ public final class DynamicValue implements Value {
         } else if (type.equals(ValueTypes.INT)) {
             return (U) Integer.valueOf(rawValue);
         } else if (type.equals(ValueTypes.STRING_LIST)) {
-            return (U) Arrays.stream((rawValue).split(","))
+            return (U) Arrays.stream(rawValue.split(","))
                              .map(String::trim)
+                             .filter(s -> !s.isEmpty())
                              .collect(toList());
         } else if (type.equals(ValueTypes.STRING)) {
             return (U) rawValue;
         }
         throw new DynamicValueTypeException(type);
+    }
+
+    @Override
+    public String toString() {
+        return "DynamicValue{"
+                + "rawValue='" + rawValue + '\''
+                + '}';
     }
 
     private static final class DynamicValueTypeException extends ValueTypeException {

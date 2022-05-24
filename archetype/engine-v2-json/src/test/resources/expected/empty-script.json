@@ -3,7 +3,7 @@
   "methods": {},
   "children": [
     {
-      "label": "Step1",
+      "name": "Step1",
       "id": "1",
       "kind": "step",
       "children": [
@@ -11,20 +11,17 @@
           "kind": "inputs",
           "children": [
             {
-              "label": "Enum1",
-              "name": "enum1",
-              "global": false,
-              "optional": false,
-              "default": null,
+              "name": "Enum1",
+              "id": "enum1",
               "kind": "enum",
               "children": [
                 {
-                  "label": "Enum1Value1",
+                  "name": "Enum1Value1",
                   "value": "enum1-value1",
                   "kind": "option"
                 },
                 {
-                  "label": "Enum1Value2",
+                  "name": "Enum1Value2",
                   "value": "enum1-value2",
                   "kind": "option"
                 }

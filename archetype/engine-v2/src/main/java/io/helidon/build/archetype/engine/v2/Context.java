@@ -19,11 +19,13 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
-import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
+import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
@@ -33,26 +35,27 @@ import static io.helidon.build.common.PropertyEvaluator.evaluate;
  * Holds the state for an archetype invocation.
  *
  * <ul>
- *     <li>Used to maintain the current working directory for resolving files and scripts.</li>
- *     <li>Used to maintain the input nesting hierarchy</li>
- *     <li>Used to maintain the values (external, internal, pushed)</li>
+ *     <li>Maintains the current working directory for resolving files and scripts.</li>
+ *     <li>Maintains the scope for resolving values and variables</li>
+ *     <li>Maintains the values and variables</li>
  * </ul>
  */
 public final class Context {
 
     private static final Path NULL_PATH = Path.of("");
 
+    private Scope scope = Scope.ROOT;
     private final Map<String, Value> defaults = new HashMap<>();
+    private final Map<String, Value> variables = new HashMap<>();
     private final Map<String, ContextValue> values = new HashMap<>();
     private final Deque<Path> directories = new ArrayDeque<>();
-    private final Deque<String> inputs = new ArrayDeque<>();
 
     private Context(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         if (externalDefaults != null) {
-            externalDefaults.forEach((k, v) -> defaults.put(k, externalValue(v)));
+            externalDefaults.forEach((k, v) -> defaults.put(k, ContextValue.external(v)));
         }
         if (externalValues != null) {
-            externalValues.forEach((k, v) -> values.put(k, externalValue(evaluate(v, externalValues::get))));
+            externalValues.forEach((k, v) -> values.put(k, ContextValue.external(evaluate(v, externalValues::get))));
         }
         directories.push(cwd == null ? NULL_PATH : cwd);
     }
@@ -90,11 +93,12 @@ public final class Context {
     /**
      * Get an external default value.
      *
-     * @param name input name
+     * @param id     input id
+     * @param global global
      * @return value
      */
-    public Value defaultValue(String name) {
-        Value defaultValue = defaults.get(path(name));
+    public Value defaultValue(String id, boolean global) {
+        Value defaultValue = defaults.get(path(id, global));
         String wrapped = defaultValue != null ? defaultValue.asString() : null;
         if (wrapped != null) {
             defaultValue = Value.create(substituteVariables(wrapped));
@@ -103,115 +107,116 @@ public final class Context {
     }
 
     /**
-     * Put a value in the context.
+     * Set a value in the context.
      *
-     * @param path  input path
-     * @param value value
+     * @param path     input path
+     * @param newValue value
+     * @param kind     value kind
      * @throws IllegalStateException if a value already exists
      */
-    public void put(String path, Value value) {
-        ContextValue current = values.get(path);
-        if (current == null) {
-            values.put(path, new ContextValue(value, true));
+    public void setValue(String path, Value newValue, ContextValue.ValueKind kind) {
+        ContextValue currentValue = values.get(path);
+        if (currentValue == null || !currentValue.isReadOnly()) {
+            values.put(path, new ContextValue(newValue, kind));
         } else {
-            if (current.external) {
-                if (!current.unwrap().equals(value.unwrap())) {
+            GenericType<?> type = currentValue.type();
+            if (type == null) {
+                type = newValue.type();
+            }
+            if (type == null) {
+                type = ValueTypes.STRING;
+            }
+            Object currentVal = currentValue.as(type);
+            Object newVal = newValue.as(type);
+            if (!currentVal.equals(newVal)) {
+                String scopeInfo = scopeInfo();
+                if (scopeInfo.isEmpty()) {
                     throw new IllegalStateException(String.format(
-                            "%s requires %s=%s", fullPath(), path, value.unwrap()));
+                            "Cannot set %s=%s, value already exists", path, newVal));
+                } else {
+                    throw new IllegalStateException(String.format(
+                            "%s requires %s=%s", scopeInfo, path, currentVal));
                 }
-            } else if (current.internal) {
-                throw new IllegalStateException(String.format(
-                        "Archetype error, internal value '%s' already set", path));
-            } else {
-                throw new IllegalStateException(String.format(
-                        "Archetype error, value '%s' already set", path));
             }
         }
     }
 
     /**
-     * Get a value by input path.
+     * Set a variable.
      *
-     * @param path input path
-     * @return value, or {@code null}
+     * @param id    variable id
+     * @param value variable value
      */
-    public Value get(String path) {
-        return values.get(path);
+    public void setVariable(String id, Value value) {
+        variables.put(id, value);
     }
 
     /**
-     * Push the given input path.
+     * Get a value.
      *
-     * @param path input path
-     * @param global true if the input is global
+     * @param key value key
+     * @return value, or {@code null} if not found
      */
-    public void push(String path, boolean global) {
-        if (!global) {
-            inputs.push(path);
+    public Value getValue(String key) {
+        return values.get(key);
+    }
+
+    /**
+     * Create a new scope.
+     *
+     * @param id     scope identifier, must be non {@code null}
+     * @param global {@code true} if the scope is global, {@code false} otherwise
+     * @return scope
+     * @throws IllegalArgumentException if id is {@code null}
+     */
+    public Scope newScope(String id, boolean global) {
+        if (id == null) {
+            throw new IllegalArgumentException("Scope id is null");
         }
+        return new Scope(this.scope, id, global);
     }
 
     /**
-     * Push a new input value.
+     * Push a scope.
      *
-     * @param name input name
-     * @param value value
-     * @param global true if the input is global
+     * @param scope scope
      */
-    public void push(String name, Value value, boolean global) {
-        String path = path(name);
-        if (value != null) {
-            values.put(path, new ContextValue(value, false));
-            push(path, global);
-        } else if (values.get(path) != null) {
-            push(path, global);
+    public void pushScope(Scope scope) {
+        this.scope = scope;
+    }
+
+    /**
+     * Get the current scope.
+     *
+     * @return Scope
+     */
+    public Scope peekScope() {
+        return this.scope;
+    }
+
+    /**
+     * Pop the current scope.
+     *
+     * @throws NoSuchElementException if the current scope is the root scope
+     */
+    public void popScope() {
+        if (this.scope == Scope.ROOT) {
+            throw new NoSuchElementException();
         }
+        this.scope = this.scope.parent;
     }
 
     /**
-     * Pop the current input.
-     */
-    public void pop() {
-        inputs.pop();
-    }
-
-    /**
-     * Lookup a context value.
+     * Lookup a value.
      *
-     * @param path input path
+     * @param query query
      * @return value, {@code null} if not found
      */
-    public Value lookup(String path) {
-        String current = inputs.peek();
-        if (current == null) {
-            current = "";
-        }
-        String key;
-        if (path.startsWith("ROOT.")) {
-            key = path.substring(5);
-        } else {
-            int offset = 0;
-            int level = 0;
-            while (path.startsWith("PARENT.", offset)) {
-                offset += 7;
-                level++;
-            }
-            if (offset > 0) {
-                path = path.substring(offset);
-            } else {
-                level = 0;
-            }
-            int index;
-            for (index = current.length() - 1; index >= 0 && level > 0; index--) {
-                if (current.charAt(index) == '.') {
-                    level--;
-                }
-            }
-            if (index > 0) {
-                key = current.substring(0, index + 1) + "." + path;
-            } else {
-                key = path;
-            }
+    public Value lookup(String query) {
+        String key = resolveQuery(query);
+        Value value = variables.get(key);
+        if (value != null) {
+            return value;
         }
         return values.get(key);
     }
@@ -219,25 +224,57 @@ public final class Context {
     /**
      * Compute the path for a given input name.
      *
-     * @param name name
-     * @return input path
+     * @param id     input id
+     * @param global global
+     * @return key
      */
-    public String path(String name) {
-        String path = inputs.peek();
-        if (path != null) {
-            path += "." + name;
-        } else {
-            path = name;
+    public String path(String id, boolean global) {
+        if (global) {
+            return id;
         }
-        return path;
+        return path(scope, id);
+    }
+
+    private static String path(Scope scope, String id) {
+        return scope.global ? id : scope.id + "." + id;
     }
 
     /**
-     * Returns the current input path.
-     * @return input path
+     * Compute the value key for a given query.
+     *
+     * @param query query
+     * @return value key
      */
-    public String path() {
-        return inputs.peek();
+    public String resolveQuery(String query) {
+        String scopeId = scope.global ? "" : scope.id();
+        String key;
+        if (query.startsWith("ROOT.")) {
+            key = query.substring(5);
+        } else {
+            int offset = 0;
+            int level = 0;
+            while (query.startsWith("PARENT.", offset)) {
+                offset += 7;
+                level++;
+            }
+            if (offset > 0) {
+                query = query.substring(offset);
+            } else {
+                level = 0;
+            }
+            int index;
+            for (index = scopeId.length() - 1; index >= 0 && level > 0; index--) {
+                if (scopeId.charAt(index) == '.') {
+                    level--;
+                }
+            }
+            if (index > 0) {
+                key = scopeId.substring(0, index + 1) + "." + query;
+            } else {
+                key = query;
+            }
+        }
+        return key;
     }
 
     /**
@@ -261,27 +298,13 @@ public final class Context {
     }
 
     /**
-     * Ensure that {@code inputs} is empty.
+     * If the given node is an instance of {@link Condition}, evaluate the expression.
      *
-     * @throws IllegalStateException if {@code inputs} is not empty
+     * @param node node
+     * @return {@code true} if the node is not an instance of {@link Condition} or the expression result
      */
-    public void ensureEmptyInputs() {
-        if (!inputs.isEmpty()) {
-            throw new IllegalStateException("Invalid state, inputs is not empty: " + inputs);
-        }
-    }
-
-    private String fullPath() {
-        StringBuilder sb = new StringBuilder();
-        String[] inputsArray = inputs.toArray(new String[0]);
-        for (int i = inputsArray.length - 1; i >= 0; i--) {
-            String input = inputsArray[i];
-            sb.append(input).append("=").append(values.get(input).unwrap());
-            if (i > 0) {
-                sb.append(";");
-            }
-        }
-        return sb.toString();
+    public boolean filterNode(Node node) {
+        return Condition.filter(node, this::lookup);
     }
 
     /**
@@ -316,58 +339,63 @@ public final class Context {
         return new Context(cwd, externalValues, externalDefaults);
     }
 
-    private static ContextValue externalValue(String value) {
-        return new ContextValue(DynamicValue.create(value), false);
+    private String scopeInfo() {
+        StringBuilder sb = new StringBuilder();
+        Scope scope = this.scope;
+        while (scope.id != null) {
+            Value value = values.get(scope.id);
+            sb.append(scope.id).append("=").append(value != null ? value.unwrap() : "null");
+            if (scope.parent.id != null) {
+                sb.append(";");
+            }
+            scope = scope.parent;
+        }
+        return sb.toString();
     }
 
     /**
-     * Context value.
+     * Context scope.
+     * Tree nodes for the context values.
      */
-    private static final class ContextValue implements Value {
+    public static final class Scope {
 
-        private final boolean internal;
-        private final boolean external;
-        private final Value value;
+        /**
+         * Root scope.
+         */
+        public static final Scope ROOT = new Scope(null, null, true);
 
-        private ContextValue(Value value, boolean internal) {
-            this.value = value;
-            this.internal = internal;
-            this.external = true;
+        private final Scope parent;
+        private final String id;
+        private final boolean global;
+
+        private Scope(Scope parent, String id, boolean global) {
+            this.global = global;
+            if (parent != null) {
+                this.parent = parent;
+                this.id = global ? id : path(parent, id);
+            } else {
+                this.parent = null;
+                this.id = null;
+            }
         }
 
-        @Override
-        public Boolean asBoolean() {
-            return value.asBoolean();
+        /**
+         * Get the scope identifier.
+         *
+         * @return scope id
+         */
+        public String id() {
+            return id;
         }
 
-        @Override
-        public String asString() {
-            return value.asString();
-        }
-
-        @Override
-        public Integer asInt() {
-            return value.asInt();
-        }
-
-        @Override
-        public List<String> asList() {
-            return value.asList();
-        }
-
-        @Override
-        public Object unwrap() {
-            return value.unwrap();
-        }
-
-        @Override
-        public GenericType<?> type() {
-            return value.type();
-        }
-
-        @Override
-        public <U> U as(GenericType<U> type) {
-            return value.as(type);
+        /**
+         * Test if this scope is global.
+         *
+         * @return {@code true} if the scope is global, {@code false} otherwise
+         */
+        @SuppressWarnings("unused")
+        public boolean isGlobal() {
+            return global;
         }
     }
 }

@@ -16,10 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
 import java.util.Objects;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 /**
  * Invocation.
@@ -208,14 +205,12 @@ public abstract class Invocation extends Node {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
-     * @param kind       kind
+     * @param info builder info
+     * @param kind kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-        return new Builder(loader, scriptPath, location, kind);
+    public static Builder builder(BuilderInfo info, Kind kind) {
+        return new Builder(info, kind);
     }
 
     /**
@@ -225,8 +220,8 @@ public abstract class Invocation extends Node {
 
         private final Kind kind;
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-            super(loader, scriptPath, location);
+        private Builder(BuilderInfo info, Kind kind) {
+            super(info);
             this.kind = kind;
         }
 

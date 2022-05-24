@@ -3,7 +3,7 @@
   "methods": {
     "main": [
       {
-        "label": "Cake",
+        "name": "Cake",
         "id": "3",
         "kind": "step",
         "children": [
@@ -27,15 +27,15 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Fruit",
-            "name": "fruit",
+            "name": "Fruit",
+            "id": "fruit",
             "global": false,
             "optional": false,
             "default": "berries",
             "kind": "enum",
             "children": [
               {
-                "label": "Berries",
+                "name": "Berries",
                 "value": "berries",
                 "kind": "option",
                 "children": [
@@ -46,7 +46,7 @@
                 ]
               },
               {
-                "label": "Tropical",
+                "name": "Tropical",
                 "value": "tropical",
                 "kind": "option",
                 "children": [
@@ -66,15 +66,15 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Berry type",
-            "name": "berry-type",
+            "name": "Berry type",
+            "id": "berry-type",
             "global": false,
             "optional": false,
             "default": "raspberry",
             "kind": "enum",
             "children": [
               {
-                "label": "Raspberry",
+                "name": "Raspberry",
                 "value": "raspberry",
                 "kind": "option",
                 "children": [
@@ -85,7 +85,7 @@
                 ]
               },
               {
-                "label": "Strawberry",
+                "name": "Strawberry",
                 "value": "strawberry",
                 "kind": "option",
                 "children": [
@@ -105,15 +105,15 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Tropical type",
-            "name": "tropical-type",
+            "name": "Tropical type",
+            "id": "tropical-type",
             "global": false,
             "optional": false,
             "default": "mango",
             "kind": "enum",
             "children": [
               {
-                "label": "Mango",
+                "name": "Mango",
                 "value": "mango",
                 "kind": "option",
                 "children": [
@@ -124,7 +124,7 @@
                 ]
               },
               {
-                "label": "Banana",
+                "name": "Banana",
                 "value": "banana",
                 "kind": "option",
                 "children": [
@@ -144,8 +144,8 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Organic",
-            "name": "organic",
+            "name": "Organic",
+            "id": "organic",
             "global": false,
             "optional": false,
             "default": true,
@@ -159,8 +159,8 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Frozen",
-            "name": "frozen",
+            "name": "Frozen",
+            "id": "frozen",
             "global": false,
             "optional": false,
             "default": true,
@@ -174,8 +174,8 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Fare trade",
-            "name": "fare-trade",
+            "name": "Fare trade",
+            "id": "fare-trade",
             "global": false,
             "optional": false,
             "default": true,
@@ -195,8 +195,8 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Plantain",
-            "name": "plantain",
+            "name": "Plantain",
+            "id": "plantain",
             "global": false,
             "optional": false,
             "default": true,
@@ -210,8 +210,8 @@
         "kind": "inputs",
         "children": [
           {
-            "label": "Comment",
-            "name": "comment",
+            "name": "Comment",
+            "id": "comment",
             "global": false,
             "optional": true,
             "default": null,
@@ -222,7 +222,7 @@
     ],
     "customize": [
       {
-        "label": "Customize cake",
+        "name": "Customize cake",
         "id": "4",
         "kind": "step",
         "children": [
@@ -230,8 +230,8 @@
             "kind": "inputs",
             "children": [
               {
-                "label": "Frosting",
-                "name": "frosting",
+                "name": "Frosting",
+                "id": "frosting",
                 "global": false,
                 "optional": false,
                 "default": true,

@@ -23,9 +23,9 @@
     <presets>
         <text path="input1">foo</text>
     </presets>
-    <step label="My Step">
+    <step name="My Step">
         <inputs>
-            <boolean name="input1" label="Input 1"/>
+            <boolean id="input1" name="Input 1"/>
         </inputs>
     </step>
 </archetype-script>

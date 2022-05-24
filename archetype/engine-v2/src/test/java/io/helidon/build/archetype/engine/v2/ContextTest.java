@@ -17,6 +17,7 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,9 @@ class ContextTest {
     @Test
     void testLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
+        Context.Scope scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
 
         Value value;
 
@@ -61,19 +64,40 @@ class ContextTest {
     @Test
     void testLookupInScope() {
         Context context = Context.create();
-        context.push("foo", Value.TRUE, false);
-        context.push("bar", Value.TRUE, false);
-        context.push("color", Value.create("blue"), false);
-        context.pop();
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.TRUE, ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.TRUE, ValueKind.EXTERNAL);
+        scope = context.newScope("color", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("blue"), ValueKind.EXTERNAL);
+        context.popScope();
         Value value = context.lookup("color");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("blue"));
     }
 
     @Test
+    void testLookupGlobal() {
+        Context context = Context.create();
+        Context.Scope scope;
+        scope = context.newScope("foo", true);
+        context.pushScope(scope);
+        context.setValue("bar", Value.create("foo-value"), ValueKind.EXTERNAL);
+
+        Value value;
+        value = context.lookup("bar");
+        assertThat(value, is(notNullValue()));
+        assertThat(value.asString(), is("foo-value"));
+    }
+
+    @Test
     void testLookupInternalOnly() {
         Context context = Context.create();
-        context.put("foo", Value.create("foo-value"));
+        context.setValue("foo", Value.create("foo-value"), ValueKind.EXTERNAL);
 
         Value value;
 
@@ -101,8 +125,13 @@ class ContextTest {
     @Test
     void testRelativeLookup() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
-        context.push("bar", Value.create("bar-value"), false);
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("bar-value"), ValueKind.EXTERNAL);
 
         Value value;
 
@@ -137,11 +166,16 @@ class ContextTest {
     }
 
     @Test
-    void testPopInput() {
+    void testPopScope() {
         Context context = Context.create();
-        context.push("foo", Value.create("foo-value"), false);
-        context.push("bar", Value.create("bar-value"), false);
-        context.pop();
+        Context.Scope scope;
+        scope = context.newScope("foo", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
+        scope = context.newScope("bar", false);
+        context.pushScope(scope);
+        context.setValue(scope.id(), Value.create("bar-value"), ValueKind.EXTERNAL);
+        context.popScope();
 
         Value value;
 

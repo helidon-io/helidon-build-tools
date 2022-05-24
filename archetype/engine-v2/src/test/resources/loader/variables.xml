@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,8 +19,12 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
-
-    <presets>
-        <text path="input1" resolvable="false">foo</text>
-    </presets>
+    <variables>
+        <boolean path="var1">true</boolean>
+        <text path="var2" transient="true">text1</text>
+        <enum path="var3">enum1</enum>
+        <list path="var4">
+            <value>list1</value>
+        </list>
+    </variables>
 </archetype-script>

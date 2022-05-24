@@ -20,27 +20,39 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
 
+import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
+import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldRed;
+import static java.util.Collections.emptyList;
+
+// TODO use prompt attribute when available
+//      restrict so that it is not usable in option
 
 /**
  * Prompter that uses CLI for input/output.
  */
 public class TerminalInputResolver extends InputResolver {
     private static final String ENTER_SELECTION = Bold.apply("Enter selection");
-    private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (one or more numbers separated by spaces)";
+    private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (numbers separated by spaces or 'none')";
 
     private final InputStream in;
-    private String lastLabel;
+    private String lastName;
 
     /**
      * Create an interactive input resolver.
@@ -59,158 +71,187 @@ public class TerminalInputResolver extends InputResolver {
     }
 
     @Override
+    protected void onVisitStep(Step step, Context context) {
+        System.out.printf("%n| %s%n%n", step.name());
+    }
+
+    @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
             try {
-                printLabel(input);
                 Value defaultValue = defaultValue(input, context);
-                String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue.asBoolean()) : null;
-                String question = String.format("%s (yes/no)", Bold.apply(input.label()));
+                String defaultText = defaultValue != null ? BoldBlue.apply(Input.Boolean.asString(defaultValue)) : null;
+                String question = String.format("%s (yes/no)", Bold.apply(input.name()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal());
-                    return VisitResult.CONTINUE;
+                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    if (defaultValue == null || !defaultValue.asBoolean()) {
+                        result = VisitResult.SKIP_SUBTREE;
+                    } else {
+                        result = VisitResult.CONTINUE;
+                    }
+                    break;
                 }
                 boolean value;
                 try {
                     value = Input.Boolean.valueOf(response, true);
                 } catch (Exception e) {
+                    System.out.println(BoldRed.apply("Invalid response: " + response));
+                    if (LogLevel.isDebug()) {
+                        Log.debug(e.getMessage());
+                    }
                     continue;
                 }
-                context.push(input.name(), Value.create(value), input.isGlobal());
-                return VisitResult.CONTINUE;
+                context.setValue(scope.id(), Value.create(value), ContextValue.ValueKind.USER);
+                if (!value) {
+                    result = VisitResult.SKIP_SUBTREE;
+                } else {
+                    result = VisitResult.CONTINUE;
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitText(Input.Text input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        try {
-            String defaultValue = defaultValue(input, context).asString();
-            String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
-            String response = prompt(Bold.apply(input.label()), defaultText);
-            if (response == null || response.trim().length() == 0) {
-                context.push(input.name(), Value.create(defaultValue), input.isGlobal());
-            } else {
-                context.push(input.name(), Value.create(response), input.isGlobal());
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        if (result == null) {
+            try {
+                String defaultValue = defaultValue(input, context).asString();
+                String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
+                String response = prompt(Bold.apply(input.name()), defaultText);
+                ContextValue.ValueKind valueKind;
+                Value value;
+                if (response == null || response.trim().length() == 0) {
+                    value = Value.create(defaultValue);
+                    valueKind = ContextValue.ValueKind.DEFAULT;
+                } else {
+                    value = Value.create(response);
+                    valueKind = ContextValue.ValueKind.USER;
+                }
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            return VisitResult.CONTINUE;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitEnum(Input.Enum input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
+            String response = null;
             try {
                 Value defaultValue = defaultValue(input, context);
-                int defaultIndex = input.optionIndex(defaultValue.asString());
-
+                List<Input.Option> options = input.options(context::filterNode);
+                int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
-                if (input.options().size() == 1 && defaultIndex >= 0) {
-                    context.push(input.name(), defaultValue, input.isGlobal());
-                    return VisitResult.CONTINUE;
+                if (options.size() == 1 && defaultIndex >= 0) {
+                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    result = VisitResult.CONTINUE;
+                    break;
                 }
 
-                printLabel(input);
-                printOptions(input);
+                printName(input);
+                printOptions(options);
 
                 String defaultText = defaultIndex != -1
                         ? BoldBlue.apply(String.format("%s", defaultIndex + 1))
                         : null;
 
-                String response = prompt(ENTER_SELECTION, defaultText);
-                lastLabel = input.label();
+                response = prompt(ENTER_SELECTION, defaultText);
+                lastName = input.name();
+                Value value;
+                ContextValue.ValueKind valueKind;
                 if ((response == null || response.trim().length() == 0)) {
-                    if (defaultIndex >= 0) {
-                        context.push(input.name(), defaultValue, input.isGlobal());
-                        return VisitResult.CONTINUE;
+                    if (defaultIndex < 0) {
+                        continue;
                     }
+                    value = defaultValue;
+                    valueKind = ContextValue.ValueKind.DEFAULT;
                 } else {
-                    int index = Integer.parseInt(response.trim());
-                    if (index > 0 && index <= input.options().size()) {
-                        String value = input.normalizeOptionValue(input.options().get(index - 1).value());
-                        context.push(input.name(), Value.create(value), input.isGlobal());
-                        return VisitResult.CONTINUE;
-                    }
+                    value = Value.create(parseEnumResponse(response, options));
+                    valueKind = ContextValue.ValueKind.USER;
                 }
-            } catch (NumberFormatException e) {
-                System.out.println(BoldRed.apply(e.getMessage()));
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                System.out.println(BoldRed.apply("Invalid response: " + response));
+                if (LogLevel.isDebug()) {
+                    Log.debug(e.getMessage());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
     @Override
     public VisitResult visitList(Input.List input, Context context) {
-        VisitResult result = onVisitInput(input, context);
-        if (result != null) {
-            return result;
-        }
-        while (true) {
+        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, scope, context);
+        while (result == null) {
+            String response = null;
             try {
-                printLabel(input);
-                printOptions(input);
+                List<Input.Option> options = input.options(context::filterNode);
+
+                printName(input);
+                printOptions(options);
 
                 Value defaultValue = defaultValue(input, context);
-                List<Integer> defaultIndexes = input.optionIndexes(defaultValue.asList());
-                String defaultText = defaultIndexes.size() > 0
-                        ? BoldBlue.apply(String.format("%s",
-                        defaultIndexes.stream().map(i -> (i + 1) + "").collect(Collectors.joining(", "))))
-                        : null;
+                String defaultText = BoldBlue.apply(defaultResponse(defaultValue.asList(), options));
 
-                String response = prompt(ENTER_LIST_SELECTION, defaultText);
-
-                lastLabel = input.label();
+                response = prompt(ENTER_LIST_SELECTION, defaultText);
+                lastName = input.name();
+                Value value;
+                ContextValue.ValueKind valueKind;
                 if (response == null || response.trim().length() == 0) {
-                    if (!defaultIndexes.isEmpty()) {
-                        context.push(input.name(), defaultValue, input.isGlobal());
-                        return VisitResult.CONTINUE;
-                    }
+                    value = defaultValue;
+                    valueKind = ContextValue.ValueKind.DEFAULT;
                 } else {
-                    context.push(input.name(), Value.create(input.parseResponse(response)), input.isGlobal());
-                    return VisitResult.CONTINUE;
+                    value = Value.create(parseListResponse(response, options));
+                    valueKind = ContextValue.ValueKind.USER;
                 }
+                context.setValue(scope.id(), value, valueKind);
+                result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                System.out.println(BoldRed.apply(e.getMessage()));
+                System.out.println(BoldRed.apply("Invalid response: " + response));
+                if (LogLevel.isDebug()) {
+                    Log.debug(e.getMessage());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        context.pushScope(scope);
+        return result;
     }
 
-    private void printLabel(Input input) {
-        String label = input.label();
-        if (label != null && !label.equals(lastLabel)) {
-            System.out.println(Bold.apply(label));
+    private void printName(Input input) {
+        String name = input.name();
+        if (name != null && !name.equals(lastName)) {
+            System.out.println(Bold.apply(name));
         }
     }
 
-    private static void printOptions(Input.Options input) {
-        List<Input.Option> options = input.options();
+    private static void printOptions(List<Input.Option> options) {
         int index = 0;
+        int maxKeyWidth = maxKeyWidth(optionValues(options));
         for (Input.Option option : options) {
-            String o = BoldBlue.apply(String.format("  (%d) %s ", index + 1, option.value()));
-            String optionText = option.label() != null && !option.label().isBlank()
-                    ? String.format("%s | %s", o, option.label())
-                    : o;
-            System.out.println(optionText);
+            System.out.println(optionText(option, maxKeyWidth, index));
             index++;
         }
     }
@@ -222,5 +263,70 @@ public class TerminalInputResolver extends InputResolver {
         System.out.print(promptText);
         System.out.flush();
         return new BufferedReader(new InputStreamReader(in)).readLine();
+    }
+
+    private static String optionText(Input.Option option, int maxKeyWidth, int index) {
+        String o = BoldBlue.apply(String.format("  (%d) %s ", index + 1, option.value()));
+        String name = option.name();
+        if (name != null && !name.isBlank()) {
+            return String.format("%s%s| %s", o, padding(" ", maxKeyWidth, option.value()), name);
+        }
+        return o;
+    }
+
+    private static int maxKeyWidth(List<String> names) {
+        int maxLen = 0;
+        for (String name : names) {
+            int len = name.length();
+            if (len > maxLen) {
+                maxLen = len;
+            }
+        }
+        return maxLen;
+    }
+
+    private static List<String> optionValues(List<Input.Option> options) {
+        return options.stream()
+                      .map(Input.Option::value)
+                      .collect(Collectors.toList());
+    }
+
+    private static String parseEnumResponse(String response, List<Input.Option> options) {
+        int index = Integer.parseInt(response.trim());
+        return options.get(index - 1).value().toLowerCase();
+    }
+
+    private static List<String> parseListResponse(String response, List<Input.Option> options) {
+        response = response.trim();
+        if ("none".equals(response)) {
+            return emptyList();
+        }
+        return Arrays.stream(response.trim().split("\\s+"))
+                     .map(Integer::parseInt)
+                     .distinct()
+                     .map(i -> options.get(i - 1))
+                     .map(Input.Option::value)
+                     .map(String::toLowerCase)
+                     .collect(Collectors.toList());
+    }
+
+    private static String defaultResponse(List<String> optionNames, List<Input.Option> options) {
+        if (optionNames == null || optionNames.isEmpty()) {
+            return "none";
+        }
+        return IntStream.range(0, options.size())
+                        .boxed()
+                        .filter(i -> containsIgnoreCase(optionNames, options.get(i).value()))
+                        .map(i -> (i + 1) + "")
+                        .collect(Collectors.joining(", "));
+    }
+
+    private static boolean containsIgnoreCase(Collection<String> values, String expected) {
+        for (String optionName : values) {
+            if (optionName.equalsIgnoreCase(expected)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

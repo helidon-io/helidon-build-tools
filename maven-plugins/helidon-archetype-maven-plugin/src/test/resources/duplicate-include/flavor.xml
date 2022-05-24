@@ -20,13 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-    <step label="Helidon Flavor">
+    <step name="Helidon Flavor">
         <inputs>
-            <enum name="flavor" label="Select a flavor">
-                <option value="se" label="Helidon SE">
+            <enum id="flavor" name="Select a flavor">
+                <option value="se" name="Helidon SE">
                     <source src="se/se.xml"/>
                 </option>
-                <option value="mp" label="Helidon MP">
+                <option value="mp" name="Helidon MP">
                     <source src="mp/mp.xml"/>
                 </option>
             </enum>

@@ -20,7 +20,7 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
     <inputs>
-        <text name="more-input1" label="More input 1" default="more#1" optional="true" prompt="More1">
+        <text id="more-input1" name="More input 1" description="Another text input" default="more#1" optional="true" prompt="More1">
             <help>More Help 1</help>
         </text>
     </inputs>

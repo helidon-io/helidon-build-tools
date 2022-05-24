@@ -16,10 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-
 /**
  * Method.
  */
@@ -56,13 +52,11 @@ public final class Method extends DeclaredBlock {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info builder info
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location) {
-        return new Builder(loader, scriptPath, location);
+    public static Builder builder(BuilderInfo info) {
+        return new Builder(info);
     }
 
     /**
@@ -70,8 +64,8 @@ public final class Method extends DeclaredBlock {
      */
     public static final class Builder extends Block.Builder {
 
-        private Builder(ScriptLoader loader, Path scriptPath, Location location) {
-            super(loader, scriptPath, location, Kind.METHOD);
+        private Builder(BuilderInfo info) {
+            super(info, Kind.METHOD);
         }
 
         @Override

@@ -17,13 +17,14 @@ package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node;
 import io.helidon.build.archetype.engine.v2.util.InputTree.NodeIndex;
@@ -50,6 +51,15 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         this.verbose = verbose;
     }
 
+    /**
+     * Collect all the combinations as a list.
+     *
+     * @return list of combinations
+     */
+    public List<Map<String, String>> toList() {
+        return StreamSupport.stream(spliterator(), false).collect(Collectors.toList());
+    }
+
     @Override
     public Iterator<Map<String, String>> iterator() {
         return new CombinationsIterator(tree, verbose);
@@ -58,8 +68,6 @@ public class InputCombinations implements Iterable<Map<String, String>> {
     private static class CombinationsIterator implements Iterator<Map<String, String>> {
         private final Node root;
         private final boolean verbose;
-        private final Map<String, String> combinations;
-        private final Map<String, String> immutableCombinations;
         private final List<Node> currentInputs;
         private int iterations;
         private int currentIndex;
@@ -68,8 +76,6 @@ public class InputCombinations implements Iterable<Map<String, String>> {
         private CombinationsIterator(InputTree tree, boolean verbose) {
             this.root = tree.root();
             this.verbose = verbose;
-            this.combinations = new LinkedHashMap<>();
-            this.immutableCombinations = Collections.unmodifiableMap(combinations);
             this.currentInputs = root.collectCurrentInputs(new ArrayList<>());
             this.currentLeafNode = getLeafInput();
             if (verbose) {
@@ -89,6 +95,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
 
                 // Collect
 
+                Map<String, String> combinations = new LinkedHashMap<>();
                 root.collect(combinations);
 
                 // Advance the current leaf node. Did we complete it?
@@ -105,7 +112,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
 
                         // Yep
 
-                        return immutableCombinations;
+                        return combinations;
                     }
 
                     // No, so update current inputs
@@ -113,7 +120,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
                     updateCurrentInputs();
                 }
 
-                return immutableCombinations;
+                return combinations;
 
             } else {
                 throw new NoSuchElementException(root.children().get(0).script().toString() + ": iteration completed");
@@ -125,6 +132,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          *
          * @return The count.
          */
+        @SuppressWarnings("unused")
         int iterations() {
             return iterations;
         }
@@ -235,6 +243,7 @@ public class InputCombinations implements Iterable<Map<String, String>> {
          * @param listCombiner The list combiner.
          * @return This instance, for chaining.
          */
+        @SuppressWarnings("unused")
         public Builder listCombiner(BiFunction<List<String>, List<String>, List<List<String>>> listCombiner) {
             builder.listCombiner(listCombiner);
             return this;

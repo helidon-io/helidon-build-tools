@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
@@ -34,42 +39,70 @@ import io.helidon.build.common.GenericType;
  */
 public abstract class InputResolver implements Input.Visitor<Context> {
 
-    private NamedInput lastVisited;
+    private final Deque<DeclaredInput> parents = new ArrayDeque<>();
+    private final Deque<Step> currentSteps = new ArrayDeque<>();
+    private final Set<Step> visitedSteps = new HashSet<>();
+
+    /**
+     * Get the stack of steps.
+     *
+     * @return steps
+     */
+    Deque<Step> steps() {
+        return currentSteps;
+    }
+
+    /**
+     * Invoked for every visited step.
+     *
+     * @param step    step
+     * @param context context
+     */
+    protected void onVisitStep(Step step, Context context) {
+    }
 
     /**
      * Invoked for every named input visit.
      *
-     * @param input input
+     * @param input   input
+     * @param scope   scope
      * @param context context
      * @return visit result if a value already exists, {@code null} otherwise
      */
-    protected VisitResult onVisitInput(NamedInput input, Context context) {
-        lastVisited = input;
+    protected VisitResult onVisitInput(DeclaredInput input, Context.Scope scope, Context context) {
+        Step currentStep = currentSteps.peek();
+        if (currentStep == null) {
+            throw new IllegalStateException(input.location() + " Input not nested inside a step");
+        }
         boolean global = input.isGlobal();
-        String path = context.path(input.name());
         if (global) {
-            if (!path.equals(input.name())) {
-                throw new IllegalStateException("Invalid state, input '" + path + "' cannot be global");
+            DeclaredInput parent = parents.peek();
+            if (parent != null && !parent.isGlobal()) {
+                throw new IllegalStateException(input.location() + " Parent input is not global");
             }
         }
-        Value value = context.get(path);
+        parents.push(input);
+        Value value = context.getValue(scope.id());
         if (value == null) {
+            if (!visitedSteps.contains(currentStep)) {
+                visitedSteps.add(currentStep);
+                onVisitStep(currentStep, context);
+            }
             return null;
         }
-        input.validate(value, path);
-        context.push(path, global);
+        input.validate(value, scope.id());
         return input.visitValue(value);
     }
 
     /**
      * Compute the default value for an input.
      *
-     * @param input input
+     * @param input   input
      * @param context context
      * @return default value or {@code null} if none
      */
-    protected Value defaultValue(NamedInput input, Context context) {
-        Value defaultValue = context.defaultValue(input.name());
+    protected Value defaultValue(DeclaredInput input, Context context) {
+        Value defaultValue = context.defaultValue(input.id(), input.isGlobal());
         if (defaultValue == null) {
             defaultValue = input.defaultValue();
         }
@@ -90,22 +123,22 @@ public abstract class InputResolver implements Input.Visitor<Context> {
 
     @Override
     public VisitResult visitOption(Option option, Context context) {
-        if (lastVisited == null) {
-            throw new IllegalStateException("lastVisited must be non null");
+        if (parents.isEmpty()) {
+            throw new IllegalStateException("parents is empty");
         }
-        Value inputValue = context.lookup("PARENT." + lastVisited.name());
+        DeclaredInput parent = parents.peek();
+        Value inputValue = context.lookup("PARENT." + parent.id());
         if (inputValue != null) {
-            return lastVisited.visitOption(inputValue, option);
+            return parent.visitOption(inputValue, option);
         }
         return VisitResult.SKIP_SUBTREE;
     }
 
     @Override
     public VisitResult postVisitAny(Input input, Context context) {
-        if (input instanceof NamedInput) {
-            if (!((NamedInput) input).isGlobal()) {
-                context.pop();
-            }
+        if (input instanceof DeclaredInput) {
+            parents.pop();
+            context.popScope();
         }
         return VisitResult.CONTINUE;
     }

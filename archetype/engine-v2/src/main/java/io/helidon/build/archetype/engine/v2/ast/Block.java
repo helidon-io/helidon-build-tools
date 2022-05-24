@@ -16,12 +16,9 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
 
 /**
  * Block.
@@ -45,20 +42,13 @@ public class Block extends Node {
     /**
      * Create a new block.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info       builder info
      * @param attributes attributes map
      * @param kind       kind
      * @param children   children
      */
-    protected Block(ScriptLoader loader,
-                    Path scriptPath,
-                    Location location,
-                    Map<String, Value> attributes,
-                    Kind kind,
-                    List<Node> children) {
-        super(loader, scriptPath, location, attributes);
+    protected Block(BuilderInfo info, Map<String, Value> attributes, Kind kind, List<Node> children) {
+        super(info, attributes);
         this.kind = Objects.requireNonNull(kind, "kind is null");
         this.children = Objects.requireNonNull(children, "children is null");
     }
@@ -79,7 +69,7 @@ public class Block extends Node {
      * @return block
      */
     public Block wrap(Block.Kind kind) {
-        return new Block(loader(), scriptPath(), location(), attributes(), kind, List.of(this));
+        return new Block(BuilderInfo.of(this), attributes(), kind, List.of(this));
     }
 
     @Override
@@ -105,6 +95,17 @@ public class Block extends Node {
          */
         default VisitResult visitPreset(Preset preset, A arg) {
             return visitAny(preset, arg);
+        }
+
+        /**
+         * Visit a variable block.
+         *
+         * @param variable variable
+         * @param arg      visitor argument
+         * @return visit result
+         */
+        default VisitResult visitVariable(Variable variable, A arg) {
+            return visitAny(variable, arg);
         }
 
         /**
@@ -324,6 +325,11 @@ public class Block extends Node {
         PRESETS,
 
         /**
+         * Variables.
+         */
+        VARIABLES,
+
+        /**
          * Output.
          */
         OUTPUT,
@@ -407,14 +413,12 @@ public class Block extends Node {
     /**
      * Create a new builder.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
-     * @param kind       kind
+     * @param info builder info
+     * @param kind kind
      * @return builder
      */
-    public static Builder builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-        return new Builder(loader, scriptPath, location, kind);
+    public static Builder builder(BuilderInfo info, Kind kind) {
+        return new Builder(info, kind);
     }
 
     /**
@@ -427,13 +431,11 @@ public class Block extends Node {
         /**
          * Create a new builder.
          *
-         * @param loader     script loader
-         * @param scriptPath script path
-         * @param location   location
-         * @param kind       kind
+         * @param info builder info
+         * @param kind kind
          */
-        protected Builder(ScriptLoader loader, Path scriptPath, Location location, Kind kind) {
-            super(loader, scriptPath, location);
+        protected Builder(BuilderInfo info, Kind kind) {
+            super(info);
             this.kind = kind;
         }
 

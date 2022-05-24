@@ -20,11 +20,11 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd">
 
-    <step label="Shapes">
+    <step name="Shapes">
         <input>
-            <enum name="shape" label="Select a shape">
-                <option value="circle" label="Circle"/>
-                <option value="triangle" label="Triangle"/>
+            <enum id="shape" name="Select a shape">
+                <option value="circle" name="Circle"/>
+                <option value="triangle" name="Triangle"/>
             </enum>
         </input>
     </step>

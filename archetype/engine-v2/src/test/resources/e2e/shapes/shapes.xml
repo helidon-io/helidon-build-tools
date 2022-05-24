@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Shapes">
+    <step name="Shapes">
         <inputs>
-            <enum name="base" label="Select a shape library">
-                <option value="custom" label="Custom">
+            <enum id="base" name="Select a shape library">
+                <option value="custom" name="Custom">
                     <exec src="custom/custom.xml"/>
                 </option>
-                <option value="2d" label="2D shapes">
+                <option value="2d" name="2D shapes">
                     <exec src="2d/2d.xml"/>
                 </option>
             </enum>

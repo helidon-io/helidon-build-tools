@@ -71,12 +71,12 @@ class ControllerTest {
     void testConditional() {
         Script script = load("controller/conditional.xml");
         Context context = Context.create();
-        context.put("doModel", Value.TRUE);
-        context.put("doColors", Value.TRUE);
-        context.put("doRed", Value.TRUE);
-        context.put("doGreen", Value.FALSE);
-        context.put("doBlue", Value.TRUE);
-        context.put("doShapes", Value.FALSE);
+        context.setValue("doModel", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.setValue("doColors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.setValue("doRed", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.setValue("doGreen", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        context.setValue("doBlue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.setValue("doShapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("red", "blue"));

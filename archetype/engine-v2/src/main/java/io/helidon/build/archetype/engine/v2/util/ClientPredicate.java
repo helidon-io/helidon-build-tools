@@ -18,7 +18,7 @@ package io.helidon.build.archetype.engine.v2.util;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Preset;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 
 /**
  * Client predicate.
@@ -46,8 +46,8 @@ public final class ClientPredicate implements Node.Visitor<Void>, Block.Visitor<
     }
 
     @Override
-    public Node.VisitResult visitPreset(Preset preset, Void arg) {
-        if (preset.isTransient()) {
+    public Node.VisitResult visitVariable(Variable variable, Void arg) {
+        if (variable.isTransient()) {
             return Node.VisitResult.TERMINATE;
         }
         return Node.VisitResult.CONTINUE;

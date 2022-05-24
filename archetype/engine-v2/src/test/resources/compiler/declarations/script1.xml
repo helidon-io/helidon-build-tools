@@ -23,12 +23,12 @@
     <methods>
         <method name="script1.xml">
             <inputs>
-                <boolean name="boolean4" label="Boolean4" />
+                <boolean id="boolean4" name="Boolean4" />
             </inputs>
         </method>
     </methods>
     <inputs>
-        <boolean name="boolean3" label="Boolean3">
+        <boolean id="boolean3" name="Boolean3">
             <call method="script1.xml"/>
         </boolean>
     </inputs>

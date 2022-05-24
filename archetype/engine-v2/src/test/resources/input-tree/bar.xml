@@ -20,9 +20,9 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Bar">
+    <step name="Bar">
         <inputs>
-            <text name="bar" label="Bar" default="a-bar"/>
+            <text id="bar" name="Bar" default="a-bar"/>
         </inputs>
     </step>
 </archetype-script>

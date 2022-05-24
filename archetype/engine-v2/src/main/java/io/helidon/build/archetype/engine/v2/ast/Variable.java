@@ -19,25 +19,38 @@ package io.helidon.build.archetype.engine.v2.ast;
 import java.util.List;
 
 /**
- * Preset.
+ * Variable.
  */
-public final class Preset extends DeclaredValue {
+public final class Variable extends DeclaredValue {
 
-    private Preset(DeclaredValue.Builder builder, List<String> values) {
+    private final boolean isTransient;
+
+    private Variable(DeclaredValue.Builder builder, List<String> values) {
         super(builder, values);
+        this.isTransient = builder.attribute("transient", false).asBoolean();
+    }
+
+    /**
+     * Test if this preset is transient.
+     *
+     * @return {@code true} if transient, {@code false} otherwise
+     */
+    public boolean isTransient() {
+        return isTransient;
     }
 
     @Override
     public String toString() {
-        return "Preset{"
+        return "Variable{"
                 + "path='" + path() + '\''
+                + ", transient=" + isTransient + '\''
                 + ", value=" + value() + '\''
                 + '}';
     }
 
     @Override
-    public <A> VisitResult accept(Block.Visitor<A> visitor, A arg) {
-        return visitor.visitPreset(this, arg);
+    public <A> VisitResult accept(Visitor<A> visitor, A arg) {
+        return visitor.visitVariable(this, arg);
     }
 
     /**
@@ -47,22 +60,22 @@ public final class Preset extends DeclaredValue {
      * @param kind kind
      * @return builder
      */
-    public static Builder builder(BuilderInfo info, Block.Kind kind) {
+    public static Builder builder(BuilderInfo info, Kind kind) {
         return new Builder(info, kind);
     }
 
     /**
-     * Preset builder.
+     * Variable builder.
      */
     public static final class Builder extends DeclaredValue.Builder {
 
-        private Builder(BuilderInfo info, Block.Kind kind) {
+        private Builder(BuilderInfo info, Kind kind) {
             super(info, kind);
         }
 
         @Override
         protected DeclaredValue doBuild(DeclaredValue.Builder builder, List<String> values) {
-            return new Preset(builder, values);
+            return new Variable(builder, values);
         }
     }
 }

@@ -41,8 +41,7 @@ class ArchetypeEngineV2Test {
     @Test
     void testExternalDefault() {
         Path outputDir = e2eDir("testExternalDefault",
-                Map.of(
-                        "theme", "colors",
+                Map.of("theme", "colors",
                         "theme.base", "rainbow"),
                 Map.of("artifactId", "foo"));
         assertThat(outputDir.getFileName().toString(), startsWith("foo"));
@@ -163,8 +162,7 @@ class ArchetypeEngineV2Test {
     @Test
     void testExternalDefaultZip() throws IOException {
         Path outputDir = e2eZip("testExternalDefaultZip",
-                Map.of(
-                        "theme", "colors",
+                Map.of("theme", "colors",
                         "theme.base", "rainbow"),
                 Map.of("artifactId", "not-bar"));
         assertThat(outputDir.getFileName().toString(), startsWith("not-bar"));

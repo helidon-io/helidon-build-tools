@@ -22,9 +22,9 @@
 
 
     <inputs>
-        <list name="build-system"
-              label="Select a build system">
-            <option value="maven" label="Apache Maven">
+        <list id="build-system"
+              name="Select a build system">
+            <option value="maven" name="Apache Maven">
                 <output>
                     <templates transformations="mustache">
                         <directory>.</directory>
@@ -34,7 +34,7 @@
                     </templates>
                 </output>
             </option>
-            <option value="gradle" label="Gradle"/>
+            <option value="gradle" name="Gradle"/>
         </list>
     </inputs>
 

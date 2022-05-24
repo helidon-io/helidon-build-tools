@@ -72,7 +72,9 @@ public final class MergedModel {
     public static MergedModel resolveModel(Block block, Context context) {
         ModelResolver modelResolver = new ModelResolver(block);
         Controller.walk(modelResolver, block, context);
-        context.ensureEmptyInputs();
+        if (context.peekScope() != Context.Scope.ROOT) {
+            throw new IllegalStateException("Invalid scope");
+        }
         return modelResolver.model();
     }
 

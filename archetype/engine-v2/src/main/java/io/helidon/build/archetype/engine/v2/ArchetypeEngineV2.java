@@ -58,12 +58,35 @@ public class ArchetypeEngineV2 {
                          Map<String, String> externalDefaults,
                          Function<String, Path> directorySupplier) {
 
+        return generate(inputResolver, externalValues, externalDefaults, () -> {
+        }, directorySupplier);
+    }
+
+    /**
+     * Generate a project.
+     *
+     * @param inputResolver     input resolver
+     * @param externalValues    external values
+     * @param externalDefaults  external defaults
+     * @param onResolved        callback executed when inputs are fully resolved
+     * @param directorySupplier output directory supplier
+     * @return output directory
+     */
+    public Path generate(InputResolver inputResolver,
+                         Map<String, String> externalValues,
+                         Map<String, String> externalDefaults,
+                         Runnable onResolved,
+                         Function<String, Path> directorySupplier) {
+
         Context context = Context.create(cwd, externalValues, externalDefaults);
         Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
-        context.ensureEmptyInputs();
+        if (context.peekScope() != Context.Scope.ROOT) {
+            throw new IllegalStateException("Invalid scope");
+        }
+        onResolved.run();
 
         // resolve output directory
         String artifactId = requireNonNull(context.lookup(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
@@ -75,7 +98,9 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        context.ensureEmptyInputs();
+        if (context.peekScope() != Context.Scope.ROOT) {
+            throw new IllegalStateException("Invalid scope");
+        }
 
         return directory;
     }

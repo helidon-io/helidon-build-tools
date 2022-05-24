@@ -37,7 +37,6 @@ import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Expression.Token;
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Invocation.MethodInvocation;
 import io.helidon.build.archetype.engine.v2.ast.Method;
@@ -47,6 +46,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.util.ClientCompiler;
 
 /**
@@ -219,6 +219,8 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
             default:
         }
         JsonObjectBuilder builder = blockBuilder(block);
+        String exprId = this.exprId;
+        this.exprId = null;
         stack.push(new Context(builder, JsonFactory.createArrayBuilder(), exprId));
         return block.accept(this, builder);
     }
@@ -263,11 +265,18 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         return VisitResult.CONTINUE;
     }
 
-    private VisitResult visitNamed(Input.NamedInput input, JsonObjectBuilder builder) {
-        builder.add("name", input.name())
-               .add("global", input.isGlobal())
-               .add("optional", input.isOptional())
-               .add("default", JsonFactory.createValue(input.defaultValue()));
+    private VisitResult visitNamed(Input.DeclaredInput input, JsonObjectBuilder builder) {
+        builder.add("id", input.id());
+        if (input.isGlobal()) {
+            builder.add("global", true);
+        }
+        if (input.isOptional()) {
+            builder.add("optional", true);
+        }
+        Value defaultValue = input.defaultValue();
+        if (defaultValue != null && defaultValue != Value.NULL) {
+            builder.add("default", JsonFactory.createValue(defaultValue));
+        }
         return VisitResult.CONTINUE;
     }
 
@@ -278,9 +287,12 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
 
     @Override
     public VisitResult visitInput(Input input, JsonObjectBuilder builder) {
-        builder.add("label", input.label());
-        if (input instanceof NamedInput) {
-            return visitNamed((NamedInput) input, builder);
+        builder.add("name", input.name());
+        if (input.description() != null) {
+            builder.add("description", input.description());
+        }
+        if (input instanceof Input.DeclaredInput) {
+            return visitNamed((Input.DeclaredInput) input, builder);
         } else if (input instanceof Input.Option) {
             return visitOption((Input.Option) input, builder);
         }
@@ -295,8 +307,15 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     }
 
     @Override
+    public VisitResult visitVariable(Variable variable, JsonObjectBuilder builder) {
+        builder.add("path", variable.path())
+               .add("value", JsonFactory.createValue(variable.value()));
+        return VisitResult.SKIP_SUBTREE;
+    }
+
+    @Override
     public VisitResult visitStep(Step step, JsonObjectBuilder builder) {
-        builder.add("label", step.label())
+        builder.add("name", step.name())
                .add("id", stepsIds.computeIfAbsent(step, this::stepId));
         return VisitResult.CONTINUE;
     }

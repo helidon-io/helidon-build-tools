@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputEnum;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputOption;
+import static io.helidon.build.archetype.engine.v2.TestHelper.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -35,8 +36,9 @@ public class BatchInputResolverTest {
 
     @Test
     void testInputEnumWithSingleOptionAndDefault() {
-        Block block = inputEnum("enum-input1", "value1",
-                inputOption("option1", "value1")).build();
+        Block block = step("step",
+                inputEnum("enum-input1", "value1",
+                        inputOption("option1", "value1"))).build();
 
         Context context = Context.create();
         Controller.walk(new BatchInputResolver(), block, context);

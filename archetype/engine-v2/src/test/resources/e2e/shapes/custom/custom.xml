@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@
 
     <exec src="../../common/common.xml"/>
     <inputs>
-        <text name="library-name" label="Library name" optional="true" default="My Shapes"/>
-        <list name="shapes" label="Select shapes" optional="true" default="circle,triangle">
-            <option value="circle" label="Circle"/>
-            <option value="triangle" label="Triangle"/>
-            <option value="rectangle" label="Rectangle"/>
-            <option value="arrow" label="Arrow"/>
-            <option value="donut" label="Donut"/>
+        <text id="library-name" name="Library name" optional="true" default="My Shapes"/>
+        <list id="shapes" name="Select shapes" optional="true" default="circle,triangle">
+            <option value="circle" name="Circle"/>
+            <option value="triangle" name="Triangle"/>
+            <option value="rectangle" name="Rectangle"/>
+            <option value="arrow" name="Arrow"/>
+            <option value="donut" name="Donut"/>
         </list>
     </inputs>
     <output>

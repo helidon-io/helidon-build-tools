@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class ClientCompilerTest {
 
-
     @Test
     void testEmptyScript() {
         Script script = load("compiler/empty-script/main.xml");
@@ -72,8 +71,8 @@ class ClientCompilerTest {
                             @Override
                             public VisitResult visitEnum(Input.Enum input, Void arg) {
                                 assertThat(++index[0], is(3));
-                                assertThat(input.name(), is("enum1"));
-                                assertThat(input.label(), is("Enum1"));
+                                assertThat(input.id(), is("enum1"));
+                                assertThat(input.name(), is("Enum1"));
                                 return VisitResult.CONTINUE;
                             }
 
@@ -82,11 +81,11 @@ class ClientCompilerTest {
                                 switch (++index[0]) {
                                     case 4:
                                         assertThat(option.value(), is("enum1-value1"));
-                                        assertThat(option.label(), is("Enum1Value1"));
+                                        assertThat(option.name(), is("Enum1Value1"));
                                         break;
                                     case 5:
                                         assertThat(option.value(), is("enum1-value2"));
-                                        assertThat(option.label(), is("Enum1Value2"));
+                                        assertThat(option.name(), is("Enum1Value2"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -142,8 +141,8 @@ class ClientCompilerTest {
                             @Override
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 assertThat(++index[0], is(3));
-                                assertThat(input.name(), is("boolean1"));
-                                assertThat(input.label(), is("Boolean1"));
+                                assertThat(input.id(), is("boolean1"));
+                                assertThat(input.name(), is("Boolean1"));
                                 return VisitResult.CONTINUE;
                             }
 
@@ -195,8 +194,8 @@ class ClientCompilerTest {
                             @Override
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 assertThat(++index[0], is(3));
-                                assertThat(input.name(), is("boolean1"));
-                                assertThat(input.label(), is("Boolean1"));
+                                assertThat(input.id(), is("boolean1"));
+                                assertThat(input.name(), is("Boolean1"));
                                 return VisitResult.CONTINUE;
                             }
 
@@ -255,12 +254,12 @@ class ClientCompilerTest {
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 switch (++index[0]) {
                                     case 3:
-                                        assertThat(input.name(), is("boolean1"));
-                                        assertThat(input.label(), is("Boolean1"));
+                                        assertThat(input.id(), is("boolean1"));
+                                        assertThat(input.name(), is("Boolean1"));
                                         break;
                                     case 5:
-                                        assertThat(input.name(), is("boolean2"));
-                                        assertThat(input.label(), is("Boolean2"));
+                                        assertThat(input.id(), is("boolean2"));
+                                        assertThat(input.name(), is("Boolean2"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -323,12 +322,12 @@ class ClientCompilerTest {
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 switch (++index[0]) {
                                     case 3:
-                                        assertThat(input.name(), is("boolean1"));
-                                        assertThat(input.label(), is("Boolean1"));
+                                        assertThat(input.id(), is("boolean1"));
+                                        assertThat(input.name(), is("Boolean1"));
                                         break;
                                     case 5:
-                                        assertThat(input.name(), is("boolean2"));
-                                        assertThat(input.label(), is("Boolean2"));
+                                        assertThat(input.id(), is("boolean2"));
+                                        assertThat(input.name(), is("Boolean2"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -372,16 +371,16 @@ class ClientCompilerTest {
                             public VisitResult visitEnum(Input.Enum input, Void arg) {
                                 switch (++index[0]) {
                                     case 2:
-                                        assertThat(input.name(), is("fruit"));
-                                        assertThat(input.label(), is("Fruit"));
+                                        assertThat(input.id(), is("fruit"));
+                                        assertThat(input.name(), is("Fruit"));
                                         break;
                                     case 4:
-                                        assertThat(input.name(), is("berry-type"));
-                                        assertThat(input.label(), is("Berry type"));
+                                        assertThat(input.id(), is("berry-type"));
+                                        assertThat(input.name(), is("Berry type"));
                                         break;
                                     case 10:
-                                        assertThat(input.name(), is("tropical-type"));
-                                        assertThat(input.label(), is("Tropical type"));
+                                        assertThat(input.id(), is("tropical-type"));
+                                        assertThat(input.name(), is("Tropical type"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -394,27 +393,27 @@ class ClientCompilerTest {
                                 switch (++index[0]) {
                                     case 3:
                                         assertThat(option.value(), is("berries"));
-                                        assertThat(option.label(), is("Berries"));
+                                        assertThat(option.name(), is("Berries"));
                                         break;
                                     case 5:
                                         assertThat(option.value(), is("raspberry"));
-                                        assertThat(option.label(), is("Raspberry"));
+                                        assertThat(option.name(), is("Raspberry"));
                                         break;
                                     case 7:
                                         assertThat(option.value(), is("strawberry"));
-                                        assertThat(option.label(), is("Strawberry"));
+                                        assertThat(option.name(), is("Strawberry"));
                                         break;
                                     case 9:
                                         assertThat(option.value(), is("tropical"));
-                                        assertThat(option.label(), is("Tropical"));
+                                        assertThat(option.name(), is("Tropical"));
                                         break;
                                     case 11:
                                         assertThat(option.value(), is("mango"));
-                                        assertThat(option.label(), is("Mango"));
+                                        assertThat(option.name(), is("Mango"));
                                         break;
                                     case 14:
                                         assertThat(option.value(), is("banana"));
-                                        assertThat(option.label(), is("Banana"));
+                                        assertThat(option.name(), is("Banana"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -426,24 +425,24 @@ class ClientCompilerTest {
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 switch (++index[0]) {
                                     case 6:
-                                        assertThat(input.name(), is("organic"));
-                                        assertThat(input.label(), is("Organic"));
+                                        assertThat(input.id(), is("organic"));
+                                        assertThat(input.name(), is("Organic"));
                                         break;
                                     case 8:
-                                        assertThat(input.name(), is("frozen"));
-                                        assertThat(input.label(), is("Frozen"));
+                                        assertThat(input.id(), is("frozen"));
+                                        assertThat(input.name(), is("Frozen"));
                                         break;
                                     case 12:
-                                        assertThat(input.name(), is("fare-trade"));
-                                        assertThat(input.label(), is("Fare trade"));
+                                        assertThat(input.id(), is("fare-trade"));
+                                        assertThat(input.name(), is("Fare trade"));
                                         break;
                                     case 15:
-                                        assertThat(input.name(), is("plantain"));
-                                        assertThat(input.label(), is("Plantain"));
+                                        assertThat(input.id(), is("plantain"));
+                                        assertThat(input.name(), is("Plantain"));
                                         break;
                                     case 17:
-                                        assertThat(input.name(), is("frosting"));
-                                        assertThat(input.label(), is("Frosting"));
+                                        assertThat(input.id(), is("frosting"));
+                                        assertThat(input.name(), is("Frosting"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -456,8 +455,8 @@ class ClientCompilerTest {
                                 switch (++index[0]) {
                                     case 13:
                                     case 16:
-                                        assertThat(input.name(), is("comment"));
-                                        assertThat(input.label(), is("Comment"));
+                                        assertThat(input.id(), is("comment"));
+                                        assertThat(input.name(), is("Comment"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);
@@ -509,19 +508,19 @@ class ClientCompilerTest {
                             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                                 switch (++index[0]) {
                                     case 1:
-                                        assertThat(input.name(), is("boolean1"));
-                                        assertThat(input.label(), is("Boolean1"));
+                                        assertThat(input.id(), is("boolean1"));
+                                        assertThat(input.name(), is("Boolean1"));
                                         break;
                                     case 2:
                                     case 6:
-                                        assertThat(input.name(), is("boolean2"));
-                                        assertThat(input.label(), is("Boolean2"));
+                                        assertThat(input.id(), is("boolean2"));
+                                        assertThat(input.name(), is("Boolean2"));
                                         break;
                                     case 3:
                                     case 7:
                                     case 10:
-                                        assertThat(input.name(), is("boolean3"));
-                                        assertThat(input.label(), is("Boolean3"));
+                                        assertThat(input.id(), is("boolean3"));
+                                        assertThat(input.name(), is("Boolean3"));
                                         break;
                                     case 4:
                                     case 5:
@@ -529,8 +528,8 @@ class ClientCompilerTest {
                                     case 9:
                                     case 11:
                                     case 12:
-                                        assertThat(input.name(), is("boolean4"));
-                                        assertThat(input.label(), is("Boolean4"));
+                                        assertThat(input.id(), is("boolean4"));
+                                        assertThat(input.name(), is("Boolean4"));
                                         break;
                                     default:
                                         fail("Unexpected index: " + index[0]);

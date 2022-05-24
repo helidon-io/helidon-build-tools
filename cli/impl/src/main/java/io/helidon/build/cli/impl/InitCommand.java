@@ -98,6 +98,7 @@ public final class InitCommand extends BaseCommand {
                 .metadata(metadata)
                 .initOptions(initOptions)
                 .userConfig(config)
+                .onResolved(Log::info)
                 .initProperties(context.properties())
                 .projectDir(this::initProjectDir)
                 .build();
@@ -134,7 +135,6 @@ public final class InitCommand extends BaseCommand {
             if (projectDirSpecified || config.failOnProjectNameCollision()) {
                 failed("$(red Directory $(plain %s) already exists)", projectDir);
             }
-            Log.info();
             Log.info("$(italic,yellow Directory $(plain %s) already exists, generating unique name)", projectDir);
             Path parentDirectory = projectDir.getParent();
             for (int i = 2; i < 128; i++) {

@@ -32,12 +32,13 @@ import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -63,7 +64,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     private final List<String> errors = new ArrayList<>();
     private final Deque<StepState> steps = new ArrayDeque<>();
     private final Map<String, List<Block>> allRefs = new HashMap<>();
-    private final Deque<Map<String, NamedInput>> scopes = new ArrayDeque<>(List.of(new HashMap<>()));
+    private final Deque<Map<String, DeclaredInput>> scopes = new ArrayDeque<>(List.of(new HashMap<>()));
     private final Deque<Set<String>> options = new ArrayDeque<>();
     private final List<Preset> presets = new ArrayList<>();
     private String inputPath = null;
@@ -110,8 +111,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             List<Block> refs = allRefs.get(path);
             if (refs == null || refs.isEmpty()) {
                 errors.add(String.format(
-                        "%s:%s %s: '%s'",
-                        preset.scriptPath(),
+                        "%s %s: '%s'",
                         preset.location(),
                         PRESET_UNRESOLVED,
                         path));
@@ -119,8 +119,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 Block ref = refs.get(0);
                 if ((preset.kind() != ref.kind())) {
                     errors.add(String.format(
-                            "%s:%s %s: '%s', expected: %s, actual: %s",
-                            preset.scriptPath(),
+                            "%s %s: '%s', expected: %s, actual: %s",
                             preset.location(),
                             PRESET_TYPE_MISMATCH,
                             path,
@@ -131,11 +130,19 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         }
     }
 
+    private List<Block> refs(String path, Context ctx) {
+        List<Block> refs = allRefs.get(ctx.resolveQuery(path));
+        if (refs != null) {
+            return refs;
+        }
+        return allRefs.get(path);
+    }
+
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
         try {
             condition.expression().eval(variable -> {
-                List<Block> refs = allRefs.get(variable);
+                List<Block> refs = refs(variable, ctx);
                 if (refs == null || refs.isEmpty()) {
                     return null;
                 }
@@ -144,7 +151,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 switch (kind) {
                     case LIST:
                     case ENUM:
-                        String value = ((Input.Options) ref).options().get(0).value();
+                        String value = ((Input.Options) ref).options(ctx::filterNode).get(0).value();
                         return kind == Input.Kind.LIST ? Value.create(List.of(value)) : Value.create(value);
                     case TEXT:
                         return Value.create("some text");
@@ -155,15 +162,13 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 }
             });
         } catch (Expression.UnresolvedVariableException ex) {
-            errors.add(String.format("%s:%s %s: '%s'",
-                    condition.scriptPath(),
+            errors.add(String.format("%s %s: '%s'",
                     condition.location(),
                     EXPR_UNRESOLVED_VARIABLE,
                     ex.variable()));
         } catch (IllegalStateException ex) {
             errors.add(String.format(
-                    "%s:%s %s: '%s'",
-                    condition.scriptPath(),
+                    "%s %s: '%s'",
                     condition.location(),
                     EXPR_EVAL_ERROR,
                     ex.getMessage()));
@@ -174,11 +179,13 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        if (preset.isResolvable()) {
-            presets.add(preset);
-        } else {
-            allRefs.computeIfAbsent(preset.path(), k -> new ArrayList<>()).add(preset);
-        }
+        presets.add(preset);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitVariable(Variable variable, Context arg) {
+        allRefs.computeIfAbsent(variable.path(), k -> new ArrayList<>()).add(variable);
         return VisitResult.CONTINUE;
     }
 
@@ -217,18 +224,15 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         boolean declaredOptional = step.isOptional();
         boolean optional = stepState.isOptional();
         if (stepState.inputs == 0) {
-            errors.add(String.format("%s:%s %s",
-                    step.scriptPath(),
+            errors.add(String.format("%s %s",
                     step.location(),
                     STEP_NO_INPUT));
         } else if (declaredOptional && !optional) {
-            errors.add(String.format("%s:%s %s",
-                    step.scriptPath(),
+            errors.add(String.format("%s %s",
                     step.location(),
                     STEP_DECLARED_OPTIONAL));
         } else if (!declaredOptional && optional) {
-            errors.add(String.format("%s:%s %s",
-                    step.scriptPath(),
+            errors.add(String.format("%s %s",
                     step.location(),
                     STEP_NOT_DECLARED_OPTIONAL));
         }
@@ -238,14 +242,14 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     @Override
     public VisitResult visitInput(Input input0, Context ctx) {
         // process scope
-        Map<String, NamedInput> currentScope = requireNonNull(scopes.peek(), "current scope is null");
+        Map<String, DeclaredInput> currentScope = requireNonNull(scopes.peek(), "current scope is null");
         scopes.push(new HashMap<>());
 
-        if (input0 instanceof NamedInput) {
-            NamedInput input = (NamedInput) input0;
-
-            inputPath = ctx.path(input.name());
-            ctx.push(inputPath, input.isGlobal());
+        if (input0 instanceof DeclaredInput) {
+            DeclaredInput input = (DeclaredInput) input0;
+            Context.Scope scope = ctx.newScope(input.id(), input.isGlobal());
+            inputPath = scope.id();
+            ctx.pushScope(scope);
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());
 
             if (input instanceof Input.Options) {
@@ -253,8 +257,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             }
 
             if (currentScope.containsKey(inputPath)) {
-                errors.add(String.format("%s:%s %s: '%s'",
-                        input.scriptPath(),
+                errors.add(String.format("%s %s: '%s'",
                         input.location(),
                         INPUT_ALREADY_DECLARED,
                         inputPath));
@@ -264,8 +267,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 if (!duplicates.isEmpty()) {
                     Block duplicate = duplicates.get(0);
                     if (duplicate.kind() != input.kind()) {
-                        errors.add(String.format("%s:%s %s: '%s'",
-                                input.scriptPath(),
+                        errors.add(String.format("%s %s: '%s'",
                                 input.location(),
                                 INPUT_TYPE_MISMATCH,
                                 inputPath));
@@ -276,8 +278,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
             boolean optional = input.isOptional();
             if (optional && input.defaultValue().unwrap() == null) {
-                errors.add(String.format("%s:%s %s: '%s'",
-                        input.scriptPath(),
+                errors.add(String.format("%s %s: '%s'",
                         input.location(),
                         INPUT_OPTIONAL_NO_DEFAULT,
                         inputPath));
@@ -285,8 +286,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
             StepState stepState = steps.peek();
             if (stepState == null) {
-                errors.add(String.format("%s:%s %s: '%s'",
-                        input.scriptPath(),
+                errors.add(String.format("%s %s: '%s'",
                         input.location(),
                         INPUT_NOT_IN_STEP,
                         inputPath));
@@ -299,8 +299,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             String value = option.value();
             if (!requireNonNull(options.peek(), "option values is null").add(value)) {
                 errors.add(String.format(
-                        "%s:%s %s: '%s'",
-                        option.scriptPath(),
+                        "%s %s: '%s'",
                         option.location(),
                         OPTION_VALUE_ALREADY_DECLARED,
                         value));
@@ -311,10 +310,8 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult postVisitInput(Input input, Context ctx) {
-        if (input instanceof NamedInput) {
-            if (!((NamedInput) input).isGlobal()) {
-                ctx.pop();
-            }
+        if (input instanceof DeclaredInput) {
+            ctx.popScope();
             if (input instanceof Input.Options) {
                 options.pop();
             }

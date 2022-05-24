@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.Context;
-import io.helidon.build.archetype.engine.v2.InputResolver;
+import io.helidon.build.archetype.engine.v2.ContextValue;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.archetype.engine.v2.VisitorAdapter;
@@ -43,13 +43,14 @@ import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
-import io.helidon.build.archetype.engine.v2.ast.Input.NamedInput;
+import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Location;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.util.InputTree.Node.Kind;
 import io.helidon.build.common.GenericType;
 import io.helidon.build.common.VirtualFileSystem;
@@ -1093,10 +1094,16 @@ public class InputTree {
         public VisitResult visitPreset(Preset preset, Context ctx) {
             String path = preset.path();
             Value value = preset.value();
-            ctx.put(path, value);
+            ctx.setValue(path, value, ContextValue.ValueKind.DEFAULT);
 
             PresetNode presets = (PresetNode) builder.current();
             presets.add(path, asString(value));
+            return VisitResult.CONTINUE;
+        }
+
+        @Override
+        public VisitResult visitVariable(Variable variable, Context ctx) {
+            ctx.setVariable(variable.path(), variable.value());
             return VisitResult.CONTINUE;
         }
 
@@ -1120,7 +1127,7 @@ public class InputTree {
                 ctx.pushCwd(block.scriptPath().getParent());
                 return VisitResult.CONTINUE;
             } else if (block.kind() == Block.Kind.PRESETS) {
-                builder.pushPresets(ctx.path(), block.scriptPath(), block.location());
+                builder.pushPresets(ctx.peekScope().id(), block.scriptPath(), block.location());
             }
             return super.visitBlock(block, ctx);
         }
@@ -1141,19 +1148,17 @@ public class InputTree {
             return VisitResult.CONTINUE;
         }
 
-        private static class InputCollector extends InputResolver {
+        private static class InputCollector implements Input.Visitor<Context> {
             private final Builder builder;
 
             InputCollector(Builder builder) {
                 this.builder = builder;
             }
 
-            String push(NamedInput input, Context context) {
-                String path = context.path(input.name());
-                if (!input.isGlobal()) {
-                    context.push(path, false);
-                }
-                return path;
+            String push(DeclaredInput input, Context context) {
+                Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+                context.pushScope(scope);
+                return scope.id();
             }
 
             @Override
@@ -1167,7 +1172,7 @@ public class InputTree {
 
             @Override
             public VisitResult visitText(Input.Text input, Context context) {
-                String path = context.path(input.name());
+                String path = push(input, context);
                 String defaultValue = builder.externalDefault(path);
                 if (defaultValue == null) {
                     defaultValue = input.defaultValue().asString();
@@ -1177,7 +1182,6 @@ public class InputTree {
                         throw new UnresolvedInputException("text '" + path + "' requires a default value");
                     }
                 }
-                push(input, context);
                 builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.location());
                 builder.pushValue(defaultValue, input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
@@ -1192,7 +1196,7 @@ public class InputTree {
 
             @Override
             public VisitResult visitList(Input.List input, Context context) {
-                String path = context.path(input.name());
+                String path = push(input, context);
                 List<String> defaultValues;
                 String defaultValue = builder.externalDefault(path);
                 if (defaultValue == null) {
@@ -1202,7 +1206,6 @@ public class InputTree {
                                           .filter(v -> !v.isEmpty())
                                           .collect(Collectors.toList());
                 }
-                path = push(input, context);
                 builder.pushInputList(path, defaultValues, input.scriptPath(), input.location());
                 return VisitResult.CONTINUE;
             }
@@ -1237,7 +1240,10 @@ public class InputTree {
                     default:
                         throw new IllegalStateException("unknown kind: " + input.kind());
                 }
-                return super.postVisitAny(input, context);
+                if (input instanceof DeclaredInput) {
+                    context.popScope();
+                }
+                return VisitResult.CONTINUE;
             }
         }
     }

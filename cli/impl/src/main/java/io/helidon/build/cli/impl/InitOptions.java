@@ -49,7 +49,7 @@ public final class InitOptions {
     /**
      * The default archetype name.
      */
-    static final String DEFAULT_ARCHETYPE_NAME = "bare";
+    static final String DEFAULT_ARCHETYPE_NAME = "quickstart";
 
     private Flavor flavor;
     private String helidonVersion;
@@ -329,7 +329,7 @@ public final class InitOptions {
                     case "init_flavor":
                         return "${flavor}";
                     case "init_archetype":
-                        return "${base}";
+                        return "${app-type}";
                     case "init_build":
                         return "${build-system}";
                     default:
