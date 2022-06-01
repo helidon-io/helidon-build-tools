@@ -60,6 +60,14 @@ public final class Context {
         directories.push(cwd == null ? NULL_PATH : cwd);
     }
 
+    private Context(Context ctx) {
+        defaults.putAll(ctx.defaults);
+        variables.putAll(ctx.variables);
+        values.putAll(ctx.values);
+        directories.addAll(ctx.directories);
+        scope = ctx.scope;
+    }
+
     /**
      * Push a new working directory.
      *
@@ -129,16 +137,24 @@ public final class Context {
             Object currentVal = currentValue.as(type);
             Object newVal = newValue.as(type);
             if (!currentVal.equals(newVal)) {
-                String scopeInfo = scopeInfo();
-                if (scopeInfo.isEmpty()) {
-                    throw new IllegalStateException(String.format(
-                            "Cannot set %s=%s, value already exists", path, newVal));
-                } else {
-                    throw new IllegalStateException(String.format(
-                            "%s requires %s=%s", scopeInfo, path, currentVal));
-                }
+                throw new IllegalStateException(String.format(
+                        "Cannot set value, path=%s, current={kind=%s, %s}, new={kind=%s, %s}",
+                        path,
+                        currentValue.kind(),
+                        currentValue.wrapped(),
+                        kind,
+                        newValue));
             }
         }
+    }
+
+    /**
+     * Unset a value.
+     *
+     * @param id value id
+     */
+    public void unsetValue(String id) {
+        values.remove(id);
     }
 
     /**
@@ -152,13 +168,31 @@ public final class Context {
     }
 
     /**
+     * Unset a variable.
+     *
+     * @param id variable id
+     */
+    public void unsetVariable(String id) {
+        variables.remove(id);
+    }
+
+    /**
      * Get a value.
      *
      * @param key value key
      * @return value, or {@code null} if not found
      */
-    public Value getValue(String key) {
+    public ContextValue getValue(String key) {
         return values.get(key);
+    }
+
+    /**
+     * Get all values.
+     *
+     * @return values
+     */
+    public Map<String, ContextValue> values() {
+        return values;
     }
 
     /**
@@ -337,6 +371,17 @@ public final class Context {
      */
     public static Context create(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         return new Context(cwd, externalValues, externalDefaults);
+    }
+
+    /**
+     * Create a copy of a context.
+     *
+     * @param context context to copy
+     * @return context
+     * @throws NullPointerException if context is {@code null}
+     */
+    public static Context create(Context context) {
+        return new Context(context);
     }
 
     private String scopeInfo() {

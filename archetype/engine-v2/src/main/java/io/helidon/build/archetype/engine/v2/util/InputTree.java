@@ -153,8 +153,7 @@ public class InputTree {
     public abstract static class Node {
         private int id;      // non-final to allow prune() to fix this to avoid sparse arrays
         private Node parent; // non-final to allow preset siblings to become children
-        private final Path script;
-        private final int line;
+        private final Location location;
         private final String path;
         private final Kind kind;
         private final List<Node> children;
@@ -194,10 +193,9 @@ public class InputTree {
             VALUE
         }
 
-        Node(int id, Node parent, String path, Kind kind, Path script, int line) {
+        Node(int id, Node parent, String path, Kind kind, Location location) {
             this.id = id;
-            this.script = script;
-            this.line = line;
+            this.location = location;
             this.path = path;
             this.kind = kind;
             this.parent = parent;
@@ -217,21 +215,12 @@ public class InputTree {
         }
 
         /**
-         * Returns the script path.
+         * Returns the location.
          *
-         * @return The path.
+         * @return The location.
          */
-        public Path script() {
-            return script;
-        }
-
-        /**
-         * Returns the line number in the script at which this node was defined.
-         *
-         * @return The line number.
-         */
-        public int line() {
-            return line;
+        public Location location() {
+            return location;
         }
 
         /**
@@ -314,21 +303,16 @@ public class InputTree {
         }
 
         /**
-         * Recurse to find the current non-value leaf node.
+         * Find the current non-value leaf node.
          *
          * @return The leaf node.
          */
         Node findLeafNode() {
-            if (!children.isEmpty()) {
-                int index = index().current();
-                Node nextChild = children.get(index);
-                return nextChild.findLeafNode();
+            Node node = this;
+            while (!node.children.isEmpty()) {
+                node = node.children.get(node.index().current());
             }
-            if (isValue()) {
-                return parent();
-            } else {
-                return this;
-            }
+            return node.isValue() ? parent() : this;
         }
 
         /**
@@ -404,15 +388,15 @@ public class InputTree {
             String path = path();
             if (path == null) {
                 if (value == null) {
-                    return String.format("%d %s from %s:%s", id(), kind(), script(), line());
+                    return String.format("uid=%d, kind=%s, location=%s", id(), kind(), location());
                 } else {
-                    return String.format("%d %s '%s' from %s:%s", id(), kind(), value, script(), line());
+                    return String.format("uid=%d, kind=%s, value=%s, location=%s", id(), kind(), value, location());
                 }
             } else {
                 if (value == null) {
-                    return String.format("%d %s '%s' from %s:%s", id(), kind(), path, script(), line());
+                    return String.format("uid=%d, kind=%s, path=%s, location=%s", id(), kind(), path, location());
                 } else {
-                    return String.format("%d %s '%s' = '%s' from %s:%s", id(), kind(), path, value, script(), line());
+                    return String.format("uid=%d, kind=%s, path=%s, value=%s, location=%s", id(), kind(), path, value, location());
                 }
             }
         }
@@ -488,15 +472,14 @@ public class InputTree {
         /**
          * Create a new input node.
          *
-         * @param id     id
-         * @param parent parent
-         * @param kind   kind
-         * @param path   path
-         * @param script script
-         * @param line   line
+         * @param id       id
+         * @param parent   parent
+         * @param kind     kind
+         * @param path     path
+         * @param location location
          */
-        InputNode(int id, Node parent, Kind kind, String path, Path script, int line) {
-            super(id, parent, path, kind, script, line);
+        InputNode(int id, Node parent, Kind kind, String path, Location location) {
+            super(id, parent, path, kind, location);
         }
 
         @Override
@@ -521,7 +504,7 @@ public class InputTree {
          * @param id id
          */
         Root(int id) {
-            super(id, null, null, Kind.ROOT, NULL_PATH, 0);
+            super(id, null, null, Kind.ROOT, NULL_LOCATION);
         }
 
         @Override
@@ -555,13 +538,12 @@ public class InputTree {
          * @param parent   parent
          * @param path     path
          * @param defaults defaults
-         * @param script   script
-         * @param line     line
+         * @param location location
          * @param combiner combiner
          */
-        ListNode(int id, Node parent, String path, List<String> defaults, Path script, int line,
+        ListNode(int id, Node parent, String path, List<String> defaults, Location location,
                  BiFunction<List<String>, List<String>, List<List<String>>> combiner) {
-            super(id, parent, Kind.LIST, path, script, line);
+            super(id, parent, Kind.LIST, path, location);
             this.defaults = defaults;
             this.combiner = combiner;
         }
@@ -580,6 +562,7 @@ public class InputTree {
 
             /**
              * Create a new list index.
+             *
              * @param combinations combinations
              */
             ListIndex(List<List<String>> combinations) {
@@ -661,15 +644,14 @@ public class InputTree {
         /**
          * Create a new value node.
          *
-         * @param id     id
-         * @param parent parent
-         * @param path   path
-         * @param value  value
-         * @param script script
-         * @param line   line
+         * @param id       id
+         * @param parent   parent
+         * @param path     path
+         * @param value    value
+         * @param location location
          */
-        ValueNode(int id, Node parent, String path, String value, Path script, int line) {
-            super(id, parent, path, Kind.VALUE, script, line);
+        ValueNode(int id, Node parent, String path, String value, Location location) {
+            super(id, parent, path, Kind.VALUE, location);
             // Allow null values for text as a way to represent optionals with no default; these will not be collected
             if (parent.kind() != Kind.TEXT) {
                 requireNonNull(value);
@@ -715,14 +697,13 @@ public class InputTree {
         /**
          * Create a new preset node.
          *
-         * @param id     id
-         * @param parent parent
-         * @param path   path
-         * @param script script
-         * @param line   line
+         * @param id       id
+         * @param parent   parent
+         * @param path     path
+         * @param location location
          */
-        PresetNode(int id, Node parent, String path, Path script, int line) {
-            super(id, parent, path, Kind.PRESETS, script, line);
+        PresetNode(int id, Node parent, String path, Location location) {
+            super(id, parent, path, Kind.PRESETS, location);
             this.presets = new LinkedHashMap<>();
         }
 
@@ -893,12 +874,13 @@ public class InputTree {
             }
 
             if (!externalValues.isEmpty()) {
-                PresetNode presets = (PresetNode) pushPresets("$-externalValues", NULL_PATH, NULL_LOCATION);
+                PresetNode presets = (PresetNode) pushPresets("$-externalValues", NULL_LOCATION);
                 externalValues.forEach(presets::add);
             }
 
             String scriptName = entryPoint == null ? MAIN_FILE : entryPoint;
 
+            //noinspection resource
             FileSystem fs = fileSystem();
             Path cwd = fs.getPath("/");
             Context context = Context.create(cwd, Map.of(), Map.of());
@@ -1034,30 +1016,30 @@ public class InputTree {
             return nodes.peek();
         }
 
-        Node pushInput(Kind kind, String path, Path script, Location location) {
+        Node pushInput(Kind kind, String path, Location location) {
             Node parent = parent();
-            return push(new InputNode(nextId++, parent, kind, path, script, location.lineNumber()));
+            return push(new InputNode(nextId++, parent, kind, path, location));
         }
 
-        void pushInputList(String path, List<String> defaults, Path script, Location location) {
+        void pushInputList(String path, List<String> defaults, Location location) {
             Node parent = parent();
-            push(new ListNode(nextId++, parent, path, defaults, script, location.lineNumber(), listCombiner));
+            push(new ListNode(nextId++, parent, path, defaults, location, listCombiner));
         }
 
-        Node pushPresets(String path, Path script, Location location) {
+        Node pushPresets(String path, Location location) {
             Node parent = parent();
-            return push(new PresetNode(nextId++, parent, path, script, location.lineNumber()));
+            return push(new PresetNode(nextId++, parent, path, location));
         }
 
-        void pushValue(String value, Path script, Location location) {
+        void pushValue(String value, Location location) {
             Node parent = requireNonNull(parent());
-            push(new ValueNode(nextId++, parent, parent.path(), value, script, location.lineNumber()));
+            push(new ValueNode(nextId++, parent, parent.path(), value, location));
         }
 
         @SuppressWarnings("SameParameterValue")
-        void addValue(Node parent, String value, Path script, Location location) {
+        void addValue(Node parent, String value, Location location) {
             // Adds self to parent
-            new ValueNode(nextId++, parent, parent.path(), value, script, location.lineNumber());
+            new ValueNode(nextId++, parent, parent.path(), value, location);
         }
 
         String externalDefault(String path) {
@@ -1127,7 +1109,7 @@ public class InputTree {
                 ctx.pushCwd(block.scriptPath().getParent());
                 return VisitResult.CONTINUE;
             } else if (block.kind() == Block.Kind.PRESETS) {
-                builder.pushPresets(ctx.peekScope().id(), block.scriptPath(), block.location());
+                builder.pushPresets(ctx.peekScope().id(), block.location());
             }
             return super.visitBlock(block, ctx);
         }
@@ -1165,8 +1147,8 @@ public class InputTree {
             public VisitResult visitBoolean(Input.Boolean input, Context context) {
                 String path = push(input, context);
                 //noinspection unused
-                Node node = builder.pushInput(Kind.BOOLEAN, path, input.scriptPath(), input.location());
-                builder.pushValue("yes", input.scriptPath(), input.location());
+                Node node = builder.pushInput(Kind.BOOLEAN, path, input.location());
+                builder.pushValue("yes", input.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1182,15 +1164,15 @@ public class InputTree {
                         throw new UnresolvedInputException("text '" + path + "' requires a default value");
                     }
                 }
-                builder.pushInput(Kind.TEXT, path, input.scriptPath(), input.location());
-                builder.pushValue(defaultValue, input.scriptPath(), input.location());
+                builder.pushInput(Kind.TEXT, path, input.location());
+                builder.pushValue(defaultValue, input.location());
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitEnum(Input.Enum input, Context context) {
                 String path = push(input, context);
-                builder.pushInput(Kind.ENUM, path, input.scriptPath(), input.location());
+                builder.pushInput(Kind.ENUM, path, input.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1206,14 +1188,14 @@ public class InputTree {
                                           .filter(v -> !v.isEmpty())
                                           .collect(Collectors.toList());
                 }
-                builder.pushInputList(path, defaultValues, input.scriptPath(), input.location());
+                builder.pushInputList(path, defaultValues, input.location());
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitOption(Input.Option option, Context context) {
                 String value = option.value();
-                builder.pushValue(value, option.scriptPath(), option.location());
+                builder.pushValue(value, option.location());
                 return VisitResult.CONTINUE;
             }
 
@@ -1222,7 +1204,7 @@ public class InputTree {
                 switch (input.kind()) {
                     case BOOLEAN:
                         Node parent = builder.current().parent();
-                        builder.addValue(parent, "no", input.scriptPath(), input.location());
+                        builder.addValue(parent, "no", input.location());
                         // pop 2
                         builder.pop();
                         builder.pop();

@@ -56,6 +56,24 @@ public final class ContextValue implements Value {
     }
 
     /**
+     * Get the value kind.
+     *
+     * @return ValueKind
+     */
+    public ValueKind kind() {
+        return kind;
+    }
+
+    /**
+     * Get the wrapped value.
+     *
+     * @return Value
+     */
+    public Value wrapped() {
+        return value;
+    }
+
+    /**
      * Create a new external value.
      *
      * @param value raw value

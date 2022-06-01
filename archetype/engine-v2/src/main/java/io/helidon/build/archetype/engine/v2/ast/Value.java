@@ -212,7 +212,10 @@ public interface Value {
 
         @Override
         public String toString() {
-            return "TypedValue{ " + value + ", " + type + " }";
+            return "TypedValue{"
+                    + "value='" + value + "'"
+                    + ", type=" + type
+                    + '}';
         }
     }
 

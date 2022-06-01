@@ -19,6 +19,8 @@ package io.helidon.build.archetype.engine.v2.ast;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Block.
@@ -60,6 +62,40 @@ public class Block extends Node {
      */
     public List<Node> children() {
         return children;
+    }
+
+    /**
+     * Get the nested nodes stream.
+     *
+     * @param filter first filter applied
+     * @return stream of nodes
+     */
+    public Stream<Node> children(Predicate<Node> filter) {
+        return children.stream().filter(filter).map(Condition::unwrap);
+    }
+
+    /**
+     * Get the nested nodes stream.
+     *
+     * @param filter first filter applied
+     * @param <T>    node type
+     * @return stream of nodes
+     */
+    public <T> Stream<T> children(Predicate<Node> filter, Class<T> clazz) {
+        return children(filter).filter(clazz::isInstance).map(clazz::cast);
+    }
+
+    /**
+     * Get the nested nodes stream.
+     *
+     * @param filter1 first filter applied
+     * @param clazz   the type of nodes to include
+     * @param filter2 final filter applied
+     * @param <T>     node type
+     * @return stream of nodes
+     */
+    public <T> Stream<T> children(Predicate<Node> filter1, Class<T> clazz, Predicate<T> filter2) {
+        return children(filter1).filter(clazz::isInstance).map(clazz::cast).filter(filter2);
     }
 
     /**

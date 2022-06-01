@@ -396,6 +396,7 @@ abstract class ArchetypeInvoker {
         Path invoke() {
             InitOptions initOptions = initOptions();
             initOptions.applyConfig(userConfig(), EngineVersion.V2);
+            initOptions.applyOverrides(initProperties());
             Map<String, String> externalDefaults = new HashMap<>();
 
             // Initialize params with any properties passed on the command-line; options will take precedence

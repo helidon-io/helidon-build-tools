@@ -544,16 +544,11 @@ public abstract class Input extends Block {
         /**
          * Get the options.
          *
-         * @param predicate node predicate
+         * @param filter node predicate
          * @return options
          */
-        public java.util.List<Option> options(Predicate<Node> predicate) {
-            return children().stream()
-                             .filter(predicate)
-                             .map(Condition::unwrap)
-                             .filter(Option.class::isInstance)
-                             .map(Option.class::cast)
-                             .collect(Collectors.toList());
+        public java.util.List<Option> options(Predicate<Node> filter) {
+            return children(filter, Option.class).collect(Collectors.toList());
         }
 
         @Override

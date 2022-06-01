@@ -22,10 +22,23 @@
 
     <step name="colors">
         <inputs>
-            <list id="colors" name="Select colors" default="red,yellow">
-                <option value="red" name="Red"/>
-                <option value="orange" name="Orange"/>
-                <option value="yellow" name="Yellow"/>
+            <list id="colors" name="Select colors">
+                <option value="red" name="Red">
+                    <inputs>
+                        <enum id="red-tone" name="Red tone">
+                            <option value="burgundy" name="Burgundy"/>
+                            <option value="auburn" name="Auburn" />
+                        </enum>
+                    </inputs>
+                </option>
+                <option value="orange" name="Orange">
+                    <inputs>
+                        <enum id="orange-tone" name="Orange tone">
+                            <option value="salmon" name="Salmon"/>
+                            <option value="peach" name="Peach" />
+                        </enum>
+                    </inputs>
+                </option>
             </list>
         </inputs>
     </step>
