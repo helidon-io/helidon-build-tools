@@ -77,8 +77,9 @@ public class TerminalInputResolver extends InputResolver {
 
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
-        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
-        VisitResult result = onVisitInput(input, scope, context);
+        ContextScope scope = context.scope();
+        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             try {
                 Value defaultValue = defaultValue(input, context);
@@ -86,7 +87,7 @@ public class TerminalInputResolver extends InputResolver {
                 String question = String.format("%s (yes/no)", Bold.apply(input.name()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (defaultValue == null || !defaultValue.asBoolean()) {
                         result = VisitResult.SKIP_SUBTREE;
                     } else {
@@ -104,7 +105,7 @@ public class TerminalInputResolver extends InputResolver {
                     }
                     continue;
                 }
-                context.setValue(scope.id(), Value.create(value), ContextValue.ValueKind.USER);
+                scope.put(nextScope.id(), Value.create(value), ContextValue.ValueKind.USER);
                 if (!value) {
                     result = VisitResult.SKIP_SUBTREE;
                 } else {
@@ -114,14 +115,15 @@ public class TerminalInputResolver extends InputResolver {
                 throw new RuntimeException(e);
             }
         }
-        context.pushScope(scope);
+        context.pushScope(nextScope);
         return result;
     }
 
     @Override
     public VisitResult visitText(Input.Text input, Context context) {
-        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
-        VisitResult result = onVisitInput(input, scope, context);
+        ContextScope scope = context.scope();
+        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             try {
                 String defaultValue = defaultValue(input, context).asString();
@@ -136,20 +138,21 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(response);
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                context.setValue(scope.id(), value, valueKind);
+                scope.put(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        context.pushScope(scope);
+        context.pushScope(nextScope);
         return result;
     }
 
     @Override
     public VisitResult visitEnum(Input.Enum input, Context context) {
-        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
-        VisitResult result = onVisitInput(input, scope, context);
+        ContextScope scope = context.scope();
+        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;
             try {
@@ -158,7 +161,7 @@ public class TerminalInputResolver extends InputResolver {
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                     break;
                 }
@@ -184,7 +187,7 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(parseEnumResponse(response, options));
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                context.setValue(scope.id(), value, valueKind);
+                scope.put(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));
@@ -195,14 +198,15 @@ public class TerminalInputResolver extends InputResolver {
                 throw new RuntimeException(e);
             }
         }
-        context.pushScope(scope);
+        context.pushScope(nextScope);
         return result;
     }
 
     @Override
     public VisitResult visitList(Input.List input, Context context) {
-        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
-        VisitResult result = onVisitInput(input, scope, context);
+        ContextScope scope = context.scope();
+        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;
             try {
@@ -225,7 +229,7 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(parseListResponse(response, options));
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                context.setValue(scope.id(), value, valueKind);
+                scope.put(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));
@@ -236,7 +240,7 @@ public class TerminalInputResolver extends InputResolver {
                 throw new RuntimeException(e);
             }
         }
-        context.pushScope(scope);
+        context.pushScope(nextScope);
         return result;
     }
 

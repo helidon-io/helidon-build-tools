@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import io.helidon.build.archetype.engine.v2.Context;
-import io.helidon.build.archetype.engine.v2.ContextValue;
+import io.helidon.build.archetype.engine.v2.ContextScope;
+import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
@@ -40,6 +40,7 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Permutations;
 
+import static io.helidon.build.archetype.engine.v2.InputResolver.defaultValue;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -50,6 +51,7 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
 
     private final Context context;
     private final Deque<List<Map<String, String>>> stack = new ArrayDeque<>();
+    private final Deque<DeferredCondition> conditions = new ArrayDeque<>();
 
     private InputPermutations(Map<String, String> externalValues, Map<String, String> externalDefaults) {
         this.context = Context.create(null, externalValues, externalDefaults);
@@ -83,7 +85,20 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     }
 
     @Override
+    public VisitResult visitVariable(Variable variable, Void arg) {
+        context.scope().put(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitPreset(Preset preset, Void arg) {
+        context.scope().put(preset.path(), preset.value(), ValueKind.PRESET);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
     public VisitResult visitCondition(Condition condition, Void arg) {
+        conditions.push(new DeferredCondition(condition, context.scope()));
         return VisitResult.CONTINUE;
     }
 
@@ -97,11 +112,73 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     }
 
     @Override
+    public VisitResult postVisitBlock(Block block, Void arg) {
+        return block.acceptAfter((Block.Visitor<Void>) this, null);
+    }
+
+    @Override
     public VisitResult visitInput(Input input0, Void arg) {
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            Context.Scope scope = context.newScope(input.id(), input.isGlobal());
+            ContextScope scope = context.scope().getOrCreate(input.id(), input.isGlobal());
             context.pushScope(scope);
+        }
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult postVisitInput(Input input, Void arg) {
+        ContextScope scope = context.scope();
+        String id = scope.id();
+        List<Map<String, String>> permutations = requireNonNull(stack.pop());
+        if (input instanceof Option) {
+            String rawValue = ((Option) input).value();
+            String value = scope.parent().interpolate(rawValue);
+            stack.push(Maps.putIfAbsent(permutations, id, value));
+        } else if (input instanceof DeclaredInput) {
+            context.popScope();
+            if (input instanceof Input.Boolean) {
+                stack.push(Lists.addAll(
+                        Maps.putAll(permutations, Maps.of(id, "true")),
+                        Lists.of(Maps.of(id, "false"))));
+            } else if (input instanceof Input.Options) {
+                Map<String, List<Map<String, String>>> nested = Maps.keyedBy(permutations, id);
+                if (input instanceof Input.Enum) {
+                    stack.push(enumPermutations((Input.Enum) input, id, nested));
+                } else if (input instanceof Input.List) {
+                    stack.push(listPermutations((Input.List) input, id, nested));
+                }
+            } else if (input instanceof Input.Text) {
+                Value defaultValue = defaultValue((Input.Text) input, context);
+                if (defaultValue != null) {
+                    String value = defaultValue.asString();
+                    stack.push(Maps.putAll(permutations, Maps.of(id, value != null ? value : "xxx")));
+                } else {
+                    // add configuration for a map to supply data for text inputs
+                    stack.push(Lists.of(Maps.of(id, "xxx")));
+                }
+            }
+        }
+        return postVisitAny(input, arg);
+    }
+
+    @Override
+    public VisitResult postVisitAny(Block block, Void arg) {
+        if (stack.size() > 1) {
+            // add to parent
+            List<Map<String, String>> popped = stack.pop();
+            requireNonNull(stack.peek()).addAll(popped);
+        }
+        return postVisitAny((Node) block, arg);
+    }
+
+    @Override
+    public VisitResult postVisitAny(Node node, Void arg) {
+        if (!conditions.isEmpty()) {
+            DeferredCondition deferredCondition = conditions.peek();
+            if (node.equals(deferredCondition.condition.then())) {
+                conditions.pop();
+            }
         }
         return VisitResult.CONTINUE;
     }
@@ -109,117 +186,60 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     private List<Map<String, String>> enumPermutations(Input.Enum input,
                                                        String id,
                                                        Map<String, List<Map<String, String>>> nested) {
-        return options(input).stream()
-                             .flatMap(o -> {
-                                 Map<String, String> value = Map.of(id, o);
-                                 return nested.get(o).stream().map(m -> Maps.putAll(m, value));
-                             })
-                             .collect(toList());
+
+        return Lists.flatMap(options(input), o -> Lists.map(nested.get(o), m -> {
+            Map<String, String> entry = Maps.of(id, o);
+            return Maps.putAll(m, entry);
+        }));
     }
 
     private List<Map<String, String>> listPermutations(Input.List input,
                                                        String id,
                                                        Map<String, List<Map<String, String>>> nested) {
 
-        return Lists.flatMapElement(Permutations.of(options(input)), inputValue -> {
-            // set of permutations for the input value
-            List<List<Entry<String, String>>> ivEntries = Lists.mapElement(
-                    inputValue,
-                    v -> Lists.flatMapElement(nested.get(v), m -> m.entrySet().stream()));
+        List<String> options = options(input);
 
-            // computed permutations for the input value
-            List<Map<String, String>> ivPermutations = Permutations.ofList(ivEntries)
-                                                                   .stream()
-                                                                   .map(Maps::fromEntries)
-                                                                   .collect(toList());
+        // permutations of the input options
+        List<List<String>> optionPermutations = Permutations.of(options);
+        return Lists.flatMap(optionPermutations, op -> {
 
-            // add an entry for each permutation to represent the input value
-            return Maps.putAll(ivPermutations, Map.of(id, String.join(" ", inputValue)))
-                       .stream();
+            // entry to record the current options
+            Map<String, String> entry = Maps.of(id, String.join(" ", op));
+
+            if (op.isEmpty()) {
+                return Lists.of(entry);
+            }
+
+            // list of nested permutations for the current options
+            List<List<Map<String, String>>> nestedPermutations = Lists.map(op, nested::get);
+
+            // effective permutations for the current options
+            // i.e. permutations of the nested permutations
+            List<List<Map<String, String>>> computed = Permutations.ofList(nestedPermutations);
+
+            // merge the individual maps
+            List<Map<String, String>> permutations = Lists.map(computed, Maps::putAll);
+
+            // add the current options to all computed permutations
+            return Maps.putAll(permutations, entry);
         });
     }
 
-    @Override
-    public VisitResult postVisitInput(Input input, Void arg) {
-        String id = context.peekScope().id();
-        List<Map<String, String>> permutations = requireNonNull(stack.pop());
-        if (input instanceof Option) {
-            String value = ((Option) input).value();
-            stack.push(Maps.putIfAbsent(permutations, id, value));
-        } else if (input instanceof Input.Boolean) {
-            stack.push(Lists.addAll(Maps.putAll(permutations, Map.of(id, "true")), List.of(Map.of(id, "false"))));
-            context.popScope();
-        } else if (input instanceof Input.Options) {
-            // nested permutations
-            Map<String, List<Map<String, String>>> nested = Maps.keyedBy(permutations, id);
-            if (input instanceof Input.Enum) {
-                stack.push(enumPermutations((Input.Enum) input, id, nested));
-            } else if (input instanceof Input.List) {
-                stack.push(listPermutations((Input.List) input, id, nested));
-            }
-            context.popScope();
-        } else if (input instanceof Input.Text) {
-            Value defaultValue = ((Input.Text) input).defaultValue();
-            if (defaultValue != null) {
-                String value = defaultValue.asString();
-                stack.push(Maps.putAll(permutations, Map.of(id, value)));
-            } else {
-                stack.push(List.of());
-            }
-            context.popScope();
-        }
-        return postVisitAny(input, arg);
-    }
-
-    @Override
-    public VisitResult visitVariable(Variable variable, Void arg) {
-        context.setVariable(variable.path(), variable.value());
-        return VisitResult.CONTINUE;
-    }
-
-    @Override
-    public VisitResult visitPreset(Preset preset, Void arg) {
-        context.setValue(preset.path(), preset.value(), ContextValue.ValueKind.PRESET);
-        return VisitResult.CONTINUE;
-    }
-
-    private boolean filterNode(Node node) {
-        try {
-            return context.filterNode(node);
-        } catch (IllegalArgumentException ex){
-            // include the node even if variable cannot be resolved
-            // worse case we generate a bad permutation
-            return true;
-        }
-    }
-
-    @Override
-    public VisitResult postVisitAny(Block block, Void arg) {
-
-        // unset presets
-        block.children(this::filterNode, Block.class, b -> b.kind() == Block.Kind.PRESETS)
-             .flatMap(b -> b.children(context::filterNode, Preset.class))
-             .forEach(p -> context.unsetValue(p.path()));
-
-        // unset variables
-        block.children(this::filterNode, Block.class, b -> b.kind() == Block.Kind.VARIABLES)
-             .flatMap(b -> b.children(context::filterNode, Variable.class))
-             .forEach(p -> context.unsetVariable(p.path()));
-
-        if (stack.size() > 1) {
-            // add to parent
-            List<Map<String, String>> popped = stack.pop();
-            requireNonNull(stack.peek()).addAll(popped);
-        }
-        return VisitResult.CONTINUE;
-    }
-
-    @Override
-    public VisitResult postVisitBlock(Block block, Void arg) {
-        return block.acceptAfter((Block.Visitor<Void>) this, null);
-    }
-
     private List<String> options(DeclaredInput node) {
-        return node.children(this::filterNode, Option.class).map(Option::value).collect(toList());
+        return node.children(n -> true, Option.class)
+                   .map(Option::value)
+                   .map(context.scope()::interpolate)
+                   .collect(toList());
+    }
+
+    private static final class DeferredCondition {
+
+        final Condition condition;
+        final ContextScope scope;
+
+        DeferredCondition(Condition condition, ContextScope scope) {
+            this.condition = condition;
+            this.scope = scope;
+        }
     }
 }

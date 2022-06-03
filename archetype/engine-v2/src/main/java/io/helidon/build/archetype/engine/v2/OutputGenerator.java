@@ -193,7 +193,7 @@ public class OutputGenerator implements Output.Visitor<Context> {
              .stream()
              .flatMap(id -> transformationOps(id).stream())
              .forEach(op -> {
-                 String replacement = context.substituteVariables(op.replacement());
+                 String replacement = context.scope().interpolate(op.replacement());
                  String current = sb.toString();
                  sb.setLength(0);
                  sb.append(current.replaceAll(op.regex(), replacement));

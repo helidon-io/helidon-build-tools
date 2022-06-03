@@ -83,7 +83,7 @@ public class SourcePath {
      *
      * @param path The path.
      * @return The segments.
-     * @throws IllegalArgumentException If the path is invalid.
+     * @throws IllegalArgumentException If the path is invalid.S
      */
     public static String[] parseSegments(String path) throws IllegalArgumentException {
         if (Strings.isNotValid(path)) {

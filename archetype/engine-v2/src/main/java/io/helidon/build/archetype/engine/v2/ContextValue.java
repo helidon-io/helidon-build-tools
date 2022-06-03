@@ -136,6 +136,11 @@ public final class ContextValue implements Value {
         PRESET,
 
         /**
+         * Local variable value.
+         */
+        LOCAL_VAR,
+
+        /**
          * Default value.
          */
         DEFAULT,

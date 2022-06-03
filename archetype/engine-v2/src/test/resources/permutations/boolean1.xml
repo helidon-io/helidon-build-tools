@@ -20,7 +20,7 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="colors">
+    <step name="boolean1">
         <inputs>
             <boolean id="colors" name="Use colors" />
         </inputs>

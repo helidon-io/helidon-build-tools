@@ -33,7 +33,7 @@ public final class Permutations {
      * Compute the non-repetitive permutations of the given elements.
      *
      * @param lists elements for which to compute the permutations
-     * @param <T>      element type
+     * @param <T>   element type
      * @return list of permutations
      */
     public static <T> List<List<T>> ofList(List<List<T>> lists) {

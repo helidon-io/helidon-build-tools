@@ -89,7 +89,7 @@ class OutputGeneratorTest {
     @Test
     void testReplacement() throws IOException {
         Path outputDir = generate("generator/replacement.xml",
-                ctx -> ctx.setValue("package", Value.create("com.example"), ContextValue.ValueKind.EXTERNAL));
+                scope -> scope.put("package", Value.create("com.example"), ContextValue.ValueKind.EXTERNAL));
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));
@@ -109,17 +109,17 @@ class OutputGeneratorTest {
     }
 
     private static Path generate(String path) {
-        return generate(path, ctx -> {});
+        return generate(path, scope -> {});
     }
 
-    private static Path generate(String path, Consumer<Context> initializer) {
+    private static Path generate(String path, Consumer<ContextScope> initializer) {
         Script script = load(path);
         Path scriptPath = script.scriptPath();
         String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
         Path target = targetDir(OutputGeneratorTest.class);
         Path outputDir = unique(target.resolve("generator-ut/"), dirname);
         Context context = Context.create(script.scriptPath().getParent());
-        initializer.accept(context);
+        initializer.accept(context.scope());
         MergedModel mergedModel = MergedModel.resolveModel(script, context);
         OutputGenerator outputGenerator = new OutputGenerator(mergedModel, outputDir);
         Controller.walk(outputGenerator, script, context);

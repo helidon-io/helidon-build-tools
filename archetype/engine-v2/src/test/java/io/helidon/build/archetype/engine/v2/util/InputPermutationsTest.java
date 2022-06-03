@@ -15,8 +15,7 @@
  */
 package io.helidon.build.archetype.engine.v2.util;
 
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
  * Unit test for class {@link InputPermutations}.
@@ -44,16 +44,17 @@ class InputPermutationsTest {
 
     @Test
     void testList2() {
-        assertThat(permutations("permutations/list2.xml"), contains(
+        List<Map<String, String>> permutations = permutations("permutations/list2.xml");
+        assertThat(permutations, contains(
                 Map.of("colors", ""),
-                Map.of("colors", "red", "colors.red-tone", "burgundy"),
-                Map.of("colors", "red", "colors.red-tone", "auburn"),
-                Map.of("colors", "orange", "colors.orange-tone", "salmon"),
-                Map.of("colors", "orange", "colors.orange-tone", "peach"),
-                Map.of("colors", "red orange", "colors.red-tone", "burgundy", "colors.orange-tone", "salmon"),
-                Map.of("colors", "red orange", "colors.red-tone", "auburn", "colors.orange-tone", "salmon"),
-                Map.of("colors", "red orange", "colors.red-tone", "burgundy", "colors.orange-tone", "peach"),
-                Map.of("colors", "red orange", "colors.red-tone", "auburn", "colors.orange-tone", "peach")));
+                Map.of("colors", "red", "red", "burgundy"),
+                Map.of("colors", "red", "red", "auburn"),
+                Map.of("colors", "orange", "orange", "salmon"),
+                Map.of("colors", "orange", "orange", "peach"),
+                Map.of("colors", "red orange", "red", "burgundy", "orange", "salmon"),
+                Map.of("colors", "red orange", "red", "auburn", "orange", "salmon"),
+                Map.of("colors", "red orange", "red", "burgundy", "orange", "peach"),
+                Map.of("colors", "red orange", "red", "auburn", "orange", "peach")));
     }
 
     @Test
@@ -65,11 +66,12 @@ class InputPermutationsTest {
 
     @Test
     void testEnum2() {
-        assertThat(permutations("permutations/enum2.xml"), contains(
-                Map.of("colors", "red", "colors.red-tone", "burgundy"),
-                Map.of("colors", "red", "colors.red-tone", "auburn"),
-                Map.of("colors", "orange", "colors.orange-tone", "salmon"),
-                Map.of("colors", "orange", "colors.orange-tone", "peach")));
+        List<Map<String, String>> permutations = permutations("permutations/enum2.xml");
+        assertThat(permutations, contains(
+                Map.of("colors", "red", "colors.red", "burgundy"),
+                Map.of("colors", "red", "colors.red", "auburn"),
+                Map.of("colors", "orange", "colors.orange", "salmon"),
+                Map.of("colors", "orange", "colors.orange", "peach")));
     }
 
     @Test
@@ -82,7 +84,8 @@ class InputPermutationsTest {
 
     @Test
     void testBoolean2() {
-        assertThat(permutations("permutations/boolean2.xml"), contains(
+        List<Map<String, String>> permutations = permutations("permutations/boolean2.xml");
+        assertThat(permutations, contains(
                 Map.of("colors", "true", "colors.tones", ""),
                 Map.of("colors", "true", "colors.tones", "dark"),
                 Map.of("colors", "true", "colors.tones", "light"),
@@ -91,140 +94,156 @@ class InputPermutationsTest {
     }
 
     @Test
+    void testText1() {
+        List<Map<String, String>> permutations = permutations("permutations/text1.xml");
+        assertThat(permutations, contains(
+                Map.of("name", "Foo")));
+    }
+
+    @Test
+    void testText2() {
+        List<Map<String, String>> permutations = permutations("permutations/text2.xml");
+        assertThat(permutations, contains(
+                Map.of("name", "xxx")));
+    }
+
+    @Test
+    void testSubstitutions() {
+        List<Map<String, String>> permutations = permutations("permutations/substitutions.xml");
+        assertThat(permutations, contains(
+                Map.of("text", "a-foo-a-bar"),
+                Map.of("list-things", ""),
+                Map.of("list-things", "a-bar")));
+    }
+
+    //@Test
+    void testConditionals() {
+        List<Map<String, String>> permutations = permutations("permutations/conditionals.xml");
+        permutations.forEach(System.out::println);
+        List<Map<String, String>> list = new ArrayList<>();
+        list.add(Map.of("heat", ""));
+        list.add(Map.of("heat", "warm", "warm", ""));
+        list.add(Map.of("heat", "warm", "warm", "red", "red", "burgundy"));
+        list.add(Map.of("heat", "warm", "warm", "red", "red", "auburn"));
+        list.add(Map.of("heat", "cold", "cold", ""));
+        list.add(Map.of("heat", "cold", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "cold", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "cold", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "cold", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "azure"));
+        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "indigo"));
+        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "azure"));
+        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", ""));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "tea"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "lime"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
+        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
+        assertThat(permutations, containsInAnyOrder(list.toArray(new Map[0])));
+    }
+
+    //@Test
     void testE2e() {
         List<Map<String, String>> permutations = permutations("e2e/main.xml");
         permutations.forEach(System.out::println);
-//        Map<String, String> colors = Map.of(
-//                "theme", "colors",
-//                "theme.base", "custom",
-//                "theme.base.style", "modern",
-//                "theme.base.palette-name", "My Palette",
-//                "theme.base.colors", "red,green,blue",
-//                "artifactId", "my-project"
-//        );
-//
-//        Map<String, String> colorsClassic = Map.of(
-//                "theme", "colors",
-//                "theme.base", "custom",
-//                "theme.base.style", "classic",
-//                "theme.base.palette-name", "My Palette",
-//                "theme.base.colors", "red,green,blue",
-//                "artifactId", "my-project"
-//        );
-//
-//        Map<String, String> colorsRainbow = Map.of(
-//                "theme", "colors",
-//                "theme.base", "rainbow",
-//                "theme.base.style", "modern",
-//                "theme.base.palette-name", "Rainbow",
-//                "theme.base.colors", "red,orange,yellow,green,blue,indigo,violet",
-//                "artifactId", "my-project"
-//        );
-//
-//        Map<String, String> shapes = Map.of(
-//                "theme", "shapes",
-//                "theme.base", "custom",
-//                "theme.base.style", "modern",
-//                "theme.base.library-name", "My Shapes",
-//                "theme.base.shapes", "circle,triangle",
-//                "artifactId", "my-project"
-//        );
-//
-//
-//        Map<String, String> shapesClassic = Map.of(
-//                "theme", "shapes",
-//                "theme.base", "custom",
-//                "theme.base.style", "classic",
-//                "theme.base.library-name", "My Shapes",
-//                "theme.base.shapes", "circle,triangle",
-//                "artifactId", "my-project"
-//        );
-//
-//        Map<String, String> shapes2d = Map.of(
-//                "theme", "shapes",
-//                "theme.base", "2d",
-//                "theme.base.style", "modern",
-//                "theme.base.library-name", "2D Shapes",
-//                "theme.base.shapes", "circle,triangle,rectangle",
-//                "artifactId", "my-project"
-//        );
-//        List<Map<String, String>> expected = List.of(
-//                colors,
-//                nextExpected(colors, Map.of(), "theme.base.colors"),
-//                nextExpected(colors, Map.of("theme.base.colors", "red")),
-//                nextExpected(colors, Map.of("theme.base.colors", "orange")),
-//                nextExpected(colors, Map.of("theme.base.colors", "yellow")),
-//                nextExpected(colors, Map.of("theme.base.colors", "green")),
-//                nextExpected(colors, Map.of("theme.base.colors", "blue")),
-//                nextExpected(colors, Map.of("theme.base.colors", "indigo")),
-//                nextExpected(colors, Map.of("theme.base.colors", "violet")),
-//                nextExpected(colors, Map.of("theme.base.colors", "pink")),
-//                nextExpected(colors, Map.of("theme.base.colors", "light-pink")),
-//                nextExpected(colors, Map.of("theme.base.colors", "cyan")),
-//                nextExpected(colors, Map.of("theme.base.colors", "light-salmon")),
-//                nextExpected(colors, Map.of("theme.base.colors", "coral")),
-//                nextExpected(colors, Map.of("theme.base.colors", "tomato")),
-//                nextExpected(colors, Map.of("theme.base.colors", "lemon")),
-//                nextExpected(colors, Map.of("theme.base.colors", "khaki")),
-//                nextExpected(colors, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
-//                        + "pink,light-pink,cyan,light-salmon,coral,tomato,"
-//                        + "lemon,khaki")),
-//
-//                colorsClassic,
-//                nextExpected(colorsClassic, Map.of(), "theme.base.colors"),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "red")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "orange")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "yellow")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "green")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "blue")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "indigo")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "violet")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "pink")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "light-pink")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "cyan")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "light-salmon")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "coral")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "tomato")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "lemon")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "khaki")),
-//                nextExpected(colorsClassic, Map.of("theme.base.colors", "red,orange,yellow,green,blue,indigo,violet,"
-//                        + "pink,light-pink,cyan,light-salmon,coral,tomato,"
-//                        + "lemon,khaki")),
-//
-//
-//                colorsRainbow,
-//                nextExpected(colorsRainbow, Map.of("theme.base.style", "classic")),
-//
-//                shapes,
-//                nextExpected(shapes, Map.of(), "theme.base.shapes"),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "circle")),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "triangle")),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "rectangle")),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "arrow")),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "donut")),
-//                nextExpected(shapes, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-//
-//                shapesClassic,
-//                nextExpected(shapesClassic, Map.of(), "theme.base.shapes"),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "circle")),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "triangle")),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "rectangle")),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "arrow")),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "donut")),
-//                nextExpected(shapesClassic, Map.of("theme.base.shapes", "circle,triangle,rectangle,arrow,donut")),
-//
-//                shapes2d,
-//                nextExpected(shapes2d, Map.of("theme.base.style", "classic"))
-//        );
-//
-//        assertThat(permutations, contains(expected));
-    }
-
-    static Map<String, String> nextExpected(Map<String, String> base, Map<String, String> updates, String... removals) {
-        Map<String, String> result = new HashMap<>(base);
-        result.putAll(updates);
-        Arrays.stream(removals).forEach(result::remove);
-        return result;
+        // TODO reduce number of colors and hard-code expected result
     }
 
     private static List<Map<String, String>> permutations(String path) {

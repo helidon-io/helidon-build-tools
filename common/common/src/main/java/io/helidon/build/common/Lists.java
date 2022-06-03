@@ -15,6 +15,9 @@
  */
 package io.helidon.build.common;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -38,7 +41,7 @@ public class Lists {
      * @param <V>      input element type
      * @return new list
      */
-    public static <T, V> List<T> mapElement(List<V> list, Function<V, T> function) {
+    public static <T, V> List<T> map(List<V> list, Function<V, T> function) {
         return list == null ? List.of() : list.stream().map(function).collect(Collectors.toList());
     }
 
@@ -51,8 +54,21 @@ public class Lists {
      * @param <V>      input element type
      * @return new list
      */
-    public static <T, V> List<T> flatMapElement(List<V> list, Function<V, Stream<T>> function) {
+    public static <T, V> List<T> flatMapStream(List<V> list, Function<V, Stream<T>> function) {
         return list == null ? List.of() : list.stream().flatMap(function).collect(Collectors.toList());
+    }
+
+    /**
+     * Flat-map the elements of the given list.
+     *
+     * @param list     input list
+     * @param function mapping function
+     * @param <T>      output element type
+     * @param <V>      input element type
+     * @return new list
+     */
+    public static <T, V> List<T> flatMap(List<V> list, Function<V, Collection<T>> function) {
+        return flatMapStream(list, e -> function.apply(e).stream());
     }
 
     /**
@@ -68,5 +84,30 @@ public class Lists {
         list.addAll(list1);
         list.addAll(list2);
         return list;
+    }
+
+    /**
+     * Create a new {@link ArrayList} with the given element.
+     *
+     * @param elements input elements
+     * @param <T>      element type
+     * @return new list
+     */
+    @SafeVarargs
+    public static <T> List<T> of(T... elements) {
+        List<T> list = new ArrayList<>();
+        Collections.addAll(list, elements);
+        return list;
+    }
+
+    /**
+     * Create a new {@link ArrayList} with the given element.
+     *
+     * @param elements input elements
+     * @param <T>      element type
+     * @return new list
+     */
+    public static <T> List<T> of(Collection<T> elements) {
+        return new ArrayList<>(elements);
     }
 }

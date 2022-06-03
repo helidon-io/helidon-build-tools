@@ -20,12 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="colors">
+    <step name="list2">
         <inputs>
-            <list id="colors" name="Select colors">
+            <list id="colors" name="Select colors" global="true">
                 <option value="red" name="Red">
                     <inputs>
-                        <enum id="red-tone" name="Red tone">
+                        <enum id="red" name="Red">
                             <option value="burgundy" name="Burgundy"/>
                             <option value="auburn" name="Auburn" />
                         </enum>
@@ -33,7 +33,7 @@
                 </option>
                 <option value="orange" name="Orange">
                     <inputs>
-                        <enum id="orange-tone" name="Orange tone">
+                        <enum id="orange" name="Orange">
                             <option value="salmon" name="Salmon"/>
                             <option value="peach" name="Peach" />
                         </enum>

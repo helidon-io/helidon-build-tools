@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.ContextScope;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -131,7 +132,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     }
 
     private List<Block> refs(String path, Context ctx) {
-        List<Block> refs = allRefs.get(ctx.resolveQuery(path));
+        List<Block> refs = allRefs.get(ctx.scope().path(path));
         if (refs != null) {
             return refs;
         }
@@ -247,9 +248,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            Context.Scope scope = ctx.newScope(input.id(), input.isGlobal());
-            inputPath = scope.id();
-            ctx.pushScope(scope);
+            ContextScope ctxScope = ctx.scope().getOrCreate(input.id(), input.isGlobal());
+            inputPath = ctxScope.id();
+            ctx.pushScope(ctxScope);
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());
 
             if (input instanceof Input.Options) {

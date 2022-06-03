@@ -28,7 +28,7 @@
         </presets>
         <inputs>
             <text id="text" name="text" default="${preset}"/>
-            <list id="list-things" name="things" optional="true" default="${foo}">
+            <list id="list-things" name="things" optional="true">
                 <option value="${bar}" name="bar"/>
             </list>
         </inputs>

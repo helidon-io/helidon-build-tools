@@ -59,7 +59,7 @@ public class InputResolverTest {
                         inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue"))))))).build();
 
         Context context = Context.create();
-        context.setValue("enum-input", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        context.scope().put("enum-input", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("green"));
     }
@@ -74,7 +74,8 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.setValue("list-input", Value.create(List.of("value1", "value3")), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("list-input", Value.create(List.of("value1", "value3")), ContextValue.ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("red", "blue"));
     }
@@ -83,10 +84,11 @@ public class InputResolverTest {
     void testDefaultValueSubstitutions() {
         Block block = step("step", inputText("text-input4", "${foo}").attribute("optional", Value.TRUE)).build();
         Context context = Context.create();
-        context.setValue("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
         resolveInputs(block, context, null);
 
-        Value value = context.lookup("text-input4");
+        Value value = scope.get("text-input4");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -95,12 +97,14 @@ public class InputResolverTest {
 
     @Test
     void testExternalDefaultValueSubstitutions() {
-        Block block = step("step", inputText("text-input5", "foo").attribute("optional", Value.TRUE)).build();
         Context context = Context.create(null, null, Map.of("text-input5", "${foo}"));
-        context.setValue("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("foo", Value.create("bar"), ContextValue.ValueKind.EXTERNAL);
+
+        Block block = step("step", inputText("text-input5", "foo").attribute("optional", Value.TRUE)).build();
         resolveInputs(block, context, null);
 
-        Value value = context.lookup("text-input5");
+        Value value = scope.get("text-input5");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -125,7 +129,8 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.setValue("enum-input2", Value.create("VALUE2"), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("enum-input2", Value.create("VALUE2"), ContextValue.ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("blue"));
     }
 
@@ -152,7 +157,8 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.setValue("list-input", Value.create(List.of("VALUE2", "VALUE3")), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("list-input", Value.create(List.of("VALUE2", "VALUE3")), ContextValue.ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("green", "blue"));
     }
 
@@ -191,10 +197,11 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.setValue("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("nested-global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("nested1", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("nested1.nested2", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        scope.put("nested-global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        scope.put("nested1", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
+        scope.put("nested1.nested2", Value.create("value2"), ContextValue.ValueKind.EXTERNAL);
         List<String> resolvedInputs = resolveInputs(global, context);
         assertThat(resolvedInputs.size(), is(1));
         assertThat(resolvedInputs, contains("blue"));
@@ -218,8 +225,9 @@ public class InputResolverTest {
                 .build();
 
         Context context = Context.create();
-        context.setValue("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
-        context.setValue("global.nested", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        ContextScope scope = context.scope();
+        scope.put("global", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
+        scope.put("global.nested", Value.create("value1"), ContextValue.ValueKind.EXTERNAL);
 
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));

@@ -79,17 +79,16 @@ public class ArchetypeEngineV2 {
                          Function<String, Path> directorySupplier) {
 
         Context context = Context.create(cwd, externalValues, externalDefaults);
+        ContextScope scope = context.scope();
         Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
-        if (context.peekScope() != Context.Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
+        context.requireRootScope();
         onResolved.run();
 
         // resolve output directory
-        String artifactId = requireNonNull(context.lookup(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
+        String artifactId = requireNonNull(scope.get(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
         Path directory = directorySupplier.apply(artifactId);
 
         // resolve model  (full traversal)
@@ -98,9 +97,7 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        if (context.peekScope() != Context.Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
+        context.requireRootScope();
 
         return directory;
     }

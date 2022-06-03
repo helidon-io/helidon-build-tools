@@ -174,7 +174,7 @@ public class Maps {
      * @return new map
      */
     public static <K, V> Map<V, List<Map<K, V>>> keyedBy(List<Map<K, V>> maps, K key) {
-        return maps.stream().collect(toMap(m -> m.get(key), m -> List.of(filter(m, key)), Lists::addAll));
+        return maps.stream().collect(toMap(m -> m.get(key), m -> Lists.of(filter(m, key)), Lists::addAll));
     }
 
     /**
@@ -191,22 +191,6 @@ public class Maps {
         map.putAll(map1);
         map.putAll(map2);
         return map;
-    }
-
-    /**
-     * Add the given entry if absent in the maps.
-     *
-     * @param map   input map
-     * @param key   input key
-     * @param value input value
-     * @param <K>   key type
-     * @param <V>   value type
-     * @return new map
-     */
-    public static <K, V> Map<K, V> putIfAbsent(Map<K, V> map, K key, V value) {
-        Map<K, V> copy = new HashMap<>(map);
-        copy.putIfAbsent(key, value);
-        return copy;
     }
 
     /**
@@ -234,9 +218,26 @@ public class Maps {
      */
     public static <K, V> List<Map<K, V>> putAll(List<Map<K, V>> maps, Map<K, V> map1) {
         if (maps.isEmpty()) {
-            return List.of(map1);
+            return Lists.of(map1);
         }
-        return Lists.mapElement(maps, m -> putAll(m, map1));
+        maps.forEach(m -> m.putAll(map1));
+        return maps;
+    }
+
+    /**
+     * Add the given entry if absent in the maps.
+     *
+     * @param map   input map
+     * @param key   input key
+     * @param value input value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> putIfAbsent(Map<K, V> map, K key, V value) {
+        Map<K, V> copy = new HashMap<>(map);
+        copy.putIfAbsent(key, value);
+        return copy;
     }
 
     /**
@@ -251,9 +252,25 @@ public class Maps {
      */
     public static <K, V> List<Map<K, V>> putIfAbsent(List<Map<K, V>> maps, K key, V value) {
         if (maps.isEmpty()) {
-            return List.of(Map.of(key, value));
+            return Lists.of(Maps.of(key, value));
         }
-        return Lists.mapElement(maps, m -> putIfAbsent(m, key, value));
+        maps.forEach(m -> m.putIfAbsent(key, value));
+        return maps;
+    }
+
+    /**
+     * Create a new {@link HashMap} with the given entry.
+     *
+     * @param key   input key
+     * @param value input value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return new map
+     */
+    public static <K, V> Map<K, V> of(K key, V value) {
+        Map<K, V> map = new HashMap<>();
+        map.put(key, value);
+        return map;
     }
 
     /**

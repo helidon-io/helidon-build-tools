@@ -278,7 +278,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logCombinationsInput(String testName) {
         log.info("");
         log.info("--------------------------------------");
-        log.info("Generating Archetype Test Combinations");
+        log.info("Generating Archetype Permutations");
         log.info("--------------------------------------");
         log.info("");
         log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));

@@ -52,34 +52,35 @@ public class BatchInputResolver extends InputResolver {
     }
 
     private VisitResult visit(DeclaredInput input, Context context) {
-        Context.Scope scope = context.newScope(input.id(), input.isGlobal());
-        VisitResult result = onVisitInput(input, scope, context);
+        ContextScope scope = context.scope();
+        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             Value defaultValue = defaultValue(input, context);
             if (input.isOptional()) {
                 if (defaultValue != null) {
-                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                         result = VisitResult.SKIP_SUBTREE;
                     } else {
                         result = VisitResult.CONTINUE;
                     }
                 } else {
-                    throw new UnresolvedInputException(scope.id());
+                    throw new UnresolvedInputException(nextScope.id());
                 }
             } else if (input instanceof Input.Enum) {
                 List<Input.Option> options = ((Input.Enum) input).options(context::filterNode);
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    context.setValue(scope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                 } else {
-                    throw new UnresolvedInputException(scope.id());
+                    throw new UnresolvedInputException(nextScope.id());
                 }
             }
         }
-        context.pushScope(scope);
+        context.pushScope(nextScope);
         return result;
     }
 }

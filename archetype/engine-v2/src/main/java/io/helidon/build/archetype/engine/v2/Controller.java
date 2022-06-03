@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2;
 import java.util.Deque;
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Model;
@@ -59,13 +60,13 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.setValue(preset.path(), preset.value(), ContextValue.ValueKind.PRESET);
+        ctx.scope().put(preset.path(), preset.value(), ValueKind.PRESET);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitVariable(Variable variable, Context ctx) {
-        ctx.setVariable(variable.path(), variable.value());
+        ctx.scope().put(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
         return VisitResult.CONTINUE;
     }
 
@@ -89,7 +90,7 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
-        if (condition.expression().eval(ctx::lookup)) {
+        if (condition.expression().eval(ctx.scope()::get)) {
             return VisitResult.CONTINUE;
         }
         return VisitResult.SKIP_SUBTREE;
