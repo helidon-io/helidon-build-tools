@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,6 @@
  */
 
 package io.helidon.build.licensing;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import io.helidon.build.licensing.model.AttributionDependency;
-import io.helidon.build.licensing.model.AttributionDocument;
-import io.helidon.build.licensing.model.AttributionLicense;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +35,18 @@ import java.util.stream.Collectors;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import io.helidon.build.licensing.model.AttributionDependency;
+import io.helidon.build.licensing.model.AttributionDocument;
+import io.helidon.build.licensing.model.AttributionLicense;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Generate a report from attribution xml file.
@@ -477,7 +476,8 @@ public class Report {
         w.write("<body>\n");
         w.write("<h1>Third Party Attributions");
         w.write("<table border=1>");
-        w.write("<tr><th>Name</th><th>Version</th><th>Licensor</th><th>License Name</th><th>Attribution</th><th>Used By</th></tr>\n");
+        w.write("<tr><th>Name</th><th>Version</th><th>Licensor</th><th>License Name</th>");
+        w.write("<th>Attribution</th><th>Used By</th></tr>\n");
         List<AttributionDependency> deps = attributionDocument.getDependencies();
         Set<String> licensesUsed = new HashSet<>();
         boolean first = true;
@@ -485,13 +485,16 @@ public class Report {
             HashSet<String> intersection = new HashSet<>(moduleList);
             intersection.retainAll(d.getConsumers());
             if (moduleList.isEmpty() || !intersection.isEmpty()) {
-                w.write(String.format("<tr valign=top><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td><td><ul><li>%s</ul></td></tr>\n",
-                        d.getName(),
-                        d.getVersion(),
-                        d.getLicensor(),
-                        d.getLicenseName(),
-                        StringEscapeUtils.escapeHtml4(d.getAttribution()),
+                w.write("<tr valign=top>");
+                w.write(String.format("<td>%s</td>", d.getName()));
+                w.write(String.format("<td>%s</td>", d.getVersion()));
+                w.write(String.format("<td>%s</td>", d.getLicensor()));
+                w.write(String.format("<td>%s</td>", d.getLicenseName()));
+                w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td>",
+                        StringEscapeUtils.escapeHtml4(d.getAttribution())));
+                w.write(String.format("<td><ul><li>%s</ul></td>",
                         String.join("<li>", d.getConsumers())));
+                w.write("</tr>");
 
                 detectLicenses(licensesUsed, d.getAttribution());
 
@@ -518,8 +521,9 @@ public class Report {
             } else {
                 licenseText = "No license text found for " + s;
             }
-            w.write(String.format("<tr valign=top><td>%s</td><td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td></tr>\n",
-                    s, StringEscapeUtils.escapeHtml4(licenseText)));
+            w.write(String.format("<tr valign=top><td>%s</td>", s));
+            w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td></tr>%n",
+                    StringEscapeUtils.escapeHtml4(licenseText)));
         }
         w.write("</table>\n");
 
