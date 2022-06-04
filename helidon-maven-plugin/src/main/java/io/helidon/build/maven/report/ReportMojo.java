@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,12 @@ public class ReportMojo
     @Parameter(property = Report.INPUT_FILE_DIR_PROPERTY_NAME)
     private String inputFileDir;
 
-    // Output report (text) file
+    // Output report file format
+    @Parameter(property = Report.OUTPUT_FILE_FORMAT_PROPERTY_NAME,
+            defaultValue = Report.DEFAULT_OUTPUT_FILE_FORMAT, required = true)
+    private String outputFileFormat;
+
+    // Output report file
     @Parameter(property = Report.OUTPUT_FILE_NAME_PROPERTY_NAME, defaultValue = Report.DEFAULT_OUTPUT_FILE_NAME, required = true)
     private String outputFileName;
 
@@ -86,9 +91,11 @@ public class ReportMojo
                 .inputFileName(inputFileName)
                 .moduleList(modules)
                 .inputFileDir(inputFileDir)
+                .outputFileFormat(outputFileFormat)
                 .outputFileName(outputFileName)
                 .outputFileDir(outputFileDir)
-                .outputHandler((s) -> getLog().info(s));
+                .outputHandler((s) -> getLog().info(s))
+                .errorHandler((s) -> getLog().error(s));
 
         // If no modules were provided, then scan this project and get all the
         // helidon artifacts that are dependencies and use that for the module list.
