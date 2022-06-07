@@ -30,6 +30,7 @@ import io.helidon.build.common.GenericType;
 import static io.helidon.build.archetype.engine.v2.ContextPath.PARENT_REF;
 import static io.helidon.build.archetype.engine.v2.ContextPath.PATH_SEPARATOR;
 import static io.helidon.build.archetype.engine.v2.ContextPath.PATH_SEPARATOR_CHAR;
+import static io.helidon.build.archetype.engine.v2.ContextPath.ROOT_REF;
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
 
 /**
@@ -180,9 +181,6 @@ public final class ContextScope {
      * @throws IllegalStateException    if a scope already exists and the requested visibility doesn't match
      */
     public ContextScope getOrCreateParent(String[] segments, Visibility visibility) {
-        if (segments.length == 0) {
-            return root;
-        }
         return findScope(segments, (s, sid) -> s.getOrCreateScope0(sid, visibility));
     }
 
@@ -254,9 +252,10 @@ public final class ContextScope {
     /**
      * Compute the visible path for this scope.
      *
+     * @param internal if {@code true}, include the full hierarchy
      * @return path
      */
-    public String path() {
+    public String path(boolean internal) {
         StringBuilder resolved = new StringBuilder();
         ContextScope scope = this;
         while (scope.parent != null) {
@@ -265,13 +264,23 @@ public final class ContextScope {
             } else {
                 resolved.insert(0, scope.id + PATH_SEPARATOR);
             }
-            if (scope.visibility == Visibility.GLOBAL
-                    || scope.parent.visibility == Visibility.GLOBAL) {
+            if (!internal
+                    && (scope.visibility == Visibility.GLOBAL
+                    || scope.parent.visibility == Visibility.GLOBAL)) {
                 break;
             }
             scope = scope.parent;
         }
         return resolved.toString();
+    }
+
+    /**
+     * Compute the visible path for this scope.
+     *
+     * @return path
+     */
+    public String path() {
+        return path(false);
     }
 
     /**
@@ -344,11 +353,11 @@ public final class ContextScope {
     }
 
     private ContextScope findScope(String[] segments, BiFunction<ContextScope, String, ContextScope> fn) {
-        ContextScope scope = root;
+        ContextScope scope = this;
         for (int i = 0; i < segments.length - 1; i++) {
             String segment = segments[i];
-            if (i == 0 && PATH_SEPARATOR.equals(segment)) {
-                scope = this;
+            if (i == 0 && ROOT_REF.equals(segment)) {
+                scope = root;
             } else if (PARENT_REF.equals(segment)) {
                 scope = i == 0 ? parent : scope.parent;
             } else {

@@ -109,7 +109,6 @@ public class InputResolverTest {
         Value value = scope.getValue("text-input5");
 
         assertThat(value, is(notNullValue()));
-        assertThat(value.type(), is(ValueTypes.STRING));
         assertThat(value.asString(), is("bar"));
     }
 

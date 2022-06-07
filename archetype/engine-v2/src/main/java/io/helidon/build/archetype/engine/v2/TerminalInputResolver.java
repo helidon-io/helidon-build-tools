@@ -79,7 +79,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             try {
@@ -123,7 +123,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitText(Input.Text input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             try {
@@ -152,7 +152,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitEnum(Input.Enum input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;
@@ -206,7 +206,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitList(Input.List input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;

@@ -254,7 +254,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ContextScope ctxScope = ctx.scope().getOrCreateScope("." + input.id(), input.isGlobal());
+            ContextScope ctxScope = ctx.scope().getOrCreateScope(input.id(), input.isGlobal());
             inputPath = ctxScope.id();
             ctx.pushScope(ctxScope);
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());

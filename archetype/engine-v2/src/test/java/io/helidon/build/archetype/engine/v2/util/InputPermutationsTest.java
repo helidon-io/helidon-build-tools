@@ -116,6 +116,7 @@ class InputPermutationsTest {
                 Map.of("list-things", "a-bar")));
     }
 
+    // TODO
     //@Test
     void testConditionals() {
         List<Map<String, String>> permutations = permutations("permutations/conditionals.xml");

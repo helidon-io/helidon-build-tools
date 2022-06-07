@@ -18,7 +18,6 @@ package io.helidon.build.archetype.engine.v2;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -43,21 +42,16 @@ public final class Context {
     private static final Path NULL_PATH = Path.of("");
 
     private ContextScope scope = ContextScope.create();
-    private final Map<String, Value> defaults = new HashMap<>();
     private final Deque<Path> directories = new ArrayDeque<>();
 
     private Context(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         if (externalDefaults != null) {
-            externalDefaults.forEach((k, v) -> defaults.put(k, ContextValue.external(v)));
+            externalDefaults.forEach((k, v) ->
+                    put(scope, k, DynamicValue.create(() -> scope.interpolate(v)), ValueKind.DEFAULT));
         }
         if (externalValues != null) {
-            externalValues.forEach((k, v) -> {
-                String[] segments = ContextPath.parse(k);
-                String id = ContextPath.id(segments);
-                Value value = DynamicValue.create(evaluate(v, externalValues::get));
-                scope.getOrCreateParent(segments, Visibility.UNSET)
-                     .putValue(id, value, ValueKind.EXTERNAL);
-            });
+            externalValues.forEach((k, v) ->
+                    put(scope, k, DynamicValue.create(evaluate(v, externalValues::get)), ValueKind.EXTERNAL));
         }
         directories.push(cwd == null ? NULL_PATH : cwd);
     }
@@ -90,23 +84,6 @@ public final class Context {
      */
     public Path cwd() {
         return directories.peek();
-    }
-
-    /**
-     * Get an external default value.
-     *
-     * @param id     input id
-     * @param global global
-     * @return value
-     */
-    public Value externalDefault(String id, boolean global) {
-        String path = global || scope.visibility() == Visibility.GLOBAL ? id : scope.path(id);
-        Value defaultValue = defaults.get(path);
-        String wrapped = defaultValue != null ? defaultValue.asString() : null;
-        if (wrapped != null) {
-            defaultValue = Value.create(scope.interpolate(wrapped));
-        }
-        return defaultValue;
     }
 
     /**
@@ -155,16 +132,6 @@ public final class Context {
     }
 
     /**
-     * Lookup a value.
-     *
-     * @param query query
-     * @return value, {@code null} if not found
-     */
-    public Value lookup(String query) {
-        return this.scope.getValue(query);
-    }
-
-    /**
      * Create a new context.
      *
      * @return context
@@ -194,5 +161,12 @@ public final class Context {
      */
     public static Context create(Path cwd, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         return new Context(cwd, externalValues, externalDefaults);
+    }
+
+    private static void put(ContextScope scope, String path, Value value, ValueKind valueKind) {
+        String[] segments = ContextPath.parse(path);
+        String id = ContextPath.id(segments);
+        scope.getOrCreateParent(segments, Visibility.UNSET)
+             .putValue(id, value, valueKind);
     }
 }

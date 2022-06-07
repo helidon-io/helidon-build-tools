@@ -41,7 +41,7 @@ class ContextTest {
         scope.putValue("foo1", Value.create("foo-value1"), ValueKind.EXTERNAL);
         context.pushScope(scope);
 
-        scope = scope.getOrCreateScope(".bar", false);
+        scope = scope.getOrCreateScope("bar", false);
         scope.putValue("bar1", Value.create("bar-value1"), ValueKind.EXTERNAL);
         context.pushScope(scope);
 
@@ -49,18 +49,18 @@ class ContextTest {
         scope = context.scope();
         Value value;
 
-        value = scope.getValue(".bar1");
+        value = scope.getValue("bar1");
         assertThat(value, is(nullValue()));
 
-        value = scope.getValue(".bar.bar1");
+        value = scope.getValue("bar.bar1");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("bar-value1"));
 
-        value = scope.getValue(".foo1");
+        value = scope.getValue("foo1");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("foo-value1"));
 
-        value = scope.getValue("foo1");
+        value = scope.getValue("~foo1");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("foo-value1"));
 
@@ -68,10 +68,10 @@ class ContextTest {
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("foo-value1"));
 
-        value = scope.getValue("foo.bar1");
+        value = scope.getValue("~foo.bar1");
         assertThat(value, is(nullValue()));
 
-        value = scope.getValue("foo.bar.bar1");
+        value = scope.getValue("~foo.bar.bar1");
         assertThat(value, is(notNullValue()));
         assertThat(value.asString(), is("bar-value1"));
 

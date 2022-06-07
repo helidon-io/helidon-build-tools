@@ -19,20 +19,19 @@ package io.helidon.build.archetype.engine.v2;
 import java.util.LinkedList;
 
 import static java.lang.Character.isLetterOrDigit;
-import static java.lang.Character.isLowerCase;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Context path.
- * A context path is a string representation of the path of a {@code DeclaredInput} in the tree.
+ * A context path is a string representation of the path of a {@code DeclaredInput} in the context.
  *
  * <ul>
  *     <li>A path contains segments separated by {@code "."} characters</li>
- *     <li>Segments can contains only lower case letters, digits and separator {@code "-"}</li>
- *     <li>The segment separator {@code "-"} must used between valid characters ; ({@code "--"} is prohibited</li>
- *     <li>Two reference operators are available, current scope: {@code "."} ; parent scope: {@code ".."}</li>
- *     <li>A path that starts with {@code "."} is relative to the associated {@link ContextScope}</li>
- *     <li>A path that starts with a segment is absolute. I.e. relative to the root scope</li>
+ *     <li>Segments can contains only letters, digits and separator {@code "-"}</li>
+ *     <li>The segment separator {@code "-"} must be used between valid characters ; ({@code "--"} is prohibited</li>
+ *     <li>Two reference operators are available, root scope: {@code "~"} ; parent scope: {@code ".."}</li>
+ *     <li>A path that starts with {@code "~"} is absolute. I.e. relative to the root scope</li>
+ *     <li>A path that starts with a segment is relative, or a parent reference is relative</li>
  * </ul>
  *
  * @see io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput
@@ -46,6 +45,16 @@ public final class ContextPath {
     public static final String PARENT_REF = "..";
 
     /**
+     * Root path reference.
+     */
+    public static final String ROOT_REF = "~";
+
+    /**
+     * Root path reference char.
+     */
+    public static final char ROOT_REF_CHAR = '~';
+
+    /**
      * Path separator character.
      */
     public static final char PATH_SEPARATOR_CHAR = '.';
@@ -56,32 +65,6 @@ public final class ContextPath {
     public static final String PATH_SEPARATOR = ".";
 
     private static final char SEGMENT_SEPARATOR = '-';
-
-    /**
-     * Test if this path is absolute.
-     *
-     * @param segments the path segments
-     * @return {@code true} if absolute, {@code false} otherwise
-     */
-    public static boolean isAbsolute(String[] segments) {
-        return segments.length == 0 || segments[0].indexOf(PATH_SEPARATOR_CHAR) < 0;
-    }
-
-    /**
-     * Test if this path is natural.
-     * A path is natural if it does not include parent references {@code ".."}
-     *
-     * @param segments the path segments
-     * @return {@code true} if natural, {@code false} otherwise
-     */
-    public static boolean isNatural(String[] segments) {
-        for (String segment : segments) {
-            if (PARENT_REF.equals(segment)) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     /**
      * Get the last segment of the path.
@@ -111,24 +94,17 @@ public final class ContextPath {
     public static String toString(String[] segments, int endIndex) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= endIndex; i++) {
+            if (i == 0 && segments[i].equals(ROOT_REF)) {
+                continue;
+            }
             sb.append(segments[i]);
-            if (i + 1 < segments.length
+            if (i + 1 <= endIndex
                     && segments[i].indexOf(PATH_SEPARATOR_CHAR) < 0
                     && segments[i + 1].indexOf(PATH_SEPARATOR_CHAR) < 0) {
                 sb.append(PATH_SEPARATOR_CHAR);
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * Get this path as a string.
-     *
-     * @param segments the path segments
-     * @return String
-     */
-    public static String toString(String[] segments) {
-        return toString(segments, segments.length - 1);
     }
 
     /**
@@ -140,47 +116,64 @@ public final class ContextPath {
      * @throws NullPointerException     if path is {@code null}
      */
     public static String[] parse(String path) {
+        if (requireNonNull(path, "path is null").isEmpty()) {
+            throw new IllegalArgumentException("path is empty");
+        }
         LinkedList<String> segments = new LinkedList<>();
         StringBuilder buf = new StringBuilder();
-        char[] chars = requireNonNull(path, "path is null").toCharArray();
+        char[] chars = path.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];
-            boolean last = i + 1 == chars.length;
-            if (c == PATH_SEPARATOR_CHAR) {
-                if (i + 1 < chars.length && chars[i + 1] == PATH_SEPARATOR_CHAR) {
-                    // double dot
-                    i++; // skip next character
-                    if (!segments.isEmpty()) {
-                        if ((i > 1 && chars[i - 2] != PATH_SEPARATOR_CHAR)) {
-                            // ".foo.." to "."
-                            segments.removeLast();
+            switch (c) {
+                case ROOT_REF_CHAR:
+                    if (i == 0) {
+                        segments.add(ROOT_REF);
+                        if (i + 2 < chars.length
+                                && chars[i + 1] == PATH_SEPARATOR_CHAR
+                                && chars[i + 2] == PATH_SEPARATOR_CHAR) {
+                            // "~.." to "~"
+                            i += 2;
+                        }
+                        continue;
+                    }
+                    throw new InvalidPathException(c, path, i);
+                case PATH_SEPARATOR_CHAR:
+                    if (i + 1 < chars.length) {
+                        if (chars[i + 1] == PATH_SEPARATOR_CHAR) {
+                            // ".."
+                            i++;
+                            if (i > 1 && isLetterOrDigit(chars[i - 2])) {
+                                // ".foo.." to "."
+                                segments.removeLast();
+                                continue;
+                            }
+                            segments.add(PARENT_REF);
                             continue;
-                        } else if(segments.peekLast().equals(PATH_SEPARATOR)) {
-                            // "..." -> ".."
-                            segments.removeLast();
+                        }
+                        if (i > 0 && isLetterOrDigit(chars[i + 1])) {
+                            // valid "." as path separator
+                            continue;
                         }
                     }
-                    segments.add(PARENT_REF);
-                } else if (i == 0) {
-                    segments.add(PATH_SEPARATOR);
-                }
-                continue;
-            }
-            boolean dash = c == SEGMENT_SEPARATOR;
-            if (!(dash || (Character.isDigit(c) || (Character.isLetter(c) && isLowerCase(c))))) {
-                throw new InvalidPathException(c, path, i);
-            }
-            int buf_len = buf.length();
-            if (dash && (buf_len == 0 || buf.charAt(buf_len - 1) == SEGMENT_SEPARATOR)) {
-                throw new InvalidPathException(c, path, i);
-            }
-            buf.append(c);
-            if (last || chars[i + 1] == PATH_SEPARATOR_CHAR) {
-                if (c == SEGMENT_SEPARATOR) {
                     throw new InvalidPathException(c, path, i);
-                }
-                segments.add(buf.toString());
-                buf.setLength(0);
+                default:
+                    if (c == SEGMENT_SEPARATOR) {
+                        if (!((i > 0 && i + 1 < chars.length)
+                                && isLetterOrDigit(chars[i - 1])
+                                && isLetterOrDigit(chars[i + 1]))) {
+                            throw new InvalidPathException(c, path, i);
+                        }
+                        buf.append(c);
+                        continue;
+                    }
+                    if (!isLetterOrDigit(c)) {
+                        throw new InvalidPathException(c, path, i);
+                    }
+                    buf.append(c);
+                    if (i + 1 == chars.length || chars[i + 1] == PATH_SEPARATOR_CHAR) {
+                        segments.add(buf.toString());
+                        buf.setLength(0);
+                    }
             }
         }
         if (buf.length() > 0) {

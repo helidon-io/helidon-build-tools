@@ -57,7 +57,7 @@ class ContextScopeTest {
     @Test
     void testGetValueOrCreateScope3() {
         ContextScope root = ContextScope.create();
-        ContextScope bar = root.getOrCreateScope(".foo.bar", Visibility.GLOBAL);
+        ContextScope bar = root.getOrCreateScope("foo.bar", Visibility.GLOBAL);
         assertThat(bar, is(not(nullValue())));
         assertThat(bar.id(), is("bar"));
         assertThat(bar.parent(), is(not(nullValue())));
@@ -83,7 +83,7 @@ class ContextScopeTest {
     @Test
     void testGetValueOrCreateScope5() {
         ContextScope root = ContextScope.create();
-        ContextScope foo = root.getOrCreateScope(".foo", Visibility.GLOBAL);
+        ContextScope foo = root.getOrCreateScope("~foo", Visibility.GLOBAL);
         assertThat(foo, is(not(nullValue())));
         assertThat(foo.id(), is("foo"));
         assertThat(foo.parent(), is(root));
@@ -104,9 +104,9 @@ class ContextScopeTest {
     @Test
     void testGetValueOrCreateScope7() {
         ContextScope root = ContextScope.create();
-        ContextScope foo = root.getOrCreateScope(".foo", Visibility.GLOBAL);
-        ContextScope bar = foo.getOrCreateScope(".bar", Visibility.GLOBAL);
-        ContextScope bob = bar.getOrCreateScope("bob", Visibility.GLOBAL);
+        ContextScope foo = root.getOrCreateScope("foo", Visibility.GLOBAL);
+        ContextScope bar = foo.getOrCreateScope("bar", Visibility.GLOBAL);
+        ContextScope bob = bar.getOrCreateScope("~bob", Visibility.GLOBAL);
         assertThat(bob, is(not(nullValue())));
         assertThat(bob.id(), is("bob"));
         assertThat(bob.parent(), is(root));
@@ -116,8 +116,8 @@ class ContextScopeTest {
     @Test
     void testGetValueOrCreateScope8() {
         ContextScope root = ContextScope.create();
-        ContextScope foo = root.getOrCreateScope(".foo", Visibility.GLOBAL);
-        ContextScope bob = foo.getOrCreateScope(".bar..bob", Visibility.GLOBAL);
+        ContextScope foo = root.getOrCreateScope("foo", Visibility.GLOBAL);
+        ContextScope bob = foo.getOrCreateScope("bar..bob", Visibility.GLOBAL);
         assertThat(bob, is(not(nullValue())));
         assertThat(bob.id(), is("bob"));
         assertThat(bob.parent(), is(foo));
@@ -157,7 +157,7 @@ class ContextScopeTest {
         ContextScope root = ContextScope.create();
         ContextScope scope = root.getOrCreateScope("foo", Visibility.GLOBAL);
         scope.putValue("bar", Value.create("bar"), ValueKind.USER);
-        Value bar = scope.getValue(".bar");
+        Value bar = scope.getValue("bar");
         assertThat(bar, is(not(nullValue())));
         assertThat(bar.asString(), is("bar"));
     }
@@ -200,11 +200,11 @@ class ContextScopeTest {
         assertThat(bar, is(not(nullValue())));
         assertThat(bar.asString(), is("bob"));
 
-        bar = barScope.getValue("bob");
+        bar = barScope.getValue("~bob");
         assertThat(bar, is(not(nullValue())));
         assertThat(bar.asString(), is("bob"));
 
-        bar = barScope.getValue(".bob");
+        bar = barScope.getValue("bob");
         assertThat(bar, is(not(nullValue())));
         assertThat(bar.asString(), is("bob"));
     }
@@ -228,7 +228,7 @@ class ContextScopeTest {
     void testPath1() {
         ContextScope root = ContextScope.create();
         ContextScope scope = root.getOrCreateScope("foo", Visibility.GLOBAL)
-                                 .getOrCreateScope(".bar", Visibility.LOCAL);
+                                 .getOrCreateScope("bar", Visibility.LOCAL);
         assertThat(scope.path(), is("bar"));
     }
 
@@ -236,7 +236,7 @@ class ContextScopeTest {
     void testPath2() {
         ContextScope root = ContextScope.create();
         ContextScope scope = root.getOrCreateScope("foo", Visibility.GLOBAL)
-                                 .getOrCreateScope(".bar", Visibility.GLOBAL);
+                                 .getOrCreateScope("bar", Visibility.GLOBAL);
         assertThat(scope.path(), is("bar"));
     }
 
@@ -244,8 +244,8 @@ class ContextScopeTest {
     void testPath3() {
         ContextScope root = ContextScope.create();
         ContextScope scope = root.getOrCreateScope("global", Visibility.GLOBAL)
-                                 .getOrCreateScope(".foo", Visibility.LOCAL)
-                                 .getOrCreateScope(".bar", Visibility.LOCAL);
+                                 .getOrCreateScope("foo", Visibility.LOCAL)
+                                 .getOrCreateScope("bar", Visibility.LOCAL);
         assertThat(scope.path(), is("foo.bar"));
     }
 }

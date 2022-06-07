@@ -21,12 +21,12 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
     <presets>
-        <list path="theme.base.shapes">
+        <list path="~theme.base.shapes">
             <value>circle</value>
             <value>triangle</value>
             <value>rectangle</value>
         </list>
-        <text path="theme.base.library-name">2D Shapes</text>
+        <text path="~theme.base.library-name">2D Shapes</text>
     </presets>
     <exec src="../custom/custom.xml"/>
     <output>

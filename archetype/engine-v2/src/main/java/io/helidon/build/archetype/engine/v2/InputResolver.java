@@ -82,7 +82,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
         }
         parents.push(input);
-        Value value = context.scope().getValue("." + input.id());
+        Value value = context.scope().getValue(input.id());
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -102,10 +102,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * @return default value or {@code null} if none
      */
     public static Value defaultValue(DeclaredInput input, Context context) {
-        Value defaultValue = context.externalDefault(input.id(), input.isGlobal());
-        if (defaultValue == null) {
-            defaultValue = input.defaultValue();
-        }
+        Value defaultValue = input.defaultValue();
         ContextScope scope = context.scope();
         if (defaultValue != null) {
             GenericType<?> valueType = defaultValue.type();

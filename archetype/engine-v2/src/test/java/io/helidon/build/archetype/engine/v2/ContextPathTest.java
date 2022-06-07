@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -31,103 +32,63 @@ class ContextPathTest {
     void testParse() {
         String[] segments;
 
-        segments = ContextPath.parse("");
-        assertThat(segments.length, is(0));
-
-        segments = ContextPath.parse(".");
-        assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is("."));
-
         segments = ContextPath.parse("..");
         assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is(".."));
-
-        segments = ContextPath.parse("...");
-        assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is(".."));
+        assertThat(segments, arrayContaining(".."));
 
         segments = ContextPath.parse("....");
         assertThat(segments.length, is(2));
-        assertThat(ContextPath.toString(segments), is("...."));
+        assertThat(segments, arrayContaining("..", ".."));
 
-        segments = ContextPath.parse(".foo");
-        assertThat(segments.length, is(2));
-        assertThat(ContextPath.toString(segments), is(".foo"));
-
-        segments = ContextPath.parse(".foo.");
-        assertThat(segments.length, is(2));
-        assertThat(ContextPath.toString(segments), is(".foo"));
-
-        segments = ContextPath.parse("foo.");
+        segments = ContextPath.parse("foo");
         assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is("foo"));
+        assertThat(segments, arrayContaining("foo"));
+
+        segments = ContextPath.parse("foo-bar");
+        assertThat(segments.length, is(1));
+        assertThat(segments, arrayContaining("foo-bar"));
+
+        segments = ContextPath.parse("foo.bar");
+        assertThat(segments.length, is(2));
+        assertThat(segments, arrayContaining("foo", "bar"));
+
+        segments = ContextPath.parse("~foo");
+        assertThat(segments.length, is(2));
+        assertThat(segments, arrayContaining("~", "foo"));
+
+        segments = ContextPath.parse("~foo.bar");
+        assertThat(segments.length, is(3));
+        assertThat(segments, arrayContaining("~", "foo", "bar"));
+
+        segments = ContextPath.parse("~..foo.bar");
+        assertThat(segments.length, is(3));
+        assertThat(segments, arrayContaining("~", "foo", "bar"));
 
         segments = ContextPath.parse("foo..");
         assertThat(segments.length, is(0));
-        assertThat(ContextPath.toString(segments), is(""));
-
-        segments = ContextPath.parse(".foo..");
-        assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is("."));
-
-        segments = ContextPath.parse(".foo..bar");
-        assertThat(segments.length, is(2));
-        assertThat(ContextPath.toString(segments), is(".bar"));
 
         segments = ContextPath.parse("..foo..");
         assertThat(segments.length, is(1));
-        assertThat(ContextPath.toString(segments), is(".."));
+        assertThat(segments, arrayContaining(".."));
 
         segments = ContextPath.parse("....foo....");
         assertThat(segments.length, is(3));
-        assertThat(ContextPath.toString(segments), is("......"));
-
-        segments = ContextPath.parse(".foo.bar");
-        assertThat(segments.length, is(3));
-        assertThat(ContextPath.toString(segments), is(".foo.bar"));
-
-        segments = ContextPath.parse(".foo.......");
-        assertThat(segments.length, is(2));
-        assertThat(ContextPath.toString(segments), is("...."));
-    }
-
-    @Test
-    void testAbsolute() {
-        String[] segments;
-
-        segments = ContextPath.parse(".");
-        assertThat(ContextPath.isAbsolute(segments), is(false));
-
-        segments = ContextPath.parse("foo");
-        assertThat(ContextPath.isAbsolute(segments), is(true));
-    }
-
-    @Test
-    void testNatural() {
-        String[] segments;
-
-        segments = ContextPath.parse(".");
-        assertThat(ContextPath.isNatural(segments), is(true));
-
-        segments = ContextPath.parse("..");
-        assertThat(ContextPath.isNatural(segments), is(false));
-
-        segments = ContextPath.parse("foo");
-        assertThat(ContextPath.isNatural(segments), is(true));
-
-        segments = ContextPath.parse(".foo");
-        assertThat(ContextPath.isNatural(segments), is(true));
-
-        segments = ContextPath.parse("foo.bar");
-        assertThat(ContextPath.isNatural(segments), is(true));
-
-        segments = ContextPath.parse("..foo.bar");
-        assertThat(ContextPath.isNatural(segments), is(false));
+        assertThat(segments, arrayContaining("..", "..", ".."));
     }
 
     @Test
     void testInvalidPath() {
         assertThrows(NullPointerException.class, () -> ContextPath.parse(null));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(""));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("."));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("..."));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("foo."));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo."));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo.."));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo..bar"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo.bar"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo......."));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("-"));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("foo-"));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("-foo"));

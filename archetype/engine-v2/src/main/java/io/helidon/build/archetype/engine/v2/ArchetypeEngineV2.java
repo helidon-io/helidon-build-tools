@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 public class ArchetypeEngineV2 {
 
     private static final String ENTRYPOINT = "main.xml";
-    private static final String ARTIFACT_ID = "artifact-id";
+    private static final String ARTIFACT_ID = "artifactId";
 
     private final Path cwd;
 
@@ -88,6 +88,7 @@ public class ArchetypeEngineV2 {
         onResolved.run();
 
         // resolve output directory
+        // TODO use a Function<ContextScope, Path> instead of hard-coding artifactId here...
         String artifactId = requireNonNull(scope.getValue(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
         Path directory = directorySupplier.apply(artifactId);
 

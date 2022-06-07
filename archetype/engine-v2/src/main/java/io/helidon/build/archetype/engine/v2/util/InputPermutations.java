@@ -120,7 +120,7 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     public VisitResult visitInput(Input input0, Void arg) {
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ContextScope scope = context.scope().getOrCreateScope("." + input.id(), input.isGlobal());
+            ContextScope scope = context.scope().getOrCreateScope(input.id(), input.isGlobal());
             context.pushScope(scope);
         }
         return VisitResult.CONTINUE;

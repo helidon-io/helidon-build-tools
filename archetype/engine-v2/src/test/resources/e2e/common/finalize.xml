@@ -22,11 +22,11 @@
 
     <step optional="true" name="Customize Project">
         <inputs>
-            <text id="artifact-id" name="Project artifactId" optional="true" default="my-project"/>
+            <text id="artifactId" name="Project artifactId" optional="true" default="my-project"/>
         </inputs>
         <output>
             <model>
-                <value key="artifactId">${artifact-id}</value>
+                <value key="artifactId">${artifactId}</value>
             </model>
         </output>
     </step>

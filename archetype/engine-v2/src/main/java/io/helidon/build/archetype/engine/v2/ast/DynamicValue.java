@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.build.common.GenericType;
 
@@ -28,10 +29,11 @@ import static java.util.stream.Collectors.toList;
  */
 public final class DynamicValue implements Value {
 
-    private final String rawValue;
+    private final Supplier<String> supplier;
+    private String rawValue;
 
-    private DynamicValue(String rawValue) {
-        this.rawValue = rawValue;
+    private DynamicValue(Supplier<String> supplier) {
+        this.supplier = supplier;
     }
 
     /**
@@ -41,12 +43,29 @@ public final class DynamicValue implements Value {
      * @return Value
      */
     public static Value create(String value) {
-        return new DynamicValue(value);
+        return new DynamicValue(() -> value);
+    }
+
+    /**
+     * Create a new dynamic value.
+     *
+     * @param supplier raw value supplier
+     * @return Value
+     */
+    public static Value create(Supplier<String> supplier) {
+        return new DynamicValue(supplier);
     }
 
     @Override
     public Object unwrap() {
+        initRawValue();
         return rawValue;
+    }
+
+    private void initRawValue() {
+        if (rawValue == null) {
+            rawValue = supplier.get();
+        }
     }
 
     @Override
@@ -58,6 +77,7 @@ public final class DynamicValue implements Value {
     @SuppressWarnings("unchecked")
     public <U> U as(GenericType<U> type) {
         Objects.requireNonNull(type, "type is null");
+        initRawValue();
         if (type.equals(ValueTypes.BOOLEAN)) {
             return (U) Boolean.valueOf(Input.Boolean.valueOf(rawValue));
         } else if (type.equals(ValueTypes.INT)) {

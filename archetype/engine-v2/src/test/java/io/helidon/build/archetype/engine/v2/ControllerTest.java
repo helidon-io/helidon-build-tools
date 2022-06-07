@@ -73,12 +73,12 @@ class ControllerTest {
         Script script = load("controller/conditional.xml");
         Context context = Context.create();
         ContextScope scope = context.scope();
-        scope.putValue("do-model", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("do-colors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("do-red", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("do-green", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("do-blue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("do-shapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doModel", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doColors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doRed", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doGreen", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doBlue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("doShapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("red", "blue"));

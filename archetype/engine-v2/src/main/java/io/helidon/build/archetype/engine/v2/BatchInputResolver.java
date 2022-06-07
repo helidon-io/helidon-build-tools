@@ -54,7 +54,7 @@ public class BatchInputResolver extends InputResolver {
 
     private VisitResult visit(DeclaredInput input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             Value defaultValue = defaultValue(input, context);
@@ -77,7 +77,7 @@ public class BatchInputResolver extends InputResolver {
                     scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                 } else {
-                    throw new UnresolvedInputException(nextScope.id());
+                    throw new UnresolvedInputException(nextScope.path(true));
                 }
             }
         }
