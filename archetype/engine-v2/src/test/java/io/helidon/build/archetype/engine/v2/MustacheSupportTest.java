@@ -242,7 +242,7 @@ class MustacheSupportTest {
     void testModelValueWithContextVariable() {
         Block block = model(modelValue("color", "${color}")).build();
         Context context = Context.create();
-        context.scope().put("color", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
+        context.scope().putValue("color", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
         assertThat(render("{{color}}", block, null, context), is("red"));
     }
 
@@ -251,8 +251,8 @@ class MustacheSupportTest {
         Block block = model(modelValue("colors", "${red},${blue}")).build();
         Context context = Context.create();
         ContextScope scope = context.scope();
-        scope.put("red", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
-        scope.put("blue", Value.create("blue"), ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("red", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("blue", Value.create("blue"), ContextValue.ValueKind.EXTERNAL);
         assertThat(render("{{colors}}", block, null, context), is("red,blue"));
     }
 

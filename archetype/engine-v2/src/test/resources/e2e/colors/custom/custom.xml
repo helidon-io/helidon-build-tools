@@ -49,23 +49,23 @@
             </includes>
         </templates>
         <model>
-            <value key="palette-name">${palette-name}</value>
+            <value key="palette-name">${.palette-name}</value>
             <list key="colors">
-                <value if="${colors} contains 'red'">Red</value>
-                <value if="${colors} contains 'orange'">Orange</value>
-                <value if="${colors} contains 'yellow'">Yellow</value>
-                <value if="${colors} contains 'green'">Green</value>
-                <value if="${colors} contains 'blue'">Blue</value>
-                <value if="${colors} contains 'indigo'">Indigo</value>
-                <value if="${colors} contains 'violet'">Violet</value>
-                <value if="${colors} contains 'pink'">Pink</value>
-                <value if="${colors} contains 'light-pink'">Light-pink</value>
-                <value if="${colors} contains 'cyan'">Cyan</value>
-                <value if="${colors} contains 'light-salmon'">Light-salmon</value>
-                <value if="${colors} contains 'coral'">Coral</value>
-                <value if="${colors} contains 'tomato'">Tomato</value>
-                <value if="${colors} contains 'lemon'">Lemon</value>
-                <value if="${colors} contains 'khaki'">Khaki</value>
+                <value if="${.colors} contains 'red'">Red</value>
+                <value if="${.colors} contains 'orange'">Orange</value>
+                <value if="${.colors} contains 'yellow'">Yellow</value>
+                <value if="${.colors} contains 'green'">Green</value>
+                <value if="${.colors} contains 'blue'">Blue</value>
+                <value if="${.colors} contains 'indigo'">Indigo</value>
+                <value if="${.colors} contains 'violet'">Violet</value>
+                <value if="${.colors} contains 'pink'">Pink</value>
+                <value if="${.colors} contains 'light-pink'">Light-pink</value>
+                <value if="${.colors} contains 'cyan'">Cyan</value>
+                <value if="${.colors} contains 'light-salmon'">Light-salmon</value>
+                <value if="${.colors} contains 'coral'">Coral</value>
+                <value if="${.colors} contains 'tomato'">Tomato</value>
+                <value if="${.colors} contains 'lemon'">Lemon</value>
+                <value if="${.colors} contains 'khaki'">Khaki</value>
             </list>
             <list key="style-notes">
                 <value>Colors can have many styles</value>

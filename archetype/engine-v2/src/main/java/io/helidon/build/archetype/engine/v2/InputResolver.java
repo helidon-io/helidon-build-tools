@@ -82,7 +82,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
         }
         parents.push(input);
-        Value value = context.scope().get(scope.id());
+        Value value = context.scope().getValue("." + input.id());
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -128,7 +128,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             throw new IllegalStateException("parents is empty");
         }
         DeclaredInput parent = parents.peek();
-        Value inputValue = context.scope().get(".." + parent.id());
+        Value inputValue = context.scope().getValue(".." + parent.id());
         if (inputValue != null) {
             return parent.visitOption(inputValue, option);
         }

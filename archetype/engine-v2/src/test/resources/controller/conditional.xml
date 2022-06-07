@@ -20,14 +20,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <output if="${doModel}">
+    <output if="${do-model}">
         <model>
-            <list if="${doColors}" key="colors">
-                <value if="${doRed}">red</value>
-                <value if="${doGreen}">green</value>
-                <value if="${doBlue}">blue</value>
+            <list if="${do-colors}" key="colors">
+                <value if="${do-red}">red</value>
+                <value if="${do-green}">green</value>
+                <value if="${do-blue}">blue</value>
             </list>
-            <list if="${doShapes}" key="shapes">
+            <list if="${do-shapes}" key="shapes">
                 <value>circle</value>
             </list>
         </model>

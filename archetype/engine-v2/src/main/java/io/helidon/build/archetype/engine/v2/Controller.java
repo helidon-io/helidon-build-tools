@@ -22,12 +22,16 @@ import java.util.Objects;
 import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
+
+import static io.helidon.build.common.PropertyEvaluator.evaluate;
 
 /**
  * Controller.
@@ -60,13 +64,17 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.scope().put(preset.path(), preset.value(), ValueKind.PRESET);
+        String[] segments = ContextPath.parse(preset.path());
+        String id = ContextPath.id(segments);
+        ctx.scope()
+           .getOrCreateParent(segments, ContextScope.Visibility.UNSET)
+           .putValue(id, preset.value(), ValueKind.PRESET);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitVariable(Variable variable, Context ctx) {
-        ctx.scope().put(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        ctx.scope().putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
         return VisitResult.CONTINUE;
     }
 
@@ -90,7 +98,7 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
-        if (condition.expression().eval(ctx.scope()::get)) {
+        if (condition.expression().eval(ctx.scope()::getValue)) {
             return VisitResult.CONTINUE;
         }
         return VisitResult.SKIP_SUBTREE;
@@ -180,7 +188,7 @@ final class Controller extends VisitorAdapter<Context> {
     /**
      * Walk.
      *
-     * @param resolver input resolver
+     * @param resolver      input resolver
      * @param outputVisitor output visitor
      * @param modelVisitor  model visitor
      * @param block         block, must be non {@code null}

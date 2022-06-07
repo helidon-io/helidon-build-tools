@@ -47,22 +47,22 @@ class ControllerTest {
         ContextScope scope = context.scope();
         Controller.walk(script, context);
 
-        Value preset1 = scope.get("preset1");
+        Value preset1 = scope.getValue("preset1");
         assertThat(preset1, is(not(nullValue())));
         assertThat(preset1.type(), is(ValueTypes.BOOLEAN));
         assertThat(preset1.asBoolean(), is(true));
 
-        Value preset2 = scope.get("preset2");
+        Value preset2 = scope.getValue("preset2");
         assertThat(preset2, is(not(nullValue())));
         assertThat(preset2.type(), is(ValueTypes.STRING));
         assertThat(preset2.asString(), is("text1"));
 
-        Value preset3 = scope.get("preset3");
+        Value preset3 = scope.getValue("preset3");
         assertThat(preset3, is(not(nullValue())));
         assertThat(preset3.type(), is(ValueTypes.STRING));
         assertThat(preset3.asString(), is("enum1"));
 
-        Value preset4 = scope.get("preset4");
+        Value preset4 = scope.getValue("preset4");
         assertThat(preset4, is(not(nullValue())));
         assertThat(preset4.type(), is(ValueTypes.STRING_LIST));
         assertThat(preset4.asList(), contains("list1"));
@@ -73,12 +73,12 @@ class ControllerTest {
         Script script = load("controller/conditional.xml");
         Context context = Context.create();
         ContextScope scope = context.scope();
-        scope.put("doModel", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.put("doColors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.put("doRed", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.put("doGreen", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
-        scope.put("doBlue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.put("doShapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-model", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-colors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-red", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-green", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-blue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        scope.putValue("do-shapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("red", "blue"));

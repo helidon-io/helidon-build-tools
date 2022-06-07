@@ -28,102 +28,109 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ContextPathTest {
 
     @Test
-    void testNormalize() {
-        ContextPath path;
+    void testParse() {
+        String[] segments;
 
-        path = ContextPath.create("");
-        assertThat(path.asString(), is(""));
-        assertThat(path.segments().length, is(0));
+        segments = ContextPath.parse("");
+        assertThat(segments.length, is(0));
 
-        path = ContextPath.create(".");
-        assertThat(path.asString(), is("."));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse(".");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is("."));
 
-        path = ContextPath.create("..");
-        assertThat(path.asString(), is(".."));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse("..");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is(".."));
 
-        path = ContextPath.create("...");
-        assertThat(path.asString(), is(".."));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse("...");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is(".."));
 
-        path = ContextPath.create("....");
-        assertThat(path.asString(), is("...."));
-        assertThat(path.segments().length, is(2));
+        segments = ContextPath.parse("....");
+        assertThat(segments.length, is(2));
+        assertThat(ContextPath.toString(segments), is("...."));
 
-        path = ContextPath.create(".foo");
-        assertThat(path.asString(), is(".foo"));
-        assertThat(path.segments().length, is(2));
+        segments = ContextPath.parse(".foo");
+        assertThat(segments.length, is(2));
+        assertThat(ContextPath.toString(segments), is(".foo"));
 
-        path = ContextPath.create(".foo.");
-        assertThat(path.asString(), is(".foo"));
-        assertThat(path.segments().length, is(2));
+        segments = ContextPath.parse(".foo.");
+        assertThat(segments.length, is(2));
+        assertThat(ContextPath.toString(segments), is(".foo"));
 
-        path = ContextPath.create("foo.");
-        assertThat(path.asString(), is("foo"));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse("foo.");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is("foo"));
 
-        path = ContextPath.create("foo..");
-        assertThat(path.asString(), is(""));
-        assertThat(path.segments().length, is(0));
+        segments = ContextPath.parse("foo..");
+        assertThat(segments.length, is(0));
+        assertThat(ContextPath.toString(segments), is(""));
 
-        path = ContextPath.create(".foo..");
-        assertThat(path.asString(), is("."));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse(".foo..");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is("."));
 
-        path = ContextPath.create(".foo..bar");
-        assertThat(path.asString(), is(".bar"));
-        assertThat(path.segments().length, is(2));
+        segments = ContextPath.parse(".foo..bar");
+        assertThat(segments.length, is(2));
+        assertThat(ContextPath.toString(segments), is(".bar"));
 
-        path = ContextPath.create("..foo..");
-        assertThat(path.asString(), is(".."));
-        assertThat(path.segments().length, is(1));
+        segments = ContextPath.parse("..foo..");
+        assertThat(segments.length, is(1));
+        assertThat(ContextPath.toString(segments), is(".."));
 
-        path = ContextPath.create("....foo....");
-        assertThat(path.asString(), is("......"));
-        assertThat(path.segments().length, is(3));
+        segments = ContextPath.parse("....foo....");
+        assertThat(segments.length, is(3));
+        assertThat(ContextPath.toString(segments), is("......"));
+
+        segments = ContextPath.parse(".foo.bar");
+        assertThat(segments.length, is(3));
+        assertThat(ContextPath.toString(segments), is(".foo.bar"));
+
+        segments = ContextPath.parse(".foo.......");
+        assertThat(segments.length, is(2));
+        assertThat(ContextPath.toString(segments), is("...."));
     }
 
     @Test
     void testAbsolute() {
-        ContextPath path;
+        String[] segments;
 
-        path = ContextPath.create(".");
-        assertThat(path.isAbsolute(), is(false));
+        segments = ContextPath.parse(".");
+        assertThat(ContextPath.isAbsolute(segments), is(false));
 
-        path = ContextPath.create("foo");
-        assertThat(path.isAbsolute(), is(true));
+        segments = ContextPath.parse("foo");
+        assertThat(ContextPath.isAbsolute(segments), is(true));
     }
 
     @Test
     void testNatural() {
-        ContextPath path;
+        String[] segments;
 
-        path = ContextPath.create(".");
-        assertThat(path.isNatural(), is(true));
+        segments = ContextPath.parse(".");
+        assertThat(ContextPath.isNatural(segments), is(true));
 
-        path = ContextPath.create("..");
-        assertThat(path.isNatural(), is(false));
+        segments = ContextPath.parse("..");
+        assertThat(ContextPath.isNatural(segments), is(false));
 
-        path = ContextPath.create("foo");
-        assertThat(path.isNatural(), is(true));
+        segments = ContextPath.parse("foo");
+        assertThat(ContextPath.isNatural(segments), is(true));
 
-        path = ContextPath.create(".foo");
-        assertThat(path.isNatural(), is(true));
+        segments = ContextPath.parse(".foo");
+        assertThat(ContextPath.isNatural(segments), is(true));
 
-        path = ContextPath.create("foo.bar");
-        assertThat(path.isNatural(), is(true));
+        segments = ContextPath.parse("foo.bar");
+        assertThat(ContextPath.isNatural(segments), is(true));
 
-        path = ContextPath.create("..foo.bar");
-        assertThat(path.isNatural(), is(false));
+        segments = ContextPath.parse("..foo.bar");
+        assertThat(ContextPath.isNatural(segments), is(false));
     }
 
     @Test
     void testInvalidPath() {
-        assertThrows(NullPointerException.class, () -> ContextPath.create(null));
-        assertThrows(IllegalArgumentException.class, () -> ContextPath.create("-"));
-        assertThrows(IllegalArgumentException.class, () -> ContextPath.create("foo-"));
-        assertThrows(IllegalArgumentException.class, () -> ContextPath.create("-foo"));
-        assertThrows(IllegalArgumentException.class, () -> ContextPath.create("foo--bar"));
+        assertThrows(NullPointerException.class, () -> ContextPath.parse(null));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("-"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("foo-"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("-foo"));
+        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("foo--bar"));
     }
 }

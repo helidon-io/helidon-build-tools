@@ -24,9 +24,7 @@ import java.util.NoSuchElementException;
 
 import io.helidon.build.archetype.engine.v2.ContextScope.Visibility;
 import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
-import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
-import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
@@ -53,8 +51,13 @@ public final class Context {
             externalDefaults.forEach((k, v) -> defaults.put(k, ContextValue.external(v)));
         }
         if (externalValues != null) {
-            externalValues.forEach((k, v) -> scope.put(k,
-                    DynamicValue.create(evaluate(v, externalValues::get)), ValueKind.EXTERNAL));
+            externalValues.forEach((k, v) -> {
+                String[] segments = ContextPath.parse(k);
+                String id = ContextPath.id(segments);
+                Value value = DynamicValue.create(evaluate(v, externalValues::get));
+                scope.getOrCreateParent(segments, Visibility.UNSET)
+                     .putValue(id, value, ValueKind.EXTERNAL);
+            });
         }
         directories.push(cwd == null ? NULL_PATH : cwd);
     }
@@ -97,7 +100,8 @@ public final class Context {
      * @return value
      */
     public Value externalDefault(String id, boolean global) {
-        Value defaultValue = defaults.get(path(id, global));
+        String path = global || scope.visibility() == Visibility.GLOBAL ? id : scope.path(id);
+        Value defaultValue = defaults.get(path);
         String wrapped = defaultValue != null ? defaultValue.asString() : null;
         if (wrapped != null) {
             defaultValue = Value.create(scope.interpolate(wrapped));
@@ -157,28 +161,7 @@ public final class Context {
      * @return value, {@code null} if not found
      */
     public Value lookup(String query) {
-        return this.scope.get(query);
-    }
-
-    /**
-     * Compute the path for a given input name.
-     *
-     * @param id     input id
-     * @param global global
-     * @return key
-     */
-    public String path(String id, boolean global) {
-        return global || scope.visibility() == Visibility.GLOBAL? id : scope.id() + "." + id;
-    }
-
-    /**
-     * If the given node is an instance of {@link Condition}, evaluate the expression.
-     *
-     * @param node node
-     * @return {@code true} if the node is not an instance of {@link Condition} or the expression result
-     */
-    public boolean filterNode(Node node) {
-        return Condition.filter(node, scope::get);
+        return this.scope.getValue(query);
     }
 
     /**

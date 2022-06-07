@@ -86,13 +86,13 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
 
     @Override
     public VisitResult visitVariable(Variable variable, Void arg) {
-        context.scope().put(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        context.scope().putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitPreset(Preset preset, Void arg) {
-        context.scope().put(preset.path(), preset.value(), ValueKind.PRESET);
+        context.scope().putValue(preset.path(), preset.value(), ValueKind.PRESET);
         return VisitResult.CONTINUE;
     }
 
@@ -120,7 +120,7 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     public VisitResult visitInput(Input input0, Void arg) {
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ContextScope scope = context.scope().getOrCreate(input.id(), input.isGlobal());
+            ContextScope scope = context.scope().getOrCreateScope("." + input.id(), input.isGlobal());
             context.pushScope(scope);
         }
         return VisitResult.CONTINUE;
@@ -129,7 +129,7 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
     @Override
     public VisitResult postVisitInput(Input input, Void arg) {
         ContextScope scope = context.scope();
-        String id = scope.id();
+        String id = scope.path();
         List<Map<String, String>> permutations = requireNonNull(stack.pop());
         if (input instanceof Option) {
             String rawValue = ((Option) input).value();

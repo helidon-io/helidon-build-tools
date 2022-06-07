@@ -39,13 +39,13 @@
             </includes>
         </templates>
         <model>
-            <value key="library-name">${library-name}</value>
+            <value key="library-name">${.library-name}</value>
             <list key="shapes">
-                <value if="${shapes} contains 'circle'">Circle</value>
-                <value if="${shapes} contains 'triangle'">Triangle</value>
-                <value if="${shapes} contains 'rectangle'">Rectangle</value>
-                <value if="${shapes} contains 'arrow'">Arrow</value>
-                <value if="${shapes} contains 'donut'">Donut</value>
+                <value if="${.shapes} contains 'circle'">Circle</value>
+                <value if="${.shapes} contains 'triangle'">Triangle</value>
+                <value if="${.shapes} contains 'rectangle'">Rectangle</value>
+                <value if="${.shapes} contains 'arrow'">Arrow</value>
+                <value if="${.shapes} contains 'donut'">Donut</value>
             </list>
             <list key="style-notes">
                 <value>Shapes can have many styles</value>

@@ -16,7 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 import static java.lang.Character.isLetterOrDigit;
@@ -31,7 +30,7 @@ import static java.util.Objects.requireNonNull;
  *     <li>A path contains segments separated by {@code "."} characters</li>
  *     <li>Segments can contains only lower case letters, digits and separator {@code "-"}</li>
  *     <li>The segment separator {@code "-"} must used between valid characters ; ({@code "--"} is prohibited</li>
- *     <li>Two reference operators are available: current scope {@code "."} ; parent scope {@code ".."}</li>
+ *     <li>Two reference operators are available, current scope: {@code "."} ; parent scope: {@code ".."}</li>
  *     <li>A path that starts with {@code "."} is relative to the associated {@link ContextScope}</li>
  *     <li>A path that starts with a segment is absolute. I.e. relative to the root scope</li>
  * </ul>
@@ -41,43 +40,43 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ContextPath {
 
-    private final String rawPath;
-    private final String[] segments;
-    private final boolean absolute;
-
-    private ContextPath(String path) {
-        this.rawPath = path;
-        this.segments = parse(path);
-        this.absolute = segments.length == 0 || !".".equals(segments[0]);
-    }
+    /**
+     * Parent path reference.
+     */
+    public static final String PARENT_REF = "..";
 
     /**
-     * Get the segments.
-     *
-     * @return segments
+     * Path separator character.
      */
-    public String[] segments() {
-        return segments;
-    }
+    public static final char PATH_SEPARATOR_CHAR = '.';
+
+    /**
+     * Path separator string.
+     */
+    public static final String PATH_SEPARATOR = ".";
+
+    private static final char SEGMENT_SEPARATOR = '-';
 
     /**
      * Test if this path is absolute.
      *
+     * @param segments the path segments
      * @return {@code true} if absolute, {@code false} otherwise
      */
-    public boolean isAbsolute() {
-        return absolute;
+    public static boolean isAbsolute(String[] segments) {
+        return segments.length == 0 || segments[0].indexOf(PATH_SEPARATOR_CHAR) < 0;
     }
 
     /**
      * Test if this path is natural.
      * A path is natural if it does not include parent references {@code ".."}
      *
+     * @param segments the path segments
      * @return {@code true} if natural, {@code false} otherwise
      */
-    public boolean isNatural() {
+    public static boolean isNatural(String[] segments) {
         for (String segment : segments) {
-            if ("..".equals(segment)) {
+            if (PARENT_REF.equals(segment)) {
                 return false;
             }
         }
@@ -85,15 +84,39 @@ public final class ContextPath {
     }
 
     /**
+     * Get the last segment of the path.
+     *
+     * @param segments the path segments
+     * @return id
+     * @throws IllegalArgumentException if the path is empty, or if the last segment contains any {@code "."}
+     */
+    public static String id(String[] segments) {
+        if (segments.length == 0) {
+            throw new IllegalArgumentException("Path is empty");
+        }
+        String id = segments[segments.length - 1];
+        if (id.indexOf(PATH_SEPARATOR_CHAR) > 0) {
+            throw new IllegalArgumentException("Invalid scope id: " + id);
+        }
+        return id;
+    }
+
+    /**
      * Get this path as a string.
      *
+     * @param segments the path segments
      * @param endIndex last index of the segments to include
      * @return String
      */
-    public String asString(int endIndex) {
+    public static String toString(String[] segments, int endIndex) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= endIndex; i++) {
             sb.append(segments[i]);
+            if (i + 1 < segments.length
+                    && segments[i].indexOf(PATH_SEPARATOR_CHAR) < 0
+                    && segments[i + 1].indexOf(PATH_SEPARATOR_CHAR) < 0) {
+                sb.append(PATH_SEPARATOR_CHAR);
+            }
         }
         return sb.toString();
     }
@@ -101,80 +124,59 @@ public final class ContextPath {
     /**
      * Get this path as a string.
      *
+     * @param segments the path segments
      * @return String
      */
-    public String asString() {
-        return asString(0);
-    }
-
-    @Override
-    public String toString() {
-        return "ContextPath{"
-                + "rawPath='" + rawPath + '\''
-                + ", segments=" + Arrays.toString(segments)
-                + ", absolute=" + absolute
-                + '}';
+    public static String toString(String[] segments) {
+        return toString(segments, segments.length - 1);
     }
 
     /**
-     * Create a context path.
+     * Parse a context path.
      *
      * @param path raw path
      * @return context path
      * @throws IllegalArgumentException if the path is not valid
      * @throws NullPointerException     if path is {@code null}
      */
-    public static ContextPath create(String path) {
-        return new ContextPath(path);
-    }
-
-    private static String[] parse(String path) {
+    public static String[] parse(String path) {
         LinkedList<String> segments = new LinkedList<>();
         StringBuilder buf = new StringBuilder();
         char[] chars = requireNonNull(path, "path is null").toCharArray();
-        for (int i = 0; i < path.length(); i++) {
+        for (int i = 0; i < chars.length; i++) {
             char c = chars[i];
             boolean last = i + 1 == chars.length;
-            if (c == '.') {
-                if (last) {
-                    if (segments.isEmpty()) {
-                        buf.append(c);
-                    } else {
-                        // ignore trailing dot
-                        break;
-                    }
-                } else {
-                    if (chars[i + 1] == '.') {
-                        // double dot
-                        i++; // skip next character
-                        if (i > 1 && chars[i - 2] != '.') {
-                            // delete previous segment
+            if (c == PATH_SEPARATOR_CHAR) {
+                if (i + 1 < chars.length && chars[i + 1] == PATH_SEPARATOR_CHAR) {
+                    // double dot
+                    i++; // skip next character
+                    if (!segments.isEmpty()) {
+                        if ((i > 1 && chars[i - 2] != PATH_SEPARATOR_CHAR)) {
+                            // ".foo.." to "."
                             segments.removeLast();
                             continue;
+                        } else if(segments.peekLast().equals(PATH_SEPARATOR)) {
+                            // "..." -> ".."
+                            segments.removeLast();
                         }
-                        buf.append(c);
                     }
-                    buf.append(c);
+                    segments.add(PARENT_REF);
+                } else if (i == 0) {
+                    segments.add(PATH_SEPARATOR);
                 }
-                segments.add(buf.toString());
-                buf.setLength(0);
                 continue;
             }
-            boolean dash = c == '-';
-            if (!(dash || (isLetterOrDigit(c) && isLowerCase(c)))) {
+            boolean dash = c == SEGMENT_SEPARATOR;
+            if (!(dash || (Character.isDigit(c) || (Character.isLetter(c) && isLowerCase(c))))) {
                 throw new InvalidPathException(c, path, i);
             }
             int buf_len = buf.length();
-            if (i > 0 && chars[i - 1] == '.' && buf_len > 0) {
-                segments.add(buf.toString());
-                buf.setLength(0);
-            }
-            if (dash && (buf_len == 0 || buf.charAt(buf_len - 1) == '-')) {
+            if (dash && (buf_len == 0 || buf.charAt(buf_len - 1) == SEGMENT_SEPARATOR)) {
                 throw new InvalidPathException(c, path, i);
             }
             buf.append(c);
-            if (last || chars[i + 1] == '.') {
-                if (c == '-') {
+            if (last || chars[i + 1] == PATH_SEPARATOR_CHAR) {
+                if (c == SEGMENT_SEPARATOR) {
                     throw new InvalidPathException(c, path, i);
                 }
                 segments.add(buf.toString());

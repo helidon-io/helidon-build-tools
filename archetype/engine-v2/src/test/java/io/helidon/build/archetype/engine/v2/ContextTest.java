@@ -33,186 +33,56 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ContextTest {
 
     @Test
-    void testLookup() {
-        Context context = Context.create();
-        ContextScope scope = context.scope().getOrCreate("foo", false);
-        context.pushScope(scope);
-        context.scope().put(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
-
-        Value value;
-
-        value = context.lookup("foo");
-        assertThat(value, is(nullValue()));
-
-        value = context.lookup("ROOT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.PARENT.PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-    }
-
-    @Test
-    void testLookupInScope() {
-        Context context = Context.create();
-        ContextScope scope = context.scope();
-
-        scope = scope.getOrCreate("foo", false);
-        scope.put(scope.id(), Value.TRUE, ValueKind.EXTERNAL);
-        context.pushScope(scope);
-
-        scope = scope.getOrCreate("bar", false);
-        scope.put(scope.id(), Value.TRUE, ValueKind.EXTERNAL);
-        context.pushScope(scope);
-
-        scope = scope.getOrCreate("color", false);
-        scope.put(scope.id(), Value.create("blue"), ValueKind.EXTERNAL);
-
-        Value color = context.lookup("color");
-        assertThat(color, is(notNullValue()));
-        assertThat(color.asString(), is("blue"));
-    }
-
-    @Test
-    void testLookupGlobal() {
-        Context context = Context.create();
-        ContextScope scope = context.scope();
-        scope = scope.getOrCreate("foo", true);
-        scope.put("bar", Value.create("foo-value"), ValueKind.EXTERNAL);
-        context.pushScope(scope);
-
-        Value value;
-        value = context.lookup("bar");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-    }
-
-    @Test
-    void testLookupInternalOnly() {
-        Context context = Context.create();
-        context.scope().put("foo", Value.create("foo-value"), ValueKind.EXTERNAL);
-
-        Value value;
-
-        value = context.lookup("foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("ROOT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.PARENT.PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-    }
-
-    @Test
-    void testRelativeLookup() {
-        Context context = Context.create();
-        ContextScope scope;
-        scope = context.scope().getOrCreate("foo", false);
-        context.pushScope(scope);
-        context.scope().put(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
-        scope = context.scope().getOrCreate("bar", false);
-        context.pushScope(scope);
-        context.scope().put(scope.id(), Value.create("bar-value"), ValueKind.EXTERNAL);
-
-        Value value;
-
-        value = context.lookup("bar");
-        assertThat(value, is(nullValue()));
-
-        value = context.lookup("ROOT.bar");
-        assertThat(value, is(nullValue()));
-
-        value = context.lookup("ROOT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("ROOT.foo.bar");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
-
-        value = context.lookup("PARENT.bar");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
-
-        value = context.lookup("PARENT.PARENT.bar");
-        assertThat(value, is(nullValue()));
-
-        value = context.lookup("PARENT.PARENT.PARENT.foo");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
-
-        value = context.lookup("PARENT.PARENT.PARENT.foo.bar");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
-    }
-
-    @Test
     void testPopScope() {
         Context context = Context.create();
         ContextScope scope = context.scope();
 
-        scope = scope.getOrCreate("foo", false);
-        scope.put(scope.id(), Value.create("foo-value"), ValueKind.EXTERNAL);
+        scope = scope.getOrCreateScope("foo", false);
+        scope.putValue("foo1", Value.create("foo-value1"), ValueKind.EXTERNAL);
         context.pushScope(scope);
 
-        scope = scope.getOrCreate("bar", false);
-        scope.put(scope.id(), Value.create("bar-value"), ValueKind.EXTERNAL);
+        scope = scope.getOrCreateScope(".bar", false);
+        scope.putValue("bar1", Value.create("bar-value1"), ValueKind.EXTERNAL);
         context.pushScope(scope);
 
         context.popScope();
+        scope = context.scope();
         Value value;
 
-        value = context.lookup("bar");
-        assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
-
-        value = context.lookup("foo");
+        value = scope.getValue(".bar1");
         assertThat(value, is(nullValue()));
 
-        value = context.lookup("ROOT.foo");
+        value = scope.getValue(".bar.bar1");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
+        assertThat(value.asString(), is("bar-value1"));
 
-        value = context.lookup("PARENT.foo");
+        value = scope.getValue(".foo1");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value"));
+        assertThat(value.asString(), is("foo-value1"));
 
-        value = context.lookup("foo.bar");
+        value = scope.getValue("foo1");
+        assertThat(value, is(notNullValue()));
+        assertThat(value.asString(), is("foo-value1"));
+
+        value = scope.getValue("..foo1");
+        assertThat(value, is(notNullValue()));
+        assertThat(value.asString(), is("foo-value1"));
+
+        value = scope.getValue("foo.bar1");
         assertThat(value, is(nullValue()));
 
-        value = context.lookup("ROOT.foo.bar");
+        value = scope.getValue("foo.bar.bar1");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
+        assertThat(value.asString(), is("bar-value1"));
 
-        value = context.lookup("PARENT.foo.bar");
+        value = scope.getValue("..foo.bar.bar1");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value"));
+        assertThat(value.asString(), is("bar-value1"));
     }
 
     @Test
     void testExternalValuesSubstitution() {
         Context context = Context.create(null, Map.of("foo", "foo", "bar", "${foo}"), null);
-        assertThat(context.lookup("bar").asString(), is("foo"));
+        assertThat(context.scope().getValue("bar").asString(), is("foo"));
     }
 }

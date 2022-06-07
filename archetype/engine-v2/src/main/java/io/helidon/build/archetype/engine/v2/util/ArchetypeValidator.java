@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.ContextPath;
 import io.helidon.build.archetype.engine.v2.ContextScope;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
@@ -132,7 +133,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     }
 
     private List<Block> refs(String path, Context ctx) {
-        List<Block> refs = allRefs.get(ctx.scope().path(path));
+        String[] segments = ContextPath.parse(path);
+        String id = ContextPath.id(segments);
+        List<Block> refs = allRefs.get(ctx.scope().findScope(segments).path(id));
         if (refs != null) {
             return refs;
         }
@@ -142,6 +145,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
         try {
+            ContextScope scope = ctx.scope();
             condition.expression().eval(variable -> {
                 List<Block> refs = refs(variable, ctx);
                 if (refs == null || refs.isEmpty()) {
@@ -152,7 +156,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 switch (kind) {
                     case LIST:
                     case ENUM:
-                        String value = ((Input.Options) ref).options(ctx::filterNode).get(0).value();
+                        String value = ((Input.Options) ref).options(n -> Condition.filter(n, scope::getValue))
+                                                            .get(0)
+                                                            .value();
                         return kind == Input.Kind.LIST ? Value.create(List.of(value)) : Value.create(value);
                     case TEXT:
                         return Value.create("some text");
@@ -248,7 +254,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ContextScope ctxScope = ctx.scope().getOrCreate(input.id(), input.isGlobal());
+            ContextScope ctxScope = ctx.scope().getOrCreateScope("." + input.id(), input.isGlobal());
             inputPath = ctxScope.id();
             ctx.pushScope(ctxScope);
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());

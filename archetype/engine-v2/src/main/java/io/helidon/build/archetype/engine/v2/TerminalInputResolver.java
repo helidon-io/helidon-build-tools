@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
@@ -78,7 +79,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitBoolean(Input.Boolean input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             try {
@@ -87,7 +88,7 @@ public class TerminalInputResolver extends InputResolver {
                 String question = String.format("%s (yes/no)", Bold.apply(input.name()));
                 String response = prompt(question, defaultText);
                 if (response == null || response.trim().length() == 0) {
-                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (defaultValue == null || !defaultValue.asBoolean()) {
                         result = VisitResult.SKIP_SUBTREE;
                     } else {
@@ -105,7 +106,7 @@ public class TerminalInputResolver extends InputResolver {
                     }
                     continue;
                 }
-                scope.put(nextScope.id(), Value.create(value), ContextValue.ValueKind.USER);
+                scope.putValue(nextScope.id(), Value.create(value), ContextValue.ValueKind.USER);
                 if (!value) {
                     result = VisitResult.SKIP_SUBTREE;
                 } else {
@@ -122,7 +123,7 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitText(Input.Text input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             try {
@@ -138,7 +139,7 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(response);
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                scope.put(nextScope.id(), value, valueKind);
+                scope.putValue(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -151,17 +152,17 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitEnum(Input.Enum input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;
             try {
                 Value defaultValue = defaultValue(input, context);
-                List<Input.Option> options = input.options(context::filterNode);
+                List<Input.Option> options = input.options(n -> Condition.filter(n, scope::getValue));
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                     break;
                 }
@@ -187,7 +188,7 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(parseEnumResponse(response, options));
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                scope.put(nextScope.id(), value, valueKind);
+                scope.putValue(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));
@@ -205,12 +206,12 @@ public class TerminalInputResolver extends InputResolver {
     @Override
     public VisitResult visitList(Input.List input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             String response = null;
             try {
-                List<Input.Option> options = input.options(context::filterNode);
+                List<Input.Option> options = input.options(n -> Condition.filter(n, scope::getValue));
 
                 printName(input);
                 printOptions(options);
@@ -229,7 +230,7 @@ public class TerminalInputResolver extends InputResolver {
                     value = Value.create(parseListResponse(response, options));
                     valueKind = ContextValue.ValueKind.USER;
                 }
-                scope.put(nextScope.id(), value, valueKind);
+                scope.putValue(nextScope.id(), value, valueKind);
                 result = VisitResult.CONTINUE;
             } catch (NumberFormatException | IndexOutOfBoundsException e) {
                 System.out.println(BoldRed.apply("Invalid response: " + response));

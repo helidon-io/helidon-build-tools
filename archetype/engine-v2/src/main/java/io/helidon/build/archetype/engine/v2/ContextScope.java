@@ -15,6 +15,8 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,14 +27,18 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.common.GenericType;
 
+import static io.helidon.build.archetype.engine.v2.ContextPath.PARENT_REF;
+import static io.helidon.build.archetype.engine.v2.ContextPath.PATH_SEPARATOR;
+import static io.helidon.build.archetype.engine.v2.ContextPath.PATH_SEPARATOR_CHAR;
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
 
 /**
  * Context scope.
- * Tree nodes of context values.
+ * Tree nodes that represents scoping of {@code DeclaredInput}.
  *
  * @see Context
  * @see ContextPath
+ * @see io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput
  */
 public final class ContextScope {
 
@@ -73,7 +79,7 @@ public final class ContextScope {
         if (parent != null) {
             this.parent = parent;
             this.root = Objects.requireNonNull(root, "root is null");
-            if (id == null || id.isEmpty() || id.indexOf('.') >= 0) {
+            if (id == null || id.isEmpty() || id.indexOf(PATH_SEPARATOR_CHAR) >= 0) {
                 throw new IllegalArgumentException("Invalid scope id");
             }
             this.id = id;
@@ -130,19 +136,19 @@ public final class ContextScope {
     }
 
     /**
-     * Get or create a new scope.
+     * Get or create a scope.
      *
      * @param path   scope path, must be non {@code null} and non-empty
      * @param global {@code true} if the scope is global, {@code false} otherwise
      * @return scope
      * @throws IllegalArgumentException if path is {@code null}
      */
-    public ContextScope getOrCreate(String path, boolean global) {
-        return getOrCreate(path, global ? Visibility.GLOBAL : Visibility.LOCAL);
+    public ContextScope getOrCreateScope(String path, boolean global) {
+        return getOrCreateScope(path, global ? Visibility.GLOBAL : Visibility.LOCAL);
     }
 
     /**
-     * Get or create a new scope.
+     * Get or create a scope.
      * If the path contains more than one segment (delimited by {@code .}), the intermediate scopes are implicitly
      * created.
      *
@@ -153,18 +159,44 @@ public final class ContextScope {
      * @throws IllegalArgumentException if path is invalid
      * @throws IllegalStateException    if a scope already exists and the requested visibility doesn't match
      */
-    public ContextScope getOrCreate(String path, Visibility visibility) {
-        ContextPath contextPath = ContextPath.create(path);
-        String[] segments = contextPath.segments();
+    public ContextScope getOrCreateScope(String path, Visibility visibility) {
+        String[] segments = ContextPath.parse(path);
+        ContextScope parent = getOrCreateParent(segments, Visibility.UNSET);
+        String id = ContextPath.id(segments);
+        return parent.getOrCreateScope0(id, visibility);
+    }
+
+    /**
+     * Get or create the parent scopes for the given segments.
+     * I.e. all segments except the last one.
+     * If the path contains more than one segment (delimited by {@code .}), the intermediate scopes are implicitly
+     * created.
+     *
+     * @param segments   path segments, must be non {@code null}
+     * @param visibility scope visibility
+     * @return parent scope
+     * @throws NullPointerException     if path is null
+     * @throws IllegalArgumentException if path is invalid
+     * @throws IllegalStateException    if a scope already exists and the requested visibility doesn't match
+     */
+    public ContextScope getOrCreateParent(String[] segments, Visibility visibility) {
         if (segments.length == 0) {
             return root;
         }
-        String id = segments[segments.length - 1];
-        if (id.indexOf('.') > 0) {
-            throw new IllegalArgumentException("Invalid scope id: " + id);
-        }
-        ContextScope parent = findScope(contextPath, (s, sid) -> s.getOrCreate0(sid, visibility));
-        return parent.getOrCreate0(id, visibility);
+        return findScope(segments, (s, sid) -> s.getOrCreateScope0(sid, visibility));
+    }
+
+    /**
+     * Find a scope.
+     *
+     * @param segments path segments
+     * @return scope, or {@code null} if not found
+     * @throws NullPointerException     if path is null
+     * @throws IllegalArgumentException if path is invalid
+     * @see ContextPath
+     */
+    public ContextScope findScope(String[] segments) {
+        return findScope(segments, ContextScope::findScope0);
     }
 
     /**
@@ -175,9 +207,9 @@ public final class ContextScope {
      * @param kind  value kind
      * @throws IllegalStateException if a non readonly value already exists
      */
-    public void put(String key, Value value, ValueKind kind) {
-        if (key.indexOf('.') >= 0) {
-            throw new IllegalArgumentException("key must not contain '.'");
+    public void putValue(String key, Value value, ValueKind kind) {
+        if (key.contains(PATH_SEPARATOR)) {
+            throw new IllegalArgumentException(String.format("key must not contain '%s'", PATH_SEPARATOR));
         }
         ContextValue currentValue = values.get(key);
         if (currentValue == null || !currentValue.isReadOnly()) {
@@ -212,30 +244,50 @@ public final class ContextScope {
      * @throws NullPointerException     if path is null
      * @throws IllegalArgumentException if path is invalid
      */
-    public Value get(String path) {
-        ContextPath contextPath = valuePath(path);
-        // TODO bi-function should traverse global children and first level of non global to find sid
-        ContextScope scope = findScope(contextPath, (s, sid) -> s.children.get(sid));
-        // TODO BFS traverse global children to find id
-        return scope.values.get(id);
+    public Value getValue(String path) {
+        String[] segments = ContextPath.parse(path);
+        String id = ContextPath.id(segments);
+        ContextScope scope = findScope(segments, ContextScope::findScope0);
+        return scope.findValue(id);
     }
 
     /**
-     * Compute the effective path of a value.
-     * Scopes with visibility is {@link Visibility#GLOBAL} are not included.
+     * Compute the visible path for this scope.
      *
-     * @param path path
-     * @return effective path
-     * @throws NullPointerException     if path is null
-     * @throws IllegalArgumentException if path is invalid
+     * @return path
      */
-    public String path(String path) {
-        ContextPath contextPath = valuePath(path);
-        ContextScope scope = findScope(contextPath, (s, sid) -> s.children.get(sid));
-        StringBuilder resolved = new StringBuilder(id);
+    public String path() {
+        StringBuilder resolved = new StringBuilder();
+        ContextScope scope = this;
         while (scope.parent != null) {
-            if (scope.visibility != Visibility.GLOBAL) {
-                resolved.insert(0, scope.id + ".");
+            if (resolved.length() == 0) {
+                resolved.append(scope.id);
+            } else {
+                resolved.insert(0, scope.id + PATH_SEPARATOR);
+            }
+            if (scope.visibility == Visibility.GLOBAL
+                    || scope.parent.visibility == Visibility.GLOBAL) {
+                break;
+            }
+            scope = scope.parent;
+        }
+        return resolved.toString();
+    }
+
+    /**
+     * Compute the visible path for a given value.
+     *
+     * @param key value key
+     * @return path
+     */
+    public String path(String key) {
+        StringBuilder resolved = new StringBuilder(key);
+        ContextScope scope = this;
+        while (scope.parent != null) {
+            resolved.insert(0, scope.id + PATH_SEPARATOR);
+            if (scope.visibility == Visibility.GLOBAL
+                    || scope.parent.visibility == Visibility.GLOBAL) {
+                break;
             }
             scope = scope.parent;
         }
@@ -259,7 +311,7 @@ public final class ContextScope {
         while (!output.equals(input)) {
             input = output;
             output = evaluate(output, var -> {
-                Value val = get(var);
+                Value val = getValue(var);
                 if (val == null) {
                     throw new IllegalArgumentException("Unresolved variable: " + var);
                 }
@@ -277,51 +329,74 @@ public final class ContextScope {
                 + '}';
     }
 
-    private ContextScope getOrCreate0(String id, Visibility visibility) {
+    private ContextScope getOrCreateScope0(String id, Visibility visibility) {
         ContextScope scope = children.computeIfAbsent(id, sid -> new ContextScope(this, root, sid, visibility));
-        if (scope.visibility != visibility) {
+        if (scope.visibility != visibility && visibility != Visibility.UNSET) {
             if (scope.visibility == Visibility.UNSET) {
                 scope.visibility = visibility;
             } else {
                 throw new IllegalStateException(String.format(
                         "Scope visibility mismatch, id=%s, current=%s, requested=%s",
-                        id, parent.visibility, visibility));
+                        id, scope.visibility, visibility));
             }
         }
         return scope;
     }
 
-    private ContextScope findScope(ContextPath path, BiFunction<ContextScope, String, ContextScope> fn) {
+    private ContextScope findScope(String[] segments, BiFunction<ContextScope, String, ContextScope> fn) {
         ContextScope scope = root;
-        String[] segments = path.segments();
         for (int i = 0; i < segments.length - 1; i++) {
             String segment = segments[i];
-            if (".".equals(segment)) {
-                if (i == 0) {
-                    scope = this;
-                }
-            } else if ("..".equals(segment)) {
+            if (i == 0 && PATH_SEPARATOR.equals(segment)) {
+                scope = this;
+            } else if (PARENT_REF.equals(segment)) {
                 scope = i == 0 ? parent : scope.parent;
             } else {
                 scope = fn.apply(scope, segment);
                 if (scope == null) {
-                    throw new IllegalStateException("Unresolved scope: " + path.asString(i));
+                    throw new IllegalStateException("Unresolved scope: " + ContextPath.toString(segments, i));
                 }
             }
         }
         return scope;
     }
 
-    private static ContextPath valuePath(String rawPath) {
-        ContextPath path = ContextPath.create(rawPath);
-        String[] segments = path.segments();
-        if (segments.length == 0) {
-            throw new IllegalArgumentException("Normalized path is empty");
+    private ContextScope findScope0(String id) {
+        if (children.containsKey(id)) {
+            return children.get(id);
         }
-        String id = segments[segments.length - 1];
-        if (id.indexOf('.') > 0) {
-            throw new IllegalArgumentException("Invalid scope id: " + id);
+        if (parent == null || parent.visibility == Visibility.GLOBAL) {
+            Deque<ContextScope> stack = new ArrayDeque<>(children.values());
+            while (!stack.isEmpty()) {
+                ContextScope scope = stack.pop();
+                if (scope.children.containsKey(id)) {
+                    return scope.children.get(id);
+                }
+                if (scope.visibility == Visibility.GLOBAL) {
+                    stack.addAll(scope.children.values());
+                }
+            }
         }
-        return path;
+        return null;
+    }
+
+    private Value findValue(String id) {
+        if (values.containsKey(id)) {
+            return values.get(id);
+        }
+        if (parent == null || parent.visibility == Visibility.GLOBAL) {
+            Deque<ContextScope> stack = new ArrayDeque<>(children.values());
+            while (!stack.isEmpty()) {
+                ContextScope scope = stack.pop();
+                if (scope.parent.visibility != Visibility.GLOBAL) {
+                    continue;
+                }
+                if (scope.values.containsKey(id)) {
+                    return scope.values.get(id);
+                }
+                stack.addAll(scope.children.values());
+            }
+        }
+        return null;
     }
 }

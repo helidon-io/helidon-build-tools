@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.List;
 
+import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
@@ -53,13 +54,13 @@ public class BatchInputResolver extends InputResolver {
 
     private VisitResult visit(DeclaredInput input, Context context) {
         ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = scope.getOrCreateScope("." + input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             Value defaultValue = defaultValue(input, context);
             if (input.isOptional()) {
                 if (defaultValue != null) {
-                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                         result = VisitResult.SKIP_SUBTREE;
                     } else {
@@ -69,11 +70,11 @@ public class BatchInputResolver extends InputResolver {
                     throw new UnresolvedInputException(nextScope.id());
                 }
             } else if (input instanceof Input.Enum) {
-                List<Input.Option> options = ((Input.Enum) input).options(context::filterNode);
+                List<Input.Option> options = ((Input.Enum) input).options(n -> Condition.filter(n, scope::getValue));
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    scope.put(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                 } else {
                     throw new UnresolvedInputException(nextScope.id());

@@ -44,7 +44,7 @@ public class BatchInputResolverTest {
         ContextScope scope = context.scope();
         Controller.walk(new BatchInputResolver(), block, context);
 
-        Value value = scope.get("enum-input1");
+        Value value = scope.getValue("enum-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
