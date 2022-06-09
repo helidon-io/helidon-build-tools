@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.MergedModel;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 

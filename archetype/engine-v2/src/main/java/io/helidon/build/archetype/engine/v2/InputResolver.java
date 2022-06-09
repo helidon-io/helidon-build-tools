@@ -29,6 +29,8 @@ import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import io.helidon.build.common.GenericType;
 
 /**
@@ -82,7 +84,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
         }
         parents.push(input);
-        Value value = context.scope().getValue(input.id());
+        Value value = context.getValue(input.id());
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -90,7 +92,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
             return null;
         }
-        input.validate(value, scope.id());
+        input.validate(value, scope.path(true));
         return input.visitValue(value);
     }
 
@@ -103,15 +105,14 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      */
     public static Value defaultValue(DeclaredInput input, Context context) {
         Value defaultValue = input.defaultValue();
-        ContextScope scope = context.scope();
         if (defaultValue != null) {
             GenericType<?> valueType = defaultValue.type();
             if (valueType == ValueTypes.STRING) {
-                String value = scope.interpolate(input.normalizeOptionValue(defaultValue.asString()));
+                String value = context.interpolate(input.normalizeOptionValue(defaultValue.asString()));
                 return Value.create(value);
             } else if (valueType == ValueTypes.STRING_LIST) {
                 return Value.create(defaultValue.asList().stream()
-                                                .map(scope::interpolate)
+                                                .map(context::interpolate)
                                                 .map(input::normalizeOptionValue)
                                                 .collect(Collectors.toList()));
             }

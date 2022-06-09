@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -112,14 +114,16 @@ class OutputGeneratorTest {
         return generate(path, scope -> {});
     }
 
-    private static Path generate(String path, Consumer<ContextScope> initializer) {
+    private static Path generate(String path, Consumer<Context> initializer) {
         Script script = load(path);
         Path scriptPath = script.scriptPath();
         String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
         Path target = targetDir(OutputGeneratorTest.class);
         Path outputDir = unique(target.resolve("generator-ut/"), dirname);
-        Context context = Context.create(script.scriptPath().getParent());
-        initializer.accept(context.scope());
+        Context context = Context.builder()
+                                 .cwd(script.scriptPath().getParent())
+                                 .build();
+        initializer.accept(context);
         MergedModel mergedModel = MergedModel.resolveModel(script, context);
         OutputGenerator outputGenerator = new OutputGenerator(mergedModel, outputDir);
         Controller.walk(outputGenerator, script, context);

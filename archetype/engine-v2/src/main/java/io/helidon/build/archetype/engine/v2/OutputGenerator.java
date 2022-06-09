@@ -33,6 +33,7 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Output.Replace;
 import io.helidon.build.archetype.engine.v2.ast.Output.Template;
 import io.helidon.build.archetype.engine.v2.ast.Output.Transformation;
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 import io.helidon.build.common.SourcePath;
 

@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.context;
 
 import java.util.Map;
 
-import io.helidon.build.archetype.engine.v2.ContextValue.ValueKind;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -35,54 +34,44 @@ class ContextTest {
     @Test
     void testPopScope() {
         Context context = Context.create();
-        ContextScope scope = context.scope();
-
-        scope = scope.getOrCreateScope("foo", false);
-        scope.putValue("foo1", Value.create("foo-value1"), ValueKind.EXTERNAL);
-        context.pushScope(scope);
-
-        scope = scope.getOrCreateScope("bar", false);
-        scope.putValue("bar1", Value.create("bar-value1"), ValueKind.EXTERNAL);
-        context.pushScope(scope);
+        context.pushScope("foo", false)
+               .putValue("", Value.create("foo1"), ValueKind.EXTERNAL);
+        context.pushScope("bar", false)
+               .putValue("", Value.create("bar1"), ValueKind.EXTERNAL);
 
         context.popScope();
-        scope = context.scope();
         Value value;
 
-        value = scope.getValue("bar1");
-        assertThat(value, is(nullValue()));
-
-        value = scope.getValue("bar.bar1");
+        value = context.scope().getValue("bar");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value1"));
+        assertThat(value.asString(), is("bar1"));
 
-        value = scope.getValue("foo1");
+        value = context.scope().getValue("");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value1"));
+        assertThat(value.asString(), is("foo1"));
 
-        value = scope.getValue("~foo1");
+        value = context.scope().getValue("~foo");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value1"));
+        assertThat(value.asString(), is("foo1"));
 
-        value = scope.getValue("..foo1");
+        value = context.scope().getValue("..foo");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("foo-value1"));
+        assertThat(value.asString(), is("foo1"));
 
-        value = scope.getValue("~foo.bar1");
-        assertThat(value, is(nullValue()));
-
-        value = scope.getValue("~foo.bar.bar1");
+        value = context.scope().getValue("~foo.bar");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value1"));
+        assertThat(value.asString(), is("bar1"));
 
-        value = scope.getValue("..foo.bar.bar1");
+        value = context.scope().getValue("~..foo.bar");
         assertThat(value, is(notNullValue()));
-        assertThat(value.asString(), is("bar-value1"));
+        assertThat(value.asString(), is("bar1"));
     }
 
     @Test
     void testExternalValuesSubstitution() {
-        Context context = Context.create(null, Map.of("foo", "foo", "bar", "${foo}"), null);
+        Context context = Context.builder()
+                                 .externalValues(Map.of("foo", "foo", "bar", "${foo}"))
+                                 .build();
         assertThat(context.scope().getValue("bar").asString(), is("foo"));
     }
 }

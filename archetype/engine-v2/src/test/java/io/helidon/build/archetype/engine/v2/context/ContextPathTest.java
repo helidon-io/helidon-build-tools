@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.context;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +31,9 @@ class ContextPathTest {
     @Test
     void testParse() {
         String[] segments;
+
+        segments = ContextPath.parse("");
+        assertThat(segments.length, is(0));
 
         segments = ContextPath.parse("..");
         assertThat(segments.length, is(1));
@@ -79,7 +82,6 @@ class ContextPathTest {
     @Test
     void testInvalidPath() {
         assertThrows(NullPointerException.class, () -> ContextPath.parse(null));
-        assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(""));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("."));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse("..."));
         assertThrows(IllegalArgumentException.class, () -> ContextPath.parse(".foo"));

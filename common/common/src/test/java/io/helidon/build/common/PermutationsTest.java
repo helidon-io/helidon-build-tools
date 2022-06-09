@@ -80,7 +80,7 @@ class PermutationsTest {
     }
 
     @Test
-    void testListPermutations() {
+    void testOfList() {
         List<List<String>> permutations = Permutations.ofList(List.of(
                 List.of("", "foo", "bar", "foo bar"),
                 List.of("black", "white", "grey"),

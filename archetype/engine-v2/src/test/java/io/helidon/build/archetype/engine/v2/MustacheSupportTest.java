@@ -20,9 +20,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 import com.github.mustachejava.MustacheException;
-import io.helidon.build.archetype.engine.v2.ast.Value;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.MergedModel.resolveModel;
@@ -242,7 +244,7 @@ class MustacheSupportTest {
     void testModelValueWithContextVariable() {
         Block block = model(modelValue("color", "${color}")).build();
         Context context = Context.create();
-        context.scope().putValue("color", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
+        context.putValue("color", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
         assertThat(render("{{color}}", block, null, context), is("red"));
     }
 
@@ -250,9 +252,8 @@ class MustacheSupportTest {
     void testModelValueWithContextVariables() {
         Block block = model(modelValue("colors", "${red},${blue}")).build();
         Context context = Context.create();
-        ContextScope scope = context.scope();
-        scope.putValue("red", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("blue", Value.create("blue"), ContextValue.ValueKind.EXTERNAL);
+        context.putValue("red", Value.create("red"), ContextValue.ValueKind.EXTERNAL);
+        context.putValue("blue", Value.create("blue"), ContextValue.ValueKind.EXTERNAL);
         assertThat(render("{{colors}}", block, null, context), is("red,blue"));
     }
 

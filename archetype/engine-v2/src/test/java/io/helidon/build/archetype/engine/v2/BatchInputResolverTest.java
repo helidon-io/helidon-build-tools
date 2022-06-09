@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,10 +42,8 @@ public class BatchInputResolverTest {
                         inputOption("option1", "value1"))).build();
 
         Context context = Context.create();
-        ContextScope scope = context.scope();
         Controller.walk(new BatchInputResolver(), block, context);
-
-        Value value = scope.getValue("enum-input1");
+        Value value = context.getValue("enum-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));

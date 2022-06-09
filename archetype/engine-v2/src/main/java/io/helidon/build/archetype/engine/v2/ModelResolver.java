@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 /**
  * Model resolver.

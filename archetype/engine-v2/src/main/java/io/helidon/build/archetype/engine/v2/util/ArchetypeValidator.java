@@ -25,9 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.build.archetype.engine.v2.Context;
-import io.helidon.build.archetype.engine.v2.ContextPath;
-import io.helidon.build.archetype.engine.v2.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextPath;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -41,6 +40,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
 
 import static java.util.Objects.requireNonNull;
 
@@ -79,7 +79,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
      */
     public static List<String> validate(Path script) {
         ArchetypeValidator validator = new ArchetypeValidator();
-        Context context = Context.create(script.getParent());
+        Context context = Context.builder()
+                                 .cwd(script.getParent())
+                                 .build();
         Walker.walk(validator, ScriptLoader.load(script), context, context::cwd);
         validator.validatePresets();
         return validator.errors;
@@ -134,8 +136,17 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     private List<Block> refs(String path, Context ctx) {
         String[] segments = ContextPath.parse(path);
-        String id = ContextPath.id(segments);
-        List<Block> refs = allRefs.get(ctx.scope().findScope(segments).path(id));
+        if (segments.length == 0) {
+            throw new IllegalArgumentException("Invalid ref");
+        }
+        String refId;
+        if (ContextPath.ROOT_REF.equals(segments[0])) {
+            refId = path;
+        } else {
+            String scopePath = ctx.scope().path();
+            refId = scopePath.isEmpty() ? path : scopePath + "." + path;
+        }
+        List<Block> refs = allRefs.get(refId);
         if (refs != null) {
             return refs;
         }
@@ -145,7 +156,6 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
         try {
-            ContextScope scope = ctx.scope();
             condition.expression().eval(variable -> {
                 List<Block> refs = refs(variable, ctx);
                 if (refs == null || refs.isEmpty()) {
@@ -156,7 +166,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 switch (kind) {
                     case LIST:
                     case ENUM:
-                        String value = ((Input.Options) ref).options(n -> Condition.filter(n, scope::getValue))
+                        String value = ((Input.Options) ref).options(n -> Condition.filter(n, ctx::getValue))
                                                             .get(0)
                                                             .value();
                         return kind == Input.Kind.LIST ? Value.create(List.of(value)) : Value.create(value);
@@ -254,9 +264,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ContextScope ctxScope = ctx.scope().getOrCreateScope(input.id(), input.isGlobal());
-            inputPath = ctxScope.id();
-            ctx.pushScope(ctxScope);
+            ctx.pushScope(input.id(), input.isGlobal());
+            ContextScope scope = ctx.scope();
+            inputPath = scope.path();
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());
 
             if (input instanceof Input.Options) {

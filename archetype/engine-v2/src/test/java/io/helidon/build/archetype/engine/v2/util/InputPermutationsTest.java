@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
@@ -32,6 +33,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @SuppressWarnings("unchecked")
 class InputPermutationsTest {
 
+    @Disabled
     @Test
     void testList1() {
         List<Map<String, String>> permutations = permutations("permutations/list1.xml");
@@ -42,6 +44,7 @@ class InputPermutationsTest {
                 Map.of("colors", "red orange")));
     }
 
+    @Disabled
     @Test
     void testList2() {
         List<Map<String, String>> permutations = permutations("permutations/list2.xml");
@@ -57,6 +60,7 @@ class InputPermutationsTest {
                 Map.of("colors", "red orange", "red", "auburn", "orange", "peach")));
     }
 
+    @Disabled
     @Test
     void testEnum1() {
         assertThat(permutations("permutations/enum1.xml"), contains(
@@ -64,6 +68,7 @@ class InputPermutationsTest {
                 Map.of("colors", "orange")));
     }
 
+    @Disabled
     @Test
     void testEnum2() {
         List<Map<String, String>> permutations = permutations("permutations/enum2.xml");
@@ -74,6 +79,7 @@ class InputPermutationsTest {
                 Map.of("colors", "orange", "colors.orange", "peach")));
     }
 
+    @Disabled
     @Test
     void testBoolean1() {
         List<Map<String, String>> permutations = permutations("permutations/boolean1.xml");
@@ -82,6 +88,7 @@ class InputPermutationsTest {
                 Map.of("colors", "false")));
     }
 
+    @Disabled
     @Test
     void testBoolean2() {
         List<Map<String, String>> permutations = permutations("permutations/boolean2.xml");
@@ -93,6 +100,7 @@ class InputPermutationsTest {
                 Map.of("colors", "false")));
     }
 
+    @Disabled
     @Test
     void testText1() {
         List<Map<String, String>> permutations = permutations("permutations/text1.xml");
@@ -100,6 +108,7 @@ class InputPermutationsTest {
                 Map.of("name", "Foo")));
     }
 
+    @Disabled
     @Test
     void testText2() {
         List<Map<String, String>> permutations = permutations("permutations/text2.xml");
@@ -107,6 +116,7 @@ class InputPermutationsTest {
                 Map.of("name", "xxx")));
     }
 
+    @Disabled
     @Test
     void testSubstitutions() {
         List<Map<String, String>> permutations = permutations("permutations/substitutions.xml");

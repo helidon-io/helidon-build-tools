@@ -22,6 +22,7 @@ import java.util.List;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,9 +49,8 @@ class TerminalInputResolverTest {
         Block block = step("step", inputBoolean("boolean-input1", true)).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
 
-        Value value = scope.getValue("boolean-input1");
+        Value value = context.getValue("boolean-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.BOOLEAN));
@@ -62,9 +62,7 @@ class TerminalInputResolverTest {
         Block block = step("step", inputBoolean("boolean-input2", false)).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("boolean-input2");
+        Value value = context.getValue("boolean-input2");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.BOOLEAN));
@@ -76,8 +74,7 @@ class TerminalInputResolverTest {
         Block block = step("step", inputBoolean("boolean-input3", true)).build();
 
         Context context = prompt(block, "NO");
-        ContextScope scope = context.scope();
-        Value value = scope.getValue("boolean-input3");
+        Value value = context.getValue("boolean-input3");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.BOOLEAN));
@@ -92,9 +89,7 @@ class TerminalInputResolverTest {
                         inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("list-input1");
+        Value value = context.getValue("list-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING_LIST));
@@ -109,9 +104,7 @@ class TerminalInputResolverTest {
                         inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("list-input2");
+        Value value = context.getValue("list-input2");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING_LIST));
@@ -127,9 +120,7 @@ class TerminalInputResolverTest {
                         inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "1 3");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("list-input3");
+        Value value = context.getValue("list-input3");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING_LIST));
@@ -145,8 +136,7 @@ class TerminalInputResolverTest {
                         inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "1 3 3 1");
-        ContextScope scope = context.scope();
-        Value value = scope.getValue("list-input4");
+        Value value = context.getValue("list-input4");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING_LIST));
@@ -161,9 +151,7 @@ class TerminalInputResolverTest {
                         inputOption("option2", "value2"))).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("enum-input1");
+        Value value = context.getValue("enum-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -177,9 +165,7 @@ class TerminalInputResolverTest {
                         inputOption("option1", "value1"))).build();
 
         Context context = prompt(block, "2");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("enum-input1");
+        Value value = context.getValue("enum-input1");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -195,9 +181,7 @@ class TerminalInputResolverTest {
                         inputOption("option3", "value3"))).build();
 
         Context context = prompt(block, "2");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("enum-input2");
+        Value value = context.getValue("enum-input2");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -209,9 +193,7 @@ class TerminalInputResolverTest {
         Block block = step("step", inputText("text-input1", null)).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("text-input1");
+        Value value = context.getValue("text-input1");
 
         assertThat(value, is(not(nullValue())));
         assertThat(value.unwrap(), is(nullValue()));
@@ -222,9 +204,7 @@ class TerminalInputResolverTest {
         Block block = step("step", inputText("text-input2", "value1")).build();
 
         Context context = prompt(block, "");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("text-input2");
+        Value value = context.getValue("text-input2");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -236,9 +216,7 @@ class TerminalInputResolverTest {
         Block block = step("step", inputText("text-input3", "value1")).build();
 
         Context context = prompt(block, "not-value1");
-        ContextScope scope = context.scope();
-
-        Value value = scope.getValue("text-input3");
+        Value value = context.getValue("text-input3");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.List;
 import java.util.Map;

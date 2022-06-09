@@ -13,31 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.context;
 
-import java.util.List;
-
-import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.GenericType;
+import io.helidon.build.archetype.engine.v2.util.ValueDelegate;
 
 /**
  * Context value.
+ * A context value qualifies the connection between nodes in the context tree.
+ * It is a decorates an actual value with a kind that qualifies a value, see {@link ValueKind}.
+ *
+ * @see ContextEdge
  */
-public final class ContextValue implements Value {
+public final class ContextValue extends ValueDelegate {
 
+    private final ContextScope scope;
     private final Value value;
     private final ValueKind kind;
+
+    private ContextValue(ContextScope scope, Value value, ValueKind kind) {
+        super(value);
+        this.scope = scope;
+        this.value = value;
+        this.kind = kind;
+    }
 
     /**
      * Create a new context value.
      *
+     * @param scope scope
      * @param value wrapped value
      * @param kind  value kind
      */
-    ContextValue(Value value, ValueKind kind) {
-        this.value = value;
-        this.kind = kind;
+    public static ContextValue create(ContextScope scope, Value value, ValueKind kind) {
+        return new ContextValue(scope, value, kind);
     }
 
     /**
@@ -56,6 +65,15 @@ public final class ContextValue implements Value {
     }
 
     /**
+     * Get the scope.
+     *
+     * @return scope
+     */
+    public ContextScope scope() {
+        return scope;
+    }
+
+    /**
      * Get the value kind.
      *
      * @return ValueKind
@@ -64,65 +82,11 @@ public final class ContextValue implements Value {
         return kind;
     }
 
-    /**
-     * Get the wrapped value.
-     *
-     * @return Value
-     */
-    public Value wrapped() {
-        return value;
-    }
-
-    /**
-     * Create a new external value.
-     *
-     * @param value raw value
-     * @return ContextValue
-     */
-    public static ContextValue external(String value) {
-        return new ContextValue(DynamicValue.create(value), ValueKind.EXTERNAL);
-    }
-
-    @Override
-    public Boolean asBoolean() {
-        return value.asBoolean();
-    }
-
-    @Override
-    public String asString() {
-        return value.asString();
-    }
-
-    @Override
-    public Integer asInt() {
-        return value.asInt();
-    }
-
-    @Override
-    public List<String> asList() {
-        return value.asList();
-    }
-
-    @Override
-    public Object unwrap() {
-        return value.unwrap();
-    }
-
-    @Override
-    public GenericType<?> type() {
-        return value.type();
-    }
-
-    @Override
-    public <U> U as(GenericType<U> type) {
-        return value.as(type);
-    }
-
     @Override
     public String toString() {
         return "ContextValue{"
                 + "kind=" + kind
-                + ", value=" + value
+                + ", value=" + value()
                 + '}';
     }
 

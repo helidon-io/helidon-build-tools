@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 /**
  * Merged model.

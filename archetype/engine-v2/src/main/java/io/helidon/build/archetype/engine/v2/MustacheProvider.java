@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider;
 

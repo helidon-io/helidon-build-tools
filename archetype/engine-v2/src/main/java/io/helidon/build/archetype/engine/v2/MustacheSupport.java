@@ -35,6 +35,7 @@ import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.MergedModel.Value;
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 
 import com.github.mustachejava.Binding;

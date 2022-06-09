@@ -23,6 +23,9 @@ import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
 
@@ -53,28 +56,27 @@ public class BatchInputResolver extends InputResolver {
     }
 
     private VisitResult visit(DeclaredInput input, Context context) {
-        ContextScope scope = context.scope();
-        ContextScope nextScope = scope.getOrCreateScope(input.id(), input.isGlobal());
+        ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             Value defaultValue = defaultValue(input, context);
             if (input.isOptional()) {
                 if (defaultValue != null) {
-                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     if (input instanceof Input.Boolean && !defaultValue.asBoolean()) {
                         result = VisitResult.SKIP_SUBTREE;
                     } else {
                         result = VisitResult.CONTINUE;
                     }
                 } else {
-                    throw new UnresolvedInputException(nextScope.id());
+                    throw new UnresolvedInputException(nextScope.path(true));
                 }
             } else if (input instanceof Input.Enum) {
-                List<Input.Option> options = ((Input.Enum) input).options(n -> Condition.filter(n, scope::getValue));
+                List<Input.Option> options = ((Input.Enum) input).options(n -> Condition.filter(n, context::getValue));
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
                 if (options.size() == 1 && defaultIndex >= 0) {
-                    scope.putValue(nextScope.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
                     result = VisitResult.CONTINUE;
                 } else {
                     throw new UnresolvedInputException(nextScope.path(true));

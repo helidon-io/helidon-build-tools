@@ -25,6 +25,8 @@ import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,25 +46,24 @@ class ControllerTest {
     void testPresets() {
         Script script = load("controller/presets.xml");
         Context context = Context.create();
-        ContextScope scope = context.scope();
         Controller.walk(script, context);
 
-        Value preset1 = scope.getValue("preset1");
+        Value preset1 = context.getValue("preset1");
         assertThat(preset1, is(not(nullValue())));
         assertThat(preset1.type(), is(ValueTypes.BOOLEAN));
         assertThat(preset1.asBoolean(), is(true));
 
-        Value preset2 = scope.getValue("preset2");
+        Value preset2 = context.getValue("preset2");
         assertThat(preset2, is(not(nullValue())));
         assertThat(preset2.type(), is(ValueTypes.STRING));
         assertThat(preset2.asString(), is("text1"));
 
-        Value preset3 = scope.getValue("preset3");
+        Value preset3 = context.getValue("preset3");
         assertThat(preset3, is(not(nullValue())));
         assertThat(preset3.type(), is(ValueTypes.STRING));
         assertThat(preset3.asString(), is("enum1"));
 
-        Value preset4 = scope.getValue("preset4");
+        Value preset4 = context.getValue("preset4");
         assertThat(preset4, is(not(nullValue())));
         assertThat(preset4.type(), is(ValueTypes.STRING_LIST));
         assertThat(preset4.asList(), contains("list1"));
@@ -72,13 +73,12 @@ class ControllerTest {
     void testConditional() {
         Script script = load("controller/conditional.xml");
         Context context = Context.create();
-        ContextScope scope = context.scope();
-        scope.putValue("doModel", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("doColors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("doRed", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("doGreen", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("doBlue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
-        scope.putValue("doShapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doModel", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doColors", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doRed", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doGreen", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doBlue", Value.TRUE, ContextValue.ValueKind.EXTERNAL);
+        context.putValue("doShapes", Value.FALSE, ContextValue.ValueKind.EXTERNAL);
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("red", "blue"));
@@ -87,7 +87,9 @@ class ControllerTest {
     @Test
     void testExecCwd() {
         Script script = load("controller/exec.xml");
-        Context context = Context.create(script.scriptPath().getParent());
+        Context context = Context.builder()
+                                 .cwd(script.scriptPath().getParent())
+                                 .build();
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("red"));
@@ -96,7 +98,9 @@ class ControllerTest {
     @Test
     void testSourceCwd() {
         Script script = load("controller/source.xml");
-        Context context = Context.create(script.scriptPath().getParent());
+        Context context = Context.builder()
+                                 .cwd(script.scriptPath().getParent())
+                                 .build();
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("green"));

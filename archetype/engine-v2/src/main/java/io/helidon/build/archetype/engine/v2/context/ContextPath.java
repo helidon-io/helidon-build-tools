@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.context;
 
 import java.util.LinkedList;
 
@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Context path.
- * A context path is a string representation of the path of a {@code DeclaredInput} in the context.
+ * A context path is a notation to represent the path of a value in the context tree.
  *
  * <ul>
  *     <li>A path contains segments separated by {@code "."} characters</li>
@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * </ul>
  *
  * @see io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput
- * @see ContextScope
+ * @see ContextNode
  */
 public final class ContextPath {
 
@@ -116,9 +116,7 @@ public final class ContextPath {
      * @throws NullPointerException     if path is {@code null}
      */
     public static String[] parse(String path) {
-        if (requireNonNull(path, "path is null").isEmpty()) {
-            throw new IllegalArgumentException("path is empty");
-        }
+        requireNonNull(path, "path is null");
         LinkedList<String> segments = new LinkedList<>();
         StringBuilder buf = new StringBuilder();
         char[] chars = path.toCharArray();

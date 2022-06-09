@@ -30,9 +30,9 @@ public final class Permutations {
     }
 
     /**
-     * Compute the non-repetitive permutations of the given elements.
+     * Compute the non-repetitive permutations of the given permutations.
      *
-     * @param lists elements for which to compute the permutations
+     * @param lists permutations for which to compute the permutations
      * @param <T>   element type
      * @return list of permutations
      */
