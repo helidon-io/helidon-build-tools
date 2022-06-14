@@ -17,6 +17,7 @@ package io.helidon.build.archetype.engine.v2.context;
 
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -140,6 +141,51 @@ class CopyOnWriteContextEdgeTest {
 
     @Test
     void testVisitEdges() {
-        // TODO test visiting a multi-edges tree
+        ContextNode node = ContextNode.create(CopyOnWriteContextEdge::create);
+        node.putValue("foo", Value.create("foo1"), ValueKind.USER);
+        node.putValue("foo.bar", Value.create("bar1"), ValueKind.USER);
+        node.putValue("bob", Value.create("bob1"), ValueKind.USER);
+        node.putValue("bob.alice", Value.create("alice1"), ValueKind.USER);
+        node.putValue("foo", Value.create("foo2"), ValueKind.USER);
+
+        int[] index = new int[]{0};
+        node.visitEdges(edge -> {
+            String path = edge.node().path(true);
+            switch (++index[0]) {
+                case 1:
+                    assertThat(path, is(""));
+                    assertThat(edge.value(), is(nullValue()));
+                    break;
+                case 2:
+                    assertThat(path, is("foo"));
+                    assertThat(edge.value(), is(not(nullValue())));
+                    assertThat(edge.value().asString(), is("foo1"));
+                    break;
+                case 3:
+                case 5:
+                    assertThat(path, is("foo.bar"));
+                    assertThat(edge.value(), is(not(nullValue())));
+                    assertThat(edge.value().asString(), is("bar1"));
+                    break;
+                case 4:
+                    assertThat(path, is("foo"));
+                    assertThat(edge.value(), is(not(nullValue())));
+                    assertThat(edge.value().asString(), is("foo2"));
+                    break;
+                case 6:
+                    assertThat(path, is("bob"));
+                    assertThat(edge.value(), is(not(nullValue())));
+                    assertThat(edge.value().asString(), is("bob1"));
+                    break;
+                case 7:
+                    assertThat(path, is("bob.alice"));
+                    assertThat(edge.value(), is(not(nullValue())));
+                    assertThat(edge.value().asString(), is("alice1"));
+                    break;
+                default:
+                    Assertions.fail("Unexpected index: " + index[0]);
+            }
+        });
+        assertThat(index[0], is(7));
     }
 }

@@ -16,6 +16,7 @@
 package io.helidon.build.archetype.engine.v2.util;
 
 import java.util.List;
+import java.util.Objects;
 
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.GenericType;
@@ -30,10 +31,10 @@ public abstract class ValueDelegate implements Value {
     /**
      * Create a new value delegate.
      *
-     * @param value delegated value
+     * @param value delegated value, must be non {@code null}
      */
     protected ValueDelegate(Value value) {
-        this.value = value;
+        this.value = Objects.requireNonNull(value, "value is null");
     }
 
     /**

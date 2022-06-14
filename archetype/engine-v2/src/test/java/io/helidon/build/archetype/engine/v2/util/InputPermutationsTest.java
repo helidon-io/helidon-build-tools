@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @SuppressWarnings("unchecked")
 class InputPermutationsTest {
 
-    @Disabled
+    //@Disabled
     @Test
     void testList1() {
         List<Map<String, String>> permutations = permutations("permutations/list1.xml");
@@ -44,7 +44,7 @@ class InputPermutationsTest {
                 Map.of("colors", "red orange")));
     }
 
-    @Disabled
+    //@Disabled
     @Test
     void testList2() {
         List<Map<String, String>> permutations = permutations("permutations/list2.xml");
@@ -126,8 +126,8 @@ class InputPermutationsTest {
                 Map.of("list-things", "a-bar")));
     }
 
-    // TODO
-    //@Test
+    @Disabled
+    @Test
     void testConditionals() {
         List<Map<String, String>> permutations = permutations("permutations/conditionals.xml");
         permutations.forEach(System.out::println);
@@ -250,7 +250,8 @@ class InputPermutationsTest {
         assertThat(permutations, containsInAnyOrder(list.toArray(new Map[0])));
     }
 
-    //@Test
+    @Disabled
+    @Test
     void testE2e() {
         List<Map<String, String>> permutations = permutations("e2e/main.xml");
         permutations.forEach(System.out::println);

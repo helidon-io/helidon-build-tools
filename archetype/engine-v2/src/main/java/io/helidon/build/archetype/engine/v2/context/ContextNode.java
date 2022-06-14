@@ -17,7 +17,6 @@ package io.helidon.build.archetype.engine.v2.context;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
@@ -151,10 +150,12 @@ public final class ContextNode implements ContextScope {
                 visitor.visit(node.edge);
                 visitor.postVisit(node.edge);
                 stack.pop();
+                parent = node.parent0;
             } else {
                 if (parent != null && node == parent) {
                     visitor.postVisit(node.edge);
                     stack.pop();
+                    parent = node.parent0;
                 } else {
                     visitor.visit(node.edge);
                     if (!nestedNodes.isEmpty()) {
@@ -171,16 +172,14 @@ public final class ContextNode implements ContextScope {
             }
             if (node.edge instanceof CopyOnWriteContextEdge) {
                 List<? extends ContextEdge> variations = ((CopyOnWriteContextEdge) node.edge).variations();
-                if (variations.size() > 1 && node.equals(variations.get(0))) {
+                if (variations.size() > 1 && node.edge == variations.get(0)) {
                     ListIterator<? extends ContextEdge> it = variations.listIterator(variations.size());
                     while (it.previousIndex() > 0) {
                         ContextEdge previous = it.previous();
                         stack.push(previous.node());
                     }
                 }
-                continue;
             }
-            parent = node.parent0;
         }
     }
 
@@ -190,7 +189,7 @@ public final class ContextNode implements ContextScope {
     }
 
     @Override
-    public ContextScope parent0() {
+    public ContextNode parent0() {
         return parent0;
     }
 

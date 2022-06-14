@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextNode;
+import io.helidon.build.archetype.engine.v2.context.ContextPrinter;
 import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.context.CopyOnWriteContextEdge;
@@ -85,6 +86,8 @@ public class InputPermutations implements Node.Visitor<Void>, Block.Visitor<Void
         // Collect all permutations as a single path into a context with multi-edges nodes
         InputPermutations visitor = new InputPermutations(externalValues, externalDefaults);
         Walker.walk(visitor, script, null);
+
+        System.out.println(ContextPrinter.print(visitor.context.scope()));
 
         // TODO 1. print root scope
         // TODO 2. filter tree

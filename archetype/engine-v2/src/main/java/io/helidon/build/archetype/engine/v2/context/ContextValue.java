@@ -28,13 +28,11 @@ import io.helidon.build.archetype.engine.v2.util.ValueDelegate;
 public final class ContextValue extends ValueDelegate {
 
     private final ContextScope scope;
-    private final Value value;
     private final ValueKind kind;
 
     private ContextValue(ContextScope scope, Value value, ValueKind kind) {
         super(value);
         this.scope = scope;
-        this.value = value;
         this.kind = kind;
     }
 

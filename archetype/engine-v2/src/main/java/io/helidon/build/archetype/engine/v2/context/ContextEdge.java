@@ -15,10 +15,10 @@
  */
 package io.helidon.build.archetype.engine.v2.context;
 
+import java.util.List;
+
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
-
-import java.util.List;
 
 /**
  * A connection between context nodes that holds a value.

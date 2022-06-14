@@ -214,7 +214,8 @@ class ContextNodeTest {
     void testPutExistingReadOnly() {
         ContextNode scope = ContextNode.create();
         scope.putValue("foo", Value.create("foo"), ValueKind.EXTERNAL);
-        assertThrows(IllegalStateException.class, () -> scope.putValue("foo", Value.create("bar"), ValueKind.EXTERNAL));
+        assertThrows(IllegalStateException.class,
+                () -> scope.putValue("foo", Value.create("bar"), ValueKind.EXTERNAL));
     }
 
     @Test
@@ -240,7 +241,8 @@ class ContextNodeTest {
     @Test
     void testPutInvalidPath() {
         ContextNode scope = ContextNode.create();
-        assertThrows(IllegalArgumentException.class, () -> scope.putValue(".foo", Value.create("foo"), ValueKind.EXTERNAL));
+        assertThrows(IllegalArgumentException.class,
+                () -> scope.putValue(".foo", Value.create("foo"), ValueKind.EXTERNAL));
     }
 
     @Test
