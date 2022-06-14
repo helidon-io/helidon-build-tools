@@ -441,6 +441,7 @@ plugin's classpath.
 
 | Property | Type | Default<br/>Value | Description |
 | --- | --- | --- | --- |
+| includeVersion| Boolean | false | "true" to include version numbers in attributions. "false" to not include them. |
 | inputFileDir| File | Plugin's CLASSPATH | Path to the directory containing the input XML file. |
 | inputFileName| String | HELIDON_THIRD_PARTY_LICENSES.xml | Name of the input XML file. |
 | outputFileDir| File | `target` | Directory to place generated report text file. |
