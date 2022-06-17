@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests {@link VirtualFileSystem}.
  */
+@SuppressWarnings("resource")
 class VirtualFileSystemTest {
 
     private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
@@ -223,7 +224,7 @@ class VirtualFileSystemTest {
     @Test
     void testWalk() throws IOException {
         FileSystem fs = vfs();
-        List<String> paths = Files.walk(fs.getPath("/")).map(p -> toString(p)).collect(Collectors.toList());
+        List<String> paths = Files.walk(fs.getPath("/")).map(this::toString).collect(Collectors.toList());
         assertThat(paths, hasItems("/", "dir1", "dir1/file.txt", "blue", "green"));
     }
 
@@ -311,6 +312,12 @@ class VirtualFileSystemTest {
         Path root =  vfs().getPath("/");
         InvalidPathException ex = assertThrows(InvalidPathException.class, () -> readString(root.resolve("/../test.txt")));
         assertThat(ex.getMessage(), startsWith("Not within virtual root"));
+    }
+
+    @Test
+    void testResolveSlash() {
+        Path root =  vfs().getPath("/");
+        assertThat(toString(root.resolve("/")), is("/"));
     }
 
     private String toString(Path path) {

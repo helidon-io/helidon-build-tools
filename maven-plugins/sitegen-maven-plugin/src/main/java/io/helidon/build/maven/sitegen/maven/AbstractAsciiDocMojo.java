@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.build.common.Maps;
 import io.helidon.build.maven.sitegen.asciidoctor.AsciidocExtensionRegistry;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -38,7 +39,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.asciidoctor.Asciidoctor;
-import org.asciidoctor.AttributesBuilder;
+import org.asciidoctor.Attributes;
+import org.asciidoctor.Options;
 import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
@@ -49,7 +51,7 @@ import static io.helidon.build.maven.sitegen.maven.Constants.PROPERTY_PREFIX;
 
 /**
  * Processes AsciiDoc files to convert them between "natural" format (with
- * standard AsciiDoc {@code include::} includes) and "preprocessed" format (with
+ * standard AsciiDoc {@code include::} includes) and "preprocessed" format, (with
  * comments identifying included text and the text pre-included.
  * <p>
  * The "preprocessed" format renders nicely on GitHub (because GitHub AsciiDoc
@@ -87,7 +89,6 @@ import static io.helidon.build.maven.sitegen.maven.Constants.PROPERTY_PREFIX;
  * </tr>
  *
  * </table>
- *
  */
 public abstract class AbstractAsciiDocMojo extends AbstractMojo {
 
@@ -99,8 +100,8 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
     private MavenProject project;
 
     @Parameter(property = PROPERTY_PREFIX + "inputDirectory",
-               defaultValue = DEFAULT_SRC_DIR,
-               required = true)
+            defaultValue = DEFAULT_SRC_DIR,
+            required = true)
     private File inputDirectory;
 
     /**
@@ -165,22 +166,22 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * Computes paths to be processed as inputs, based on an input directory
      * and glob-style include and exclude expressions identifying paths within
      * that input directory.
+     *
      * @param inputDirectory the directory within which to search for files
-     * @param includes glob-style include expressions
-     * @param excludes glob-style exclude expressions
+     * @param includes       glob-style include expressions
+     * @param excludes       glob-style exclude expressions
      * @return Paths within the input directory tree that match the includes and
      * are not ruled out by the excludes
      * @throws IOException in case of errors matching candidate paths
      */
     static Collection<Path> inputs(Path inputDirectory, String[] includes, String[] excludes) throws IOException {
         return Files.find(inputDirectory, Integer.MAX_VALUE, (path, attrs) ->
-                        matches(path, pathMatchers(inputDirectory, includes))
-                        && !matches(path, pathMatchers(inputDirectory, excludes)))
-                .collect(Collectors.toSet());
+                            matches(path, pathMatchers(inputDirectory, includes))
+                                    && !matches(path, pathMatchers(inputDirectory, excludes)))
+                    .collect(Collectors.toSet());
     }
 
     /**
-     *
      * @return output type produced by the mojo
      */
     abstract String outputType();
@@ -189,9 +190,9 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * Performs any work needed after the file has been processed.
      *
      * @param adocFilePath path to the AsciiDoc input file
-     * @param outputPath path to the AsciiDoc output file
-     * @throws IOException in case of I/O errors working with the files
-     * @throws MojoFailureException in case the post-processing finds a user-correctable error
+     * @param outputPath   path to the AsciiDoc output file
+     * @throws IOException            in case of I/O errors working with the files
+     * @throws MojoFailureException   in case the post-processing finds a user-correctable error
      * @throws MojoExecutionException in case the post-processing encounters a system error
      */
     void postProcessFile(Path adocFilePath, Path outputPath) throws
@@ -202,11 +203,11 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
      * Processes the AsciiDoctor file using a previously-created Asciidoctor
      * instance.
      *
-     * @param asciiDoctor Asciidoctor instance (reusable for multiple files)
+     * @param asciiDoctor    Asciidoctor instance (reusable for multiple files)
      * @param inputDirectory Path for the directory where the input file resides
-     * @param adocFilePath Full Path for the input file
-     * @throws IOException in case of I/O errors working with the files
-     * @throws MojoFailureException in case the post-processing finds a user-correctable error
+     * @param adocFilePath   Full Path for the input file
+     * @throws IOException            in case of I/O errors working with the files
+     * @throws MojoFailureException   in case the post-processing finds a user-correctable error
      * @throws MojoExecutionException in case the post-processing encounters a system error
      */
     void processFile(
@@ -219,16 +220,16 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
         Path outputPath = outputDirectory.toPath().resolve(relativeInputPath);
 
         getLog().info(String.format("processing %s to format '%s' in %s",
-                adocFilePath.toString(),
+                adocFilePath,
                 outputType(),
-                outputPath.toString()));
+                outputPath));
 
         /*
          * Process the document once, suppressing the preprocessing,
          * to gather attributes that might be needed to resolve include
          * references during the second, real AsciiDoctor processing.
          */
-        Map<String, Object> attributes = projectPropertiesMap(project);
+        Map<String, Object> attributes = new HashMap<>(projectProperties(project));
         isPrelim.set(true);
         Document doc = asciiDoctor.loadFile(adocFilePath.toFile(),
                 asciiDoctorOptions(
@@ -251,28 +252,30 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
         /*
          * We do not need to convert the document because the
          * preprocessor has written the updated version of the .adoc
-         * file already and we do not need any rendered output as a
+         * file already, and we do not need any rendered output as a
          * result of invoking this mojo.
          */
 
         postProcessFile(adocFilePath, outputPath);
 
     }
+
     /**
      * Creates a stream of PathMatchers, one for each glob.
+     *
      * @param inputDirectory Path within which the globs are applied
-     * @param globs the glob patterns
+     * @param globs          the glob patterns
      * @return PathMatchers for the globs
      */
     private static Stream<PathMatcher> pathMatchers(Path inputDirectory, String[] globs) {
         return Arrays.stream(globs)
-                .map(glob -> {
-                    if (WINDOWS) {
-                        String pattern = "glob:" + inputDirectory + File.separator + glob.replace("/", "\\");
-                        return FileSystems.getDefault().getPathMatcher(pattern.replace("\\", "\\\\"));
-                    }
-                    return FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob);
-                });
+                     .map(glob -> {
+                         if (WINDOWS) {
+                             String pattern = "glob:" + inputDirectory + File.separator + glob.replace("/", "\\");
+                             return FileSystems.getDefault().getPathMatcher(pattern.replace("\\", "\\\\"));
+                         }
+                         return FileSystems.getDefault().getPathMatcher("glob:" + inputDirectory + "/" + glob);
+                     });
     }
 
     private static boolean matches(Path candidate, Stream<PathMatcher> matchers) {
@@ -295,7 +298,7 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
     private Asciidoctor createAsciiDoctor(String backendName, AtomicBoolean isPrelim) {
         Asciidoctor asciiDoctor = Asciidoctor.Factory.create();
         asciiDoctor.registerLogHandler(new SelectiveLogHandler(isPrelim));
-        new AsciidocExtensionRegistry(backendName).register(asciiDoctor);
+        AsciidocExtensionRegistry.create(backendName).register(asciiDoctor);
         return asciiDoctor;
     }
 
@@ -315,42 +318,39 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
         }
     }
 
-    private Map<String, Object> asciiDoctorOptions(
-            Map<String, Object> attributes,
-            Path inputRelativePath,
-            File outputDirectory,
-            Path baseDirPath,
-            boolean runPreprocessing) {
-        final OptionsBuilder optionsBuilder = OptionsBuilder.options()
-                .attributes(
-                        AttributesBuilder
-                                .attributes()
-                                .attributes(attributes))
-                .safe(SafeMode.UNSAFE)
-                .headerFooter(false)
-                .baseDir(baseDirPath.toFile())
-                .eruby("");
+    private Options asciiDoctorOptions(Map<String, Object> attributes,
+                                       Path inputRelativePath,
+                                       File outputDirectory,
+                                       Path baseDirPath,
+                                       boolean runPreprocessing) {
+        OptionsBuilder optionsBuilder =
+                Options.builder()
+                       .attributes(Attributes.builder().attributes(attributes).build())
+                       .safe(SafeMode.UNSAFE)
+                       .headerFooter(false)
+                       .baseDir(baseDirPath.toFile())
+                       .eruby("");
         if (outputDirectory != null) {
-            optionsBuilder.option("preincludeOutputPath",
-                        outputDirectory.toPath().resolve(inputRelativePath));
+            optionsBuilder.option("preincludeOutputPath", outputDirectory.toPath().resolve(inputRelativePath));
         }
         if (runPreprocessing) {
             optionsBuilder.option("preprocessOutputType", outputType());
         }
-
-        return optionsBuilder.asMap();
+        return optionsBuilder.build();
     }
 
-    private Map<String, Object> projectPropertiesMap(MavenProject project) {
-        Properties properties = new Properties();
-        properties.putAll(project.getProperties());
-        properties.setProperty("project.groupId", project.getGroupId());
-        properties.setProperty("project.artifactId", project.getArtifactId());
-        properties.setProperty("project.version", project.getVersion());
-        properties.setProperty("project.basedir", project.getBasedir().getAbsolutePath());
-
-        return properties.entrySet().stream()
-                .collect(Collectors.toMap(entry -> String.class.cast(entry.getKey()),
-                                          entry -> entry.getValue()));
+    /**
+     * Get the project properties.
+     *
+     * @param project project
+     * @return map
+     */
+    static Map<String, String> projectProperties(MavenProject project) {
+        Map<String, String> map = new HashMap<>(Maps.fromProperties(project.getProperties()));
+        map.put("project.groupId", project.getGroupId());
+        map.put("project.artifactId", project.getArtifactId());
+        map.put("project.version", project.getVersion());
+        map.put("project.basedir", project.getBasedir().getAbsolutePath());
+        return map;
     }
 }

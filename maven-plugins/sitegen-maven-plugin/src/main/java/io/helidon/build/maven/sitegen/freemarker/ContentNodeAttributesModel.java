@@ -25,26 +25,24 @@ import org.asciidoctor.jruby.internal.RubyAttributesMapDecorator;
 
 /**
  * A Freemarker template model to resolve {@link org.asciidoctor.ast.ContentNode} attributes.
- *
+ * <p>
  * This provides normal freemarker dotted notation access to the map as well
  * as invoking methods.
  */
-public class ContentNodeAttributesModel implements TemplateHashModel {
+final class ContentNodeAttributesModel implements TemplateHashModel {
 
     private final RubyAttributesMapDecorator rubyMap;
     private final ObjectWrapper objectWrapper;
 
     /**
-     * Create a new instance of {@link ContentNodeAttributesModel}.
+     * Create a new instance.
+     *
      * @param objectWrapper the {@link ObjectWrapper} to use wrapping java objects.
-     * @param rubyMap the {@link RubyAttributesMapDecorator} containing the attributes
+     * @param rubyMap       the {@link RubyAttributesMapDecorator} containing the attributes
      */
-    public ContentNodeAttributesModel(ObjectWrapper objectWrapper,
-                                      RubyAttributesMapDecorator rubyMap) {
-        Objects.requireNonNull(rubyMap);
-        this.rubyMap = rubyMap;
-        Objects.requireNonNull(objectWrapper);
-        this.objectWrapper = objectWrapper;
+    ContentNodeAttributesModel(ObjectWrapper objectWrapper, RubyAttributesMapDecorator rubyMap) {
+        this.rubyMap = Objects.requireNonNull(rubyMap);
+        this.objectWrapper = Objects.requireNonNull(objectWrapper);
     }
 
     @Override

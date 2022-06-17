@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -41,9 +40,8 @@ import static io.helidon.build.maven.sitegen.maven.Constants.PROPERTY_PREFIX;
 /**
  * Goal that creates the site archive.
  */
-@Mojo(name = "package",
-      defaultPhase = LifecyclePhase.PACKAGE,
-      requiresProject = true)
+@SuppressWarnings("unused")
+@Mojo(name = "package", defaultPhase = LifecyclePhase.PACKAGE)
 public class PackageMojo extends AbstractMojo {
 
     private static final String[] DEFAULT_EXCLUDES = new String[] {};
@@ -65,7 +63,7 @@ public class PackageMojo extends AbstractMojo {
     private File siteArchiveOutputDirectory;
 
     /**
-     * Directory containing the generate site files to archive.
+     * Directory containing the generated site files to archive.
      */
     @Parameter(defaultValue = DEFAULT_SITE_OUTPUT_DIR, required = true)
     private File siteOutputDirectory;
@@ -91,13 +89,11 @@ public class PackageMojo extends AbstractMojo {
     /**
      * Skip this goal execution.
      */
-    @Parameter(property = PROPERTY_PREFIX + "siteArchiveSkip",
-            defaultValue = "false",
-            required = false)
+    @Parameter(property = PROPERTY_PREFIX + "siteArchiveSkip", defaultValue = "false")
     private boolean siteArchiveSkip;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         if (siteArchiveSkip) {
             getLog().info("processing is skipped.");
             return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,6 +71,27 @@ public class SourcePath {
      */
     public SourcePath(String path) {
         segments = parseSegments(path);
+    }
+
+    /**
+     * Create a new {@link SourcePath} instance for the given paths.
+     *
+     * @param prefix a path prefix, may be {@code null}
+     * @param path   the path to use as {@code String}
+     */
+    public SourcePath(String prefix, String path) {
+        this(prefix != null ? List.of(prefix, path) : List.of(path));
+    }
+
+    /**
+     * Create a new {@link SourcePath} instance for the given paths.
+     *
+     * @param paths the paths to use as {@code String}
+     */
+    public SourcePath(List<String> paths) {
+        segments = paths.stream()
+                        .flatMap(p -> Arrays.stream(parseSegments(p)))
+                        .toArray(n -> new String[n]);
     }
 
     private static String getRelativePath(Path sourceDir, Path source) {
@@ -358,7 +380,7 @@ public class SourcePath {
 
     @Override
     public String toString() {
-        return SourcePath.class.getSimpleName() + "{ " + asString() + " }";
+        return asString(false);
     }
 
     private static class SourceFileComparator implements Comparator<SourcePath> {

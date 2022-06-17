@@ -104,6 +104,23 @@ public class Strings {
         }
     }
 
+    /**
+     * Strip the repeated leading character in the given string.
+     *
+     * @param str string to process
+     * @param c   leading character
+     * @return stripped string
+     */
+    public static String stripLeading(String str, char c) {
+        int index = 0;
+        while (index < str.length() && str.charAt(index++) == c) {
+        }
+        if (index == str.length()) {
+            return "";
+        }
+        return str.substring(index - 1);
+    }
+
     private Strings() {
     }
 }

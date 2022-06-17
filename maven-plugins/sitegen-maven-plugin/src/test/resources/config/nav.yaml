@@ -1,0 +1,63 @@
+#
+# Copyright (c) 2022 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: "ROOT"
+title: "Pet Project Documentation"
+glyph:
+  type: "icon"
+  value: "import_contacts"
+items:
+  - type: "GROUPS"
+    items:
+      - type: "GROUP"
+        title: "Main Documentation"
+        pathprefix: "/"
+        items:
+          - type: "MENU"
+            title: "About"
+            pathprefix: "/about"
+            glyph:
+              type: "icon"
+              value: "weekend"
+            includes:
+              - "**/about*.adoc"
+          - type: "MENU"
+            title: "Getting Started"
+            pathprefix: "/getting-started"
+            glyph:
+              type: "icon"
+              value: "weekend"
+            excludes:
+              - "**/start*.adoc"
+          - type: "MENU"
+            title: "Let's code"
+            pathprefix: "/lets-code"
+            glyph:
+              type: "icon"
+              value: "weekend"
+            includes:
+              - "**/*.adoc"
+  - type: "MENU"
+    title: "Extra Resources"
+    items:
+      - type: "LINK"
+        title: "Google"
+        href: "https://google.com"
+      - type: "LINK"
+        title: "Amazon"
+        href: "https://amazon.com"
+  - type: "LINK"
+    title: "GitHub"
+    href: "https://github.com"

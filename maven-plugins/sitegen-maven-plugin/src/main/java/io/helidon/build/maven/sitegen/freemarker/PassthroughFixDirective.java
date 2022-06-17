@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 
 package io.helidon.build.maven.sitegen.freemarker;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import freemarker.core.Environment;
@@ -32,7 +34,7 @@ import org.asciidoctor.ast.ContentNode;
 /**
  * A freemarker directive to fix asciidoctor passthrough not being substituted.
  */
-public class PassthroughFixDirective implements TemplateDirectiveModel {
+final class PassthroughFixDirective implements TemplateDirectiveModel {
 
     private static final String PLACEHOLDER = "\u00960\u0097";
     private static final String EMPHASIS = "_";
@@ -48,27 +50,25 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
     private static final String PASS_MACRO_BEGIN = "pass:[";
     private static final String PASS_MACRO_END = "]";
 
+    private static final List<String> INLINE_DELIMITERS = List.of(
+            EMPHASIS, STRONG, MONOSPACE, SUBSCRIPT, SUPERSCRIPT, DOUBLE_QUOTES, SINGLE_QUOTES);
+
     @Override
-    public void execute(Environment env,
-            Map params, TemplateModel[] loopVars,
-            TemplateDirectiveBody body)
+    public void execute(Environment env, Map params, TemplateModel[] loopVars, TemplateDirectiveBody body)
             throws TemplateException, IOException {
 
         if (loopVars.length != 0) {
-                throw new TemplateModelException(
-                    "This directive does not allow loop variables.");
+            throw new TemplateModelException("This directive does not allow loop variables.");
         }
 
         // Check if no parameters were given:
         if (body != null) {
-            throw new TemplateModelException(
-                    "This directive does not allow body content.");
+            throw new TemplateModelException("This directive does not allow body content.");
         }
 
         TemplateModel textVar = env.getVariable("text");
         if (!(textVar instanceof TemplateScalarModel)) {
-            throw new TemplateModelException(
-                    "text variable is not a TemplateScalarModel");
+            throw new TemplateModelException("text variable is not a TemplateScalarModel");
         }
 
         String text = ((TemplateScalarModel) textVar).getAsString();
@@ -77,8 +77,7 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
 
             TemplateModel parentVar = env.getVariable("parent");
             if (!(parentVar instanceof ContentNodeHashModel)) {
-                throw new TemplateModelException(
-                        "pareant variable is not a ContentNodeHashModel");
+                throw new TemplateModelException("parent variable is not a ContentNodeHashModel");
             }
 
             ContentNode parent = ((ContentNodeHashModel) parentVar).getContentNode();
@@ -89,13 +88,11 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
             } else if (parent instanceof Cell) {
                 source = ((Cell) parent).getSource();
             } else {
-                throw new TemplateModelException(
-                        "parent is not a Block or a Cell");
+                throw new TemplateModelException("parent is not a Block or a Cell");
             }
 
             if (source == null || source.isEmpty()) {
-                throw new TemplateModelException(
-                        "source is null or empty");
+                throw new TemplateModelException("source is null or empty");
             }
 
             String fixed = formatInlineSource(source);
@@ -107,43 +104,16 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
         }
     }
 
-    private static String formatInlineSource(String source)
-            throws TemplateModelException {
-
-        if (isTextDelimitedBy(source, EMPHASIS, EMPHASIS)) {
-            return formatInlineText(source, EMPHASIS, EMPHASIS);
+    private static String formatInlineSource(String source) {
+        for (String delimiter : INLINE_DELIMITERS) {
+            if (isTextDelimitedBy(source, delimiter, delimiter)) {
+                return formatInlineText(source, delimiter, delimiter);
+            }
         }
-
-        if (isTextDelimitedBy(source, STRONG, STRONG)) {
-            return formatInlineText(source, STRONG, STRONG);
-        }
-
-        if (isTextDelimitedBy(source, MONOSPACE, MONOSPACE)) {
-            return formatInlineText(source, MONOSPACE, MONOSPACE);
-        }
-
-        if (isTextDelimitedBy(source, SUBSCRIPT, SUBSCRIPT)) {
-            return formatInlineText(source, SUBSCRIPT, SUBSCRIPT);
-        }
-
-        if (isTextDelimitedBy(source, SUPERSCRIPT, SUPERSCRIPT)) {
-            return formatInlineText(source, SUPERSCRIPT, SUPERSCRIPT);
-        }
-
-        if (isTextDelimitedBy(source, DOUBLE_QUOTES, DOUBLE_QUOTES)) {
-            return formatInlineText(source, DOUBLE_QUOTES, DOUBLE_QUOTES);
-        }
-
-        if (isTextDelimitedBy(source, SINGLE_QUOTES, SINGLE_QUOTES)) {
-            return formatInlineText(source, SINGLE_QUOTES, SINGLE_QUOTES);
-        }
-
         return formatInlineText(source, "", "");
     }
 
-    private static String formatInlineText(String text,
-                                           String beginDelimiter,
-                                           String endDelimiter) {
+    private static String formatInlineText(String text, String beginDelimiter, String endDelimiter) {
 
         String enclosed = getEnclosedText(text, beginDelimiter, endDelimiter);
 
@@ -160,17 +130,14 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
         } else if (isTextDelimitedBy(enclosed, SINGLE_PLUS, SINGLE_PLUS)) {
 
             // if soft passthrough, do html encoding on the enclosed text
-            String enclosedPassthrough = getEnclosedText(enclosed,
-                    SINGLE_PLUS, SINGLE_PLUS);
+            String enclosedPassthrough = getEnclosedText(enclosed, SINGLE_PLUS, SINGLE_PLUS);
             return escapeSpecialCharacters(enclosedPassthrough);
 
         } else if (isTextDelimitedBy(text, PASS_MACRO_C_BEGIN, PASS_MACRO_END)) {
 
             // if soft passthrough, do html encoding on the enclosed text
-            String enclosedPassthrough =
-                    getEnclosedText(enclosed, PASS_MACRO_C_BEGIN, PASS_MACRO_END);
+            String enclosedPassthrough = getEnclosedText(enclosed, PASS_MACRO_C_BEGIN, PASS_MACRO_END);
             return escapeSpecialCharacters(enclosedPassthrough);
-
         } else {
 
             // TODO substitute attributes?
@@ -180,8 +147,8 @@ public class PassthroughFixDirective implements TemplateDirectiveModel {
 
     private static String escapeSpecialCharacters(String text) {
         return text.replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll("&", "&amp;");
+                   .replaceAll(">", "&gt;")
+                   .replaceAll("&", "&amp;");
     }
 
     private static String getEnclosedText(String text, String begin, String end) {

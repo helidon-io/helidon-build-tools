@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package io.helidon.build.maven.sitegen.maven;
 
 import java.io.File;
-import java.util.Properties;
+import java.util.Map;
 
+import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.Site;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -33,9 +33,7 @@ import org.apache.maven.project.MavenProject;
 /**
  * Goal that generates the site files.
  */
-@Mojo(name = "generate",
-      defaultPhase = LifecyclePhase.COMPILE,
-      requiresProject = true)
+@Mojo(name = "generate", defaultPhase = LifecyclePhase.COMPILE)
 public class GenerateMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
@@ -45,16 +43,16 @@ public class GenerateMojo extends AbstractMojo {
      * Directory containing the generated site files.
      */
     @Parameter(property = Constants.PROPERTY_PREFIX + "siteOutputDirectory",
-               defaultValue = Constants.DEFAULT_SITE_OUTPUT_DIR,
-               required = true)
+            defaultValue = Constants.DEFAULT_SITE_OUTPUT_DIR,
+            required = true)
     private File siteOutputDirectory;
 
     /**
      * Directory containing the site sources.
      */
     @Parameter(property = Constants.PROPERTY_PREFIX + "siteSourceDirectory",
-               defaultValue = Constants.DEFAULT_SITE_SOURCE_DIR,
-               required = true)
+            defaultValue = Constants.DEFAULT_SITE_SOURCE_DIR,
+            required = true)
     private File siteSourceDirectory;
 
     /**
@@ -66,16 +64,14 @@ public class GenerateMojo extends AbstractMojo {
     /**
      * Skip this goal execution.
      */
-    @Parameter(property = Constants.PROPERTY_PREFIX + "siteGenerateSkip",
-            defaultValue = "false",
-            required = false)
+    @Parameter(property = Constants.PROPERTY_PREFIX + "siteGenerateSkip", defaultValue = "false")
     private boolean siteGenerateSkip;
 
     @SuppressWarnings("CanBeFinal")
     private Site site = null;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         if (siteGenerateSkip) {
             getLog().info("processing is skipped.");
             return;
@@ -83,31 +79,26 @@ public class GenerateMojo extends AbstractMojo {
 
         project.addCompileSourceRoot(siteSourceDirectory.getAbsolutePath());
 
-        Properties properties = new Properties();
-        properties.putAll(project.getProperties());
-        properties.setProperty("project.groupId", project.getGroupId());
-        properties.setProperty("project.artifactId", project.getArtifactId());
-        properties.setProperty("project.version", project.getVersion());
-        properties.setProperty("project.basedir", project.getBasedir().getAbsolutePath());
-
-        site = Site.builder()
-                .config(siteConfigFile, properties)
-                .build();
-
-        // enable jruby verbose mode on debugging
-        if (getLog().isDebugEnabled()) {
-            System.setProperty("jruby.cli.verbose", "true");
-        }
+        Map<String, String> properties = AbstractAsciiDocMojo.projectProperties(project);
 
         try {
-            site.generate(siteSourceDirectory, siteOutputDirectory);
+            Config config = Config.create(siteConfigFile.toPath(), properties);
+            site = Site.create(config);
+
+            // enable jruby verbose mode on debugging
+            if (getLog().isDebugEnabled()) {
+                System.setProperty("jruby.cli.verbose", "true");
+            }
+
+            site.generate(siteSourceDirectory.toPath(), siteOutputDirectory.toPath());
         } catch (RenderingException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
+            throw new MojoExecutionException("Rendering error", ex);
         }
     }
 
     /**
      * Get the site instance.
+     *
      * @return {@code Site} instance
      */
     public Site getSite() {

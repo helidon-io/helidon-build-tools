@@ -27,14 +27,11 @@ import org.asciidoctor.extension.Contexts;
 import org.asciidoctor.extension.Reader;
 
 /**
- * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
- * for creating pillars.
+ * A {@link BlockProcessor} implementation that provides custom asciidoc syntax for creating pillars.
  */
 public class PillarsBlockProcessor extends BlockProcessor {
 
-    /**
-     * This block is of type example (delimited by ====).
-     */
+    // This block is of type example (delimited by ====).
     private static final Map<String, Object> CONFIG = createConfig(Contexts.EXAMPLE);
 
     /**
@@ -53,11 +50,6 @@ public class PillarsBlockProcessor extends BlockProcessor {
         return this.createBlock(parent, "pillars", Collections.emptyList(), attributes, opts);
     }
 
-    /**
-     * Create a block processor configuration.
-     * @param blockTypes the types of block
-     * @return map
-     */
     private static Map<String, Object> createConfig(String... blockTypes){
         Map<String, Object> config = new HashMap<>();
         config.put(Contexts.KEY, Arrays.asList(blockTypes));
