@@ -21,7 +21,8 @@ const cp = require('child_process');
 gulp.task('build', (done) => {
     gulp.src('../../cli/impl/target/libs/**/*').pipe(gulp.dest('./target/cli/libs'));
     gulp.src('../../cli/impl/target/helidon.jar').pipe(gulp.dest('./target/cli'));
-    gulp.src('../lsp/io.helidon.lsp4mp.extension/target/io.helidon.lsp4mp.extension.jar').pipe(gulp.dest('./target/jars'));
-    gulp.src('../lsp/jdt/io.helidon.jdt.extension.core/target/io.helidon.jdt.extension.core.jar').pipe(gulp.dest('./target/jars'));
+    gulp.src('../lsp/io.helidon.lsp.server/target/io.helidon.lsp.server.jar').pipe(gulp.dest('./target/server'));
+    // gulp.src('../lsp/io.helidon.lsp4mp.extension/target/io.helidon.lsp4mp.extension.jar').pipe(gulp.dest('./target/jars'));
+    // gulp.src('../lsp/jdt/io.helidon.jdt.extension.core/target/io.helidon.jdt.extension.core.jar').pipe(gulp.dest('./target/jars'));
     done();
 });

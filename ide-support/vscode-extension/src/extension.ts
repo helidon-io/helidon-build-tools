@@ -23,6 +23,11 @@ import { openStartPage } from "./startPage";
 import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
 import { STEPS } from "./steps_data";
+import {ChildProcess} from 'child_process';
+import {ChildProcessAPI} from './ChildProcessAPI';
+import {startSocketLangServer} from './languageServer';
+
+let langServerProcess: ChildProcess;
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -68,6 +73,12 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     updateWorkspaceDocuments(context);
+
+    startSocketLangServer(context).then(data => {
+        if (data) {
+            langServerProcess = data;
+        }
+    });
 }
 
 export function deactivate() {
@@ -75,4 +86,8 @@ export function deactivate() {
     process.env.PATH = undefined;
     process.env.M2_HOME = undefined;
     process.env.MAVEN_HOME = undefined;
+
+    if (langServerProcess) {
+        ChildProcessAPI.killProcess(langServerProcess.pid);
+    }
 }

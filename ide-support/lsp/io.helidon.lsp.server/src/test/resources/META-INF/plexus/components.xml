@@ -1,0 +1,33 @@
+<component-set>
+    <components>
+        <component>
+            <role>org.apache.maven.project.ProjectDependenciesResolver</role>
+            <role-hint>resolver</role-hint>
+            <implementation>
+                org.apache.maven.project.DefaultProjectDependenciesResolver
+            </implementation>
+        </component>
+        <component>
+            <role>org.apache.maven.model.building.ModelBuilder</role>
+            <role-hint>builder</role-hint>
+            <implementation>
+                org.apache.maven.model.building.DefaultModelBuilder
+            </implementation>
+        </component>
+        <component>
+            <role>org.eclipse.aether.impl.ArtifactResolver</role>
+            <role-hint>artifactResolver</role-hint>
+            <implementation>
+                org.eclipse.aether.internal.impl.DefaultArtifactResolver
+            </implementation>
+        </component>
+
+        <component>
+            <role>org.codehaus.plexus.logging.Logger</role>
+            <role-hint>logger</role-hint>
+            <implementation>
+                org.apache.maven.cli.logging.Slf4jLogger
+            </implementation>
+        </component>
+    </components>
+</component-set>

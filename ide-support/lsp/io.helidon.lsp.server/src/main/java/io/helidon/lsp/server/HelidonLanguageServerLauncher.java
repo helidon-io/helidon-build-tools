@@ -16,11 +16,13 @@
 
 package io.helidon.lsp.server;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import io.helidon.lsp.server.core.HelidonLanguageServer;
@@ -48,6 +50,11 @@ public class HelidonLanguageServerLauncher {
      * @throws IOException          IOException
      */
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
+        try {
+            LogManager.getLogManager().readConfiguration(new FileInputStream("logging.properties"));
+        } catch (SecurityException | IOException e1) {
+            LOGGER.warning(e1.getMessage());
+        }
         // start the language server
         startServer(Integer.parseInt(args[0]));
     }

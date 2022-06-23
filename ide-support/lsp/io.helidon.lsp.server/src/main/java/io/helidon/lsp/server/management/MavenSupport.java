@@ -16,8 +16,11 @@
 
 package io.helidon.lsp.server.management;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -69,6 +72,29 @@ public class MavenSupport {
         }
     }
 
+    private static class MavenPrintStream extends PrintStream {
+
+        private final List<String> content = new ArrayList<>();
+
+        public MavenPrintStream() {
+            super(new ByteArrayOutputStream());
+        }
+
+        @Override
+        public void println(String string) {
+            content.add(string);
+        }
+
+        @Override
+        public void print(String string) {
+            content.add(string);
+        }
+
+        public List<String> content() {
+            return content;
+        }
+    }
+
     /**
      * Get paths for the dependency jars for the given pom file.
      *
@@ -82,24 +108,34 @@ public class MavenSupport {
 
         List<String> output = new ArrayList<>();
         List<String> result = new ArrayList<>();
-        String mvnCommand = "dependency:build-classpath";
+        String mvnCommand = "dependency:build-classpath";//build-classpath
         String dependencyMarker = "Dependencies classpath:";
+        String stopDependenciesMarker = "-------------";
 
+        MavenPrintStream mavenPrintStream = new MavenPrintStream();
         try {
             MavenCommand.builder()
-                    .addArgument(mvnCommand)
-                    .stdOut(output::add)
-                    .directory(new File(pomPath).getParentFile())
-                    .verbose(false)
-                    .build().execute();
+                        .addArgument(mvnCommand)
+                        .stdOut(mavenPrintStream)//mavenPrintStream  System.out
+                        .directory(new File(pomPath).getParentFile())
+                        .verbose(false)
+                        .build().execute();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + mvnCommand, e);
             return Collections.emptyList();
         }
-        for (int x = 0; x < output.size(); x++) {
-            if (output.get(x).contains(dependencyMarker)) {
-                String dependencies = output.get(x + 1);
-                result.addAll(Arrays.asList(dependencies.split(File.pathSeparator)));
+        for (int x = 0; x < mavenPrintStream.content().size(); x++) {
+            if (mavenPrintStream.content().get(x).contains(dependencyMarker)) {
+                StringBuilder dependencies = new StringBuilder();
+
+                for (int y = x + 1; y < mavenPrintStream.content().size(); y++) {
+                    String content = mavenPrintStream.content().get(y);
+                    if (content.contains(stopDependenciesMarker)) {
+                        break;
+                    }
+                    dependencies.append(content);
+                }
+                result.addAll(Arrays.asList(dependencies.toString().split(File.pathSeparator)));
                 break;
             }
         }
@@ -139,10 +175,10 @@ public class MavenSupport {
             return null;
         }
         return Arrays.stream(listFiles)
-                .filter(file ->
-                        file.isFile() && file.getName().equals(POM_FILE_NAME))
-                .findFirst()
-                .map(File::getAbsolutePath).orElse(null);
+                     .filter(file ->
+                             file.isFile() && file.getName().equals(POM_FILE_NAME))
+                     .findFirst()
+                     .map(File::getAbsolutePath).orElse(null);
     }
 
 }

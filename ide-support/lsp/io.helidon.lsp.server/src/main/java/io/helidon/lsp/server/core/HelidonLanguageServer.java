@@ -16,7 +16,10 @@
 
 package io.helidon.lsp.server.core;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.LogManager;
 
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.utils.FileUtils;
