@@ -22,31 +22,33 @@ import org.asciidoctor.extension.JavaExtensionRegistry;
 import org.asciidoctor.jruby.extension.spi.ExtensionRegistry;
 
 /**
- * An implementation of {@link ExtensionRegistry} to register custom extensions
- * to Asciidoctorj.
+ * An implementation of {@link ExtensionRegistry} to register custom extensions in Asciidoctorj.
  */
 public class AsciidocExtensionRegistry implements ExtensionRegistry {
 
     private final String backendName;
 
-    /**
-     * Create a new instance of {@link AsciidocExtensionRegistry}.
-     * @param backendName the name of the backend
-     */
-    public AsciidocExtensionRegistry(String backendName) {
+    private AsciidocExtensionRegistry(String backendName) {
         this.backendName = backendName;
     }
 
     @Override
     public void register(Asciidoctor asciidoctor) {
-        JavaConverterRegistry javaConverterRegistry =
-                asciidoctor.javaConverterRegistry();
+        JavaConverterRegistry javaConverterRegistry = asciidoctor.javaConverterRegistry();
         javaConverterRegistry.register(AsciidocConverter.class, backendName);
-
-        JavaExtensionRegistry javaExtensionRegistry = asciidoctor
-                .javaExtensionRegistry();
+        JavaExtensionRegistry javaExtensionRegistry = asciidoctor.javaExtensionRegistry();
         javaExtensionRegistry.block(new CardBlockProcessor());
         javaExtensionRegistry.block(new PillarsBlockProcessor());
         javaExtensionRegistry.preprocessor(new IncludePreprocessor());
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @param backendName backend name
+     * @return new instance
+     */
+    public static AsciidocExtensionRegistry create(String backendName) {
+        return new AsciidocExtensionRegistry(backendName);
     }
 }

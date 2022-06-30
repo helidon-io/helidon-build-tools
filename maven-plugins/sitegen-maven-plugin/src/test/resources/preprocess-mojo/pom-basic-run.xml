@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <configuration>
-                    <inputDirectory>../testpreprocess</inputDirectory> <!-- relative to this xml file -->
+                    <inputDirectory>../preprocess</inputDirectory> <!-- relative to this xml file -->
                     <includes>
                         <include>**/*.adoc</include>
                     </includes>

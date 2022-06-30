@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the include preprocessing logic.
+ * Tests {@link IncludePreprocessor}.
  */
 public class IncludePreprocessorTest {
 
@@ -63,18 +66,14 @@ public class IncludePreprocessorTest {
                 "}\n" +
                 "----";
 
-        List<Include> expectedIncludes = new ArrayList<>();
 
         List<String> content = asList(contentText);
-        expectedIncludes.add(new Include(2, 1, 5, asList(includedContentText), "A.java"));
-
         AtomicInteger lineNumber = new AtomicInteger(0);
-        Block sba = Block.consumeBlock(content, lineNumber);
+        Block sba = Block.consumeBlock(asList(contentText), lineNumber);
         List<Include> includes = sba.includes();
 
-        assertEquals(content.size(), lineNumber.get(), "returned line number did not match");
-        assertEquals(expectedIncludes, includes);
-
+        assertThat("returned line number did not match", content.size(), is(lineNumber.get()));
+        assertThat(includes, hasItem(new Include(2, 1, 5, asList(includedContentText), "A.java")));
     }
 
     @Test

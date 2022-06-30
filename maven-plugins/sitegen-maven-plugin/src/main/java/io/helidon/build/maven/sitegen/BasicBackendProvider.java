@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package io.helidon.build.maven.sitegen;
 
-import io.helidon.config.Config;
+import io.helidon.build.maven.sitegen.spi.BackendProvider;
 
 /**
  * Backend provider for {@link BasicBackend}.
  */
-public class BasicBackendProvider implements BackendProvider {
+public final class BasicBackendProvider implements BackendProvider {
 
     @Override
     public BasicBackend create(String name, Config node) {
         if (BasicBackend.BACKEND_NAME.equals(name)) {
-            return new BasicBackend();
+            return BasicBackend.create();
         }
         return null;
     }

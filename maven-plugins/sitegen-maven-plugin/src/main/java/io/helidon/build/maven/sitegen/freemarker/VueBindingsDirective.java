@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,58 +21,32 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.build.maven.sitegen.Page;
-
-import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
-import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
-import freemarker.template.TemplateModel;
-import freemarker.template.TemplateModelException;
 import org.asciidoctor.ast.ContentNode;
 
 /**
  * A freemarker directive to accumulate custom vue bindings.
  */
-public class VueBindingsDirective implements TemplateDirectiveModel {
+public class VueBindingsDirective extends ContentNodeDirective {
 
     private final Map<String, String> bindings = new HashMap<>();
 
     @Override
-    public void execute(Environment env,
-                        Map params,
-                        TemplateModel[] loopVars,
-                        TemplateDirectiveBody body)
+    void doExecute(ContentNode node, Map<?, ?> params, TemplateDirectiveBody body)
             throws TemplateException, IOException {
 
-        TemplateModel dataModel = env.getDataModel().get("this");
-        if (!(dataModel instanceof ContentNodeHashModel)) {
-            throw new TemplateModelException(
-                    "Data model is not a ContentNodeHashModel");
-        }
-        ContentNode node = ((ContentNodeHashModel) dataModel).getContentNode();
-        if (node == null) {
-            throw new TemplateModelException("'this' has a null content-node");
-        }
-
-        Object page = node.getDocument().getAttribute("page");
-        if (page == null || !(page instanceof Page)) {
-            throw new TemplateModelException("Unable to get page instance");
-        }
-
-        if (body == null) {
-            throw new TemplateModelException("Body is null");
-        }
         StringWriter writer = new StringWriter();
         body.render(writer);
-        bindings.put(((Page) page).getSourcePath(), writer.toString());
+        bindings.put(page(node).source(), writer.toString());
     }
 
     /**
      * Get the stored bindings.
+     *
      * @return {@code Map<String, String>}, never {@code null}
      */
-    public Map<String, String> getBindings() {
+    public Map<String, String> bindings() {
         return bindings;
     }
 }

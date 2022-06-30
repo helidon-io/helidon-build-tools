@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import io.helidon.build.maven.sitegen.RenderingException;
+
 import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
@@ -27,25 +29,24 @@ import org.asciidoctor.ast.ContentNode;
 
 /**
  * A Freemarker template model to resolve {@link ContentNode}.
- *
+ * <p>
  * This provides properties style references on {@link ContentNode} objects
  * inside Freemarker templates.
  */
-public class ContentNodeHashModel implements TemplateHashModel {
+final class ContentNodeHashModel implements TemplateHashModel {
 
     private final ObjectWrapper objectWrapper;
     private final ContentNode contentNode;
 
     /**
-     * Create a new instance of {@link ContentNodeHashModel}.
+     * Create a new instance.
+     *
      * @param objectWrapper the object wrapper to use
-     * @param node the {@link ContentNode} to expose as {@link TemplateHashModel}
+     * @param node          the node to expose as model
      */
-    public ContentNodeHashModel(ObjectWrapper objectWrapper, ContentNode node) {
-        Objects.requireNonNull(objectWrapper);
-        this.objectWrapper = objectWrapper;
-        Objects.requireNonNull(node);
-        this.contentNode = node;
+    ContentNodeHashModel(ObjectWrapper objectWrapper, ContentNode node) {
+        this.objectWrapper = Objects.requireNonNull(objectWrapper);
+        this.contentNode = Objects.requireNonNull(node);
     }
 
     /**
@@ -86,11 +87,15 @@ public class ContentNodeHashModel implements TemplateHashModel {
             try {
                 return objectWrapper.wrap(getterMethod.invoke(contentNode));
             } catch (InvocationTargetException
-                    | SecurityException
-                    | IllegalAccessException
-                    | IllegalArgumentException ex) {
+                     | SecurityException
+                     | IllegalAccessException
+                     | IllegalArgumentException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof RenderingException) {
+                    throw (RenderingException) cause;
+                }
                 throw new TemplateModelException(String.format(
-                        "Error during getter invocation: node=%s, methodname=%s",
+                        "Error during getter invocation: node=%s, method=%s",
                         contentNode,
                         getterMethod.getName()),
                         ex);
@@ -105,7 +110,7 @@ public class ContentNodeHashModel implements TemplateHashModel {
     }
 
     @Override
-    public boolean isEmpty() throws TemplateModelException {
+    public boolean isEmpty() {
         return false;
     }
 }

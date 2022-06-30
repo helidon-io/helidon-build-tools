@@ -29,9 +29,9 @@ import java.util.regex.Pattern;
  * For the purposes of preprocessing the AsciiDoc, we treat all included content
  * as residing within a block, whether that is an actual block (such as the body
  * of a {@code [source]} block between the "----" lines) or a synthetic block
- * composed of the lines immediately following a free-standing (i.e., not in a
+ * composed of the lines immediately following a freestanding (i.e., not in a
  * {@code [source]} block) {@code include::}.
- *
+ * <p>
  * Each {@code Include} instance records:
  * <ul>
  * <li>the starting and ending line numbers within the block of interest where
@@ -107,7 +107,7 @@ import java.util.regex.Pattern;
  * to parse two of them -- full bracketed and numbered -- into {@code Include}
  * instances.
  * <p>
- * The numbered form already provides all the information needed: the include
+ * The numbered form already provides all the information needed: the included content
  * target (path and tags), the included text, and the text's location within the
  * enclosing block. Converting numbered form into an {@code Include} has no side
  * effects. See {@link #fromNumberedInclude }.
@@ -116,8 +116,8 @@ import java.util.regex.Pattern;
  * of the content that contains the included text, because the end of the included
  * text is marked by the ending {@code // _include-end::} comment.
  * See {@link #consumeBracketedInclude }.
- *
  */
+@SuppressWarnings("unused")
 public class Include {
 
     private static final String INCLUDE_PREFIX = "_include";
@@ -125,14 +125,12 @@ public class Include {
     /*
      * matches a bracketing _include-... comment (start or end)
      */
-    static final Pattern INCLUDE_BRACKET_PATTERN
-            = Pattern.compile("// " + INCLUDE_PREFIX + "-" + "(start|end)::(.*)");
+    static final Pattern INCLUDE_BRACKET_PATTERN = Pattern.compile("// " + INCLUDE_PREFIX + "-" + "(start|end)::(.*)");
 
     /*
      * matches a numbered _include:: comment
      */
-    static final Pattern INCLUDE_NUMBERED_PATTERN
-            = Pattern.compile("// " + INCLUDE_PREFIX + "::(\\d*)-(\\d*):(.*)");
+    static final Pattern INCLUDE_NUMBERED_PATTERN = Pattern.compile("// " + INCLUDE_PREFIX + "::(\\d*)-(\\d*):(.*)");
 
     /*
      * matches an AsciiDoc include:: directive
@@ -148,7 +146,7 @@ public class Include {
      * Returns whether the line is an _include-start line.
      *
      * @param line the line to check
-     * @return whether or not the line is an _include-start line
+     * @return whether the line is an _include-start line
      */
     static boolean isIncludeStart(String line) {
         return line.startsWith("// " + INCLUDE_START);
@@ -158,7 +156,7 @@ public class Include {
      * Returns whether the line is an _include-end line.
      *
      * @param line the line to check
-     * @return whether or not the line is an _include-end line
+     * @return whether the line is an _include-end line
      */
     static boolean isIncludeEnd(String line) {
         return line.startsWith("// " + INCLUDE_END);
@@ -168,16 +166,15 @@ public class Include {
      * Extracts the include-relevant part of an _include-start line.
      *
      * @param line the line to be examined
-     * @return the include path and any modifiers from the line
+     * @return include path and any modifiers from the line
      */
     static String targetFromIncludeStart(String line) {
         return line.substring(("// " + INCLUDE_START + "::").length());
     }
 
     /**
-     *
      * @param line the line to check
-     * @return whether or not the line is a numbered _include:: line
+     * @return whether the line is a numbered _include:: line
      */
     static boolean isIncludeNumbered(String line) {
         return INCLUDE_NUMBERED_PATTERN.matcher(line).matches();
@@ -187,7 +184,7 @@ public class Include {
      * Formats an include target as a normal AsciiDoc {@code include::} directive.
      *
      * @param includeTarget the target
-     * @return the include directive
+     * @return include directive
      */
     static String include(String includeTarget) {
         return String.format("include::" + includeTarget);
@@ -221,17 +218,13 @@ public class Include {
     /**
      * Creates a new instance given full information about the included content.
      *
-     * @param startOfBlock where, within the overall content, the block resides
-     * @param startWithinBlock where, within the block, this include begins
-     * @param endWithinBlock where, within the block, this include ends
-     * @param body the included text
-     * @param includeTarget the include path and any additional attributes
+     * @param startOfBlock     where, within the overall content, the block resides
+     * @param startWithinBlock where, within the block, the included content begins
+     * @param endWithinBlock   where, within the block, the included content ends
+     * @param body             the included text
+     * @param includeTarget    include path and any additional attributes
      */
-    Include(int startOfBlock,
-            int startWithinBlock,
-            int endWithinBlock,
-            List<String> body,
-            String includeTarget) {
+    Include(int startOfBlock, int startWithinBlock, int endWithinBlock, List<String> body, String includeTarget) {
         this.startWithinBlock = startWithinBlock;
         this.endWithinBlock = endWithinBlock;
         this.includeTarget = includeTarget;
@@ -244,50 +237,45 @@ public class Include {
      * descriptor. The block (as indicated by the starting point) should not
      * include any include descriptor comment but rather the included content.
      *
-     * @param content lines containing the included text
-     * @param startOfBlock start of the block that containing included content
-     * @param numberedInclude numbered include comment line describing the include
+     * @param content         lines containing the included text
+     * @param startOfBlock    start of the block that containing included content
+     * @param numberedInclude numbered include comment line describing the included content
      */
-    static Include fromNumberedInclude(
-            List<String> content,
-            int startOfBlock,
-            String numberedInclude) {
+    static Include fromNumberedInclude(List<String> content, int startOfBlock, String numberedInclude) {
         Matcher m = INCLUDE_NUMBERED_PATTERN.matcher(numberedInclude);
         if (!m.matches()) {
             throw new IllegalStateException(
                     "Expected numbered include but did not match expected pattern - "
-                    + numberedInclude);
+                            + numberedInclude);
         }
         int startWithinBlock = Integer.parseInt(m.group(1));
         int endWithinBlock = Integer.parseInt(m.group(2));
-        Include result = new Include(
+
+        return new Include(
                 content,
                 startOfBlock,
                 startWithinBlock,
                 endWithinBlock,
                 m.group(3));
-
-        return result;
     }
 
     /**
      * Parses a bracketed include block, starting at the specified line within
      * the content and advancing the {@code lineNumber} to just past the ending
-     * bracket comment for the include.
+     * bracket comment for the included content.
      *
-     * @param content lines containing the bracketed include to be parsed
-     * @param lineNumber starting point of the bracketed include (the starting comment)
-     * @param output buffer at the end of which the result of consuming and translating
-     * the include will be stored by the caller (used only for computing the location
-     * in the block where the included content resides)
-     * @oaran startOfOutputBlock where the included content itself begins in the
-     * output
-     * @return an Include describing this include
+     * @param content            lines containing the bracketed include to be parsed
+     * @param lineNumber         starting point of the bracketed include (the starting comment)
+     * @param output             buffer at the end of which the result of consuming and translating
+     *                           the included content will be stored by the caller (used only for computing the location
+     *                           in the block where the included content resides)
+     * @param startOfOutputBlock where the included content itself begins in the output
+     * @return Include describing this include
      */
     static Include consumeBracketedInclude(List<String> content,
-            AtomicInteger lineNumber,
-            List<String> output,
-            int startOfOutputBlock) {
+                                           AtomicInteger lineNumber,
+                                           List<String> output,
+                                           int startOfOutputBlock) {
         String line = content.get(lineNumber.get());
         Matcher m = INCLUDE_BRACKET_PATTERN.matcher(line);
         if (!(m.matches() && m.group(1).equals("start"))) {
@@ -317,19 +305,19 @@ public class Include {
 
     /**
      * Creates a new instance given the content and starting position within it
-     * where the include content resides.
+     * where the included content resides.
      *
-     * @param content content within which the included text resides
-     * @param startOfBlock where, within the content, the block begins
+     * @param content          content within which the included text resides
+     * @param startOfBlock     where, within the content, the block begins
      * @param startWithinBlock where, within the block, the included text begins
-     * @param endWithinBlock where, within the bloc, the included text ends
-     * @param includeTarget the include path and any additional attributes
+     * @param endWithinBlock   where, within the bloc, the included text ends
+     * @param includeTarget    the included content path and any additional attributes
      */
     private Include(List<String> content,
-            int startOfBlock,
-            int startWithinBlock,
-            int endWithinBlock,
-            String includeTarget) {
+                    int startOfBlock,
+                    int startWithinBlock,
+                    int endWithinBlock,
+                    String includeTarget) {
 
         this(startOfBlock, startWithinBlock, endWithinBlock,
                 buildBody(content, startOfBlock, startWithinBlock, endWithinBlock),
@@ -365,7 +353,7 @@ public class Include {
     /**
      * Format the numbered descriptor for the included content.
      *
-     * @return AsciiDoc comment describing the include using line numbers
+     * @return AsciiDoc comment describing the included content using line numbers
      */
     String asNumberedAsciiDocInclude() {
         return String.format(INCLUDE_NUMBERED_TEMPLATE, startWithinBlock, endWithinBlock, includeTarget);
@@ -381,7 +369,6 @@ public class Include {
     }
 
     /**
-     *
      * @return the starting position of the included text within the containing
      * block
      */
@@ -390,17 +377,14 @@ public class Include {
     }
 
     /**
-     *
-     * @return the ending position of the included text within the containing
-     * block
+     * @return the ending position of the included text within the containing block
      */
     int endWithinBlock() {
         return endWithinBlock;
     }
 
     /**
-     *
-     * @return the include target (path and any additional attributes)
+     * @return the included content target (path and any additional attributes)
      */
     String includeTarget() {
         return includeTarget;
@@ -437,10 +421,7 @@ public class Include {
         if (!Objects.equals(this.includeTarget, other.includeTarget)) {
             return false;
         }
-        if (!Objects.equals(this.body, other.body)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.body, other.body);
     }
 
     @Override
@@ -451,9 +432,9 @@ public class Include {
     }
 
     private static List<String> buildBody(List<String> content,
-            int startOfBlock,
-            int startWithinBlock,
-            int endWithinBlock) {
+                                          int startOfBlock,
+                                          int startWithinBlock,
+                                          int endWithinBlock) {
         List<String> b = new ArrayList<>();
         for (int i = startWithinBlock; i <= endWithinBlock; i++) {
             b.add(content.get(startOfBlock + i));

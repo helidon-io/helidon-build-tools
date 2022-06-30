@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -36,6 +38,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
@@ -57,6 +60,8 @@ public final class FileUtils {
 
     private static final Map<String, String> FS_ENV = Map.of("create", "true");
     private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
+    private static final Path TMPDIR = Path.of(System.getProperty("java.io.tmpdir"));
+    private static final Random RANDOM = new Random();
 
 
     /**
@@ -760,19 +765,19 @@ public final class FileUtils {
             }
             Path root = fs.getRootDirectories().iterator().next();
             Files.walk(root)
-                    .filter(p -> !p.equals(root))
-                    .forEach(file -> {
-                        Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
-                        try {
-                            if (Files.isDirectory(file)) {
-                                Files.createDirectories(filePath);
-                            } else {
-                                Files.copy(file, filePath);
-                            }
-                        } catch (IOException ioe) {
-                            throw new UncheckedIOException(ioe);
-                        }
-                    });
+                 .filter(p -> !p.equals(root))
+                 .forEach(file -> {
+                     Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                     try {
+                         if (Files.isDirectory(file)) {
+                             Files.createDirectories(filePath);
+                         } else {
+                             Files.copy(file, filePath);
+                         }
+                     } catch (IOException ioe) {
+                         throw new UncheckedIOException(ioe);
+                     }
+                 });
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -816,5 +821,67 @@ public final class FileUtils {
     }
 
     private FileUtils() {
+    }
+
+    /**
+     * Get a resource as a {@link Path} instance.
+     *
+     * @param path  the resource path
+     * @param clazz class used to resolve the resource
+     * @return Path
+     * @throws IllegalArgumentException if the resource path is not found, or if the URI scheme is not supported
+     */
+    public static Path resourceAsPath(String path, Class<?> clazz) throws IllegalArgumentException {
+        // get classloader resource URL
+        URL templatesDirURL = clazz.getResource(path);
+        if (templatesDirURL == null) {
+            throw new IllegalArgumentException("resource not found: " + path);
+        }
+        // convert URL to Path
+        try {
+            return pathOf(templatesDirURL.toURI());
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Get the file extension for the given path.
+     *
+     * @param file path
+     * @return extension or {@code null}
+     */
+    public static String fileExt(Path file) {
+        String filename = file.getFileName().toString();
+        int index = filename.lastIndexOf(".");
+        return index < 0 ? null : filename.substring(index + 1);
+    }
+
+    /**
+     * Generate a random path in the system temp directory ({@code java.io.tmpdir}).
+     *
+     * @param prefix prefix, may be {@code null}
+     * @param suffix suffix, may be {@code null}
+     * @return new path
+     */
+    public static Path randomPath(String prefix, String suffix) {
+        return randomPath(TMPDIR, prefix, suffix);
+    }
+
+    /**
+     * Generate a random path in the given directory.
+     *
+     * @param dir    directory
+     * @param prefix prefix, may be {@code null}
+     * @param suffix suffix, may be {@code null}
+     * @return new path
+     */
+    public static Path randomPath(Path dir, String prefix, String suffix) {
+        String filename = prefix == null ? "" : prefix;
+        filename += Long.toUnsignedString(RANDOM.nextLong());
+        if (suffix != null) {
+            filename += suffix;
+        }
+        return dir.resolve(filename);
     }
 }

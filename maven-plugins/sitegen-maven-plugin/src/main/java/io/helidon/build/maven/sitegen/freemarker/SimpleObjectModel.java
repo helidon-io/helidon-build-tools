@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,25 @@ import freemarker.template.TemplateModel;
 /**
  * A simple {@code TemplateModel} to pass objects from templates.
  */
-public class SimpleObjectModel implements TemplateModel {
+final class SimpleObjectModel implements TemplateModel {
 
     private final Object wrapped;
 
     /**
      * Create a new instance of {@link SimpleObjectModel}.
+     *
      * @param wrapped the object to wrap
      */
-    public SimpleObjectModel(Object wrapped) {
+    SimpleObjectModel(Object wrapped) {
         this.wrapped = wrapped;
     }
 
     /**
      * Get the wrapped object.
+     *
      * @return the wrapped object
      */
-    public Object getWrapped() {
+    public Object wrapped() {
         return wrapped;
     }
 }

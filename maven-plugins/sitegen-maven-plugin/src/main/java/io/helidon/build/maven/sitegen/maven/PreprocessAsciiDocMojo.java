@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,11 +56,8 @@ import org.apache.maven.plugins.annotations.Parameter;
  * </td>
  * </tr>
  * </table>
- *
  */
-@Mojo(name = "preprocess-adoc",
-      defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-      requiresProject = true)
+@Mojo(name = "preprocess-adoc", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
 
     /**
@@ -69,14 +66,14 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
      * in the repository is the same as the pre-included form (to ensure that the
      * developer has included the updated pre-included file in the commit).
      */
-    @Parameter(property = Constants.PROPERTY_PREFIX + "checkPreprocess",
-            defaultValue = "false")
+    @Parameter(property = Constants.PROPERTY_PREFIX + "checkPreprocess", defaultValue = "false")
     private boolean checkPreprocess;
 
     @Override
     void postProcessFile(Path adocFilePath, Path outputPath)
             throws IOException, MojoFailureException, MojoExecutionException {
-    if (checkPreprocess) {
+
+        if (checkPreprocess) {
             compareFiles(adocFilePath, outputPath);
         }
     }
@@ -90,8 +87,8 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
         if (pathA.equals(pathB)) {
             getLog().warn(
                     new IllegalArgumentException(
-                        "'check' set to true but it will always pass: "
-                                + "input and output files are the same"));
+                            "'check' set to true but it will always pass: "
+                                    + "input and output files are the same"));
         }
         try {
             byte[] inputDigest = digest(pathA);
@@ -100,26 +97,24 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
                 throw new MojoFailureException(String.format(
                         "file %s does not match its expected pre-processed form; "
                                 + "the commit might need an up-to-date file from running 'preprocess-adoc'%n%s ",
-                        pathA.toString(),
+                        pathA,
                         formatDiffs(pathA, pathB)));
             }
         } catch (NoSuchAlgorithmException e) {
             throw new MojoExecutionException("error checking for matching input and output files", e);
         } catch (DiffException ex) {
             throw new MojoExecutionException(
-                String.format("Error comparing %s and %s",
-                        pathA.toString(),
-                        pathB.toString()),
-                ex);
+                    String.format("Error comparing %s and %s", pathA, pathB.toString()),
+                    ex);
         }
     }
 
     private byte[] digest(Path path) throws IOException, NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
-
         byte[] buffer = new byte[256];
         try (InputStream is = new BufferedInputStream(Files.newInputStream(path));
              DigestInputStream dis = new DigestInputStream(is, md)) {
+            //noinspection StatementWithEmptyBody
             while (dis.read(buffer) != -1) {
             }
         }
@@ -130,7 +125,7 @@ public class PreprocessAsciiDocMojo extends AbstractAsciiDocMojo {
         List<String> contentA = Files.readAllLines(pathA);
         List<String> contentB = Files.readAllLines(pathB);
         return DiffUtils.diff(contentA, contentB).getDeltas().stream()
-                .map(Delta::toString)
-                .collect(Collectors.joining(System.lineSeparator()));
+                        .map(Delta::toString)
+                        .collect(Collectors.joining(System.lineSeparator()));
     }
 }

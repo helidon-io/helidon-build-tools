@@ -68,9 +68,22 @@ public class Strings {
      */
     public static String normalizeNewLines(String value) {
         if (value == null) {
-            return value;
+            return null;
         }
         return value.replaceAll("\r\n", "\n");
+    }
+
+    /**
+     * Force UNIX style path on Windows.
+     *
+     * @param value The value to normalize, may be {@code null}
+     * @return normalized value
+     */
+    public static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "/");
     }
 
     /**
@@ -102,6 +115,23 @@ public class Strings {
         } else {
             return "";
         }
+    }
+
+    /**
+     * Strip the repeated leading character in the given string.
+     *
+     * @param str string to process
+     * @param c   leading character
+     * @return stripped string
+     */
+    public static String stripLeading(String str, char c) {
+        int index = 0;
+        while (index < str.length() && str.charAt(index++) == c) {
+        }
+        if (index == str.length()) {
+            return "";
+        }
+        return str.substring(index - 1);
     }
 
     private Strings() {
