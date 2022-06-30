@@ -95,9 +95,7 @@ public class SourcePath {
     }
 
     private static String getRelativePath(Path sourceDir, Path source) {
-        return sourceDir.relativize(source).toString()
-                        // force UNIX style path on Windows
-                        .replace("\\", "/");
+        return Strings.normalizePath(sourceDir.relativize(source).toString());
     }
 
     /**

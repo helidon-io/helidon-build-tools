@@ -70,10 +70,11 @@ public class AsciidocConverter extends AbstractConverter<String> {
 
     @Override
     public String convert(ContentNode node, String transform, Map<Object, Object> opts) {
+        document = node.getDocument();
+        page = (Page) Objects.requireNonNull(document.getAttribute("page"), "page is null!");
+        String frame = frame(node);
         try {
-            document = node.getDocument();
-            page = (Page) Objects.requireNonNull(document.getAttribute("page"), "page is null!");
-            frames.push(sourceLocation(node));
+            frames.push(frame);
             return convert(node);
         } finally {
             frames.pop();
@@ -131,14 +132,24 @@ public class AsciidocConverter extends AbstractConverter<String> {
         return frames;
     }
 
-    private String sourceLocation(ContentNode node) {
+    private String frame(ContentNode node) {
         Cursor location = cursor(node);
         if (location == null) {
             return "\tat ?:?";
         }
-        Path sourcePath = ctx.resolvePath(page, location.getPath());
-        String source = ctx.sourceDir().relativize(sourcePath).toString();
-        return String.format("\tat %s:%s", source, location.getLineNumber());
+        String suffix = (String) document.getAttribute("docfilesuffix");
+        if (suffix == null) {
+            suffix = ".adoc";
+        }
+        String source;
+        String path = location.getPath();
+        if (path != null && path.contains(suffix)) {
+            Path sourcePath = ctx.resolvePath(page, path);
+            source = ctx.sourceDir().relativize(sourcePath).toString();
+        } else {
+            source = path;
+        }
+        return String.format("\tat %s:%s", source.replace("\\", "/"), location.getLineNumber());
     }
 
     private static Cursor cursor(ContentNode node) {

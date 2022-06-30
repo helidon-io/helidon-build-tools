@@ -44,6 +44,7 @@ import io.helidon.build.maven.sitegen.models.SourcePathFilter;
 import io.helidon.build.maven.sitegen.models.StaticAsset;
 
 import static io.helidon.build.common.FileUtils.requireDirectory;
+import static io.helidon.build.common.Strings.normalizePath;
 import static io.helidon.build.common.Strings.requireValid;
 import static io.helidon.build.maven.sitegen.Site.Options.FAIL_ON;
 import static io.helidon.build.maven.sitegen.Site.Options.STRICT_IMAGES;
@@ -285,7 +286,7 @@ public class Context {
      */
     public Page resolvePage(Page page, String path) {
         Path resolvedPath = resolvePath(page, path);
-        String key = sourceDir.relativize(resolvedPath).toString();
+        String key = normalizePath(sourceDir.relativize(resolvedPath).toString());
         return pages().get(key);
     }
 

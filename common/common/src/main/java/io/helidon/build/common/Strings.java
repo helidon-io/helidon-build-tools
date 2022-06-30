@@ -68,9 +68,22 @@ public class Strings {
      */
     public static String normalizeNewLines(String value) {
         if (value == null) {
-            return value;
+            return null;
         }
         return value.replaceAll("\r\n", "\n");
+    }
+
+    /**
+     * Force UNIX style path on Windows.
+     *
+     * @param value The value to normalize, may be {@code null}
+     * @return normalized value
+     */
+    public static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "/");
     }
 
     /**

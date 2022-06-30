@@ -22,12 +22,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.test.utils.TestFiles;
+import io.helidon.build.maven.sitegen.models.PageFilter;
+
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.Patch;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import io.helidon.build.maven.sitegen.models.PageFilter;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -89,7 +91,7 @@ public class BasicBackendTest {
         Template template = config.getTemplate(expectedTpl.getFileName().toString());
         Path expected = OUTPUT_DIR.resolve("expected_" + actual.getFileName());
         Map<String, Object> model = new HashMap<>();
-        model.put("basedir", Path.of("").toAbsolutePath());
+        model.put("basedir", TestFiles.pathOf(Path.of("").toAbsolutePath()));
         template.process(model, Files.newBufferedWriter(expected));
 
         // diff expected and rendered

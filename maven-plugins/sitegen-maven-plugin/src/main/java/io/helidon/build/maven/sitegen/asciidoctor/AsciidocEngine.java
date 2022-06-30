@@ -42,6 +42,7 @@ import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
 
 import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.Strings.normalizePath;
 import static io.helidon.build.common.Strings.requireValid;
 import static java.util.Objects.requireNonNull;
 
@@ -359,8 +360,6 @@ public class AsciidocEngine {
     }
 
     private static String relativePath(Path sourceDir, Path source) {
-        return sourceDir.relativize(source).toString()
-                        // force UNIX style path on Windows
-                        .replace("\\", "/");
+        return normalizePath(sourceDir.relativize(source).toString());
     }
 }
