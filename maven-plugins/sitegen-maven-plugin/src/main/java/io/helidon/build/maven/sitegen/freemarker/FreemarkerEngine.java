@@ -27,10 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.RenderingException;
-import io.helidon.build.maven.sitegen.Site;
 
 import freemarker.core.Environment;
 import freemarker.template.Configuration;
@@ -40,8 +40,6 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import freemarker.template.TemplateNotFoundException;
 import freemarker.template.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.helidon.build.common.Strings.requireValid;
 
@@ -51,7 +49,6 @@ import static io.helidon.build.common.Strings.requireValid;
 @SuppressWarnings("unused")
 public class FreemarkerEngine {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FreemarkerEngine.class);
     private static final Version FREEMARKER_VERSION = Configuration.VERSION_2_3_23;
     private static final ObjectWrapper OBJECT_WRAPPER = new ObjectWrapper(FREEMARKER_VERSION);
 
@@ -127,7 +124,7 @@ public class FreemarkerEngine {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Template tpl = freemarker.getTemplate(path);
             OutputStreamWriter writer = new OutputStreamWriter(baos);
-            LOGGER.debug("Applying template: {}", path);
+            Log.debug("Applying template: %s", path);
             Environment env = tpl.createProcessingEnvironment(model, writer);
             for (Entry<String, TemplateDirectiveModel> directive : ctx.templateSession().directives().entrySet()) {
                 env.setVariable(directive.getKey(), directive.getValue());
@@ -139,12 +136,12 @@ public class FreemarkerEngine {
             env.process();
             return baos.toString(StandardCharsets.UTF_8);
         } catch (TemplateNotFoundException ex) {
-            Boolean strict = ctx.option(Site.Options.STRICT_TEMPLATES, Boolean.class).orElse(true);
+            boolean strict = ctx.strictTemplates();
             String msg = String.format("Unable to find template: %s", path);
             if (strict) {
                 throw new RenderingException(msg);
             }
-            LOGGER.warn(msg);
+            Log.warn(msg);
             return "";
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);

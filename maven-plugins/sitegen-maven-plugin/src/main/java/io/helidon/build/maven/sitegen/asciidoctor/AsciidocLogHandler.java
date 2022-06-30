@@ -16,74 +16,58 @@
 package io.helidon.build.maven.sitegen.asciidoctor;
 
 import java.util.Collection;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
+import java.util.logging.Logger;
 
-import io.helidon.build.maven.sitegen.RenderingException;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.maven.sitegen.Context;
 
 import org.asciidoctor.log.LogHandler;
 import org.asciidoctor.log.LogRecord;
-import org.asciidoctor.log.Severity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Custom log handler.
  */
 final class AsciidocLogHandler implements LogHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsciidocLogHandler.class);
     private static final String INVALID_REF = "possible invalid reference";
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
 
-    private final Supplier<Collection<String>> framesSupplier;
-    private volatile Consumer<RenderingException> accumulator;
-    private volatile int failOnOrdinal = Integer.MAX_VALUE;
+    private final Supplier<Collection<String>> frames;
 
     /**
      * Create a new instance.
      *
-     * @param framesSupplier frames supplier
+     * @param frames frames supplier
      */
-    AsciidocLogHandler(Supplier<Collection<String>> framesSupplier) {
-        this.framesSupplier = framesSupplier;
-    }
-
-    /**
-     * Setup the log handler.
-     *
-     * @param accumulator consumer of exception that accumulates the errors
-     * @param severity    severity on which to start raising error, if {@code null} errors are not raised
-     */
-    void setup(Consumer<RenderingException> accumulator, Severity severity) {
-        this.accumulator = accumulator;
-        this.failOnOrdinal = severity != null ? severity.ordinal() : Integer.MAX_VALUE;
+    AsciidocLogHandler(Supplier<Collection<String>> frames) {
+        this.frames = frames;
     }
 
     @Override
     public void log(LogRecord logRecord) {
+        Context ctx = Context.get();
+        int failOn = ctx.failOn();
         String message = logRecord.getMessage();
-        if (logRecord.getSeverity().ordinal() >= failOnOrdinal || message.startsWith(INVALID_REF)) {
-            AsciidocLoggedException ex = new AsciidocLoggedException(message, framesSupplier.get());
-            if (accumulator == null) {
-                throw ex;
-            }
-            accumulator.accept(ex);
+        if (logRecord.getSeverity().ordinal() >= failOn || message.startsWith(INVALID_REF)) {
+            ctx.error(new AsciidocLoggedException(message, frames.get()));
             return;
         }
         switch (logRecord.getSeverity()) {
             case DEBUG:
-                LOGGER.debug(message);
+                Log.debug(message);
                 break;
             case WARN:
-                LOGGER.warn(message);
+                Log.warn(message);
                 break;
             case FATAL:
             case ERROR:
-                LOGGER.error(message);
+                Log.error(message);
                 break;
             default:
-                LOGGER.info(message);
+                Log.info(message);
         }
     }
 
@@ -91,21 +75,24 @@ final class AsciidocLogHandler implements LogHandler {
      * One time setup.
      */
     static void init() {
-        java.util.logging.Logger asciidoctorLogger = java.util.logging.Logger.getLogger("asciidoctor");
-        asciidoctorLogger.setUseParentHandlers(false);
-        asciidoctorLogger.addHandler(new Handler() {
-            @Override
-            public void publish(java.util.logging.LogRecord record) {
-            }
+        if (!INITIALIZED.get()) {
+            Logger asciidoctorLogger = Logger.getLogger("asciidoctor");
+            asciidoctorLogger.setUseParentHandlers(false);
+            asciidoctorLogger.addHandler(new Handler() {
+                @Override
+                public void publish(java.util.logging.LogRecord record) {
+                }
 
-            @Override
-            public void flush() {
-            }
+                @Override
+                public void flush() {
+                }
 
-            @Override
-            public void close() throws SecurityException {
-            }
-        });
+                @Override
+                public void close() throws SecurityException {
+                }
+            });
+            INITIALIZED.set(true);
+        }
     }
 
     /**

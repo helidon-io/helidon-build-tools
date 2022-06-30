@@ -19,6 +19,8 @@ package io.helidon.build.maven.sitegen.maven;
 import java.io.File;
 import java.io.IOException;
 
+import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
+
 import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -33,6 +35,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
+import org.codehaus.plexus.component.annotations.Requirement;
 
 import static io.helidon.build.maven.sitegen.maven.Constants.DEFAULT_SITE_OUTPUT_DIR;
 import static io.helidon.build.maven.sitegen.maven.Constants.PROPERTY_PREFIX;
@@ -46,6 +49,9 @@ public class PackageMojo extends AbstractMojo {
 
     private static final String[] DEFAULT_EXCLUDES = new String[] {};
     private static final String[] DEFAULT_INCLUDES = new String[] {"**/**"};
+
+    @Requirement
+    private PlexusLoggerHolder plexusLogHolder;
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;

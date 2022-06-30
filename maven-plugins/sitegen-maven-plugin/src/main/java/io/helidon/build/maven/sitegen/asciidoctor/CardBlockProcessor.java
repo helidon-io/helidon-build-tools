@@ -20,7 +20,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import io.helidon.build.common.logging.Log;
 
 import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
@@ -32,8 +33,6 @@ import org.asciidoctor.extension.Reader;
  * A {@link BlockProcessor} implementation that provides custom asciidoc syntax for creating cards.
  */
 public class CardBlockProcessor extends BlockProcessor {
-
-    private static final Logger LOGGER = Logger.getLogger(CardBlockProcessor.class.getName());
 
     /**
      * Marker text for generated block links.
@@ -71,7 +70,7 @@ public class CardBlockProcessor extends BlockProcessor {
                 linkPhrase = String.format("link:%s[%s]", link, BLOCK_LINK_TEXT);
             } else {
                 linkPhrase = null;
-                LOGGER.warning(link);
+                Log.warn(link);
             }
             if (linkPhrase != null){
                 parseContent(block, List.of(linkPhrase));

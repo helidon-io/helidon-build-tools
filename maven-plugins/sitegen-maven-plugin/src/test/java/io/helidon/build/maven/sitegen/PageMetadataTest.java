@@ -94,6 +94,30 @@ class PageMetadataTest {
         assertThat(m.keywords(), is("keyword1, keyword2, keyword3"));
     }
 
+    @Test
+    public void testPageWithH1Prefix1() {
+        Metadata m = null;
+        try {
+            m = readMetadata("with_h1prefix1.adoc");
+        } catch (Throwable ex) {
+            fail("with_h1prefix1.adoc is a valid document", ex);
+        }
+        assertThat(m.h1Prefix(), is("Foo"));
+        assertThat(m.h1(), is("With H1 Prefix"));
+    }
+
+    @Test
+    public void testPageWithH1Prefix2() {
+        Metadata m = null;
+        try {
+            m = readMetadata("dir1/dir2/with_h1prefix_included.adoc");
+        } catch (Throwable ex) {
+            fail("dir1/dir2/with_h1prefix_included.adoc is a valid document", ex);
+        }
+        assertThat(m.h1(), is("Bar"));
+        assertThat(m.h1Prefix(), is("Foo"));
+    }
+
     private static Metadata readMetadata(String filename) {
         return SITE.readMetadata(SOURCE_DIR.resolve(filename));
     }

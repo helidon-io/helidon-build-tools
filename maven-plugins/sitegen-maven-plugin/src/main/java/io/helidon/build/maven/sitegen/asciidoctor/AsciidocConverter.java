@@ -24,6 +24,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.SiteEngine;
@@ -37,8 +38,6 @@ import org.asciidoctor.ast.Document;
 import org.asciidoctor.ast.PhraseNode;
 import org.asciidoctor.ast.StructuralNode;
 import org.asciidoctor.converter.AbstractConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.helidon.build.maven.sitegen.asciidoctor.CardBlockProcessor.BLOCK_LINK_TEXT;
 
@@ -48,8 +47,6 @@ import static io.helidon.build.maven.sitegen.asciidoctor.CardBlockProcessor.BLOC
  * The Freemarker templates are loaded from classpath, see {@link TemplateLoader}
  */
 public class AsciidocConverter extends AbstractConverter<String> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsciidocConverter.class);
 
     private final FreemarkerEngine templateEngine;
     private final Deque<String> frames = new ArrayDeque<>();
@@ -108,7 +105,7 @@ public class AsciidocConverter extends AbstractConverter<String> {
             }
             templateName = node.getNodeName();
         }
-        LOGGER.debug("Rendering node: {}", node);
+        Log.debug("Rendering node: " + node);
         try {
             return templateEngine.renderString(templateName, node);
         } catch (RenderingException ex) {

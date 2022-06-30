@@ -31,11 +31,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.maven.sitegen.asciidoctor.AsciidocExtensionRegistry;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.asciidoctor.Asciidoctor;
@@ -95,6 +97,10 @@ public abstract class AbstractAsciiDocMojo extends AbstractMojo {
     private static final String DEFAULT_SRC_DIR = "${project.basedir}";
     private static final String JRUBY_DEBUG_PROPERTY_NAME = "jruby.cli.verbose";
     private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+
+    @Component
+    @SuppressWarnings("unused")
+    private PlexusLoggerHolder plexusLogHolder;
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;

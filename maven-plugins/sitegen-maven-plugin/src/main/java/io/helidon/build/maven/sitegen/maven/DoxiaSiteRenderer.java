@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.Site;
@@ -39,6 +40,7 @@ import org.apache.maven.doxia.siterenderer.SiteRenderingContext;
 import org.apache.maven.plugins.site.render.ReportDocumentRenderer;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.IOUtil;
 
 /**
@@ -46,6 +48,10 @@ import org.codehaus.plexus.util.IOUtil;
  */
 @Component(role = Renderer.class)
 public class DoxiaSiteRenderer extends DefaultSiteRenderer {
+
+    @Requirement
+    @SuppressWarnings("unused")
+    private PlexusLoggerHolder plexusLogHolder;
 
     @Override
     public void render(Collection<DocumentRenderer> documents, SiteRenderingContext context, File outputDirectory)

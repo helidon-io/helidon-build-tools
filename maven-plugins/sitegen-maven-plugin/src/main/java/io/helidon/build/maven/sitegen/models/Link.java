@@ -18,14 +18,11 @@ package io.helidon.build.maven.sitegen.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.Model;
 import io.helidon.build.maven.sitegen.RenderingException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static io.helidon.build.maven.sitegen.Site.Options.STRICT_XREF;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -33,8 +30,6 @@ import static java.util.Objects.requireNonNull;
  */
 @SuppressWarnings("unused")
 public final class Link implements Model {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Link.class);
 
     private final String source;
     private final String target;
@@ -58,12 +53,12 @@ public final class Link implements Model {
                     source = builder.path.replace("." + backend, ".adoc");
                     Page page = ctx.resolvePage(doc, source);
                     if (page == null) {
-                        boolean strict = ctx.option(STRICT_XREF, Boolean.class).orElse(true);
+                        boolean strict = ctx.strictXRef();
                         String msg = String.format("Unresolved cross-reference: %s, document: %s", source, doc.source());
                         if (strict) {
                             throw new RenderingException(msg);
                         }
-                        LOGGER.warn(msg);
+                        Log.warn(msg);
                         page = Page.UNRESOLVED;
                     }
                     target = page.target();

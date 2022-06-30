@@ -23,8 +23,10 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,16 +36,18 @@ import java.util.concurrent.Callable;
 import io.helidon.build.common.Instance;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.VirtualFileSystem;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.freemarker.TemplateSession;
 import io.helidon.build.maven.sitegen.models.Page;
 import io.helidon.build.maven.sitegen.models.PageFilter;
 import io.helidon.build.maven.sitegen.models.SourcePathFilter;
 import io.helidon.build.maven.sitegen.models.StaticAsset;
 
-import org.slf4j.LoggerFactory;
-
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.Strings.requireValid;
+import static io.helidon.build.maven.sitegen.Site.Options.FAIL_ON;
+import static io.helidon.build.maven.sitegen.Site.Options.STRICT_IMAGES;
+import static io.helidon.build.maven.sitegen.Site.Options.STRICT_XREF;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
 
@@ -52,8 +56,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class Context {
 
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(Context.class);
-    private static final ThreadLocal<Context> THREAD_LOCAL = new ThreadLocal<>();
+    private static final ThreadLocal<Deque<Context>> REGISTRY = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final Site site;
     private final TemplateSession templateSession;
@@ -105,10 +108,10 @@ public class Context {
      * @throws RenderingException to raise all the errors that occurred
      */
     public <T> T runInContext(Callable<T> callable) {
-        THREAD_LOCAL.set(this);
-        List<RenderingException> errors = new ArrayList<>();
-        this.errors = errors;
         try {
+            REGISTRY.get().push(this);
+            List<RenderingException> errors = new ArrayList<>();
+            this.errors = errors;
             T result = callable.call();
             if (!errors.isEmpty()) {
                 throw new RenderingException(errors);
@@ -118,6 +121,8 @@ public class Context {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            REGISTRY.get().pop();
         }
     }
 
@@ -128,11 +133,11 @@ public class Context {
      * @throws IllegalStateException if the ctx is not set in the current thread
      */
     public static Context get() {
-        Context ctx = THREAD_LOCAL.get();
+        Context ctx = REGISTRY.get().peek();
         if (ctx != null) {
             return ctx;
         }
-        throw new IllegalStateException("ctx is not set!");
+        throw new IllegalStateException("context is not set!");
     }
 
     /**
@@ -184,6 +189,56 @@ public class Context {
      */
     public <T> Optional<T> option(String key, Class<T> type) {
         return Optional.ofNullable(site.options().get(key)).map(type::cast);
+    }
+
+    /**
+     * Get the {@link Site.Options#FAIL_ON} option value.
+     *
+     * @return severity ordinal
+     */
+    public int failOn() {
+        String severity = option(FAIL_ON, String.class).orElse("WARN");
+        switch (severity) {
+            case "DEBUG":
+                return 0;
+            case "INFO":
+                return 1;
+            case "WARN":
+                return 2;
+            case "ERROR":
+                return 3;
+            case "FATAL":
+                return 4;
+            default:
+                return 5;
+        }
+    }
+
+    /**
+     * Get the {@link Site.Options#STRICT_XREF} option value.
+     *
+     * @return {@code true} if enabled (default), {@code false} otherwise
+     */
+    public boolean strictXRef() {
+        return option(STRICT_XREF, Boolean.class).orElse(true);
+    }
+
+    /**
+     * Get the {@link Site.Options#STRICT_TEMPLATES} option value.
+     *
+     * @return {@code true} if enabled (default), {@code false} otherwise
+     */
+    public boolean strictTemplates() {
+        return option(Site.Options.STRICT_TEMPLATES, Boolean.class).orElse(true);
+    }
+
+    /**
+     * Get the {@link Site.Options#STRICT_IMAGES} option value.
+     *
+     * @return {@code true} if enabled (default), {@code false} otherwise
+     */
+    public boolean strictImages() {
+        return option(STRICT_IMAGES, Boolean.class).orElse(true);
     }
 
     /**
@@ -305,7 +360,39 @@ public class Context {
     }
 
     private Map<String, Page> initPages() {
-        return createPages(sourcePaths.instance(), site.pages(), sourceDir, site.backend());
+        List<PageFilter> filters = site.pages();
+        Log.debug("creating pages, dir=%s, filters:%s", sourceDir, site.pages());
+
+        List<SourcePath> paths = sourcePaths.instance();
+        List<SourcePath> resolvedPaths;
+        if (filters.isEmpty()) {
+            resolvedPaths = paths;
+        } else {
+            resolvedPaths = new ArrayList<>();
+            for (SourcePathFilter filter : site.pages()) {
+                resolvedPaths.addAll(filter.resolvePaths(paths));
+            }
+        }
+
+        Log.debug("resolved paths: %s", resolvedPaths);
+
+        Backend backend = site.backend();
+        Map<String, Page> pages = new HashMap<>();
+        for (SourcePath filteredPath : SourcePath.sort(resolvedPaths)) {
+            String path = filteredPath.asString(false);
+            if (pages.containsKey(path)) {
+                throw new IllegalStateException("Source path " + path + "already included");
+            }
+            Log.debug("creating page: %s", path);
+            PageRenderer renderer = backend.renderer(sourceDir.resolve(path));
+            Page.Metadata metadata = renderer.readMetadata(sourceDir.resolve(path));
+            pages.put(path, Page.builder()
+                                .source(path)
+                                .target(Page.removeFileExt(path))
+                                .metadata(metadata)
+                                .build());
+        }
+        return pages;
     }
 
     private List<String> initResolvedAssets() {
@@ -321,48 +408,6 @@ public class Context {
             }
         }
         return resolvedAssets;
-    }
-
-    /**
-     * Create pages.
-     *
-     * @param paths     a list of path to match
-     * @param filters   a list of filters to apply
-     * @param sourceDir the source directory containing the paths
-     * @param backend   the backend to use for reading the metadata
-     * @return map of pages indexed by relative source path
-     */
-    public static Map<String, Page> createPages(List<SourcePath> paths,
-                                                List<PageFilter> filters,
-                                                Path sourceDir,
-                                                Backend backend) {
-
-        requireNonNull(paths, "paths is null!");
-        requireNonNull(filters, "filters is null!");
-        List<SourcePath> filteredSourcePaths;
-        if (filters.isEmpty()) {
-            filteredSourcePaths = paths;
-        } else {
-            filteredSourcePaths = new ArrayList<>();
-            for (SourcePathFilter filter : filters) {
-                filteredSourcePaths.addAll(filter.resolvePaths(paths));
-            }
-        }
-        Map<String, Page> pages = new HashMap<>();
-        for (SourcePath filteredPath : SourcePath.sort(filteredSourcePaths)) {
-            String path = filteredPath.asString(false);
-            if (pages.containsKey(path)) {
-                throw new IllegalStateException("Source path " + path + "already included");
-            }
-            PageRenderer renderer = backend.renderer(sourceDir.resolve(path));
-            Page.Metadata metadata = renderer.readMetadata(sourceDir.resolve(path));
-            pages.put(path, Page.builder()
-                                .source(path)
-                                .target(Page.removeFileExt(path))
-                                .metadata(metadata)
-                                .build());
-        }
-        return pages;
     }
 
     /**
@@ -385,7 +430,7 @@ public class Context {
                         String targetRelativePath = resources.relativize(file).toString();
                         Path targetPath = outputDir.resolve(targetRelativePath);
                         Files.createDirectories(targetPath.getParent());
-                        LOGGER.debug("Copying static resource: {} to {}", targetRelativePath, targetPath);
+                        Log.debug("Copying static resource: %s to %s", targetRelativePath, targetPath);
                         Files.copy(file, targetPath, REPLACE_EXISTING);
                     }
                     return FileVisitResult.CONTINUE;
@@ -393,7 +438,7 @@ public class Context {
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException ex) {
-                    LOGGER.error("Error while copying static resource: {} - {}", file.getFileName(), ex.getMessage());
+                    Log.error("Error while copying static resource: %s - %s", file.getFileName(), ex.getMessage());
                     return FileVisitResult.CONTINUE;
                 }
 

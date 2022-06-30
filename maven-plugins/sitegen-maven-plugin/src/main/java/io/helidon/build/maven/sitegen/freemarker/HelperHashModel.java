@@ -18,6 +18,7 @@ package io.helidon.build.maven.sitegen.freemarker;
 
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.models.Link;
@@ -28,18 +29,13 @@ import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import org.asciidoctor.ast.ContentNode;
 import org.asciidoctor.ast.PhraseNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import static io.helidon.build.maven.sitegen.Site.Options.STRICT_IMAGES;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Link hash model.
  */
 public final class HelperHashModel implements TemplateHashModel {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HelperHashModel.class);
 
     private final ObjectWrapper objectWrapper;
     private volatile Page page;
@@ -73,12 +69,12 @@ public final class HelperHashModel implements TemplateHashModel {
                 String target = ctx.outputDir().resolve(imageUri).normalize().toString();
                 // not a URI, validate the path...
                 if (!ctx.resolvedAssets().contains(target)) {
-                    Boolean strict = ctx.option(STRICT_IMAGES, Boolean.class).orElse(true);
+                    boolean strict = ctx.strictImages();
                     String msg = String.format("Image not found! path: %s, document: %s", target, page.source());
                     if (strict) {
                         throw new RenderingException(msg);
                     }
-                    LOGGER.warn(msg);
+                    Log.warn(msg);
                 }
             }
             return imageUri;

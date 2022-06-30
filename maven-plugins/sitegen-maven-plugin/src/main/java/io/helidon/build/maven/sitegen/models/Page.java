@@ -379,7 +379,7 @@ public class Page implements Model {
                 keywords = config.get("keywords").asString().orElse(null);
                 h1 = config.get("h1").asString().orElse(null);
                 docTitle = config.get("doctitle").asString().orElse(null);
-                h1Prefix = config.get("h1prefix").asString().orElse(null);
+                h1Prefix = config.get("h1-prefix").asString().orElse(null);
                 return this;
             }
 

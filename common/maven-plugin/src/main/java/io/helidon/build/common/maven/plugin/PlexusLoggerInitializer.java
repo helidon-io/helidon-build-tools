@@ -15,31 +15,17 @@
  */
 package io.helidon.build.common.maven.plugin;
 
-import java.util.concurrent.atomic.AtomicReference;
-
+import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.codehaus.plexus.logging.Logger;
 
 /**
- * A plexus component that sets the logger.
+ * Maven life-cycle participant that captures the plexus logger.
  */
-@Component(role = PlexusLoggerHolder.class)
-public class PlexusLoggerHolder {
+@Component(role = AbstractMavenLifecycleParticipant.class, hint = "plexus-logger-initializer")
+public class PlexusLoggerInitializer extends AbstractMavenLifecycleParticipant {
 
-    /**
-     * The plexus logger reference.
-     */
-    public static final AtomicReference<Logger> REF = new AtomicReference<>();
-
-    /**
-     * Set the logger.
-     *
-     * @param logger logger
-     */
     @Requirement
     @SuppressWarnings("unused")
-    public void setLogger(Logger logger) {
-        REF.set(logger);
-    }
+    private PlexusLoggerHolder holder;
 }

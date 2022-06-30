@@ -64,7 +64,7 @@ public final class AsciidocPageRenderer implements PageRenderer {
     @Override
     public Metadata readMetadata(Path source) {
         requireNonNull(source, "source is null!");
-        Map<String, Object> docHeader = asciidocEngine.readDocumentHeader(source);
+        Map<String, Object> docHeader = AsciidocHeaders.readDocumentHeader(source);
         return Metadata.create(Config.create(docHeader, Map.of()));
     }
 }

@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import io.helidon.build.common.Instance;
 import io.helidon.build.common.VirtualFileSystem;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.Context;
 import io.helidon.build.maven.sitegen.models.Page;
@@ -36,17 +38,11 @@ import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.Attributes;
 import org.asciidoctor.AttributesBuilder;
 import org.asciidoctor.Options;
-import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.Document;
-import org.asciidoctor.log.Severity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.Strings.requireValid;
-import static io.helidon.build.maven.sitegen.Site.Options.FAIL_ON;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -59,31 +55,33 @@ public class AsciidocEngine {
      */
     public static final String DEFAULT_IMAGESDIR = "./images";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsciidocEngine.class);
-
     private final String backend;
     private final List<String> libraries;
     private final Map<String, Object> attributes;
     private final String imagesdir;
-    private final Asciidoctor asciidoctor;
+    private final Instance<Asciidoctor> asciidoctorInst;
     private final AsciidocLogHandler logHandler;
     private final AsciidocPageRenderer pageRenderer;
     private volatile String sourcePath;
     private volatile AsciidocConverter converter;
 
     private AsciidocEngine(Builder builder) {
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
         backend = requireValid(builder.backend, "backend is invalid!");
         attributes = builder.attributes;
         libraries = builder.libraries;
         imagesdir = builder.imagesDir;
         pageRenderer = new AsciidocPageRenderer(this);
         logHandler = new AsciidocLogHandler(this::frames);
-        asciidoctor = Asciidoctor.Factory.create();
+        asciidoctorInst = new Instance<>(this::initAsciidoctor);
+    }
+
+    private Asciidoctor initAsciidoctor() {
+        Asciidoctor asciidoctor = Asciidoctor.Factory.create();
         AsciidocLogHandler.init();
         asciidoctor.registerLogHandler(logHandler);
+        asciidoctor.requireLibraries(libraries);
         AsciidocExtensionRegistry.create(backend).register(asciidoctor);
+        return asciidoctor;
     }
 
     private Collection<String> frames() {
@@ -136,36 +134,6 @@ public class AsciidocEngine {
     }
 
     /**
-     * Read a document's header.
-     *
-     * @param source the document to read the header from
-     * @return the header as {@code Map<String, Object>}, never {@code null}
-     */
-    public Map<String, Object> readDocumentHeader(Path source) {
-        requireFile(source);
-        OptionsBuilder optionsBuilder =
-                Options.builder()
-                       .attributes(Attributes.builder().attributes(attributes).build())
-                       .safe(SafeMode.UNSAFE)
-                       .headerFooter(false)
-                       .eruby("")
-                       .baseDir(source.getParent().toFile())
-                       .option("parse_header_only", true);
-        if (backend != null) {
-            optionsBuilder.backend(this.backend);
-        }
-        logHandler.setup(ex -> LOGGER.warn(ex.getMessage()), Severity.WARN);
-        Document doc = asciidoctor.loadFile(source.toFile(), optionsBuilder.build());
-        Map<String, Object> headerMap = new HashMap<>();
-        String h1 = parseSection0Title(source);
-        if (h1 != null) {
-            headerMap.put("h1", h1);
-        }
-        headerMap.putAll(doc.getAttributes());
-        return headerMap;
-    }
-
-    /**
      * Render the document represented by the given {@link Page} instance.
      *
      * @param page   the {@link Page} instance representing the document to render
@@ -176,12 +144,6 @@ public class AsciidocEngine {
         requireNonNull(page, "page is null!");
         requireNonNull(ctx, "ctx is null!");
 
-        Severity failOn = ctx.option(FAIL_ON, String.class)
-                             .map(Severity::valueOf)
-                             .orElse(Severity.WARN);
-
-        logHandler.setup(ctx::error, failOn);
-        asciidoctor.requireLibraries(libraries);
         Map<String, Object> extraAttributes = Map.of("page", page);
 
         Path outputDir = ctx.outputDir();
@@ -189,12 +151,11 @@ public class AsciidocEngine {
         Path source = requireFile(sourceDir.resolve(page.source()));
 
         // set attributes
-        AttributesBuilder attrsBuilder =
-                Attributes.builder()
-                          .attributes(extraAttributes)
-                          .attributes(attributes)
-                          .skipFrontMatter(true)
-                          .experimental(true);
+        AttributesBuilder attrsBuilder = Attributes.builder()
+                                                   .attributes(attributes)
+                                                   .skipFrontMatter(true)
+                                                   .experimental(true)
+                                                   .attributes(extraAttributes);
 
         // set imagesDir and 'imagesoutdir'
         // 'imagesoutdir' is needed by asciidoctorj-diagram
@@ -209,31 +170,31 @@ public class AsciidocEngine {
         attrsBuilder.attribute("outdir", outDir);
 
         // set options
-        // set backend name
-        // use unsafe mode
         // set headerFooter to false in order to use embedded transform
         // basedir needed by asciidoctorj-diagram
-        OptionsBuilder optionsBuilder =
-                Options.builder()
-                       .sourcemap(true)
-                       .attributes(attrsBuilder.build())
-                       .safe(SafeMode.UNSAFE)
-                       .headerFooter(false)
-                       .eruby("")
-                       .baseDir(source.getParent().toFile())
-                       .option("parse", false);
-        if (backend != null) {
-            optionsBuilder.backend(this.backend);
-        }
+        Options options = Options.builder()
+                                 .attributes(attrsBuilder.build())
+                                 .sourcemap(true)
+                                 .safe(SafeMode.UNSAFE)
+                                 .headerFooter(false)
+                                 .eruby("")
+                                 .baseDir(source.getParent().toFile())
+                                 .option("parse", false)
+                                 .backend(backend)
+                                 .build();
+
         sourcePath = sourceDir.relativize(source).toString();
-        LOGGER.info("rendering {} to {}", sourcePath, outputDir.relativize(target));
-        Document document = asciidoctor.loadFile(source.toFile(), optionsBuilder.build());
-        try {
-            String output = document.convert();
-            Files.createDirectories(target.getParent());
-            Files.writeString(target, output);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        Log.info("rendering %s to %s", sourcePath, outputDir.relativize(target));
+
+        try (Asciidoctor asciidoctor = asciidoctorInst.instance()) {
+            Document document = asciidoctor.loadFile(source.toFile(), options);
+            try {
+                String output = document.convert();
+                Files.createDirectories(target.getParent());
+                Files.writeString(target, output);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
         }
     }
 
@@ -395,24 +356,6 @@ public class AsciidocEngine {
      */
     public static Builder builder() {
         return new Builder();
-    }
-
-    private static String parseSection0Title(Path source) {
-        try {
-            for (String line : Files.readAllLines(source)) {
-                // level0
-                if (line.startsWith("= ")) {
-                    return line.substring(2).trim();
-                }
-                // level1, abort...
-                if (line.startsWith("== ")) {
-                    break;
-                }
-            }
-        } catch (IOException ex) {
-            LOGGER.error("Error while parsing section0 title of " + source, ex);
-        }
-        return null;
     }
 
     private static String relativePath(Path sourceDir, Path source) {
