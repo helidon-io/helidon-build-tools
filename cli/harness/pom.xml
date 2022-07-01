@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools.cli</groupId>
         <artifactId>helidon-cli-project</artifactId>
-        <version>3.0.0-M4-SNAPSHOT</version>
+        <version>3.0.0-M4</version>
     </parent>
     <artifactId>helidon-cli-harness</artifactId>
     <name>Helidon Command Line Interface Harness</name>

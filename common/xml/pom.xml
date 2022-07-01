@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools.common</groupId>
         <artifactId>helidon-build-common-project</artifactId>
-        <version>3.0.0-M4-SNAPSHOT</version>
+        <version>3.0.0-M4</version>
     </parent>
     <artifactId>helidon-build-common-xml</artifactId>
     <name>Helidon Build Tools Common XML</name>
