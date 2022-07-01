@@ -89,6 +89,11 @@ public class Report {
     public static final String MODULES_PROPERTY_NAME = "modules";
 
     /**
+     * Name of Include Version property.
+     */
+    public static final String INCLUDE_VERSION_PROPERTY_NAME = "includeVersion";
+
+    /**
      * Default input file name.
      */
     public static final String DEFAULT_INPUT_FILE_NAME = "HELIDON_THIRD_PARTY_LICENSES.xml";
@@ -118,6 +123,11 @@ public class Report {
      */
     public static final String DEFAULT_MODULES_LIST = "*";
 
+    /**
+     * Default value for includeVersion of Modules property.
+     */
+    public static final String DEFAULT_INCLUDE_VERSION  = "false";
+
     private String inputFileDir;
     private String inputFileName;
 
@@ -126,6 +136,7 @@ public class Report {
     private String outputFileFormat;
 
     private Set<String> moduleList;
+    private Boolean includeVersion;
 
     private Consumer<String> outputHandler;
     private Consumer<String> errorHandler;
@@ -150,6 +161,8 @@ public class Report {
 
         this.outputHandler = builder.outputHandler();
         this.errorHandler = builder.errorHandler();
+
+        this.includeVersion = builder.includeVersion();
     }
 
     /**
@@ -167,6 +180,7 @@ public class Report {
                 .outputFileDir(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR))
                 .outputFileName(System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME))
                 .outputFileFormat(System.getProperty(OUTPUT_FILE_FORMAT_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_FORMAT))
+                .includeVersion(Boolean.valueOf(System.getProperty(INCLUDE_VERSION_PROPERTY_NAME, DEFAULT_INCLUDE_VERSION)))
                 .build()
                 .execute();
     }
@@ -310,7 +324,7 @@ public class Report {
                     first = false;
                 }
                 w.write(HEADER_80 + "\n");
-                w.write(d.getName() + " " + d.getVersion() + " " + d.getLicensor() + "\n");
+                w.write(d.getName() + " " + (includeVersion ? d.getVersion() : "") + " " + d.getLicensor() + "\n");
                 String lic = d.getLicenseName();
                 if (lic != null && !lic.isEmpty()) {
                     w.write(lic + "\n");
@@ -376,7 +390,8 @@ public class Report {
                 }
 
                 w.write(String.format("\t\t\t\"name\": \"%s\"\n", jsonEscape(d.getName())));
-                w.write(String.format("\t\t\t, \"version\": \"%s\"\n", jsonEscape(d.getVersion())));
+                if (includeVersion)
+                    w.write(String.format("\t\t\t, \"version\": \"%s\"\n", jsonEscape(d.getVersion())));
                 w.write(String.format("\t\t\t, \"licensor\": \"%s\"\n", jsonEscape(d.getLicensor())));
                 w.write(String.format("\t\t\t, \"license-name\": \"%s\"\n", jsonEscape(d.getLicenseName())));
                 w.write(String.format("\t\t\t, \"attribution\": \"%s\"\n", jsonEscape(d.getAttribution())));
@@ -450,7 +465,7 @@ public class Report {
         w.write("<body>\n");
         w.write("<h1>Third Party Attributions");
         w.write("<table border=1>");
-        w.write("<tr><th>Name</th><th>Version</th><th>Licensor</th><th>License Name</th>");
+        w.write(String.format("<tr><th>Name</th>%s<th>Licensor</th><th>License Name</th>", includeVersion ? "<th>Version</th>":""));
         w.write("<th>Attribution</th><th>Used By</th></tr>\n");
         List<AttributionDependency> deps = attributionDocument.getDependencies();
         Set<String> licensesUsed = new HashSet<>();
@@ -461,7 +476,8 @@ public class Report {
             if (moduleList.isEmpty() || !intersection.isEmpty()) {
                 w.write("<tr valign=top>");
                 w.write(String.format("<td>%s</td>", d.getName()));
-                w.write(String.format("<td>%s</td>", d.getVersion()));
+                if (includeVersion)
+                    w.write(String.format("<td>%s</td>", d.getVersion()));
                 w.write(String.format("<td>%s</td>", d.getLicensor()));
                 w.write(String.format("<td>%s</td>", d.getLicenseName()));
                 w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td>",
@@ -591,6 +607,8 @@ public class Report {
         private String outputFileDir = DEFAULT_OUTPUT_FILE_DIR;
         private String outputFileName = DEFAULT_OUTPUT_FILE_NAME;
         private String outputFileFormat = DEFAULT_OUTPUT_FILE_FORMAT;
+
+        private Boolean includeVersion = Boolean.valueOf(DEFAULT_INCLUDE_VERSION);
         private Set<String> moduleList = Collections.emptySet();
         private Consumer<String> outputHandler = (s) -> System.out.println(s);
         private Consumer<String> errorHandler = (s) -> System.err.println(s);
@@ -671,7 +689,7 @@ public class Report {
          * Set the name of the generated output file.
          *
          * @param outputFileName Name of output file
-         * @return the name of the generated output file.
+         * @return this builder
          */
         public Builder outputFileName(String outputFileName) {
             this.outputFileName = outputFileName;
@@ -695,6 +713,25 @@ public class Report {
          */
         public Builder outputFileFormat(String outputFileFormat) {
             this.outputFileFormat = outputFileFormat;
+            return this;
+        }
+
+        /**
+         * Include third party dependency version numbers in report output file or not.
+         * @return true to include third party dependency version numbers in report, else false. (Default false)
+         */
+        public Boolean includeVersion() {
+            return includeVersion;
+        }
+
+        /**
+         * Set whether to include third party dependency version numbers in report output file or not.
+         * Default is to not include version numbers in output file.
+         * @param includeVersion true to include third party version numbers, else false (Default false)
+         * @return this builder
+         */
+        public Builder includeVersion(Boolean includeVersion) {
+            this.includeVersion = includeVersion;
             return this;
         }
 
