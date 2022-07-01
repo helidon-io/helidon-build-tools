@@ -40,12 +40,6 @@ import io.helidon.build.licensing.model.AttributionDependency;
 import io.helidon.build.licensing.model.AttributionDocument;
 import io.helidon.build.licensing.model.AttributionLicense;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
@@ -232,9 +226,6 @@ public class Report {
                 case "json":
                     generateAttributionFileJson(document, w);
                     break;
-                case "csv":
-                    generateAttributionFileCSV(document, w);
-                    break;
                 case "html":
                     if (generateAttributionFileHtml(document, w)) {
                         w.flush();
@@ -367,100 +358,83 @@ public class Report {
      * @throws IOException if trouble writing to file
      */
     private boolean generateAttributionFileJson(AttributionDocument attributionDocument, FileWriter w) throws IOException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNodeFactory factory = mapper.getNodeFactory();
-        ObjectNode root = new ObjectNode(factory);
+        w.write("{\n");
 
         List<AttributionDependency> deps = attributionDocument.getDependencies();
         Set<String> licensesUsed = new HashSet<>();
         boolean first = true;
-        ArrayNode dependencies = null;
         for (AttributionDependency d : deps) {
             HashSet<String> intersection = new HashSet<>(moduleList);
             intersection.retainAll(d.getConsumers());
             if (moduleList.isEmpty() || !intersection.isEmpty()) {
                 if (first) {
-                    dependencies = new ArrayNode(factory);
-                    root.set("dependencies", dependencies);
+                    w.write("\t\"dependencies\": [\n");
+                    w.write("\t\t{\n");
                     first = false;
+                } else {
+                    w.write("\t\t, {\n");
                 }
 
-                ObjectNode dependency = new ObjectNode(factory);
-                dependencies.add(dependency);
-                dependency.put("name", d.getName());
-                dependency.put("version", d.getVersion());
-                dependency.put("licensor", d.getLicensor());
-                dependency.put("license-name", d.getLicenseName());
-                dependency.put("attribution", d.getAttribution());
-                ArrayNode usedBy = new ArrayNode(factory);
-                d.getConsumers().forEach(u -> usedBy.add(u));
-                dependency.set("used-by", usedBy);
+                w.write(String.format("\t\t\t\"name\": \"%s\"\n", jsonEscape(d.getName())));
+                w.write(String.format("\t\t\t, \"version\": \"%s\"\n", jsonEscape(d.getVersion())));
+                w.write(String.format("\t\t\t, \"licensor\": \"%s\"\n", jsonEscape(d.getLicensor())));
+                w.write(String.format("\t\t\t, \"license-name\": \"%s\"\n", jsonEscape(d.getLicenseName())));
+                w.write(String.format("\t\t\t, \"attribution\": \"%s\"\n", jsonEscape(d.getAttribution())));
+                w.write(String.format("\t\t\t, \"used-by\": [\n"));
+                boolean firstConsumer = true;
+                for (String consumer : d.getConsumers()) {
+                    if (firstConsumer) {
+                        w.write(String.format("\t\t\t\t\"%s\"\n", jsonEscape(consumer)));
+                        firstConsumer = false;
+                    } else {
+                        w.write(String.format("\t\t\t\t, \"%s\"\n", jsonEscape(consumer)));
+                    }
+                }
+                w.write("\t\t\t]\n");
+                w.write("\t\t}\n");
 
                 detectLicenses(licensesUsed, d.getAttribution());
             }
         }
+        w.write("\t]\n");
 
         // If we haven't written anything, then let the caller know
         if (first) {
+            w.write("}\n");
             return false;
         }
 
         // Write full text of licenses used (that were squashed out of report) to the
         // end of the file.
         first = true;
-        ObjectNode licenses = null;
         for (String s : licensesUsed) {
             if (first) {
-                licenses = new ObjectNode(factory);
-                root.set("licenses", licenses);
-                first = false;
+                w.write("\t, \"licenses\" : {\n");
             }
 
             // Get license text for AttributionDocument
             AttributionLicense license = getLicense(attributionDocument, s);
+            String sJson = jsonEscape(s);
             if (license != null) {
-                licenses.put(s, license.getText());
+                w.write(String.format("\t\t%s\"%s\": \"%s\"\n", (first ? "":", "), sJson, jsonEscape(license.getText())));
             } else {
-                licenses.put(s, "No license text found for " + s);
+                w.write(String.format("\t\t%s\"%s\": \"\"No license text found for %s\"\n", (first ? "":", "), sJson, sJson));
             }
-        }
 
-        mapper.writerWithDefaultPrettyPrinter().writeValue(w, root);
+            first = false;
+        }
+        w.write("\t}\n");
+
+        w.write("}\n");
 
         return true;
     }
 
-    /**
-     * Generates a third party attribution file from all found BAs in JSON format.
-     *
-     * @param attributionDocument AttributionDocument to generate attribution report from
-     * @param w                   FileWriter to write report to
-     * @return true if something was written, else false
-     * @throws IOException if trouble writing to file
-     */
-    private boolean generateAttributionFileCSV(AttributionDocument attributionDocument, FileWriter w) throws IOException {
-        try (CSVPrinter printer = new CSVPrinter(w, CSVFormat.DEFAULT)) {
-            printer.printRecord("name", "version", "licensor", "license name", "attribution", "used by");
-            List<AttributionDependency> deps = attributionDocument.getDependencies();
-
-            for (AttributionDependency d : deps) {
-                HashSet<String> intersection = new HashSet<>(moduleList);
-                intersection.retainAll(d.getConsumers());
-                if (moduleList.isEmpty() || !intersection.isEmpty()) {
-                    printer.printRecord(
-                            d.getName(),
-                            d.getVersion(),
-                            d.getLicensor(),
-                            d.getLicenseName(),
-                            d.getAttribution(),
-                            d.getConsumers()
-                    );
-                }
-            }
-        }
-
-        return true;
+    private static String jsonEscape(String str) {
+        return str
+                .replaceAll("\\\\", "\\\\\\\\")
+                .replaceAll("\n", "\\\\n")
+                .replaceAll("\"", "\\\\\"");
     }
 
     /**

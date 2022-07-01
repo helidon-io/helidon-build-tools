@@ -156,7 +156,6 @@
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
-        <version.lib.commons-csv>1.9.0</version.lib.commons-csv>
         <version.lib.commons-text>1.9</version.lib.commons-text>
 
         <!--
@@ -741,13 +740,9 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.lib.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${version.lib.jackson}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -793,11 +788,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-embedder</artifactId>
                 <version>${version.lib.maven-embedder}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-csv</artifactId>
-                <version>${version.lib.commons-csv}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
