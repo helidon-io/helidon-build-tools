@@ -21,11 +21,11 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
@@ -65,10 +65,10 @@ public class DoxiaSiteRenderer extends DefaultSiteRenderer {
             RenderingContext renderingContext = docRenderer.getRenderingContext();
             Path outputFile = outputDir.resolve(docRenderer.getOutputName());
             Path inputFile = renderingContext.getBasedir().toPath().resolve(renderingContext.getInputName());
-            FileTime lastModifiedTime = Files.getLastModifiedTime(outputFile);
+            long lastModifiedTime = FileUtils.lastModifiedMillis(outputFile);
             boolean modified = !Files.exists(outputFile)
-                    || (Files.getLastModifiedTime(inputFile).compareTo(lastModifiedTime) > 0)
-                    || (context.getDecoration().getLastModified() > lastModifiedTime.toMillis());
+                    || (FileUtils.lastModifiedMillis(inputFile) > lastModifiedTime)
+                    || (context.getDecoration().getLastModified() > lastModifiedTime);
 
             if (modified || docRenderer.isOverwrite()) {
                 if (!Files.exists(outputFile)) {
