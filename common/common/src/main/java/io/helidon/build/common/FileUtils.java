@@ -218,8 +218,8 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> listFiles(Path directory, BiPredicate<Path, BasicFileAttributes> pathFilter, int maxDepth) {
-        try {
-            return Files.find(requireDirectory(directory), maxDepth, pathFilter).collect(Collectors.toList());
+        try (Stream<Path> pathStream = Files.find(requireDirectory(directory), maxDepth, pathFilter)) {
+            return pathStream.collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -243,9 +243,9 @@ public final class FileUtils {
      * @return The normalized, absolute file paths.
      */
     public static List<Path> list(Path directory, final int maxDepth) {
-        try {
-            return Files.find(requireDirectory(directory), maxDepth, (path, attrs) -> true)
-                        .collect(Collectors.toList());
+        try (Stream<Path> pathStream = Files.find(requireDirectory(directory), maxDepth, (path, attrs) -> true)) {
+            return pathStream
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -374,6 +374,7 @@ public final class FileUtils {
     public static Path deleteDirectoryContent(Path directory) throws IOException {
         if (Files.exists(directory)) {
             if (Files.isDirectory(directory)) {
+                //noinspection DuplicatedCode
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
                           .filter(file -> !file.equals(directory))
@@ -441,7 +442,10 @@ public final class FileUtils {
      * @return The last modified time.
      */
     public static long lastModifiedSeconds(Path file) {
-        return lastModifiedTime(file).to(TimeUnit.SECONDS);
+        if (Files.exists(file)) {
+            return lastModifiedTime(file).to(TimeUnit.SECONDS);
+        }
+        return 0;
     }
 
     /**
@@ -452,7 +456,10 @@ public final class FileUtils {
      */
     @SuppressWarnings("unused")
     public static long lastModifiedMillis(Path file) {
-        return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
+        if (Files.exists(file)) {
+            return lastModifiedTime(file).to(TimeUnit.MILLISECONDS);
+        }
+        return 0L;
     }
 
     /**
@@ -731,21 +738,22 @@ public final class FileUtils {
      */
     public static Path zip(Path zip, Path directory) {
         try (FileSystem fs = newZipFileSystem(zip)) {
-            Files.walk(directory)
-                 .sorted(Comparator.reverseOrder())
-                 .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                 .forEach(p -> {
-                     try {
-                         Path target = fs.getPath(directory.relativize(p).toString());
-                         Path parent = target.getParent();
-                         if (parent != null) {
-                             Files.createDirectories(parent);
-                         }
-                         Files.copy(p, target, REPLACE_EXISTING);
-                     } catch (IOException ioe) {
-                         throw new UncheckedIOException(ioe);
-                     }
-                 });
+            try (Stream<Path> entries = Files.walk(directory)) {
+                entries.sorted(Comparator.reverseOrder())
+                       .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                       .forEach(p -> {
+                           try {
+                               Path target = fs.getPath(directory.relativize(p).toString());
+                               Path parent = target.getParent();
+                               if (parent != null) {
+                                   Files.createDirectories(parent);
+                               }
+                               Files.copy(p, target, REPLACE_EXISTING);
+                           } catch (IOException ioe) {
+                               throw new UncheckedIOException(ioe);
+                           }
+                       });
+            }
             return zip;
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
@@ -764,20 +772,21 @@ public final class FileUtils {
                 Files.createDirectory(directory);
             }
             Path root = fs.getRootDirectories().iterator().next();
-            Files.walk(root)
-                 .filter(p -> !p.equals(root))
-                 .forEach(file -> {
-                     Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
-                     try {
-                         if (Files.isDirectory(file)) {
-                             Files.createDirectories(filePath);
-                         } else {
-                             Files.copy(file, filePath);
-                         }
-                     } catch (IOException ioe) {
-                         throw new UncheckedIOException(ioe);
-                     }
-                 });
+            try (Stream<Path> entries = Files.walk(root)) {
+                entries.filter(p -> !p.equals(root))
+                       .forEach(file -> {
+                           Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                           try {
+                               if (Files.isDirectory(file)) {
+                                   Files.createDirectories(filePath);
+                               } else {
+                                   Files.copy(file, filePath);
+                               }
+                           } catch (IOException ioe) {
+                               throw new UncheckedIOException(ioe);
+                           }
+                       });
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -806,6 +815,7 @@ public final class FileUtils {
         }
         FileSystem fileSystem;
         try {
+            //noinspection resource
             fileSystem = newFileSystem(uri, FS_ENV, classLoader);
         } catch (FileSystemAlreadyExistsException ex) {
             fileSystem = getFileSystem(uri);

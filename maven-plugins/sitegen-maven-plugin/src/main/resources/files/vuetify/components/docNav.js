@@ -50,7 +50,7 @@ window.allComponents['docNav'] = {
             template: `
                 <div>
                     <v-list-group
-                        v-if="item.items"
+                        v-if="item.type === 'menu'"
                         v-model="isActive"
                         v-bind:group="item.group"
                     >
@@ -117,6 +117,8 @@ window.allComponents['docNav'] = {
                         this.onFocus()
                         // noinspection JSUnresolvedFunction
                         this.$emit('onActive')
+                    } else {
+                        this.isActive = false
                     }
                 },
                 onFocus: function() {
@@ -124,6 +126,27 @@ window.allComponents['docNav'] = {
                     this.$store.commit('sitegen/ISSEARCHING', false);
                 }
             }
+        })
+
+        // noinspection HtmlUnknownAttribute
+        const navGroup = Vue.component('navGroup', {
+            template: `
+                <v-card 
+                    @click.stop="onFocus"
+                    class="navGroupItem"
+                >
+                    <nav-menu 
+                        v-for="(item,i) in items"
+                        v-bind:ref="'menu-'+i"
+                        v-bind:key="i"
+                        v-bind:item="item"
+                        @onActive="$emit('onActive')"
+                    />
+                </v-card>`,
+            components: {
+                'navMenu': navMenu
+            },
+            props: ['items']
         })
 
         // noinspection HtmlUnknownAttribute
@@ -155,21 +178,15 @@ window.allComponents['docNav'] = {
                                 </a>
                             </li>
                         </ul>
-                        <v-card 
-                            @click.stop="onFocus"
-                            class="navGroupItem"
-                        >
-                            <nav-menu 
-                                v-for="(group_item,j) in group.items"
-                                v-bind:key="i+'-'+j"
-                                v-bind:item="group_item"
-                                @onActive="toggle(i)"
-                            />
-                        </v-card>
+                        <nav-group
+                            v-bind:ref="'group-' + i"
+                            v-bind:items="group.items"
+                            @onActive="toggle(i)"
+                        />
                     </v-expansion-panel-content>
                 </v-expansion-panel>`,
             components: {
-                'navMenu': navMenu
+                'navGroup': navGroup
             },
             props: ['item'],
             data: function () {
@@ -181,12 +198,25 @@ window.allComponents['docNav'] = {
                 for (let i=0; i < this.item.items.length; i++) {
                     this.groups.push({isActive: i === 0})
                 }
+                // noinspection JSUnresolvedVariable,JSUnresolvedFunction
+                this.$router.afterEach(this.afterEachRoute)
+            },
+            mounted: function () {
+                this.afterEachRoute(this.$route)
             },
             methods: {
+                afterEachRoute: function(to) {
+                    for (let i=0; i < this.item.items.length; i++) {
+                        const path = this.item.items[i].group
+                        if (!to.path.startsWith(path)) {
+                            this.groups[i].isActive = false
+                        }
+                    }
+                },
                 toggle: function(index) {
                     if (this.item.items) {
                         for (let i=0; i < this.item.items.length; i++) {
-                            this.groups[i].isActive = (i === index)
+                            this.groups[i].isActive = i === index
                         }
                     }
                     this.onFocus()
@@ -264,6 +294,18 @@ window.allComponents['docNav'] = {
                             />
                             <nav-menu
                                 v-else-if="item.type === 'menu'"
+                                v-bind:item="item"
+                            />
+                            <v-list-tile 
+                                v-else-if="item.type === 'header'"
+                                disabled
+                            >
+                                <v-list-tile-content>
+                                    <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+                                </v-list-tile-content>
+                            </v-list-tile>
+                            <nav-item
+                                v-else
                                 v-bind:item="item"
                             />
                         </template>
