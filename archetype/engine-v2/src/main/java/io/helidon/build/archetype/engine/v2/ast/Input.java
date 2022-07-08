@@ -584,6 +584,11 @@ public abstract class Input extends Block {
         }
 
         @Override
+        public VisitResult visitValue(Value value) {
+            return !value.asList().isEmpty() ? VisitResult.CONTINUE : VisitResult.SKIP_SUBTREE;
+        }
+
+        @Override
         public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
             return visitor.visitList(this, arg);
         }

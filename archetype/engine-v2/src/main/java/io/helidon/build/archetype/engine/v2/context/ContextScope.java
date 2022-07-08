@@ -15,6 +15,14 @@
  */
 package io.helidon.build.archetype.engine.v2.context;
 
+import io.helidon.build.archetype.engine.v2.ast.Value;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * Context tree node.
  *
@@ -144,5 +152,31 @@ public interface ContextScope extends ContextRegistry {
      *
      * @param visitor visitor
      */
-    void visitEdges(ContextEdge.Visitor visitor);
+    default void visitEdges(ContextEdge.Visitor visitor) {
+        visitEdges(visitor, true);
+    }
+
+    /**
+     * Get all values keyed by path.
+     *
+     * @return map of values keyed by path
+     */
+    default Map<String, ContextValue> values() {
+        Map<String, ContextValue> values = new HashMap<>();
+        visitEdges(edge -> {
+            ContextValue value = edge.value();
+            if (value != null) {
+                values.put(edge.node().path(), value);
+            }
+        });
+        return values;
+    }
+
+    /**
+     * Visit the edges.
+     *
+     * @param visitor         visitor
+     * @param visitVariations {@code true} if variations should be visited
+     */
+    void visitEdges(ContextEdge.Visitor visitor, boolean visitVariations);
 }

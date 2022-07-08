@@ -345,7 +345,7 @@ public final class Expression {
     public static final class Token {
 
         private static final Pattern ARRAY_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
-        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
+        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>~?[\\w.-]+)}");
 
         private final Operator operator;
         private final String variable;
@@ -504,7 +504,7 @@ public final class Expression {
             ARRAY("^\\[[^]\\[]*]"),
             BOOLEAN("^(true|false)"),
             STRING("^['\"][^'\"]*['\"]"),
-            VARIABLE("^\\$\\{(?<varName>[\\w.-]+)}"),
+            VARIABLE("^\\$\\{(?<varName>~?[\\w.-]+)}"),
             EQUALITY_OPERATOR("^(!=|==)"),
             BINARY_LOGICAL_OPERATOR("^(\\|\\||&&)"),
             UNARY_LOGICAL_OPERATOR("^[!]"),

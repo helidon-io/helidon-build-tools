@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,6 +34,34 @@ public class Lists {
     }
 
     /**
+     * Filter the elements of the given list.
+     *
+     * @param list      input list
+     * @param predicate predicate function
+     * @param <T>       output element type
+     * @return new list
+     */
+    public static <T> List<T> filter(List<T> list, Predicate<T> predicate) {
+        return list == null ? List.of() : list.stream().filter(predicate).collect(Collectors.toList());
+    }
+
+    /**
+     * Filter the elements of the given list.
+     *
+     * @param list  input list
+     * @param clazz type predicate
+     * @param <T>   input element type
+     * @param <V>   output element type
+     * @return new list
+     */
+    public static <T, V> List<V> filter(Collection<T> list, Class<V> clazz) {
+        return list == null ? List.of() : list.stream()
+                                              .filter(clazz::isInstance)
+                                              .map(clazz::cast)
+                                              .collect(Collectors.toList());
+    }
+
+    /**
      * Map the elements of the given list.
      *
      * @param list     input list
@@ -41,8 +70,21 @@ public class Lists {
      * @param <V>      input element type
      * @return new list
      */
-    public static <T, V> List<T> map(List<V> list, Function<V, T> function) {
+    public static <T, V> List<T> map(Collection<V> list, Function<V, T> function) {
         return list == null ? List.of() : list.stream().map(function).collect(Collectors.toList());
+    }
+
+    /**
+     * Map the elements of the given list.
+     *
+     * @param stream   input stream
+     * @param function mapping function
+     * @param <T>      output element type
+     * @param <V>      input element type
+     * @return new list
+     */
+    public static <T, V> List<T> map(Stream<V> stream, Function<V, T> function) {
+        return stream == null ? List.of() : stream.map(function).collect(Collectors.toList());
     }
 
     /**
@@ -54,7 +96,7 @@ public class Lists {
      * @param <V>      input element type
      * @return new list
      */
-    public static <T, V> List<T> flatMapStream(List<V> list, Function<V, Stream<T>> function) {
+    public static <T, V> List<T> flatMapStream(Collection<V> list, Function<V, Stream<T>> function) {
         return list == null ? List.of() : list.stream().flatMap(function).collect(Collectors.toList());
     }
 
@@ -67,7 +109,7 @@ public class Lists {
      * @param <V>      input element type
      * @return new list
      */
-    public static <T, V> List<T> flatMap(List<V> list, Function<V, Collection<T>> function) {
+    public static <T, V> List<T> flatMap(Collection<V> list, Function<V, Collection<T>> function) {
         return flatMapStream(list, e -> function.apply(e).stream());
     }
 
@@ -79,15 +121,37 @@ public class Lists {
      * @param <T>   element type
      * @return new list
      */
-    public static <T> List<T> addAll(List<T> list1, List<T> list2) {
+    public static <T> List<T> addAll(Collection<T> list1, Collection<T> list2) {
         List<T> list = new LinkedList<>();
-        list.addAll(list1);
-        list.addAll(list2);
+        if (list1 != null) {
+            list.addAll(list1);
+        }
+        if (list2 != null) {
+            list.addAll(list2);
+        }
         return list;
     }
 
     /**
-     * Create a new {@link ArrayList} with the given element.
+     * Concat the given lists.
+     *
+     * @param list1    list 1
+     * @param elements elements elements
+     * @param <T>      element type
+     * @return new list
+     */
+    @SafeVarargs
+    public static <T> List<T> addAll(Collection<T> list1, T... elements) {
+        List<T> list = new LinkedList<>();
+        if (list1 != null) {
+            list.addAll(list1);
+        }
+        Collections.addAll(list, elements);
+        return list;
+    }
+
+    /**
+     * Create a new {@link ArrayList} with the given elements.
      *
      * @param elements input elements
      * @param <T>      element type
@@ -101,13 +165,30 @@ public class Lists {
     }
 
     /**
-     * Create a new {@link ArrayList} with the given element.
+     * Create a new {@link ArrayList} with the given elements.
      *
-     * @param elements input elements
-     * @param <T>      element type
+     * @param elements           input elements
+     * @param additionalElements additional elements
+     * @param <T>                element type
      * @return new list
      */
-    public static <T> List<T> of(Collection<T> elements) {
-        return new ArrayList<>(elements);
+    @SafeVarargs
+    public static <T> List<T> of(Collection<T> elements, T... additionalElements) {
+        List<T> list = new ArrayList<>(elements);
+        Collections.addAll(list, additionalElements);
+        return list;
+    }
+
+    /**
+     * Map and join the given list.
+     *
+     * @param list      input list
+     * @param function  mapping function
+     * @param delimiter delimiter
+     * @param <T>       element type
+     * @return string
+     */
+    public static <T> String join(Collection<T> list, Function<T, String> function, String delimiter) {
+        return list.stream().map(function).collect(Collectors.joining(delimiter));
     }
 }

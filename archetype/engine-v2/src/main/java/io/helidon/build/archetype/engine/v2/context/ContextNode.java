@@ -139,7 +139,7 @@ public final class ContextNode implements ContextScope {
     }
 
     @Override
-    public void visitEdges(ContextEdge.Visitor visitor) {
+    public void visitEdges(ContextEdge.Visitor visitor, boolean visitVariations) {
         ContextNode parent = null;
         Deque<ContextNode> stack = new ArrayDeque<>();
         stack.push(this);
@@ -160,7 +160,7 @@ public final class ContextNode implements ContextScope {
                     visitor.visit(node.edge);
                     if (!nestedNodes.isEmpty()) {
                         ListIterator<ContextNode> it = nestedNodes.listIterator(nestedNodes.size());
-                        while(it.hasPrevious()) {
+                        while (it.hasPrevious()) {
                             ContextNode previous = it.previous();
                             stack.push(previous);
                         }
@@ -170,8 +170,9 @@ public final class ContextNode implements ContextScope {
                     continue;
                 }
             }
-            if (node.edge instanceof CopyOnWriteContextEdge) {
-                List<? extends ContextEdge> variations = ((CopyOnWriteContextEdge) node.edge).variations();
+            if (visitVariations) {
+                // add variations post visit
+                List<? extends ContextEdge> variations = node.edge.variations();
                 if (variations.size() > 1 && node.edge == variations.get(0)) {
                     ListIterator<? extends ContextEdge> it = variations.listIterator(variations.size());
                     while (it.previousIndex() > 0) {

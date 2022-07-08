@@ -17,6 +17,9 @@ package io.helidon.build.archetype.engine.v2.context;
 
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.util.ValueDelegate;
+import io.helidon.build.common.Lists;
+
+import java.util.List;
 
 /**
  * Context value.

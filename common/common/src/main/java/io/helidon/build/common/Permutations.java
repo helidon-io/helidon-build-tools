@@ -17,8 +17,14 @@
 package io.helidon.build.common;
 
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Permutation utility.
@@ -30,31 +36,43 @@ public final class Permutations {
     }
 
     /**
-     * Compute the non-repetitive permutations of the given permutations.
+     * An iterator that computes the non-repetitive permutations of the given permutations.
      *
-     * @param lists permutations for which to compute the permutations
-     * @param <T>   element type
-     * @return list of permutations
+     * @param <T> element type
      */
-    public static <T> List<List<T>> ofList(List<List<T>> lists) {
-        List<List<T>> permutations = new LinkedList<>();
-        if (lists.isEmpty()) {
-            return permutations;
+    public static class ListIterator<T> implements Iterator<List<T>> {
+
+        private final List<List<T>> elements;
+        private final BitSet bitSet = new BitSet();
+        private boolean started;
+        private List<T> permutation;
+
+        /**
+         * Create a new instance.
+         *
+         * @param elements permutations for which to compute the permutations
+         */
+        public ListIterator(List<List<T>> elements) {
+            this.elements = elements;
         }
-        // all elements are represented as distinct bits
-        // when a bit is set, it is included in the current permutation
-        // a list without a bit set has been cycled through, start-over with the first element
-        BitSet bitSet = new BitSet();
 
-        boolean started = false;
-
-        // all permutations are completed when there is zero bit set
-        while (!started || !bitSet.isEmpty()) {
+        @Override
+        public boolean hasNext() {
+            // all elements are represented as distinct bits
+            // when a bit is set, it is included in the current permutation
+            // a list without a bit set has been cycled through, start-over with the first element
+            if (started && bitSet.isEmpty()) {
+                // all permutations are completed when there is zero bit set
+                return false;
+            }
+            if (permutation != null) {
+                return !permutation.isEmpty();
+            }
             started = true;
             int offset = 0;
             int p_offset = 0;
-            List<T> permutation = new LinkedList<>();
-            for (List<T> list : lists) {
+            permutation = new LinkedList<>();
+            for (List<T> list : elements) {
                 int size = list.size();
                 if (size == 0) {
                     continue;
@@ -83,11 +101,38 @@ public final class Permutations {
                 p_offset = offset;
                 offset += size;
             }
-            if (!permutation.isEmpty()) {
-                permutations.add(permutation);
-            }
+            return !permutation.isEmpty();
         }
-        return permutations;
+
+        @Override
+        public List<T> next() {
+            List<T> next = permutation;
+            permutation = null;
+            return next;
+        }
+    }
+
+    /**
+     * Compute the non-repetitive permutations of the given permutations.
+     *
+     * @param lists permutations for which to compute the permutations
+     * @param <T>   element type
+     * @return stream of permutations
+     */
+    public static <T> Stream<List<T>> ofList0(List<List<T>> lists) {
+        Iterator<List<T>> iterator = new ListIterator<>(lists);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL), false);
+    }
+
+    /**
+     * Compute the non-repetitive permutations of the given permutations.
+     *
+     * @param lists element for which to compute the permutations
+     * @param <T>   element type
+     * @return list of permutations
+     */
+    public static <T> List<List<T>> ofList(List<List<T>> lists) {
+        return ofList0(lists).collect(Collectors.toList());
     }
 
     /**

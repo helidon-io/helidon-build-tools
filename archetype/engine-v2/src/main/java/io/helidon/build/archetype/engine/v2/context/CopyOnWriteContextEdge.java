@@ -71,11 +71,7 @@ public final class CopyOnWriteContextEdge implements ContextEdge {
         return scope;
     }
 
-    /**
-     * Get the variations.
-     *
-     * @return list of edges
-     */
+    @Override
     public List<CopyOnWriteContextEdge> variations() {
         return variations;
     }

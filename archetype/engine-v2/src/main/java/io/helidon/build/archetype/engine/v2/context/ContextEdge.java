@@ -56,22 +56,32 @@ public interface ContextEdge {
     List<ContextNode> nestedNodes();
 
     /**
+     * Get the variations.
+     *
+     * @return list of edges
+     */
+    default List<? extends ContextEdge> variations() {
+        return List.of(this);
+    }
+
+    /**
      * Context edge visitor.
      */
     interface Visitor {
 
         /**
-         * Visit a edge.
+         * Visit an edge.
          *
          * @param edge edge
          */
         void visit(ContextEdge edge);
 
         /**
-         * Post-visit a edge.
+         * Post-visit an edge.
          *
          * @param edge edge
          */
+        @SuppressWarnings("unused")
         default void postVisit(ContextEdge edge) {
         }
     }

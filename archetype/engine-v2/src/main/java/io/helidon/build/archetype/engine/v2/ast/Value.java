@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.build.common.GenericType;
+import io.helidon.build.common.Lists;
 
 /**
  * Value.
@@ -77,6 +78,19 @@ public interface Value {
      */
     default List<String> asList() {
         return as(ValueTypes.STRING_LIST);
+    }
+
+    /**
+     * Get the text representation of this value.
+     *
+     * @return value as text
+     */
+    default String asText() {
+        Object o = unwrap();
+        if (o instanceof List<?>) {
+            return String.join(",", Lists.map((List<?>) o, String::valueOf));
+        }
+        return String.valueOf(o);
     }
 
     /**

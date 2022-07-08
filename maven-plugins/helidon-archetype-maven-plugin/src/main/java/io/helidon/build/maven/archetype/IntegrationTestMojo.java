@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
@@ -212,7 +213,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             if (generateCombinations) {
                 logCombinationsInput(testName);
                 Script script = null;
-                List<Map<String, String>> combinations =
+                Set<Map<String, String>> combinations =
                         InputPermutations.compute(null, externalValues, externalDefaults);
 
                 log.info("Total combinations: " + combinations.size());

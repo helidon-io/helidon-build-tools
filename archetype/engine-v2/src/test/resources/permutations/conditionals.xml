@@ -31,11 +31,11 @@
                                     <enum id="red" name="Red">
                                         <option value="burgundy" name="Burgundy"/>
                                         <option value="auburn" name="Auburn"/>
-                                        <option value="light" name="Light" if="${ROOT.heat} contains 'cold'"/>
+                                        <option value="light" name="Light" if="${~heat} contains 'cold'"/>
                                     </enum>
                                 </inputs>
                             </option>
-                            <option value="orange" name="Orange" if="${ROOT.heat} contains 'cold'">
+                            <option value="orange" name="Orange" if="${~heat} contains 'cold'">
                                 <inputs>
                                     <enum id="orange" name="Orange">
                                         <option value="salmon" name="Salmon"/>
@@ -54,13 +54,13 @@
                                     <enum id="blue" name="Blue">
                                         <option value="azure" name="Azure"/>
                                         <option value="indigo" name="Indigo"/>
-                                        <option value="ultramarine" name="Ultramarine" if="${ROOT.heat} contains 'warm'"/>
+                                        <option value="ultramarine" name="Ultramarine" if="${~heat} contains 'warm'"/>
                                     </enum>
                                 </inputs>
                             </option>
                             <option value="green" name="Green">
                                 <inputs>
-                                    <enum id="green" name="Green" if="${ROOT.heat} contains 'warm'">
+                                    <enum id="green" name="Green" if="${~heat} contains 'warm'">
                                         <option value="tea" name="Tea"/>
                                         <option value="lime" name="Lime"/>
                                     </enum>

@@ -16,16 +16,18 @@
 package io.helidon.build.archetype.engine.v2.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.Lists;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for class {@link InputPermutations}.
@@ -33,224 +35,252 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @SuppressWarnings("unchecked")
 class InputPermutationsTest {
 
-    //@Disabled
     @Test
     void testList1() {
         List<Map<String, String>> permutations = permutations("permutations/list1.xml");
-        assertThat(permutations, contains(
+        assertPermutations(permutations,
                 Map.of("colors", ""),
                 Map.of("colors", "red"),
                 Map.of("colors", "orange"),
-                Map.of("colors", "red orange")));
+                Map.of("colors", "red,orange"));
     }
 
-    //@Disabled
     @Test
     void testList2() {
         List<Map<String, String>> permutations = permutations("permutations/list2.xml");
-        assertThat(permutations, contains(
+        assertPermutations(permutations,
                 Map.of("colors", ""),
                 Map.of("colors", "red", "red", "burgundy"),
                 Map.of("colors", "red", "red", "auburn"),
                 Map.of("colors", "orange", "orange", "salmon"),
                 Map.of("colors", "orange", "orange", "peach"),
-                Map.of("colors", "red orange", "red", "burgundy", "orange", "salmon"),
-                Map.of("colors", "red orange", "red", "auburn", "orange", "salmon"),
-                Map.of("colors", "red orange", "red", "burgundy", "orange", "peach"),
-                Map.of("colors", "red orange", "red", "auburn", "orange", "peach")));
+                Map.of("colors", "red,orange", "red", "burgundy", "orange", "salmon"),
+                Map.of("colors", "red,orange", "red", "auburn", "orange", "salmon"),
+                Map.of("colors", "red,orange", "red", "burgundy", "orange", "peach"),
+                Map.of("colors", "red,orange", "red", "auburn", "orange", "peach"));
     }
 
-    @Disabled
     @Test
     void testEnum1() {
-        assertThat(permutations("permutations/enum1.xml"), contains(
+        List<Map<String, String>> permutations = permutations("permutations/enum1.xml");
+        assertPermutations(permutations,
                 Map.of("colors", "red"),
-                Map.of("colors", "orange")));
+                Map.of("colors", "orange"));
     }
 
-    @Disabled
     @Test
     void testEnum2() {
         List<Map<String, String>> permutations = permutations("permutations/enum2.xml");
-        assertThat(permutations, contains(
+        assertPermutations(permutations,
                 Map.of("colors", "red", "colors.red", "burgundy"),
                 Map.of("colors", "red", "colors.red", "auburn"),
                 Map.of("colors", "orange", "colors.orange", "salmon"),
-                Map.of("colors", "orange", "colors.orange", "peach")));
+                Map.of("colors", "orange", "colors.orange", "peach"));
     }
 
-    @Disabled
     @Test
     void testBoolean1() {
         List<Map<String, String>> permutations = permutations("permutations/boolean1.xml");
-        assertThat(permutations, contains(
+        assertPermutations(permutations,
                 Map.of("colors", "true"),
-                Map.of("colors", "false")));
+                Map.of("colors", "false"));
     }
 
-    @Disabled
     @Test
     void testBoolean2() {
         List<Map<String, String>> permutations = permutations("permutations/boolean2.xml");
-        assertThat(permutations, contains(
+        assertPermutations(permutations,
                 Map.of("colors", "true", "colors.tones", ""),
                 Map.of("colors", "true", "colors.tones", "dark"),
                 Map.of("colors", "true", "colors.tones", "light"),
-                Map.of("colors", "true", "colors.tones", "dark light"),
-                Map.of("colors", "false")));
+                Map.of("colors", "true", "colors.tones", "dark,light"),
+                Map.of("colors", "false"));
     }
 
-    @Disabled
     @Test
     void testText1() {
         List<Map<String, String>> permutations = permutations("permutations/text1.xml");
-        assertThat(permutations, contains(
-                Map.of("name", "Foo")));
+        assertPermutations(permutations,
+                Map.of("name", "Foo"));
     }
 
-    @Disabled
     @Test
     void testText2() {
         List<Map<String, String>> permutations = permutations("permutations/text2.xml");
-        assertThat(permutations, contains(
-                Map.of("name", "xxx")));
+        assertPermutations(permutations,
+                Map.of("name", "xxx"));
     }
 
-    @Disabled
     @Test
     void testSubstitutions() {
         List<Map<String, String>> permutations = permutations("permutations/substitutions.xml");
-        assertThat(permutations, contains(
-                Map.of("text", "a-foo-a-bar"),
-                Map.of("list-things", ""),
-                Map.of("list-things", "a-bar")));
+        assertPermutations(permutations,
+                Map.of("list-things", "", "text", "a-foo-a-bar"),
+                Map.of("list-things", "a-bar", "text", "a-foo-a-bar"));
     }
 
-    @Disabled
     @Test
     void testConditionals() {
         List<Map<String, String>> permutations = permutations("permutations/conditionals.xml");
-        permutations.forEach(System.out::println);
-        List<Map<String, String>> list = new ArrayList<>();
-        list.add(Map.of("heat", ""));
-        list.add(Map.of("heat", "warm", "warm", ""));
-        list.add(Map.of("heat", "warm", "warm", "red", "red", "burgundy"));
-        list.add(Map.of("heat", "warm", "warm", "red", "red", "auburn"));
-        list.add(Map.of("heat", "cold", "cold", ""));
-        list.add(Map.of("heat", "cold", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "cold", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "cold", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "cold", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "azure"));
-        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "indigo"));
-        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "azure"));
-        list.add(Map.of("heat", "cold", "cold", "blue green", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "salmon", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "orange", "orange", "peach", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "burgundy", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "salmon", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", ""));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "tea"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "lime"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "tea", "blue", "ultramarine"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "azure"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "indigo"));
-        list.add(Map.of("heat", "warm cold", "warm", "red orange", "orange", "peach", "red", "auburn", "cold", "blue green", "green", "lime", "blue", "ultramarine"));
-        assertThat(permutations, containsInAnyOrder(list.toArray(new Map[0])));
+        List<Map<String, String>> expected = new ArrayList<>();
+        expected.add(Map.of("heat", ""));
+        expected.add(Map.of("heat", "warm", "warm", ""));
+        expected.add(Map.of("heat", "warm", "warm", "red", "red", "burgundy"));
+        expected.add(Map.of("heat", "warm", "warm", "red", "red", "auburn"));
+        expected.add(Map.of("heat", "cold", "cold", ""));
+        expected.add(Map.of("heat", "cold", "cold", "green"));
+        expected.add(Map.of("heat", "cold", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "cold", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "cold", "cold", "blue,green", "blue", "indigo"));
+        expected.add(Map.of("heat", "cold", "cold", "blue,green", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+
+        assertPermutations(permutations, expected);
     }
 
-    @Disabled
     @Test
     void testE2e() {
         List<Map<String, String>> permutations = permutations("e2e/main.xml");
@@ -260,5 +290,43 @@ class InputPermutationsTest {
 
     private static List<Map<String, String>> permutations(String path) {
         return InputPermutations.compute(load(path));
+    }
+
+    private static void assertPermutations(List<Map<String, String>> actual, Map<String, String>... expected) {
+        assertPermutations(actual, Arrays.asList(expected));
+    }
+
+    private static void assertPermutations(List<Map<String, String>> actual, List<Map<String, String>> expected) {
+        if (actual.size() == expected.size()) {
+            assertThat(actual, containsInAnyOrder(expected.toArray(new Map[0])));
+        } else {
+            fail(diff(actual, expected));
+        }
+    }
+
+    private static String diff(List<Map<String, String>> actual, List<Map<String, String>> expected) {
+        List<Map<String, String>> removed = new ArrayList<>();
+        for (Map<String, String> permutation : expected) {
+            if (!actual.contains(permutation)) {
+                removed.add(permutation);
+            }
+        }
+        List<Map<String, String>> added = new ArrayList<>();
+        for (Map<String, String> permutation : actual) {
+            if (!expected.contains(permutation)) {
+                added.add(permutation);
+            }
+        }
+        List<Map<String, String>> duplicates = new ArrayList<>();
+        for (Map<String, String> permutation : actual) {
+            List<Map<String, String>> list = Lists.filter(actual, p -> p.equals(permutation));
+            if (list.size() > 1) {
+                duplicates.add(permutation);
+            }
+        }
+        return String.format("\n\tRemoved: %s\n\tAdded: %s\n\tDuplicates: %s\n",
+                removed.isEmpty() ? "-" : "\n" + Lists.join(removed, p -> "\t\t" + p, "\n"),
+                added.isEmpty() ? "-" : "\n" + Lists.join(added, p -> "\t\t" + p, "\n"),
+                duplicates.isEmpty() ? "-" : "\n" + Lists.join(duplicates, p -> "\t\t" + p, "\n"));
     }
 }

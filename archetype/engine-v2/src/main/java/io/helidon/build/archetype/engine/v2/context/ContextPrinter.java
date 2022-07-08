@@ -40,37 +40,41 @@ public final class ContextPrinter implements Visitor {
     }
 
     private static String printValue(ContextValue value) {
-        return value.value().unwrap() + "(" + value.kind() + ')';
+        return value.value().unwrap() + " (" + value.kind() + ')';
     }
 
     @Override
     public void visit(ContextEdge edge) {
         ContextNode node = edge.node();
         ContextNode parent = node.parent0();
-        if (parent == null) {
-            return;
-        }
-        ContextNode n = parent;
-        while (n.parent0() != null) {
-            sb.append(' ');
-            if (isLastChild(n)) {
+        if (parent != null) {
+            int startIndex = sb.length();
+            ContextNode n = parent;
+            while (n.parent0() != null) {
                 sb.append(' ');
-            } else {
-                sb.append('|');
+                if (isLastChild(n)) {
+                    sb.append(' ');
+                } else {
+                    sb.append('|');
+                }
+                n = n.parent0();
             }
-            n = n.parent0();
+            sb.append(' ');
+            if (isLastChild(node)) {
+                sb.append('\\');
+            } else {
+                sb.append('+');
+            }
+            sb.append("- ");
+            String indent = " ".repeat((sb.length() + 1) - startIndex);
+            sb.append(node.id());
+            sb.append(System.lineSeparator());
+            for (ContextEdge variation : edge.variations()) {
+                sb.append(indent);
+                sb.append(": ").append(valuePrinter.apply(variation.value()));
+                sb.append(System.lineSeparator());
+            }
         }
-        sb.append(' ');
-        if (isLastChild(node)) {
-            sb.append('\\');
-        } else {
-            sb.append('+');
-        }
-        sb.append("- ");
-        sb.append(node.id());
-        sb.append(':');
-        sb.append(valuePrinter.apply(edge.value()));
-        sb.append(System.lineSeparator());
     }
 
     /**
@@ -82,7 +86,7 @@ public final class ContextPrinter implements Visitor {
      */
     public static String print(ContextScope scope, Function<ContextValue, String> valuePrinter) {
         StringBuilder sb = new StringBuilder();
-        scope.visitEdges(new ContextPrinter(sb, valuePrinter));
+        scope.visitEdges(new ContextPrinter(sb, valuePrinter), false);
         return sb.toString();
     }
 
@@ -94,7 +98,7 @@ public final class ContextPrinter implements Visitor {
      */
     public static String print(ContextScope scope) {
         StringBuilder sb = new StringBuilder();
-        scope.visitEdges(new ContextPrinter(sb, ContextPrinter::printValue));
+        scope.visitEdges(new ContextPrinter(sb, ContextPrinter::printValue), false);
         return sb.toString();
     }
 }
