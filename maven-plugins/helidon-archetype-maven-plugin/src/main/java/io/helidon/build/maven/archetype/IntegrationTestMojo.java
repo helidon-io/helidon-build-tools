@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.util.InputPermutations;
 import io.helidon.build.common.Maps;
@@ -212,9 +212,12 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             if (generateCombinations) {
                 logCombinationsInput(testName);
-                Script script = null;
-                Set<Map<String, String>> combinations =
-                        InputPermutations.compute(null, externalValues, externalDefaults);
+
+                List<Map<String, String>> combinations;
+                try (FileSystem fileSystem = newFileSystem(archetypeFile.toPath(), this.getClass().getClassLoader())) {
+                    Script script = ScriptLoader.load(fileSystem.getPath("main.xml"));
+                    combinations = InputPermutations.compute(script, externalValues, externalDefaults);
+                }
 
                 log.info("Total combinations: " + combinations.size());
                 for (Map<String, String> combination : combinations) {

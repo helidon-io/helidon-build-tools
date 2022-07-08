@@ -38,12 +38,16 @@ class ContextPrinterTest {
         node.putValue("foo", Value.create("foo2"), ValueKind.USER);
 
         String actual = ContextPrinter.print(node);
+
         assertThat(actual, is(""
-                + " +- foo:foo1(USER)\n"
-                + " | \\- bar:bar1(USER)\n"
-                + " +- foo:foo2(USER)\n"
-                + " | \\- bar:bar1(USER)\n"
-                + " \\- bob:bob1(USER)\n"
-                + "   \\- alice:alice1(USER)\n"));
+                + " +- foo\n"
+                + "     : foo1 (USER)\n"
+                + "     : foo2 (USER)\n"
+                + " | \\- bar\n"
+                + "       : bar1 (USER)\n"
+                + " \\- bob\n"
+                + "     : bob1 (USER)\n"
+                + "   \\- alice\n"
+                + "       : alice1 (USER)\n"));
     }
 }

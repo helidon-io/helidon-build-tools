@@ -281,6 +281,7 @@ class InputPermutationsTest {
         assertPermutations(permutations, expected);
     }
 
+    @Disabled
     @Test
     void testE2e() {
         List<Map<String, String>> permutations = permutations("e2e/main.xml");
