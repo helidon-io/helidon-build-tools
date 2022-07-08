@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -178,6 +179,23 @@ public class Maps {
     }
 
     /**
+     * Put a value in a map and return the map.
+     *
+     * @param map input map
+     * @param k   key
+     * @param v   value
+     * @param <K> key type
+     * @param <V> value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> put(Map<K, V> map, K k, V v) {
+        Map<K, V> res = new HashMap<>();
+        res.putAll(map);
+        res.put(k, v);
+        return res;
+    }
+
+    /**
      * Concatenate the given maps.
      *
      * @param map1 input map 1
@@ -305,7 +323,57 @@ public class Maps {
      * @param <V>     value type
      * @return map
      */
+    public static <K, V> Map<K, V> fromEntries(Collection<Entry<K, V>> entries, BinaryOperator<V> mergeFunction) {
+        return fromEntries(entries.stream(), mergeFunction);
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries input entries
+     * @param <K>     key type
+     * @param <V>     value type
+     * @return map
+     */
     public static <K, V> Map<K, V> fromEntries(Stream<Entry<K, V>> entries) {
         return entries.collect(toMap(Entry::getKey, Entry::getValue));
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
+     * @param entries       input entries
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> fromEntries(Stream<Entry<K, V>> entries, BinaryOperator<V> mergeFunction) {
+        return entries.collect(toMap(Entry::getKey, Entry::getValue, mergeFunction));
+    }
+
+    /**
+     * Merge the maps in the given list
+     *
+     * @param maps          maps to merge
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> merge(List<Map<K, V>> maps, BinaryOperator<V> mergeFunction) {
+        return Maps.fromEntries(Lists.flatMap(maps, Map::entrySet), mergeFunction);
+    }
+
+    /**
+     * Merge the maps in the given list
+     *
+     * @param maps maps to merge
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> merge(List<Map<K, V>> maps) {
+        return Maps.fromEntries(Lists.flatMap(maps, Map::entrySet));
     }
 }

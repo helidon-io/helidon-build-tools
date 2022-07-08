@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -114,6 +115,17 @@ public class Lists {
     }
 
     /**
+     * Flat-map the elements of the given list.
+     *
+     * @param list input list
+     * @param <T>  element type
+     * @return new list
+     */
+    public static <T> List<T> flatMap(Collection<? extends Collection<T>> list) {
+        return flatMapStream(list, e -> e.stream());
+    }
+
+    /**
      * Concat the given lists.
      *
      * @param list1 list 1
@@ -165,21 +177,6 @@ public class Lists {
     }
 
     /**
-     * Create a new {@link ArrayList} with the given elements.
-     *
-     * @param elements           input elements
-     * @param additionalElements additional elements
-     * @param <T>                element type
-     * @return new list
-     */
-    @SafeVarargs
-    public static <T> List<T> of(Collection<T> elements, T... additionalElements) {
-        List<T> list = new ArrayList<>(elements);
-        Collections.addAll(list, additionalElements);
-        return list;
-    }
-
-    /**
      * Map and join the given list.
      *
      * @param list      input list
@@ -190,5 +187,18 @@ public class Lists {
      */
     public static <T> String join(Collection<T> list, Function<T, String> function, String delimiter) {
         return list.stream().map(function).collect(Collectors.joining(delimiter));
+    }
+
+    /**
+     * Separate the given list into groups.
+     *
+     * @param list     input list
+     * @param function grouping function
+     * @param <T>      list element type
+     * @param <U>      key type
+     * @return map of groups
+     */
+    public static <T, U> List<List<T>> groupingBy(Collection<T> list, Function<T, U> function) {
+        return new ArrayList<>(list.stream().collect(Collectors.groupingBy(function)).values());
     }
 }

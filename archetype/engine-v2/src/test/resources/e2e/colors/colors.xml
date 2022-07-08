@@ -24,6 +24,12 @@
         <inputs>
             <enum id="base" name="Select a palette">
                 <option value="custom" name="Custom palette">
+                    <inputs>
+
+                    </inputs>
+                    <inputs>
+
+                    </inputs>
                     <exec src="custom/custom.xml"/>
                 </option>
                 <option value="rainbow" name="Rainbow palette">

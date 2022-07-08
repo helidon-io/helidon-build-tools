@@ -19,14 +19,10 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -85,42 +81,18 @@ public class InputPermutations {
 
         Path cwd = script.scriptPath().getParent();
 
-        // Make a single pass to capture all variations
-        // basically a map of each input (by absolute path) and their possible values
+        // Make a single pass to capture all permutations
         VisitorImpl visitor = new VisitorImpl(Context.builder().cwd(cwd).build());
         Walker.walk(visitor, script, null, visitor.context::cwd);
 
-        // convert each variation into a separate map, each map is single element that can be permuted
-        // this is the input to our permutation algorithm (List<List<T>>)
-        List<List<Map<String, InputValue>>> elements =
-                Lists.map(visitor.variations.entrySet(), e -> Lists.map(e.getValue(), v -> Map.of(e.getKey(), v)));
-
-        // TODO configuration for max and log a warning when greater
-        int permSize = elements.stream().map(List::size).reduce(1, Math::multiplyExact);
-
+        // for each permutation, perform a normal execution
+        // and use the resulting context values as permutation
+        List<Map<String, String>> permutations = visitor.permutations.pop();
         Set<TreeMap<String, String>> result = new LinkedHashSet<>();
-        Set<Map<String, InputValue>> set = new LinkedHashSet<>();
-
-        Iterator<List<Map<String, InputValue>>> it = new Permutations.ListIterator<>(elements);
-        for (int i=0; it.hasNext() && result.size() <= 200; i++) {
-
-            // unfiltered permutation that was captured regardless of the control flow
-            Permutation unfiltered = new Permutation(it.next());
-
-            // update permutation, i.e. remove incoherent values
-            Map<String, InputValue> permutation2 = unfiltered.update(visitor.inputs);
-            if (!set.add(permutation2)) {
-                // skip duplicates
-                continue;
-            }
-
+        permutations.forEach(permutation -> {
             try {
-                System.out.println(i + "/" + permSize);
-
-                // for each permutation, perform a normal execution
-                // and use the resulting context values as permutation
                 Context context = Context.builder().cwd(cwd).build();
-                Controller.walk(new InputResolverImpl(permutation2), script, context);
+                Controller.walk(new InputResolverImpl(permutation), script, context);
                 Map<String, String> contextValues = Maps.mapValue(context.scope().values(),
                         (k, v) -> v.kind() == ValueKind.USER, Value::asText);
                 if (!contextValues.isEmpty()) {
@@ -129,7 +101,7 @@ public class InputPermutations {
             } catch (InvocationException ignored) {
                 // invalid option
             }
-        }
+        });
 
         // sort the result
         List<Map<String, String>> list = new LinkedList<>(result);
@@ -137,97 +109,11 @@ public class InputPermutations {
         return list;
     }
 
-    private static final class Permutation {
-
-        final Map<String, InputValue> permutation;
-
-        Permutation(List<Map<String, InputValue>> permutation) {
-            this.permutation = Maps.fromEntries(Lists.flatMap(permutation, Map::entrySet));
-        }
-
-        Map<String, InputValue> update(Map<DeclaredInput, String> inputs) {
-            Map<String, InputValue> result = new HashMap<>();
-            for (Map.Entry<String, InputValue> entry : permutation.entrySet()) {
-                InputValue inputValue = entry.getValue();
-                if (inputValue.validate(this, inputs)) {
-                    result.put(entry.getKey(), entry.getValue());
-                }
-            }
-            return result;
-        }
-    }
-
-    private static final class InputValue {
-
-        final List<Input> parents;
-        final Value value;
-
-        InputValue(List<Input> parents, Value value) {
-            this.parents = Objects.requireNonNull(parents, "parents is null");
-            this.value = Objects.requireNonNull(value, "value is null");
-        }
-
-        boolean validate(Input input, InputValue inputValue, String option) {
-            if (input instanceof Input.Boolean) {
-                return inputValue.value.asBoolean();
-            } else if (input instanceof Input.Options) {
-                if (option == null) {
-                    throw new IllegalStateException("Options without option: " + input);
-                }
-                String value = inputValue.value.asText();
-                if (option.contains("$") || value.contains("$")) {
-                    return true;
-                }
-                if (input instanceof Input.Enum) {
-                    return option.equals(value);
-                } else if (input instanceof Input.List) {
-                    return inputValue.value.asList().contains(option);
-                }
-            }
-            return true;
-        }
-
-        boolean validate(Permutation permutation, Map<DeclaredInput, String> inputs) {
-            String option = null;
-            for (Input input0 : parents) {
-                if (input0 instanceof DeclaredInput) {
-                    DeclaredInput input = (DeclaredInput) input0;
-                    InputValue parentValue =
-                            Optional.ofNullable(inputs.get(input))
-                                    .map(permutation.permutation::get)
-                                    .orElseThrow(() -> new IllegalStateException(
-                                            "Input value not found for parent: " + input0));
-
-                    if (!validate(input0, parentValue, option)) {
-                        return false;
-                    }
-                    option = null;
-                } else if (input0 instanceof Input.Option) {
-                    option = ((Input.Option) input0).value();
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            InputValue inputValue = (InputValue) o;
-            return value.equals(inputValue.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-    }
-
     private static final class InputResolverImpl extends InputResolver {
 
-        final Map<String, InputValue> permutation;
+        final Map<String, String> permutation;
 
-        InputResolverImpl(Map<String, InputValue> permutation) {
+        InputResolverImpl(Map<String, String> permutation) {
             this.permutation = permutation;
         }
 
@@ -243,12 +129,11 @@ public class InputPermutations {
             ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
             VisitResult result = onVisitInput(input, nextScope, context);
             if (result == null) {
-                String path = nextScope.path(true);
-                InputValue inputValue = permutation.get(path);
-                if (inputValue == null) {
+                String path = nextScope.path();
+                String rawValue = permutation.get(path);
+                if (rawValue == null) {
                     throw new UnresolvedInputException(path);
                 }
-                String rawValue = inputValue.value.asText();
                 Value value = DynamicValue.create(context.interpolate(rawValue));
                 if (input instanceof Input.Options) {
                     Input.Options optionsBlock = (Input.Options) input;
@@ -281,13 +166,15 @@ public class InputPermutations {
 
     private static final class VisitorImpl implements Node.Visitor<Void>, Block.Visitor<Void> {
 
-        final Deque<Input> parents = new ArrayDeque<>();
-        final Map<String, Set<InputValue>> variations = new HashMap<>();
-        final Map<DeclaredInput, String> inputs = new HashMap<>();
+        // TODO use a unique deque as List<List<Map<String, String>
+        final Deque<List<List<Map<String, String>>>> parents = new ArrayDeque<>();
+        final Deque<List<Map<String, String>>> permutations = new ArrayDeque<>();
         final Context context;
 
         VisitorImpl(Context context) {
             this.context = context;
+            permutations.push(Lists.of());
+            parents.push(Lists.of());
         }
 
         @Override
@@ -304,68 +191,121 @@ public class InputPermutations {
 
         @Override
         public VisitResult visitBlock(Block block, Void arg) {
-            if (block.kind() == Block.Kind.OUTPUT) {
-                return VisitResult.SKIP_SUBTREE;
+            switch (block.kind()) {
+                case OUTPUT:
+                    return VisitResult.SKIP_SUBTREE;
+                case INVOKE_DIR:
+                    context.pushCwd(block.scriptPath().getParent());
+                    return VisitResult.CONTINUE;
+                case INPUTS:
+                    parents.push(Lists.of());
+                    return VisitResult.CONTINUE;
+                default:
+                    return block.accept((Block.Visitor<Void>) this, arg);
             }
-            if (block.kind() == Block.Kind.INVOKE_DIR) {
-                context.pushCwd(block.scriptPath().getParent());
-                return VisitResult.CONTINUE;
-            }
-            return block.accept((Block.Visitor<Void>) this, arg);
         }
 
         @Override
         public VisitResult postVisitBlock(Block block, Void arg) {
-            if (block.kind() == Block.Kind.INVOKE_DIR) {
-                context.popCwd();
-                return VisitResult.CONTINUE;
+            switch (block.kind()) {
+                case INVOKE_DIR:
+                    context.popCwd();
+                    return VisitResult.CONTINUE;
+                case INPUTS:
+                    List<Map<String, String>> parent = permutations.peek();
+                    if (parent == null) {
+                        throw new IllegalStateException("Unable to add permutation");
+                    }
+                    List<List<Map<String, String>>> perms = parents.pop();
+                    List<List<Map<String, String>>> computed = Permutations.ofList(perms);
+                    List<Map<String, String>> reduced = Lists.map(computed, Maps::merge);
+                    parent.addAll(reduced);
+                    return VisitResult.CONTINUE;
+                default:
+                    return block.acceptAfter((Block.Visitor<Void>) this, null);
             }
-            return block.acceptAfter((Block.Visitor<Void>) this, null);
         }
 
         @Override
         public VisitResult visitInput(Input input0, Void arg) {
+            permutations.push(Lists.of());
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
-                ContextScope scope = context.scope().getOrCreate(input.id(), input.isGlobal());
-                String path = scope.path(true);
-                inputs.put(input, path);
-                variations.computeIfAbsent(path, p -> new HashSet<>())
-                          .addAll(Lists.map(variations(input), v -> new InputValue(Lists.of(parents), v)));
-                context.pushScope(scope);
+                context.pushScope(input.id(), input.isGlobal());
             }
-            parents.push(input0);
             return VisitResult.CONTINUE;
-        }
-
-        private List<Value> variations(DeclaredInput input) {
-            if (input instanceof Input.Boolean) {
-                return Lists.of(Value.FALSE, Value.TRUE);
-            } else if (input instanceof Input.Options) {
-                Input.Options optionsBlock = (Input.Options) input;
-                List<String> optionsValues = Lists.map(optionsBlock.options(n -> true), Input.Option::value);
-                if (input instanceof Input.Enum) {
-                    return Lists.map(optionsValues, Value::create);
-                } else if (input instanceof Input.List) {
-                    return Lists.map(Permutations.of(optionsValues), Value::create);
-                }
-            } else if (input instanceof Input.Text) {
-                Value defaultValue = defaultValue(input, context);
-                return Lists.of(Optional.ofNullable(defaultValue)
-                                        .map(Value::asString)
-                                        .map(Value::create)
-                                        // TODO configuration for text values
-                                        .orElseGet(() -> Value.create("xxx")));
-            }
-            throw new IllegalArgumentException("Unsupported input: " + input);
         }
 
         @Override
         public VisitResult postVisitInput(Input input, Void arg) {
+            List<Map<String, String>> perms = permutations.pop();
             if (input instanceof DeclaredInput) {
+                List<List<Map<String, String>>> parent = parents.peek();
+                if (parent == null) {
+                    throw new IllegalStateException("Unable to add permutation");
+                }
+                String path = context.scope().path();
                 context.popScope();
+                if (input instanceof Input.Boolean) {
+                    if (perms.isEmpty()) {
+                        perms.add(Maps.of(path, "true"));
+                    } else {
+                        perms.forEach(p -> p.put(path, "true"));
+                    }
+                    perms.add(Maps.of(path, "false"));
+                    parent.add(perms);
+                } else if (input instanceof Input.Options) {
+                    if (input instanceof Input.List) {
+                        // permutation grouped by options
+                        List<List<Map<String, String>>> options = Lists.groupingBy(perms, p -> p.get(path));
+                        // generate permutations for the groups
+                        List<List<List<Map<String, String>>>> values = Permutations.of(options);
+                        List<List<Map<String, String>>> computed = Lists.map(values, l -> {
+                            switch (l.size()) {
+                                case 0:
+                                    // make sure the empty permutation has an entry
+                                    return Lists.of(Maps.of(path, ""));
+                                case 1:
+                                    // single option
+                                    return l.get(0);
+                                default:
+                                    // multiple options, requires merging the maps
+                                    List<List<Map<String, String>>> comp = Permutations.ofList(l);
+                                    return Lists.map(comp, l2 -> Maps.merge(l2, (v1, v2) -> v1 + "," + v2));
+                            }
+                        });
+                        // reduce under a single list to avoid re-computing at the parent level
+                        parent.addAll(Lists.of(Lists.flatMap(computed)));
+                    } else if (input instanceof Input.Enum) {
+                        parent.add(perms);
+                    }
+                } else if (input instanceof Input.Text) {
+                    // TODO configuration for text values
+                    Value defaultValue = defaultValue((Input.Text) input, context);
+                    String value = Optional.ofNullable(defaultValue)
+                                           .map(Value::asString)
+                                           .orElse("xxx");
+                    if (perms.isEmpty()) {
+                        perms.add(Maps.of(path, value));
+                    } else {
+                        perms.forEach(p -> p.put(path, value));
+                    }
+                    parent.add(perms);
+                }
+            } else if (input instanceof Input.Option) {
+                List<Map<String, String>> parent = permutations.peek();
+                if (parent == null) {
+                    throw new IllegalStateException("Unable to add permutation");
+                }
+                Input.Option optionBlock = (Input.Option) input;
+                String path = context.scope().path();
+                if (perms.isEmpty()) {
+                    perms.add(Maps.of(path, optionBlock.value()));
+                } else {
+                    perms.forEach(p -> p.put(path, optionBlock.value()));
+                }
+                parent.addAll(perms);
             }
-            parents.pop();
             return VisitResult.CONTINUE;
         }
     }
