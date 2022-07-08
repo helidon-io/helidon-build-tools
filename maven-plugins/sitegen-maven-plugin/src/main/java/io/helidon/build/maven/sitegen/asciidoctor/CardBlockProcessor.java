@@ -20,7 +20,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import io.helidon.build.common.logging.Log;
 
 import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.StructuralNode;
@@ -29,25 +30,20 @@ import org.asciidoctor.extension.Contexts;
 import org.asciidoctor.extension.Reader;
 
 /**
- * A {@link BlockProcessor} implementation that provides custom asciidoc syntax
- * for creating cards.
+ * A {@link BlockProcessor} implementation that provides custom asciidoc syntax for creating cards.
  */
 public class CardBlockProcessor extends BlockProcessor {
-
-    private static final Logger LOGGER = Logger.getLogger(CardBlockProcessor.class.getName());
 
     /**
      * Marker text for generated block links.
      */
     public static final String BLOCK_LINK_TEXT = "@@blocklink@@";
 
-    /**
-     * This block is of type open (delimited by --).
-     */
+    // This block is of type open (delimited by --).
     private static final Map<String, Object> CONFIG = createConfig(Contexts.OPEN);
 
     /**
-     * Create a new instance of {@link CardBlockProcessor}.
+     * Create a new instance.
      */
     public CardBlockProcessor() {
         super("CARD", CONFIG);
@@ -69,12 +65,12 @@ public class CardBlockProcessor extends BlockProcessor {
             String linkPhrase;
             String linkType = (String) attributes.get("link-type");
             if (linkType == null || linkType.equals("xref")) {
-                linkPhrase = "<<" + link + "," + BLOCK_LINK_TEXT + ">>";
+                linkPhrase = String.format("xref:%s[%s]", link, BLOCK_LINK_TEXT);
             } else if (linkType.equals("url")) {
-                linkPhrase = "link:" + link + "[" + BLOCK_LINK_TEXT + "]";
+                linkPhrase = String.format("link:%s[%s]", link, BLOCK_LINK_TEXT);
             } else {
                 linkPhrase = null;
-                LOGGER.warning(link);
+                Log.warn(link);
             }
             if (linkPhrase != null){
                 parseContent(block, List.of(linkPhrase));
@@ -88,11 +84,6 @@ public class CardBlockProcessor extends BlockProcessor {
         return block;
     }
 
-    /**
-     * Create a block processor configuration.
-     * @param blockTypes the types of block
-     * @return map
-     */
     private static Map<String, Object> createConfig(String... blockTypes){
         Map<String, Object> config = new HashMap<>();
         config.put(Contexts.KEY, Arrays.asList(blockTypes));

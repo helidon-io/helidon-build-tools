@@ -135,7 +135,7 @@ class TestUtils {
     }
 
     private static List<String> buildJavaCommand() {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-cp", "\"" + classpath() + "\""));
+        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-Xmx128M", "-cp", "\"" + classpath() + "\""));
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version != null) {
             cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);

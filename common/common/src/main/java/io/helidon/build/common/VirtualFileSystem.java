@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,14 +74,39 @@ public class VirtualFileSystem extends FileSystem {
     /**
      * Create a new virtual filesystem using the given path as the root.
      *
-     * @param path path
+     * @param path path, may be {@code null} to use a random temp directory
      * @return file system
      */
     public static FileSystem create(Path path) {
         return new VirtualFileSystem(path);
     }
 
+    /**
+     * Create a new virtual filesystem using a random temp directory as the root.
+     *
+     * @return file system
+     */
+    public static FileSystem create() {
+        return new VirtualFileSystem(null);
+    }
+
+    /**
+     * Unwrap the given (virtual) path to its internal counter-part.
+     *
+     * @param path path to unwrap
+     * @return Internal path
+     */
+    public static Path unwrap(Path path) {
+        if (path instanceof VPath) {
+            return ((VPath) path).internal;
+        }
+        return path;
+    }
+
     private VirtualFileSystem(Path internal) {
+        if (internal == null) {
+            internal = FileUtils.randomPath(null, null);
+        }
         this.internal = internal.normalize().toAbsolutePath();
         this.root = new VPath(this, "/");
         this.isOpen = true;
@@ -205,7 +230,8 @@ public class VirtualFileSystem extends FileSystem {
             if ("/".equals(path)) {
                 this.internal = fs.internal;
             } else {
-                Path internal = fs.internal.getFileSystem().getPath(path);
+                String normalized = Strings.stripLeading(path, '/');
+                Path internal = fs.internal.getFileSystem().getPath(normalized);
                 if (internal.isAbsolute() && fs.isNotWithinBounds(internal)) {
                     throw new InvalidVirtualPathException(fs, path);
                 }
@@ -297,7 +323,7 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public VPath relativize(Path other) {
-            final VPath o = unwrap(other);
+            final VPath o = unwrap0(other);
             if (fs != o.fs || isAbsolute() != o.isAbsolute()) {
                 throw new IllegalArgumentException("Incorrect filesystem or path: " + other);
             }
@@ -316,7 +342,7 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public VPath resolve(Path other) {
-            final VPath o = unwrap(other);
+            final VPath o = unwrap0(other);
             if (o.internal.isAbsolute()) {
                 return o;
             }
@@ -330,12 +356,13 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public VPath resolve(String other) {
-            Path path = internal.getFileSystem().getPath(other);
-            String pathStr = path.toString();
-            if (pathStr.startsWith("/") || pathStr.startsWith("\\")) {
-                return new VPath(fs, fs.internal.resolve(path.subpath(0, path.getNameCount())));
+            if (other.startsWith("/")) {
+                return new VPath(fs, fs.internal.resolve(Strings.stripLeading(other, '/')));
             }
-            return new VPath(fs, internal.resolve(path));
+            if (other.startsWith("\\")) {
+                return new VPath(fs, fs.internal.resolve(Strings.stripLeading(other, '\\')));
+            }
+            return new VPath(fs, internal.resolve(other));
         }
 
         @Override
@@ -347,12 +374,12 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public boolean startsWith(Path other) {
-            return internal.startsWith(unwrap(other).internal);
+            return internal.startsWith(unwrap0(other).internal);
         }
 
         @Override
         public boolean endsWith(Path other) {
-            return internal.endsWith(unwrap(other).internal);
+            return internal.endsWith(unwrap0(other).internal);
         }
 
         @Override
@@ -396,7 +423,7 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public int compareTo(Path other) {
-            return internal.compareTo(unwrap(other).internal);
+            return internal.compareTo(unwrap0(other).internal);
         }
 
         @Override
@@ -445,7 +472,7 @@ public class VirtualFileSystem extends FileSystem {
         }
     }
 
-    private static VPath unwrap(Path path) {
+    private static VPath unwrap0(Path path) {
         Objects.requireNonNull(path, "path");
         if (!(path instanceof VPath)) {
             throw new ProviderMismatchException();
@@ -491,62 +518,62 @@ public class VirtualFileSystem extends FileSystem {
 
         @Override
         public void checkAccess(Path path, AccessMode... modes) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             vpath.internalProvider().checkAccess(vpath.internalAbsolute(), modes);
         }
 
         @Override
         public Path readSymbolicLink(Path link) throws IOException {
-            VPath vlink = unwrap(link);
+            VPath vlink = unwrap0(link);
             return new VPath(vlink.fs, Files.readSymbolicLink(vlink.internalAbsolute()));
         }
 
         @Override
         public void copy(Path src, Path target, CopyOption... options) throws IOException {
-            VPath vsrc = unwrap(src);
-            vsrc.internalProvider().copy(vsrc.internalAbsolute(), unwrap(target).internalAbsolute(), options);
+            VPath vsrc = unwrap0(src);
+            vsrc.internalProvider().copy(vsrc.internalAbsolute(), unwrap0(target).internalAbsolute(), options);
         }
 
         @Override
         public void createDirectory(Path path, FileAttribute<?>... attrs) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             vpath.internalProvider().createDirectory(vpath.internalAbsolute(), attrs);
         }
 
         @Override
         public void delete(Path path) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             vpath.internalProvider().delete(vpath.internalAbsolute());
         }
 
         @Override
         public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().getFileAttributeView(vpath.internalAbsolute(), type, options);
         }
 
         @Override
         public FileStore getFileStore(Path path) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().getFileStore(vpath.fs.internal);
         }
 
         @Override
         public boolean isHidden(Path path) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().isHidden(vpath.internalAbsolute());
         }
 
         @Override
         public boolean isSameFile(Path path, Path other) throws IOException {
-            VPath vpath = unwrap(path);
-            return vpath.internalProvider().isSameFile(vpath.internalAbsolute(), unwrap(other).internalAbsolute());
+            VPath vpath = unwrap0(path);
+            return vpath.internalProvider().isSameFile(vpath.internalAbsolute(), unwrap0(other).internalAbsolute());
         }
 
         @Override
         public void move(Path src, Path target, CopyOption... options) throws IOException {
-            VPath vsrc = unwrap(src);
-            vsrc.internalProvider().move(vsrc.internalAbsolute(), unwrap(target).internalAbsolute(), options);
+            VPath vsrc = unwrap0(src);
+            vsrc.internalProvider().move(vsrc.internalAbsolute(), unwrap0(target).internalAbsolute(), options);
         }
 
         @Override
@@ -554,21 +581,21 @@ public class VirtualFileSystem extends FileSystem {
                                                                   Set<? extends OpenOption> options,
                                                                   ExecutorService exec,
                                                                   FileAttribute<?>... attrs) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().newAsynchronousFileChannel(vpath.internalAbsolute(), options, exec, attrs);
         }
 
         @Override
         public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options,
                                                   FileAttribute<?>... attrs) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().newByteChannel(vpath.internalAbsolute(), options, attrs);
         }
 
         @Override
         public DirectoryStream<Path> newDirectoryStream(Path path,
                                                         DirectoryStream.Filter<? super Path> filter) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             Iterator<Path> it = vpath.internalProvider().newDirectoryStream(vpath.internalAbsolute(), filter).iterator();
             Stream<Path> stream = StreamSupport.stream(spliteratorUnknownSize(it, Spliterator.ORDERED), false);
             return new DirectoryStream<>() {
@@ -588,19 +615,19 @@ public class VirtualFileSystem extends FileSystem {
         public FileChannel newFileChannel(Path path,
                                           Set<? extends OpenOption> options,
                                           FileAttribute<?>... attrs) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().newFileChannel(vpath.internalAbsolute(), options, attrs);
         }
 
         @Override
         public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().newInputStream(vpath.internalAbsolute(), options);
         }
 
         @Override
         public OutputStream newOutputStream(Path path, OpenOption... options) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().newOutputStream(vpath.internalAbsolute(), options);
         }
 
@@ -608,7 +635,7 @@ public class VirtualFileSystem extends FileSystem {
         public <A extends BasicFileAttributes> A readAttributes(Path path,
                                                                 Class<A> type,
                                                                 LinkOption... options) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().readAttributes(vpath.internalAbsolute(), type, options);
         }
 
@@ -616,13 +643,13 @@ public class VirtualFileSystem extends FileSystem {
         public Map<String, Object> readAttributes(Path path,
                                                   String attribute,
                                                   LinkOption... options) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             return vpath.internalProvider().readAttributes(vpath.internalAbsolute(), attribute, options);
         }
 
         @Override
         public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
-            VPath vpath = unwrap(path);
+            VPath vpath = unwrap0(path);
             vpath.internalProvider().setAttribute(vpath.internalAbsolute(), attribute, value, options);
         }
 

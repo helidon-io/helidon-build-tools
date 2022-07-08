@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  * this goal. (This goal inherits the common settings and adds no others.)
  */
 @Mojo(name = "naturalize-adoc",
-        defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-        requiresProject = true)
+        defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class NaturalizeAsciiDocMojo extends AbstractAsciiDocMojo {
 
     @Override

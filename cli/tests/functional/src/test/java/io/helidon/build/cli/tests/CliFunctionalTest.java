@@ -22,6 +22,7 @@ import io.helidon.build.common.ProcessMonitor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -341,6 +342,7 @@ public class CliFunctionalTest {
         assertThat(output, containsString("Found maven executable"));
     }
 
+    @Disabled("https://github.com/oracle/helidon-build-tools/issues/720")
     @Test
     public void testVerbose() throws Exception {
         int port = TestUtils.getAvailablePort();

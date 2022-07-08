@@ -1,0 +1,203 @@
+<doc-view>
+
+<h2 id="_auto_links">Auto Links</h2>
+<div class="section">
+<p>https://example.org</p>
+
+<p><a target="_blank" href="https://github.com" class="bare">https://github.com</a></p>
+
+</div>
+
+
+<h2 id="_url_macros">URL Macros</h2>
+<div class="section">
+<p><a target="_blank" href="https://github.com" class="bare">https://github.com</a></p>
+
+<p><a target="_blank" href="https://github.com">GitHub</a></p>
+
+<p><a target="_blank" href="report.pdf">Get Report</a></p>
+
+
+<h3 id="_passthroughs">Passthroughs</h3>
+<div class="section">
+<p><a target="_blank" href="My Documents/report.pdf">Get Report</a></p>
+
+<p><a target="_blank" href="My%20Documents/report.pdf">Get Report</a></p>
+
+<p><a target="_blank" href="My&#32;Documents/report.pdf">Get Report</a></p>
+
+<p><a target="_blank" href="https://example.org/now_this__link_works.html" class="bare">https://example.org/now_this__link_works.html</a></p>
+
+<p>|<a target="_blank" href="https://github.com" class="bare">https://github.com</a>|</p>
+
+<p>|<a target="_blank" href="file:///home/username">Your files</a>|</p>
+
+</div>
+
+
+<h3 id="_macro_attributes">Macro Attributes</h3>
+<div class="section">
+<p><a target="_blank" href="https://github.com" class="resource">GitHub</a></p>
+
+<p><a target="_blank" href="https://github.com">1=2 posits the problem of inequality</a></p>
+
+<p><a target="_blank" href="https://github.com">href="#top" attribute</a></p>
+
+<p><a target="read-later" href="https://github.com" rel="noopener">GitHub</a></p>
+
+<p><a target="_blank" href="https://github.com" rel="nofollow">GitHub</a></p>
+
+<p><a target="read-later" href="https://github.com" rel="noopener nofollow">GitHub</a></p>
+
+<p>Let&#8217;s view the raw HTML of the <a target="_blank" href="view-source:index.html">GitHub Source</a>.</p>
+
+</div>
+
+</div>
+
+
+<h2 id="_cross_references">Cross-References</h2>
+<div class="section">
+<p><router-link to="/b">B</router-link></p>
+
+<p><router-link :to="{path: '/b', hash: '#bottom'}">B Bottom</router-link></p>
+
+<p><router-link :to="{path: '/b', hash: '#bottom'}">B Bottom</router-link></p>
+
+<p><router-link to="#bottom" @click.native="this.scrollFix('#bottom')">Bottom</router-link></p>
+
+<p>(scroll-down)
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+
+<br>
+</p>
+
+<p id="bottom">Bottom</p>
+
+</div>
+
+</doc-view>

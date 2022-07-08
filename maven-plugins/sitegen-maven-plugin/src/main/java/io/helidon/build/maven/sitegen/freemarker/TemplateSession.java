@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,7 @@ public class TemplateSession {
     private final VueBindingsDirective vueBindingsDirective = new VueBindingsDirective();
     private final CustomLayoutDirective customLayoutDirective = new CustomLayoutDirective();
 
-    /**
-     * Create a new TemplateSession instance.
-     */
-    public TemplateSession() {
+    private TemplateSession() {
         directives.put("searchIndex", searchIndexDirective);
         directives.put("vueBindings", vueBindingsDirective);
         directives.put("customLayout", customLayoutDirective);
@@ -49,7 +46,7 @@ public class TemplateSession {
      *
      * @return the list of directive
      */
-    public Map<String, TemplateDirectiveModel> getDirectives() {
+    public Map<String, TemplateDirectiveModel> directives() {
         return directives;
     }
 
@@ -58,7 +55,7 @@ public class TemplateSession {
      *
      * @return the search index directive
      */
-    public SearchIndexDirective getSearchIndex() {
+    public SearchIndexDirective searchIndex() {
         return searchIndexDirective;
     }
 
@@ -67,7 +64,7 @@ public class TemplateSession {
      *
      * @return the vue binding directive
      */
-    public VueBindingsDirective getVueBindings(){
+    public VueBindingsDirective vueBindings(){
         return vueBindingsDirective;
     }
 
@@ -76,7 +73,15 @@ public class TemplateSession {
      *
      * @return the custom layout directive
      */
-    public CustomLayoutDirective getCustomLayouts(){
+    public CustomLayoutDirective customLayouts(){
         return customLayoutDirective;
+    }
+
+    /**
+     * Create a new instance.
+     * @return new instance
+     */
+    public static TemplateSession create() {
+        return new TemplateSession();
     }
 }

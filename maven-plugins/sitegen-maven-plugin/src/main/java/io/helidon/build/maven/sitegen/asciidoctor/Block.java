@@ -17,9 +17,7 @@
 package io.helidon.build.maven.sitegen.asciidoctor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,7 +72,7 @@ import java.util.stream.Collectors;
  * Further content
  * ----
  * }
- * </pre> here is the corresponding numbered form:
+ * </pre> here is the numbered form:
  * <pre>
  * {@code
  * [source]
@@ -106,29 +104,25 @@ import java.util.stream.Collectors;
  * in which the user has added AsciiDoc {@code include::} directives in the body
  * of the numbered form.
  */
+@SuppressWarnings("unused")
 public class Block {
 
-    private static final Set<String> BLOCK_DELIMITERS
-            = new HashSet<>(Arrays.asList(
-                    new String[]{"====", // example
-                        "----", // listing, source
-                        "...." // listing
-                }));
+    private static final Set<String> BLOCK_DELIMITERS = Set.of(
+            "====", // example
+            "----", // listing, source
+            "...." // listing
+    );
 
-    private static final Set<String> BLOCK_INTRODUCERS
-            = new HashSet<>(Arrays.asList(
-                    new String[]{"source", "listing", "example"}));
+    private static final Set<String> BLOCK_INTRODUCERS = Set.of("source", "listing", "example");
 
-    /*
-     * Match lines that start with a "[", capturing until, or "]" as the introducer
-     */
+    // Match lines that start with a "[", capturing until, or "]" as the introducer
     private static final Pattern BLOCK_INTRODUCER_PATTERN = Pattern.compile("\\[([^,\\]]*).*");
 
     /**
      * Creates a Block by consuming the input text, advancing {@code lineNumber}
      * so it points just past the end of the block's ending delimiter.
      *
-     * @param content lines containing AsciiDoc
+     * @param content    lines containing AsciiDoc
      * @param lineNumber line number at which to begin processing the block
      * @return a new Block describing the block
      */
@@ -168,9 +162,9 @@ public class Block {
      */
     List<String> asBlockWithNumberedIncludes() {
         return asBlock(() -> includes.stream()
-                    .map(Include::asNumberedAsciiDocInclude)
-                    .collect(Collectors.toList()),
-                    this::body);
+                                     .map(Include::asNumberedAsciiDocInclude)
+                                     .collect(Collectors.toList()),
+                this::body);
     }
 
     /**
@@ -194,18 +188,15 @@ public class Block {
         return asBlock(this::bracketedBody);
     }
 
-    private List<String> asBlock(
-            Supplier<List<String>> bodyGenerator) {
+    private List<String> asBlock(Supplier<List<String>> bodyGenerator) {
         return asBlock(Collections::emptyList, bodyGenerator);
     }
 
-    private List<String> asBlock(
-            Supplier<List<String>> preambleCommentsGenerator,
-            Supplier<List<String>> bodyGenerator) {
+    private List<String> asBlock(Supplier<List<String>> preambleGenerator, Supplier<List<String>> bodyGenerator) {
         List<String> result = new ArrayList<>();
         result.add(blockDecl);
         result.addAll(preamble);
-        result.addAll(preambleCommentsGenerator.get());
+        result.addAll(preambleGenerator.get());
         result.add(delimiter);
         result.addAll(bodyGenerator.get());
         result.add(delimiter);
@@ -228,8 +219,8 @@ public class Block {
          */
         for (int i = includes.size() - 1; i >= 0; i--) {
             Include ia = includes.get(i);
-            for (int j = ia.startWithinBlock(); j <= ia.endWithinBlock(); j++) {
-                result.remove(ia.startWithinBlock());
+            if (ia.endWithinBlock() >= ia.startWithinBlock()) {
+                result.subList(ia.startWithinBlock(), ia.endWithinBlock() + 1).clear();
             }
             if (ia.startWithinBlock() >= result.size()) {
                 result.addAll(ia.asAsciiDocInclude());
@@ -243,17 +234,12 @@ public class Block {
     private List<String> bracketedBody() {
         List<String> result = new ArrayList<>();
         Matcher m = Include.ASCIIDOC_INCLUDE_PATTERN.matcher("");
-
         for (String bodyLine : originalBody()) {
             m.reset(bodyLine);
             if (m.matches()) {
-                result.add(String.format(Include.INCLUDE_BRACKET_TEMPLATE,
-                        "start",
-                        m.group(1)));
+                result.add(String.format(Include.INCLUDE_BRACKET_TEMPLATE, "start", m.group(1)));
                 result.add(bodyLine);
-                result.add(String.format(Include.INCLUDE_BRACKET_TEMPLATE,
-                        "end",
-                        m.group(1)));
+                result.add(String.format(Include.INCLUDE_BRACKET_TEMPLATE, "end", m.group(1)));
             } else {
                 result.add(bodyLine);
             }
@@ -262,7 +248,6 @@ public class Block {
     }
 
     /**
-     *
      * @return IncludeAnalyzers for any includes processed in the block
      */
     List<Include> includes() {
@@ -281,19 +266,21 @@ public class Block {
         int blockStartLineNumber = body.size();
 
         doUntilBlockDelimiter(content, aLineNumber, line -> {
-            if (Include.isIncludeStart(line)) {
-                aLineNumber.decrementAndGet();
-                Include ia = Include.consumeBracketedInclude(
-                        content,
-                        aLineNumber,
-                        body,
-                        blockStartLineNumber);
-                includes.add(ia);
-                body.addAll(ia.body());
-            } else {
-                body.add(line);
-            }
-        },
+                    if (Include.isIncludeStart(line)) {
+                        aLineNumber.decrementAndGet();
+                        Include ia = Include.consumeBracketedInclude(
+                                content,
+                                aLineNumber,
+                                body,
+                                blockStartLineNumber);
+                        includes.add(ia);
+                        if (ia != null) {
+                            body.addAll(ia.body());
+                        }
+                    } else {
+                        body.add(line);
+                    }
+                },
                 delimiter::equals);
     }
 
@@ -310,10 +297,8 @@ public class Block {
             }
         });
         final int startOfBlock = lineNumber.get();
-        pendingIncludes.forEach((pendingInclude) -> {
-            includes.add(Include.fromNumberedInclude(
-                    content, startOfBlock, pendingInclude));
-        });
+        pendingIncludes.forEach((pendingInclude) -> includes.add(
+                Include.fromNumberedInclude(content, startOfBlock, pendingInclude)));
         preamble = result;
     }
 
@@ -331,7 +316,10 @@ public class Block {
         } while (true);
     }
 
-    private String doUntilInitialBlockDelimiter(List<String> content, AtomicInteger lineNumber, Consumer<String> lineConsumer) {
+    private String doUntilInitialBlockDelimiter(List<String> content,
+                                                AtomicInteger lineNumber,
+                                                Consumer<String> lineConsumer) {
+
         return doUntilBlockDelimiter(content, lineNumber, lineConsumer,
                 Block::isBlockDelimiter);
     }
