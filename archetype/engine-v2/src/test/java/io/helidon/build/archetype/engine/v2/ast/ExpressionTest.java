@@ -25,9 +25,11 @@ import io.helidon.build.archetype.engine.v2.ast.Expression.UnresolvedVariableExc
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Value.ValueTypeException;
 
+import io.helidon.build.common.Maps;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.ast.Expression.parse;
+import static io.helidon.build.common.Maps.mapValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -276,5 +278,22 @@ class ExpressionTest {
     void testArrayWithStringLiterals() {
         assertThat(parse("['foo'] contains 'foo'").eval(), is(true));
         assertThat(parse("['foo'] contains 'bar'").eval(), is(false));
+    }
+
+    @Test
+    void testComplex() {
+        Expression expr = parse("(!(${metrics} || ${tracing} || ${health}) || (${metrics} && ${tracing} && ${health}))");
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "true",
+                "tracing", "true",
+                "health", "true"), DynamicValue::create)::get), is(true));
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "false",
+                "tracing", "true",
+                "health", "true"), DynamicValue::create)::get), is(false));
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "false",
+                "tracing", "false",
+                "health", "false"), DynamicValue::create)::get), is(false));
     }
 }

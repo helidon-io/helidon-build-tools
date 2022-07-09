@@ -172,6 +172,18 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalDefaults;
 
     /**
+     * Input filters to use when computing permutations.
+     */
+    @Parameter(property = "archetype.test.inputFilters")
+    private List<String> inputFilters;
+
+    /**
+     * Permutation filters to use filter computed permutations.
+     */
+    @Parameter(property = "archetype.test.permutationFilters")
+    private List<String> permutationFilters;
+
+    /**
      * Whether to generate input combinations.
      */
     @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
@@ -216,7 +228,14 @@ public class IntegrationTestMojo extends AbstractMojo {
                 List<Map<String, String>> combinations;
                 try (FileSystem fileSystem = newFileSystem(archetypeFile.toPath(), this.getClass().getClassLoader())) {
                     Script script = ScriptLoader.load(fileSystem.getPath("main.xml"));
-                    combinations = InputPermutations.compute(script, externalValues, externalDefaults);
+                    combinations = InputPermutations.builder()
+                                                    .script(script)
+                                                    .externalValues(externalValues)
+                                                    .externalDefaults(externalDefaults)
+                                                    .inputFilters(inputFilters)
+                                                    .permutationFilters(permutationFilters)
+                                                    .build()
+                                                    .compute();
                 }
 
                 log.info("Total combinations: " + combinations.size());
@@ -294,6 +313,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logTestDescription(String testName, Map<String, String> externalValues) {
         String testDescription = Bold.apply("Test: ") + BoldBlue.apply(testName);
         if (combinationNumber > 0) {
+            // TODO log '/ total'
             testDescription += BoldBlue.apply(", combination " + combinationNumber);
         }
         log.info("");

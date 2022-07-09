@@ -17,13 +17,18 @@ package io.helidon.build.archetype.engine.v2.util;
 
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -33,7 +38,9 @@ import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
+import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextScope;
@@ -50,36 +57,35 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Permutations;
 
-import static io.helidon.build.archetype.engine.v2.InputResolver.defaultValue;
-
 /**
  * A utility to compute input permutations.
  */
 public class InputPermutations {
 
-    /**
-     * Compute the input permutation for the given script.
-     *
-     * @param script input script
-     * @return list of permutations
-     */
-    public static List<Map<String, String>> compute(Script script) {
-        return compute(script, Map.of(), Map.of());
+    private static final Random RANDOM = new Random();
+
+    private final Script script;
+    private final Path cwd;
+    private final Map<String, String> externalValues;
+    private final Map<String, String> externalDefaults;
+    private final List<Expression> inputFilters;
+    private final List<Expression> permutationFilters;
+
+    private InputPermutations(Builder builder) {
+        script = Objects.requireNonNull(builder.script, "script is null!");
+        cwd = script.scriptPath().getParent();
+        externalValues = builder.externalValues;
+        externalDefaults = builder.externalDefaults;
+        inputFilters = builder.inputFilters;
+        permutationFilters = builder.permutationFilters;
     }
 
     /**
-     * Compute the input permutation for the given script.
+     * Compute the input permutations.
      *
-     * @param script           input script
-     * @param externalValues   external values
-     * @param externalDefaults external defaults
-     * @return set of permutations
+     * @return list of permutations
      */
-    public static List<Map<String, String>> compute(Script script,
-                                                    Map<String, String> externalValues,
-                                                    Map<String, String> externalDefaults) {
-
-        Path cwd = script.scriptPath().getParent();
+    public List<Map<String, String>> compute() {
 
         // Make a single pass to capture all permutations
         VisitorImpl visitor = new VisitorImpl(Context.builder().cwd(cwd).build());
@@ -87,26 +93,149 @@ public class InputPermutations {
 
         // for each permutation, perform a normal execution
         // and use the resulting context values as permutation
-        List<Map<String, String>> permutations = visitor.permutations.pop();
+        List<Map<String, String>> permutations = Lists.flatMap(visitor.stack.pop());
         Set<TreeMap<String, String>> result = new LinkedHashSet<>();
-        permutations.forEach(permutation -> {
-            try {
-                Context context = Context.builder().cwd(cwd).build();
-                Controller.walk(new InputResolverImpl(permutation), script, context);
-                Map<String, String> contextValues = Maps.mapValue(context.scope().values(),
-                        (k, v) -> v.kind() == ValueKind.USER, Value::asText);
-                if (!contextValues.isEmpty()) {
-                    result.add(new TreeMap<>(contextValues));
-                }
-            } catch (InvocationException ignored) {
-                // invalid option
+        for (Map<String, String> permutation : permutations) {
+            if (!filter(permutationFilters, permutation)) {
+                continue;
             }
-        });
+            Map<String, String> contextValues = execute(permutation);
+            if (contextValues != null && !contextValues.isEmpty()) {
+                result.add(new TreeMap<>(contextValues));
+            }
+        }
 
         // sort the result
         List<Map<String, String>> list = new LinkedList<>(result);
         list.sort(Comparator.comparing(m -> m.entrySet().iterator().next().toString()));
         return list;
+    }
+
+    private Map<String, String> execute(Map<String, String> permutation) {
+        try {
+            Context context = Context.builder().cwd(cwd).build();
+            Controller.walk(new InputResolverImpl(permutation), script, context);
+            Map<String, String> contextValues = Maps.mapValue(context.scope().values(),
+                    (k, v) -> v.kind() == ValueKind.USER, Value::asText);
+            if (!contextValues.isEmpty()) {
+                return new TreeMap<>(contextValues);
+            }
+        } catch (InvocationException ignored) {
+            // invalid option
+        }
+        return null;
+    }
+
+    /**
+     * Create a new builder.
+     *
+     * @return builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * {@link InputPermutations} builder.
+     */
+    public static final class Builder {
+
+        private Script script;
+        private final Map<String, String> externalValues = new HashMap<>();
+        private final Map<String, String> externalDefaults = new HashMap<>();
+        private final List<Expression> inputFilters = new ArrayList<>();
+        private final List<Expression> permutationFilters = new ArrayList<>();
+
+        /**
+         * Set the script.
+         *
+         * @param script script
+         * @return this builder
+         */
+        public Builder script(Script script) {
+            this.script = script;
+            return this;
+        }
+
+        /**
+         * Set the external values.
+         *
+         * @param externalValues external values
+         * @return this builder
+         */
+        public Builder externalValues(Map<String, String> externalValues) {
+            if (externalValues != null) {
+                this.externalValues.putAll(externalValues);
+            }
+            return this;
+        }
+
+        /**
+         * Set the external defaults.
+         *
+         * @param externalDefaults external values
+         * @return this builder
+         */
+        public Builder externalDefaults(Map<String, String> externalDefaults) {
+            if (externalDefaults != null) {
+                this.externalDefaults.putAll(externalDefaults);
+            }
+            return this;
+        }
+
+        /**
+         * Set the input filters.
+         *
+         * @param filters filters
+         * @return this builder
+         */
+        public Builder inputFilters(List<String> filters) {
+            if (filters != null) {
+                this.inputFilters.addAll(Lists.map(filters, Expression::create));
+            }
+            return this;
+        }
+
+        /**
+         * Set the permutation filters.
+         *
+         * @param filters filters
+         * @return this builder
+         */
+        public Builder permutationFilters(List<String> filters) {
+            if (filters != null) {
+                this.permutationFilters.addAll(Lists.map(filters, Expression::create));
+            }
+            return this;
+        }
+
+        /**
+         * Build the instance.
+         *
+         * @return new instance
+         */
+        public InputPermutations build() {
+            return new InputPermutations(this);
+        }
+    }
+
+    private static boolean filter(List<Expression> filters, Map<String, String> permutation) {
+        for (Expression filter : filters) {
+            try {
+                boolean result = filter.eval(s -> {
+                    String v = permutation.get(s);
+                    if (v != null) {
+                        return DynamicValue.create(v);
+                    }
+                    return null;
+                });
+                if (!result) {
+                    return false;
+                }
+            } catch (Expression.UnresolvedVariableException ignore) {
+            }
+        }
+        return true;
     }
 
     private static final class InputResolverImpl extends InputResolver {
@@ -134,6 +263,7 @@ public class InputPermutations {
                 if (rawValue == null) {
                     throw new UnresolvedInputException(path);
                 }
+                // TODO default value ?
                 Value value = DynamicValue.create(context.interpolate(rawValue));
                 if (input instanceof Input.Options) {
                     Input.Options optionsBlock = (Input.Options) input;
@@ -164,17 +294,14 @@ public class InputPermutations {
         }
     }
 
-    private static final class VisitorImpl implements Node.Visitor<Void>, Block.Visitor<Void> {
+    private final class VisitorImpl implements Node.Visitor<Void>, Block.Visitor<Void> {
 
-        // TODO use a unique deque as List<List<Map<String, String>
-        final Deque<List<List<Map<String, String>>>> parents = new ArrayDeque<>();
-        final Deque<List<Map<String, String>>> permutations = new ArrayDeque<>();
+        final Deque<List<List<Map<String, String>>>> stack = new ArrayDeque<>();
         final Context context;
 
         VisitorImpl(Context context) {
             this.context = context;
-            permutations.push(Lists.of());
-            parents.push(Lists.of());
+            stack.push(Lists.of());
         }
 
         @Override
@@ -185,7 +312,8 @@ public class InputPermutations {
 
         @Override
         public VisitResult visitPreset(Preset preset, Void arg) {
-            context.putValue(preset.path(), preset.value(), ValueKind.PRESET);
+            // Use local var instead of preset to allow overrides
+            context.putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
             return VisitResult.CONTINUE;
         }
 
@@ -197,8 +325,10 @@ public class InputPermutations {
                 case INVOKE_DIR:
                     context.pushCwd(block.scriptPath().getParent());
                     return VisitResult.CONTINUE;
+                case SCRIPT:
+                case STEP:
                 case INPUTS:
-                    parents.push(Lists.of());
+                    stack.push(Lists.of());
                     return VisitResult.CONTINUE;
                 default:
                     return block.accept((Block.Visitor<Void>) this, arg);
@@ -211,24 +341,41 @@ public class InputPermutations {
                 case INVOKE_DIR:
                     context.popCwd();
                     return VisitResult.CONTINUE;
+                case SCRIPT:
+                case STEP:
                 case INPUTS:
-                    List<Map<String, String>> parent = permutations.peek();
-                    if (parent == null) {
-                        throw new IllegalStateException("Unable to add permutation");
-                    }
-                    List<List<Map<String, String>>> perms = parents.pop();
-                    List<List<Map<String, String>>> computed = Permutations.ofList(perms);
-                    List<Map<String, String>> reduced = Lists.map(computed, Maps::merge);
-                    parent.addAll(reduced);
+                    // nested permutations
+                    List<List<Map<String, String>>> perms = stack.pop();
+
+                    // compute permutations
+                    List<List<Map<String, String>>> computed = compute(perms);
+
+                    // reduce and merge to avoid computing again at the parent level
+                    List<Map<String, String>> merged = Lists.map(computed, Maps::merge);
+
+                    addPermutations(merged);
                     return VisitResult.CONTINUE;
                 default:
                     return block.acceptAfter((Block.Visitor<Void>) this, null);
             }
         }
 
+        List<List<Map<String, String>>> compute(List<List<Map<String, String>>> perms) {
+            int permSize = perms.stream().map(List::size).reduce(1, (a, b) -> a * b);
+            // TODO log warning and dump perms ; then abort
+            List<List<Map<String, String>>> computed = new LinkedList<>();
+            Iterator<List<Map<String, String>>> it = new Permutations.ListIterator<>(perms);
+            for (int i=0; it.hasNext(); i++) {
+                System.out.println(i + "/" + permSize);
+                List<Map<String, String>> next = it.next();
+                computed.add(next);
+            }
+            return computed;
+        }
+
         @Override
         public VisitResult visitInput(Input input0, Void arg) {
-            permutations.push(Lists.of());
+            stack.push(Lists.of());
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
                 context.pushScope(input.id(), input.isGlobal());
@@ -238,75 +385,120 @@ public class InputPermutations {
 
         @Override
         public VisitResult postVisitInput(Input input, Void arg) {
-            List<Map<String, String>> perms = permutations.pop();
-            if (input instanceof DeclaredInput) {
-                List<List<Map<String, String>>> parent = parents.peek();
-                if (parent == null) {
-                    throw new IllegalStateException("Unable to add permutation");
-                }
-                String path = context.scope().path();
+            // compute permutations for the input
+            // TODO default value ? (absence of a value)
+            List<List<Map<String, String>>> computed = Lists.filter(compute(input), l -> !l.isEmpty());
+
+            // parent level computes permutations for the first dimension
+            // we reduce to avoid computing again at the parent level
+            // e.g.
+            // computed: [[{colors=red}], [{colors=orange}]]
+            // reduced: [[{colors=red}, {colors=orange}]]
+            List<Map<String, String>> reduced = Lists.flatMap(computed);
+
+            addPermutations(reduced);
+            return VisitResult.CONTINUE;
+        }
+
+        private List<List<Map<String, String>>> compute(Input input0) {
+            // nested permutations
+            // each element of the list represents the permutations for a child
+            List<List<Map<String, String>>> perms = stack.pop();
+            String path = context.scope().path();
+            if (input0 instanceof DeclaredInput) {
+                DeclaredInput input = (DeclaredInput) input0;
                 context.popScope();
-                if (input instanceof Input.Boolean) {
-                    if (perms.isEmpty()) {
-                        perms.add(Maps.of(path, "true"));
-                    } else {
-                        perms.forEach(p -> p.put(path, "true"));
-                    }
-                    perms.add(Maps.of(path, "false"));
-                    parent.add(perms);
-                } else if (input instanceof Input.Options) {
-                    if (input instanceof Input.List) {
-                        // permutation grouped by options
-                        List<List<Map<String, String>>> options = Lists.groupingBy(perms, p -> p.get(path));
-                        // generate permutations for the groups
-                        List<List<List<Map<String, String>>>> values = Permutations.of(options);
-                        List<List<Map<String, String>>> computed = Lists.map(values, l -> {
-                            switch (l.size()) {
+                switch (input0.kind()) {
+                    case BOOLEAN:
+                        // add true to all nested permutations and a new permutation for false
+                        // e.g.
+                        // nested:   [[{colors=red}], [{colors=orange}]]
+                        // computed: [[{colors=red, path=true}, [{colors=orange, path=true}], [{path=false}]]
+                        putValue(perms, path, "true");
+                        perms.add(Lists.of(Maps.of(path, "false")));
+                        return perms;
+                    case LIST:
+                        // the nested permutations represent the permutations for each option
+                        // compute permutations for the options
+                        // e.g.
+                        // options: [a, b]
+                        // computed: [[], [a], [b], [a,b]]
+                        return Lists.map(Permutations.of(perms), option -> {
+                            switch (option.size()) {
                                 case 0:
-                                    // make sure the empty permutation has an entry
+                                    // empty permutation needs an entry
                                     return Lists.of(Maps.of(path, ""));
                                 case 1:
-                                    // single option
-                                    return l.get(0);
+                                    // single permutation (single option)
+                                    return option.get(0);
                                 default:
-                                    // multiple options, requires merging the maps
-                                    List<List<Map<String, String>>> comp = Permutations.ofList(l);
-                                    return Lists.map(comp, l2 -> Maps.merge(l2, (v1, v2) -> v1 + "," + v2));
+                                    // multiple options
+                                    // e.g.
+                                    //
+                                    // options:  [[{colors=red,    red=burgundy},  {colors=red,    red=auburn}],
+                                    //            [{colors=orange, orange=salmon}, {colors=orange, orange=peach}]]
+                                    //
+                                    // computed: [[{colors=red, red=burgundy}, {colors=orange, orange=salmon}],
+                                    //            [{colors=red, red=auburn},   {colors=orange, orange=salmon}],
+                                    //            [{colors=red, red=burgundy}, {colors=orange, orange=peach}],
+                                    //            [{colors=red, red=auburn},   {colors=orange, orange=peach}]]
+                                    //
+                                    // merged:   [{colors='red,orange', red=burgundy, orange=salmon},
+                                    //            {colors='red,orange', red=burgundy, orange=peach},
+                                    //            {colors='red,orange', red=auburn,   orange=peach},
+                                    //            {colors='red,orange', red=auburn,   orange=peach}]
+                                    List<List<Map<String, String>>> comp = compute(option);
+                                    return Lists.map(comp, l -> Maps.merge(l, (v1, v2) -> v1 + "," + v2));
                             }
                         });
-                        // reduce under a single list to avoid re-computing at the parent level
-                        parent.addAll(Lists.of(Lists.flatMap(computed)));
-                    } else if (input instanceof Input.Enum) {
-                        parent.add(perms);
-                    }
-                } else if (input instanceof Input.Text) {
-                    // TODO configuration for text values
-                    Value defaultValue = defaultValue((Input.Text) input, context);
-                    String value = Optional.ofNullable(defaultValue)
-                                           .map(Value::asString)
-                                           .orElse("xxx");
-                    if (perms.isEmpty()) {
-                        perms.add(Maps.of(path, value));
-                    } else {
-                        perms.forEach(p -> p.put(path, value));
-                    }
-                    parent.add(perms);
+                    case TEXT:
+                        String value = Optional.ofNullable(externalValues.get(path))
+                                               .or(() -> Optional.ofNullable(externalDefaults.get(path)))
+                                               .or(() -> Optional.ofNullable(input.defaultValue())
+                                                                 .filter(v -> v.type() == ValueTypes.STRING)
+                                                                 .map(Value::asString))
+                                               .map(Value::create)
+                                               .map(Value::asString)
+                                               .orElse(input.id() + "-" + RANDOM.nextInt());
+
+                        // add the text value to all nested permutations
+                        // e.g.
+                        // nested:   [[{colors=red}], [{colors=orange}]]
+                        // computed: [[{colors=red, path=xxx}, [{colors=orange, path=xxx}]]
+                        putValue(perms, path, value);
+                        return perms;
+                    default:
+                        // enum does not need computing (one-of)
+                        return perms;
                 }
-            } else if (input instanceof Input.Option) {
-                List<Map<String, String>> parent = permutations.peek();
-                if (parent == null) {
-                    throw new IllegalStateException("Unable to add permutation");
-                }
-                Input.Option optionBlock = (Input.Option) input;
-                String path = context.scope().path();
-                if (perms.isEmpty()) {
-                    perms.add(Maps.of(path, optionBlock.value()));
-                } else {
-                    perms.forEach(p -> p.put(path, optionBlock.value()));
-                }
-                parent.addAll(perms);
+            } else if (input0 instanceof Input.Option) {
+                // add the option value to all nested permutations
+                // nested: [[{colors=red}], [{colors=orange}]]
+                // computed: [[{colors=red, path=option}, [{colors=orange, path=option}]]
+                putValue(perms, path, ((Input.Option) input0).value());
+                return perms;
             }
-            return VisitResult.CONTINUE;
+            throw new IllegalArgumentException("Unsupported input: " + input0);
+        }
+
+        private void addPermutations(List<Map<String, String>> perms) {
+            List<List<Map<String, String>>> parent = stack.peek();
+            if (parent == null) {
+                throw new IllegalStateException("Unable to add permutations");
+            }
+            if (!perms.isEmpty()) {
+                // apply input filters
+                List<Map<String, String>> filtered = Lists.filter(perms, m -> filter(inputFilters, m));
+                parent.add(filtered);
+            }
+        }
+
+        private void putValue(List<List<Map<String, String>>> perms, String path, String value) {
+            if (perms.isEmpty()) {
+                perms.add(Lists.of(Maps.of(path, value)));
+            } else {
+                perms.forEach(l -> l.forEach(p -> p.put(path, value)));
+            }
         }
     }
 }

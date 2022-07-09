@@ -141,7 +141,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         }
         String refId;
         if (ContextPath.ROOT_REF.equals(segments[0])) {
-            refId = path;
+            refId = path.substring(1);
         } else {
             String scopePath = ctx.scope().path();
             refId = scopePath.isEmpty() ? path : scopePath + "." + path;

@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.toMap;
 /**
  * Map utilities.
  */
+@SuppressWarnings("unused")
 public class Maps {
 
     private Maps() {
@@ -190,7 +191,9 @@ public class Maps {
      */
     public static <K, V> Map<K, V> put(Map<K, V> map, K k, V v) {
         Map<K, V> res = new HashMap<>();
-        res.putAll(map);
+        if (map != null) {
+            res.putAll(map);
+        }
         res.put(k, v);
         return res;
     }

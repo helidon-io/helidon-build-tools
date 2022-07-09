@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -29,6 +28,7 @@ import java.util.stream.Stream;
 /**
  * List utilities.
  */
+@SuppressWarnings("unused")
 public class Lists {
 
     private Lists() {
@@ -122,7 +122,7 @@ public class Lists {
      * @return new list
      */
     public static <T> List<T> flatMap(Collection<? extends Collection<T>> list) {
-        return flatMapStream(list, e -> e.stream());
+        return flatMapStream(list, Collection::stream);
     }
 
     /**
