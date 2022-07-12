@@ -56,6 +56,9 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Permutations;
+import io.helidon.build.common.logging.Log;
+
+import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
 
 /**
  * A utility to compute input permutations.
@@ -113,15 +116,19 @@ public class InputPermutations {
 
     private Map<String, String> execute(Map<String, String> permutation) {
         try {
-            Context context = Context.builder().cwd(cwd).build();
+            Context context = Context.builder()
+                                     .cwd(cwd)
+                                     .build();
             Controller.walk(new InputResolverImpl(permutation), script, context);
             Map<String, String> contextValues = Maps.mapValue(context.scope().values(),
                     (k, v) -> v.kind() == ValueKind.USER, Value::asText);
             if (!contextValues.isEmpty()) {
                 return new TreeMap<>(contextValues);
             }
-        } catch (InvocationException ignored) {
-            // invalid option
+        } catch (InvocationException ex) {
+            if (!(ex.getCause() instanceof InvalidOption)) {
+                Log.warn(ex, "Permutation error: " + permutation);
+            }
         }
         return null;
     }
@@ -238,7 +245,7 @@ public class InputPermutations {
         return true;
     }
 
-    private static final class InputResolverImpl extends InputResolver {
+    private final class InputResolverImpl extends InputResolver {
 
         final Map<String, String> permutation;
 
@@ -254,6 +261,15 @@ public class InputPermutations {
             return VisitResult.CONTINUE;
         }
 
+        @Override
+        protected VisitResult onVisitInput(DeclaredInput input, ContextScope scope, Context context) {
+            String rawValue = externalValues.get(scope.path());
+            if (rawValue != null) {
+                context.putValue(input.id(), DynamicValue.create(rawValue), ValueKind.USER);
+            }
+            return super.onVisitInput(input, scope, context);
+        }
+
         private VisitResult visit(DeclaredInput input, Context context) {
             ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
             VisitResult result = onVisitInput(input, nextScope, context);
@@ -261,26 +277,25 @@ public class InputPermutations {
                 String path = nextScope.path();
                 String rawValue = permutation.get(path);
                 if (rawValue == null) {
-                    throw new UnresolvedInputException(path);
+                    Value defaultValue = InputResolver.defaultValue(input, context);
+                    if (defaultValue == null) {
+                        throw new UnresolvedInputException(path);
+                    }
+                    context.putValue(input.id(), defaultValue, ValueKind.DEFAULT);
+                    context.pushScope(nextScope);
+                    return input.visitValue(defaultValue);
                 }
-                // TODO default value ?
                 Value value = DynamicValue.create(context.interpolate(rawValue));
                 if (input instanceof Input.Options) {
                     Input.Options optionsBlock = (Input.Options) input;
                     List<Input.Option> optionNodes = optionsBlock.options(n -> Condition.filter(n, context::getValue));
                     List<String> optionValues = Lists.map(optionNodes, o -> context.interpolate(o.value()));
                     if (input instanceof Input.List) {
-                        for (String opt : value.asList()) {
-                            if (!optionValues.contains(opt)) {
-                                throw new IllegalArgumentException(String.format(
-                                        "Invalid option value: %s, permutation: %s", opt, permutation));
-                            }
-                        }
+                        validateValue(optionValues, value);
                     } else if (input instanceof Input.Enum) {
                         String opt = value.asString();
                         if (!optionValues.contains(opt)) {
-                            throw new IllegalArgumentException(String.format(
-                                    "Invalid option value: %s, permutation: %s", opt, permutation));
+                            throw new InvalidOption(opt, permutation);
                         }
                     }
                     result = VisitResult.CONTINUE;
@@ -291,6 +306,17 @@ public class InputPermutations {
             }
             context.pushScope(nextScope);
             return result;
+        }
+
+        private void validateValue(List<String> optionValues, Value value) {
+            if ("none".equals(value.asText())) {
+                return;
+            }
+            for (String opt : value.asList()) {
+                if (!optionValues.contains(opt)) {
+                    throw new InvalidOption(opt, permutation);
+                }
+            }
         }
     }
 
@@ -347,6 +373,11 @@ public class InputPermutations {
                     // nested permutations
                     List<List<Map<String, String>>> perms = stack.pop();
 
+                    int permSize = perms.stream().map(List::size).reduce(1, (a, b) -> a * b);
+                    if (permSize > 150000) {
+                        Log.warn("Too many permutations: %s, block: %s", permSize, block.location());
+                    }
+
                     // compute permutations
                     List<List<Map<String, String>>> computed = compute(perms);
 
@@ -361,12 +392,9 @@ public class InputPermutations {
         }
 
         List<List<Map<String, String>>> compute(List<List<Map<String, String>>> perms) {
-            int permSize = perms.stream().map(List::size).reduce(1, (a, b) -> a * b);
-            // TODO log warning and dump perms ; then abort
             List<List<Map<String, String>>> computed = new LinkedList<>();
             Iterator<List<Map<String, String>>> it = new Permutations.ListIterator<>(perms);
-            for (int i=0; it.hasNext(); i++) {
-                System.out.println(i + "/" + permSize);
+            while (it.hasNext()) {
                 List<Map<String, String>> next = it.next();
                 computed.add(next);
             }
@@ -379,6 +407,15 @@ public class InputPermutations {
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
                 context.pushScope(input.id(), input.isGlobal());
+                if (input instanceof Input.Enum) {
+                    Input.Enum enumInput = (Input.Enum) input;
+                    List<Input.Option> options = enumInput.options();
+                    int defaultIndex = optionIndex(enumInput.defaultValue().asString(), options);
+                    // skip if there is only one option with a default value
+                    if (options.size() == 1 && defaultIndex >= 0) {
+                        return VisitResult.SKIP_SUBTREE;
+                    }
+                }
             }
             return VisitResult.CONTINUE;
         }
@@ -386,7 +423,6 @@ public class InputPermutations {
         @Override
         public VisitResult postVisitInput(Input input, Void arg) {
             // compute permutations for the input
-            // TODO default value ? (absence of a value)
             List<List<Map<String, String>>> computed = Lists.filter(compute(input), l -> !l.isEmpty());
 
             // parent level computes permutations for the first dimension
@@ -427,7 +463,7 @@ public class InputPermutations {
                             switch (option.size()) {
                                 case 0:
                                     // empty permutation needs an entry
-                                    return Lists.of(Maps.of(path, ""));
+                                    return Lists.of(Maps.of(path, "none"));
                                 case 1:
                                     // single permutation (single option)
                                     return option.get(0);
@@ -499,6 +535,12 @@ public class InputPermutations {
             } else {
                 perms.forEach(l -> l.forEach(p -> p.put(path, value)));
             }
+        }
+    }
+
+    private static final class InvalidOption extends RuntimeException {
+        InvalidOption(String option, Map<String, String> permutation) {
+            super(String.format("Invalid option value: %s, permutation: %s", option, permutation));
         }
     }
 }

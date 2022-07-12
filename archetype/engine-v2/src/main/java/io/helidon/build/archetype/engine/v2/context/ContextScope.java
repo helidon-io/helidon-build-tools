@@ -15,13 +15,8 @@
  */
 package io.helidon.build.archetype.engine.v2.context;
 
-import io.helidon.build.archetype.engine.v2.ast.Value;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Context tree node.

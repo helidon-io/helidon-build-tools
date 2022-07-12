@@ -40,7 +40,7 @@ class InputPermutationsTest {
     void testList1() {
         List<Map<String, String>> permutations = permutations("permutations/list1.xml");
         assertPermutations(permutations,
-                Map.of("colors", ""),
+                Map.of("colors", "none"),
                 Map.of("colors", "red"),
                 Map.of("colors", "orange"),
                 Map.of("colors", "red,orange"));
@@ -50,7 +50,7 @@ class InputPermutationsTest {
     void testList2() {
         List<Map<String, String>> permutations = permutations("permutations/list2.xml");
         assertPermutations(permutations,
-                Map.of("colors", ""),
+                Map.of("colors", "none"),
                 Map.of("colors", "red", "red", "burgundy"),
                 Map.of("colors", "red", "red", "auburn"),
                 Map.of("colors", "orange", "orange", "salmon"),
@@ -73,6 +73,7 @@ class InputPermutationsTest {
     void testEnum2() {
         List<Map<String, String>> permutations = permutations("permutations/enum2.xml");
         assertPermutations(permutations,
+                Map.of("colors", "green"),
                 Map.of("colors", "red", "colors.red", "burgundy"),
                 Map.of("colors", "red", "colors.red", "auburn"),
                 Map.of("colors", "orange", "colors.orange", "salmon"),
@@ -91,7 +92,7 @@ class InputPermutationsTest {
     void testBoolean2() {
         List<Map<String, String>> permutations = permutations("permutations/boolean2.xml");
         assertPermutations(permutations,
-                Map.of("colors", "true", "colors.tones", ""),
+                Map.of("colors", "true", "colors.tones", "none"),
                 Map.of("colors", "true", "colors.tones", "dark"),
                 Map.of("colors", "true", "colors.tones", "light"),
                 Map.of("colors", "true", "colors.tones", "dark,light"),
@@ -117,7 +118,7 @@ class InputPermutationsTest {
     void testSubstitutions() {
         List<Map<String, String>> permutations = permutations("permutations/substitutions.xml");
         assertPermutations(permutations,
-                Map.of("list-things", "", "text", "a-foo-a-bar"),
+                Map.of("list-things", "none", "text", "a-foo-a-bar"),
                 Map.of("list-things", "a-bar", "text", "a-foo-a-bar"));
     }
 
@@ -125,29 +126,29 @@ class InputPermutationsTest {
     void testConditionals() {
         List<Map<String, String>> permutations = permutations("permutations/conditionals.xml");
         List<Map<String, String>> expected = new ArrayList<>();
-        expected.add(Map.of("heat", ""));
-        expected.add(Map.of("heat", "warm", "warm", ""));
+        expected.add(Map.of("heat", "none"));
+        expected.add(Map.of("heat", "warm", "warm", "none"));
         expected.add(Map.of("heat", "warm", "warm", "red", "red", "burgundy"));
         expected.add(Map.of("heat", "warm", "warm", "red", "red", "auburn"));
-        expected.add(Map.of("heat", "cold", "cold", ""));
+        expected.add(Map.of("heat", "cold", "cold", "none"));
         expected.add(Map.of("heat", "cold", "cold", "green"));
         expected.add(Map.of("heat", "cold", "cold", "blue", "blue", "azure"));
         expected.add(Map.of("heat", "cold", "cold", "blue", "blue", "indigo"));
         expected.add(Map.of("heat", "cold", "cold", "blue,green", "blue", "indigo"));
         expected.add(Map.of("heat", "cold", "cold", "blue,green", "blue", "azure"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", ""));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "green", "green", "tea"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "green", "green", "lime"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "azure"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "indigo"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "azure"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "indigo"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "azure"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "indigo"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "none"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "green", "green", "tea"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "green", "green", "lime"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "tea", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "tea", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "tea", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "lime", "blue", "azure"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "lime", "blue", "indigo"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "none", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue", "blue", "azure"));
@@ -159,7 +160,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue", "blue", "azure"));
@@ -171,7 +172,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue", "blue", "azure"));
@@ -183,7 +184,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue", "blue", "azure"));
@@ -195,7 +196,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "salmon", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue", "blue", "azure"));
@@ -207,7 +208,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "orange", "orange", "peach", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue", "blue", "azure"));
@@ -219,7 +220,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue", "blue", "azure"));
@@ -231,7 +232,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "light", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue", "blue", "azure"));
@@ -243,7 +244,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue", "blue", "azure"));
@@ -255,7 +256,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "burgundy", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue", "blue", "azure"));
@@ -267,7 +268,7 @@ class InputPermutationsTest {
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "azure"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "indigo"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "salmon", "red", "auburn", "cold", "blue,green", "green", "lime", "blue", "ultramarine"));
-        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", ""));
+        expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "none"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "tea"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "green", "green", "lime"));
         expected.add(Map.of("heat", "warm,cold", "warm", "red,orange", "orange", "peach", "red", "auburn", "cold", "blue", "blue", "azure"));
@@ -315,7 +316,7 @@ class InputPermutationsTest {
                                  .compute();
 
         List<Map<String, String>> expected = new ArrayList<>();
-        expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
+        expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "none", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "red", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "green", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "red,green", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
@@ -324,7 +325,7 @@ class InputPermutationsTest {
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "green,blue", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "custom", "theme.base.colors", "red,green,blue", "theme.base.palette-name", "My Palette", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "colors", "theme.base", "rainbow", "theme.base.style", "classic"));
-        expected.add(Map.of("artifactId", "my-project", "theme", "shapes", "theme.base", "custom", "theme.base.library-name", "My Shapes", "theme.base.shapes", "", "theme.base.style", "classic"));
+        expected.add(Map.of("artifactId", "my-project", "theme", "shapes", "theme.base", "custom", "theme.base.library-name", "My Shapes", "theme.base.shapes", "none", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "shapes", "theme.base", "custom", "theme.base.library-name", "My Shapes", "theme.base.shapes", "circle", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "shapes", "theme.base", "custom", "theme.base.library-name", "My Shapes", "theme.base.shapes", "triangle", "theme.base.style", "classic"));
         expected.add(Map.of("artifactId", "my-project", "theme", "shapes", "theme.base", "custom", "theme.base.library-name", "My Shapes", "theme.base.shapes", "circle,triangle", "theme.base.style", "classic"));
@@ -355,6 +356,20 @@ class InputPermutationsTest {
         assertThat(permutations.size(), is(1));
         assertThat(permutations.get(0).size(), is(1));
         assertThat(permutations.get(0).get("name"), is("foo"));
+    }
+
+    @Test
+    void testExternals2() {
+        List<Map<String, String>> permutations = InputPermutations.builder()
+                                                                  .script(load("permutations/enum2.xml"))
+                                                                  .externalValues(Map.of("colors.orange", "peach"))
+                                                                  .build()
+                                                                  .compute();
+        assertPermutations(permutations,
+                Map.of("colors", "green"),
+                Map.of("colors", "orange", "colors.orange", "peach"),
+                Map.of("colors", "red", "colors.red", "burgundy"),
+                Map.of("colors", "red", "colors.red", "auburn"));
     }
 
     private static List<Map<String, String>> permutations(String path) {

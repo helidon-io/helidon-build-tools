@@ -20,6 +20,7 @@ import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -216,6 +217,49 @@ class ContextNodeTest {
         scope.putValue("foo", Value.create("foo"), ValueKind.EXTERNAL);
         assertThrows(IllegalStateException.class,
                 () -> scope.putValue("foo", Value.create("bar"), ValueKind.EXTERNAL));
+    }
+
+    @Test
+    void testGlobalMismatch() {
+        ContextNode root = ContextNode.create();
+
+        // pre-create foo and bar as global
+        ContextNode foo = root.getOrCreate("foo", Visibility.GLOBAL);
+        ContextNode bar = foo.getOrCreate("bar", Visibility.GLOBAL);
+
+        // pre-create foo.bob as global
+        foo.getOrCreate("bob", Visibility.GLOBAL)
+           .putValue("", Value.create("bob1"), ValueKind.USER);
+
+        // query bar.bob as global
+        ContextValue value = bar.getOrCreate("bob", Visibility.GLOBAL)
+                                .getValue("");
+
+        assertThat(value, is(not(nullValue())));
+        assertThat(value.asString(), is("bob1"));
+    }
+
+    @Disabled()
+    @Test
+    void testGlobalMismatchDeep() {
+        ContextNode root = ContextNode.create();
+
+        // pre-create foo and bar as global
+        ContextNode foo = root.getOrCreate("foo", Visibility.GLOBAL);
+        ContextNode bar = foo.getOrCreate("bar", Visibility.GLOBAL);
+
+        // pre-create foo.bob.alice as global
+        foo.getOrCreate("bob", Visibility.GLOBAL)
+           .getOrCreate("alice", Visibility.GLOBAL)
+           .putValue("", Value.create("alice1"), ValueKind.USER);
+
+        // query bar.bob.alice as global
+        ContextValue value = bar.getOrCreate("bob", Visibility.GLOBAL)
+                                .getOrCreate("alice", Visibility.GLOBAL)
+                                .getValue("");
+
+        assertThat(value, is(not(nullValue())));
+        assertThat(value.asString(), is("alice1"));
     }
 
     @Test

@@ -219,6 +219,19 @@ public final class ContextNode implements ContextScope {
             }
         }
         ContextNode node = new ContextNode(this, this, factory, path, visibility);
+        if (visibility == Visibility.GLOBAL) {
+            if (this != root) {
+                ContextNode existing = root.find(path);
+                if (existing != null) {
+                    // TODO copy nested nodes and variations
+                    ContextValue existingValue = existing.edge.value();
+                    if (existingValue != null) {
+                        node.edge.value(existingValue.value(), existingValue.kind());
+                    }
+                    existing.parent.edge.nestedNodes().remove(existing);
+                }
+            }
+        }
         edge.nestedNodes().add(node);
         return node;
     }

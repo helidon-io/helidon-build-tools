@@ -38,7 +38,6 @@ import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 import io.helidon.build.common.SourcePath;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Output generator.
@@ -160,12 +159,14 @@ public class OutputGenerator implements Output.Visitor<Context> {
     }
 
     private void render(Path source, Path target, String engine, Template extraScope, Context context) {
-        TemplateSupport templateSupport = TemplateSupport.get(engine, model, context);
         try {
-            Files.createDirectories(target.getParent());
-            InputStream is = Files.newInputStream(source);
-            OutputStream os = Files.newOutputStream(target);
-            templateSupport.render(is, source.toAbsolutePath().toString(), UTF_8, os, extraScope);
+            if (!Files.exists(target)) {
+                TemplateSupport templateSupport = TemplateSupport.get(engine, model, context);
+                Files.createDirectories(target.getParent());
+                InputStream is = Files.newInputStream(source);
+                OutputStream os = Files.newOutputStream(target);
+                templateSupport.render(is, source.toAbsolutePath().toString(), UTF_8, os, extraScope);
+            }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -173,8 +174,10 @@ public class OutputGenerator implements Output.Visitor<Context> {
 
     private void copy(Path source, Path target) {
         try {
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target, REPLACE_EXISTING);
+            if (!Files.exists(target)) {
+                Files.createDirectories(target.getParent());
+                Files.copy(source, target);
+            }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

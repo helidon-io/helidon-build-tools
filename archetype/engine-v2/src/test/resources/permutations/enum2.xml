@@ -39,6 +39,13 @@
                         </enum>
                     </inputs>
                 </option>
+                <option value="green" name="Green">
+                    <inputs>
+                        <enum id="green" name="Green" default="emerald">
+                            <option value="emerald" name="Emerald"/>
+                        </enum>
+                    </inputs>
+                </option>
             </enum>
         </inputs>
     </step>

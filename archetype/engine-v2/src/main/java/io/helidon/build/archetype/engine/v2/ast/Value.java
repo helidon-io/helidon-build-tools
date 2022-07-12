@@ -88,7 +88,11 @@ public interface Value {
     default String asText() {
         Object o = unwrap();
         if (o instanceof List<?>) {
-            return String.join(",", Lists.map((List<?>) o, String::valueOf));
+            List<?> list = (List<?>) o;
+            if (list.isEmpty()) {
+                return "none";
+            }
+            return String.join(",", Lists.map(list, String::valueOf));
         }
         return String.valueOf(o);
     }
