@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Output.Replace;
 import io.helidon.build.archetype.engine.v2.ast.Output.Template;
 import io.helidon.build.archetype.engine.v2.ast.Output.Transformation;
+import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 import io.helidon.build.common.SourcePath;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Output generator.
@@ -159,12 +159,14 @@ public class OutputGenerator implements Output.Visitor<Context> {
     }
 
     private void render(Path source, Path target, String engine, Template extraScope, Context context) {
-        TemplateSupport templateSupport = TemplateSupport.get(engine, model, context);
         try {
-            Files.createDirectories(target.getParent());
-            InputStream is = Files.newInputStream(source);
-            OutputStream os = Files.newOutputStream(target);
-            templateSupport.render(is, source.toAbsolutePath().toString(), UTF_8, os, extraScope);
+            if (!Files.exists(target)) {
+                TemplateSupport templateSupport = TemplateSupport.get(engine, model, context);
+                Files.createDirectories(target.getParent());
+                InputStream is = Files.newInputStream(source);
+                OutputStream os = Files.newOutputStream(target);
+                templateSupport.render(is, source.toAbsolutePath().toString(), UTF_8, os, extraScope);
+            }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -172,8 +174,10 @@ public class OutputGenerator implements Output.Visitor<Context> {
 
     private void copy(Path source, Path target) {
         try {
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target, REPLACE_EXISTING);
+            if (!Files.exists(target)) {
+                Files.createDirectories(target.getParent());
+                Files.copy(source, target);
+            }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -193,7 +197,7 @@ public class OutputGenerator implements Output.Visitor<Context> {
              .stream()
              .flatMap(id -> transformationOps(id).stream())
              .forEach(op -> {
-                 String replacement = context.substituteVariables(op.replacement());
+                 String replacement = context.scope().interpolate(op.replacement());
                  String current = sb.toString();
                  sb.setLength(0);
                  sb.append(current.replaceAll(op.regex(), replacement));

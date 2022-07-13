@@ -31,7 +31,7 @@ public final class Variable extends DeclaredValue {
     }
 
     /**
-     * Test if this preset is transient.
+     * Test if this variable is transient.
      *
      * @return {@code true} if transient, {@code false} otherwise
      */

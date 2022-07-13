@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 /**
  * Merged model.
@@ -72,9 +73,7 @@ public final class MergedModel {
     public static MergedModel resolveModel(Block block, Context context) {
         ModelResolver modelResolver = new ModelResolver(block);
         Controller.walk(modelResolver, block, context);
-        if (context.peekScope() != Context.Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
+        context.requireRootScope();
         return modelResolver.model();
     }
 

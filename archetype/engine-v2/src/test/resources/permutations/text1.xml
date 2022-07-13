@@ -20,17 +20,9 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="substitutions">
-        <presets>
-            <text path="foo">a-foo</text>
-            <text path="bar">a-bar</text>
-            <text path="preset">${foo}-${bar}</text>
-        </presets>
+    <step name="text1">
         <inputs>
-            <text id="text" name="text" default="${preset}"/>
-            <list id="list-things" name="things" optional="true" default="${foo}">
-                <option value="${bar}" name="bar"/>
-            </list>
+            <text id="name" name="Name" default="Foo"/>
         </inputs>
     </step>
 </archetype-script>

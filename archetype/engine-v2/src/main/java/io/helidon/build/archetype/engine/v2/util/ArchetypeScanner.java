@@ -49,6 +49,7 @@ public final class ArchetypeScanner implements Node.Visitor<Void> {
     private final Map<Node, DeclaredBlock> blocks = new HashMap<>();
     private final Map<DeclaredBlock, Set<Node>> nodes = new HashMap<>();
 
+    // TODO record var references (presets, variables)
     private ArchetypeScanner(Script script, Predicate<Node> predicate) {
         this.predicate = predicate;
         this.currentBlock.push(script);

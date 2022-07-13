@@ -20,9 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="Bar">
+    <step name="list1">
         <inputs>
-            <text id="bar" name="Bar" default="a-bar"/>
+            <list id="colors" name="Select colors">
+                <option value="red" name="Red"/>
+                <option value="orange" name="Orange"/>
+            </list>
         </inputs>
     </step>
 </archetype-script>

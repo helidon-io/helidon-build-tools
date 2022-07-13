@@ -29,6 +29,8 @@ import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import io.helidon.build.common.GenericType;
 
 /**
@@ -69,7 +71,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * @param context context
      * @return visit result if a value already exists, {@code null} otherwise
      */
-    protected VisitResult onVisitInput(DeclaredInput input, Context.Scope scope, Context context) {
+    protected VisitResult onVisitInput(DeclaredInput input, ContextScope scope, Context context) {
         Step currentStep = currentSteps.peek();
         if (currentStep == null) {
             throw new IllegalStateException(input.location() + " Input not nested inside a step");
@@ -82,7 +84,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
         }
         parents.push(input);
-        Value value = context.getValue(scope.id());
+        Value value = context.getValue(input.id());
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -90,7 +92,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
             return null;
         }
-        input.validate(value, scope.id());
+        input.validate(value, scope.path(true));
         return input.visitValue(value);
     }
 
@@ -101,19 +103,16 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * @param context context
      * @return default value or {@code null} if none
      */
-    protected Value defaultValue(DeclaredInput input, Context context) {
-        Value defaultValue = context.defaultValue(input.id(), input.isGlobal());
-        if (defaultValue == null) {
-            defaultValue = input.defaultValue();
-        }
+    public static Value defaultValue(DeclaredInput input, Context context) {
+        Value defaultValue = input.defaultValue();
         if (defaultValue != null) {
             GenericType<?> valueType = defaultValue.type();
             if (valueType == ValueTypes.STRING) {
-                String value = context.substituteVariables(input.normalizeOptionValue(defaultValue.asString()));
+                String value = context.interpolate(input.normalizeOptionValue(defaultValue.asString()));
                 return Value.create(value);
             } else if (valueType == ValueTypes.STRING_LIST) {
                 return Value.create(defaultValue.asList().stream()
-                                                .map(context::substituteVariables)
+                                                .map(context::interpolate)
                                                 .map(input::normalizeOptionValue)
                                                 .collect(Collectors.toList()));
             }
@@ -127,7 +126,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             throw new IllegalStateException("parents is empty");
         }
         DeclaredInput parent = parents.peek();
-        Value inputValue = context.lookup("PARENT." + parent.id());
+        Value inputValue = context.scope().getValue(".." + parent.id());
         if (inputValue != null) {
             return parent.visitOption(inputValue, option);
         }

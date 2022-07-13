@@ -20,31 +20,17 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="Choice">
+    <step name="substitutions">
         <presets>
-            <text path="choice">bar</text>
-            <boolean path="include">true</boolean>
-            <boolean path="include2">false</boolean>
+            <text path="foo">a-foo</text>
+            <text path="bar">a-bar</text>
+            <text path="preset">${foo}-${bar}</text>
         </presets>
         <inputs>
-            <enum id="choice" name="Choose">
-                <option value="foo" name="Foo">
-                    <exec src="foo.xml"/>
-                </option>
-                <option value="bar" name="Bar">
-                    <exec src="bar.xml"/>
-                </option>
-            </enum>
-            <boolean id="include" name="include me?">
-                <inputs>
-                    <boolean id="yes" name="yep"/>
-                </inputs>
-            </boolean>
-            <boolean id="include2" name="include too?">
-                <inputs>
-                    <boolean id="y" name="yes"/>
-                </inputs>
-            </boolean>
+            <text id="text" name="text" default="${preset}"/>
+            <list id="list-things" name="things" optional="true">
+                <option value="${bar}" name="bar"/>
+            </list>
         </inputs>
     </step>
 </archetype-script>

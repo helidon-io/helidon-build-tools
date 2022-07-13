@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 /**
  * Model resolver.
@@ -108,7 +109,7 @@ final class ModelResolver implements Model.Visitor<Context> {
             String content = valueContent(value, context);
             String template = value.template();
             if (template == null) {
-                return context.substituteVariables(content);
+                return context.scope().interpolate(content);
             } else {
                 return content;
             }

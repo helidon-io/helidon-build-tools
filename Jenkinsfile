@@ -36,21 +36,21 @@ pipeline {
             }
           }
         }
-        stage('build-windows'){
-          agent {
-            label "windows"
-          }
-          steps {
-            script {
-              try {
-                bat './etc/scripts/build.bat'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,cli/impl/target/reports/*.txt,cli/impl/target/helidon.exe"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
-              }
-            }
-          }
-        }
+//        stage('build-windows'){
+//          agent {
+//            label "windows"
+//          }
+//          steps {
+//            script {
+//              try {
+//                bat './etc/scripts/build.bat'
+//              } finally {
+//                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log,cli/impl/target/reports/*.txt,cli/impl/target/helidon.exe"
+//                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml,**/target/it/projects/*/TEST-*.xml'
+//              }
+//            }
+//          }
+//        }
         stage('copyright'){
           agent {
             label "linux"

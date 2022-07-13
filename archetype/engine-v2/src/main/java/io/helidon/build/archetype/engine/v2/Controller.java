@@ -27,13 +27,15 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 
 /**
  * Controller.
  * Context aware visitor adapter with convenience methods to perform full AST traversal with complete flow control.
  * Always uses an implementation of {@link InputResolver} in order to control the flow of input nodes.
  */
-final class Controller extends VisitorAdapter<Context> {
+public final class Controller extends VisitorAdapter<Context> {
 
     private final Deque<Step> steps;
 
@@ -59,13 +61,13 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.setValue(preset.path(), preset.value(), ContextValue.ValueKind.PRESET);
+        ctx.putValue(preset.path(), preset.value(), ValueKind.PRESET);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitVariable(Variable variable, Context ctx) {
-        ctx.setVariable(variable.path(), variable.value());
+        ctx.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
         return VisitResult.CONTINUE;
     }
 
@@ -89,7 +91,7 @@ final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
-        if (condition.expression().eval(ctx::lookup)) {
+        if (condition.expression().eval(ctx::getValue)) {
             return VisitResult.CONTINUE;
         }
         return VisitResult.SKIP_SUBTREE;
@@ -104,7 +106,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(InputResolver inputResolver, Block block, Context context) {
+    public static void walk(InputResolver inputResolver, Block block, Context context) {
         walk(inputResolver, null, null, block, context);
     }
 
@@ -119,7 +121,11 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws InvocationException  if an exception is thrown while traversing
      */
     @SuppressWarnings("unused")
-    static void walk(InputResolver inputResolver, Output.Visitor<Context> outputVisitor, Block block, Context context) {
+    public static void walk(InputResolver inputResolver,
+                            Output.Visitor<Context> outputVisitor,
+                            Block block,
+                            Context context) {
+
         walk(inputResolver, outputVisitor, null, block, context);
     }
 
@@ -134,7 +140,11 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws InvocationException  if an exception is thrown while traversing
      */
     @SuppressWarnings("unused")
-    static void walk(InputResolver inputResolver, Model.Visitor<Context> modelVisitor, Block block, Context context) {
+    public static void walk(InputResolver inputResolver,
+                            Model.Visitor<Context> modelVisitor,
+                            Block block,
+                            Context context) {
+
         walk(inputResolver, null, modelVisitor, block, context);
     }
 
@@ -146,7 +156,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(Block block, Context context) {
+    public static void walk(Block block, Context context) {
         walk(new BatchInputResolver(), null, null, block, context);
     }
 
@@ -159,7 +169,7 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(Output.Visitor<Context> outputVisitor, Block block, Context context) {
+    public static void walk(Output.Visitor<Context> outputVisitor, Block block, Context context) {
         walk(new BatchInputResolver(), outputVisitor, null, block, context);
     }
 
@@ -172,14 +182,14 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(Model.Visitor<Context> modelVisitor, Block block, Context context) {
+    public static void walk(Model.Visitor<Context> modelVisitor, Block block, Context context) {
         walk(new BatchInputResolver(), null, modelVisitor, block, context);
     }
 
     /**
      * Walk.
      *
-     * @param resolver input resolver
+     * @param resolver      input resolver
      * @param outputVisitor output visitor
      * @param modelVisitor  model visitor
      * @param block         block, must be non {@code null}
@@ -187,11 +197,11 @@ final class Controller extends VisitorAdapter<Context> {
      * @throws NullPointerException if context or block is {@code null}
      * @throws InvocationException  if an exception is thrown while traversing
      */
-    static void walk(InputResolver resolver,
-                     Output.Visitor<Context> outputVisitor,
-                     Model.Visitor<Context> modelVisitor,
-                     Block block,
-                     Context context) {
+    public static void walk(InputResolver resolver,
+                            Output.Visitor<Context> outputVisitor,
+                            Model.Visitor<Context> modelVisitor,
+                            Block block,
+                            Context context) {
 
         Objects.requireNonNull(context, "context is null");
         Controller controller = new Controller(resolver, outputVisitor, modelVisitor);

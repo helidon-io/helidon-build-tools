@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 import static java.util.Objects.requireNonNull;
 
@@ -58,8 +59,7 @@ public class ArchetypeEngineV2 {
                          Map<String, String> externalDefaults,
                          Function<String, Path> directorySupplier) {
 
-        return generate(inputResolver, externalValues, externalDefaults, () -> {
-        }, directorySupplier);
+        return generate(inputResolver, externalValues, externalDefaults, () -> {}, directorySupplier);
     }
 
     /**
@@ -78,18 +78,22 @@ public class ArchetypeEngineV2 {
                          Runnable onResolved,
                          Function<String, Path> directorySupplier) {
 
-        Context context = Context.create(cwd, externalValues, externalDefaults);
+        Context context = Context.builder()
+                                 .cwd(cwd)
+                                 .externalValues(externalValues)
+                                 .externalDefaults(externalDefaults)
+                                 .build();
+
         Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
-        if (context.peekScope() != Context.Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
+        context.requireRootScope();
         onResolved.run();
 
         // resolve output directory
-        String artifactId = requireNonNull(context.lookup(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
+        // TODO use a Function<ContextScope, Path> instead of hard-coding artifactId here...
+        String artifactId = requireNonNull(context.getValue(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
         Path directory = directorySupplier.apply(artifactId);
 
         // resolve model  (full traversal)
@@ -98,9 +102,7 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        if (context.peekScope() != Context.Scope.ROOT) {
-            throw new IllegalStateException("Invalid scope");
-        }
+        context.requireRootScope();
 
         return directory;
     }

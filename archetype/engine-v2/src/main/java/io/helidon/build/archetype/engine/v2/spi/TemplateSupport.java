@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import io.helidon.build.archetype.engine.v2.Context;
 import io.helidon.build.archetype.engine.v2.MergedModel;
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.context.Context;
 
 import static io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider.Cache.PROVIDERS;
 

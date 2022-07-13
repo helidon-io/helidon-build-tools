@@ -544,16 +544,11 @@ public abstract class Input extends Block {
         /**
          * Get the options.
          *
-         * @param predicate node predicate
+         * @param filter node predicate
          * @return options
          */
-        public java.util.List<Option> options(Predicate<Node> predicate) {
-            return children().stream()
-                             .filter(predicate)
-                             .map(Condition::unwrap)
-                             .filter(Option.class::isInstance)
-                             .map(Option.class::cast)
-                             .collect(Collectors.toList());
+        public java.util.List<Option> options(Predicate<Node> filter) {
+            return children(filter, Option.class).collect(Collectors.toList());
         }
 
         @Override
@@ -586,6 +581,11 @@ public abstract class Input extends Block {
                 return VisitResult.CONTINUE;
             }
             return VisitResult.SKIP_SUBTREE;
+        }
+
+        @Override
+        public VisitResult visitValue(Value value) {
+            return !value.asList().isEmpty() ? VisitResult.CONTINUE : VisitResult.SKIP_SUBTREE;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Expression.FormatException;
 import io.helidon.build.archetype.engine.v2.ast.Expression.UnresolvedVariableException;
-import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Value.ValueTypeException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.ast.Expression.parse;
+import static io.helidon.build.common.Maps.mapValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -121,7 +121,6 @@ class ExpressionTest {
         e = assertThrows(ValueTypeException.class, () -> parse("'true' || 'def'").eval());
         assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
 
-        e = assertThrows(ValueTypeException.class, () -> parse("['', 'adc', 'def'] contains ['', 'adc', 'def']").eval());
         assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
 
         e = assertThrows(UnresolvedVariableException.class, () -> parse("true == ${def}").eval());
@@ -131,6 +130,10 @@ class ExpressionTest {
     @Test
     void testContainsOperator() {
         assertThat(parse("['', 'adc', 'def'] contains 'foo'").eval(), is(false));
+        assertThat(parse("['', 'adc', 'def'] contains ['', 'adc']").eval(), is(true));
+        assertThat(parse("['', 'adc', 'def'] contains ['', 'adc', 'def']").eval(), is(true));
+        assertThat(parse("['', 'adc'] contains ['', 'adc', 'def']").eval(), is(false));
+        assertThat(parse("['', 'adc'] contains ['', 'adc', 'def']").eval(), is(false));
 
         FormatException e = assertThrows(FormatException.class, () -> parse("['', 'adc', 'def'] contains != 'foo'").eval());
         assertThat(e.getMessage(), startsWith("Missing operand"));
@@ -276,5 +279,23 @@ class ExpressionTest {
     void testArrayWithStringLiterals() {
         assertThat(parse("['foo'] contains 'foo'").eval(), is(true));
         assertThat(parse("['foo'] contains 'bar'").eval(), is(false));
+    }
+
+    @Disabled
+    @Test
+    void testComplex() {
+        Expression expr = parse("(!(${metrics} || ${tracing} || ${health}) || (${metrics} && ${tracing} && ${health}))");
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "true",
+                "tracing", "true",
+                "health", "true"), DynamicValue::create)::get), is(true));
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "false",
+                "tracing", "true",
+                "health", "true"), DynamicValue::create)::get), is(false));
+        assertThat(expr.eval(mapValue(Map.of(
+                "metrics", "false",
+                "tracing", "false",
+                "health", "false"), DynamicValue::create)::get), is(false));
     }
 }

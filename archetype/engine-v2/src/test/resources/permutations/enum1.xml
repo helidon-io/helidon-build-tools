@@ -20,9 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="Foo">
+    <step name="enum1">
         <inputs>
-            <text id="foo" name="Foo" default="a-foo"/>
+            <enum id="colors" name="Select colors">
+                <option value="red" name="Red"/>
+                <option value="orange" name="Orange"/>
+            </enum>
         </inputs>
     </step>
 </archetype-script>

@@ -20,13 +20,9 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="colors">
+    <step name="boolean1">
         <inputs>
-            <list id="colors" name="Select colors" default="red,yellow">
-                <option value="red" name="Red"/>
-                <option value="orange" name="Orange"/>
-                <option value="yellow" name="Yellow"/>
-            </list>
+            <boolean id="colors" name="Use colors" />
         </inputs>
     </step>
 </archetype-script>

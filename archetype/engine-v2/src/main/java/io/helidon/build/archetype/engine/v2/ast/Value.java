@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.build.common.GenericType;
+import io.helidon.build.common.Lists;
 
 /**
  * Value.
@@ -77,6 +78,23 @@ public interface Value {
      */
     default List<String> asList() {
         return as(ValueTypes.STRING_LIST);
+    }
+
+    /**
+     * Get the text representation of this value.
+     *
+     * @return value as text
+     */
+    default String asText() {
+        Object o = unwrap();
+        if (o instanceof List<?>) {
+            List<?> list = (List<?>) o;
+            if (list.isEmpty()) {
+                return "none";
+            }
+            return String.join(",", Lists.map(list, String::valueOf));
+        }
+        return String.valueOf(o);
     }
 
     /**
@@ -146,6 +164,23 @@ public interface Value {
     }
 
     /**
+     * Test value equality.
+     *
+     * @param value1 value1
+     * @param value2 value2
+     * @return {@code true} if the value are equals, {@code false} otherwise
+     */
+    static boolean equals(Value value1, Value value2) {
+        GenericType<?> type1 = value1.type();
+        GenericType<?> type2 = value2.type();
+        if ((type1 == null ^ type2 == null) || (type1 != null && type1 == type2)) {
+            GenericType<?> type = type1 != null ? type1 : type2;
+            return Objects.equals(value1.as(type), value2.as(type));
+        }
+        return value1.unwrap().equals(value2.unwrap());
+    }
+
+    /**
      * Exception raised for unexpected type usages.
      */
     class ValueTypeException extends IllegalStateException {
@@ -212,7 +247,10 @@ public interface Value {
 
         @Override
         public String toString() {
-            return "TypedValue{ " + value + ", " + type + " }";
+            return "TypedValue{"
+                    + "value='" + value + "'"
+                    + ", type=" + type
+                    + '}';
         }
     }
 

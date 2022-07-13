@@ -119,13 +119,17 @@ public final class Expression {
                             result = operand2.asBoolean() && operand1.asBoolean();
                             break;
                         case EQUAL:
-                            result = operand2.unwrap().equals(operand1.unwrap());
+                            result = Value.equals(operand2, operand1);
                             break;
                         case NOT_EQUAL:
-                            result = !operand2.unwrap().equals(operand1.unwrap());
+                            result = !Value.equals(operand2, operand1);
                             break;
                         case CONTAINS:
-                            result = operand2.asList().contains(operand1.asString());
+                            if (operand1.type() == ValueTypes.STRING_LIST) {
+                                result = operand2.asList().containsAll(operand1.asList());
+                            } else {
+                                result = operand2.asList().contains(operand1.asString());
+                            }
                             break;
                         default:
                             throw new IllegalStateException("Unsupported operator: " + token.operator);
@@ -345,7 +349,7 @@ public final class Expression {
     public static final class Token {
 
         private static final Pattern ARRAY_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
-        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
+        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>~?[\\w.-]+)}");
 
         private final Operator operator;
         private final String variable;
@@ -504,7 +508,7 @@ public final class Expression {
             ARRAY("^\\[[^]\\[]*]"),
             BOOLEAN("^(true|false)"),
             STRING("^['\"][^'\"]*['\"]"),
-            VARIABLE("^\\$\\{(?<varName>[\\w.-]+)}"),
+            VARIABLE("^\\$\\{(?<varName>~?[\\w.-]+)}"),
             EQUALITY_OPERATOR("^(!=|==)"),
             BINARY_LOGICAL_OPERATOR("^(\\|\\||&&)"),
             UNARY_LOGICAL_OPERATOR("^[!]"),

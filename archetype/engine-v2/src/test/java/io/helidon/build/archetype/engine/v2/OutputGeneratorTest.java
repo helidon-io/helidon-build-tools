@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -89,7 +91,7 @@ class OutputGeneratorTest {
     @Test
     void testReplacement() throws IOException {
         Path outputDir = generate("generator/replacement.xml",
-                ctx -> ctx.setValue("package", Value.create("com.example"), ContextValue.ValueKind.EXTERNAL));
+                scope -> scope.putValue("package", Value.create("com.example"), ContextValue.ValueKind.EXTERNAL));
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));
@@ -109,7 +111,7 @@ class OutputGeneratorTest {
     }
 
     private static Path generate(String path) {
-        return generate(path, ctx -> {});
+        return generate(path, scope -> {});
     }
 
     private static Path generate(String path, Consumer<Context> initializer) {
@@ -118,7 +120,9 @@ class OutputGeneratorTest {
         String dirname = scriptPath.getFileName().toString().replaceAll(".xml", "");
         Path target = targetDir(OutputGeneratorTest.class);
         Path outputDir = unique(target.resolve("generator-ut/"), dirname);
-        Context context = Context.create(script.scriptPath().getParent());
+        Context context = Context.builder()
+                                 .cwd(script.scriptPath().getParent())
+                                 .build();
         initializer.accept(context);
         MergedModel mergedModel = MergedModel.resolveModel(script, context);
         OutputGenerator outputGenerator = new OutputGenerator(mergedModel, outputDir);

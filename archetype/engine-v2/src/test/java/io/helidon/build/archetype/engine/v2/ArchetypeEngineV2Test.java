@@ -38,6 +38,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class ArchetypeEngineV2Test {
 
+    // TODO test template overriding
+    //  i.e. a template with the same file path declared in two places
+    //  the first one to render wins (upper stack can override lower stack)
+
     @Test
     void testExternalDefault() {
         Path outputDir = e2eDir("testExternalDefault",

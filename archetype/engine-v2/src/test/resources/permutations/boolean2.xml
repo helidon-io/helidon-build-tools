@@ -20,9 +20,16 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step name="no-default">
+    <step name="boolean2">
         <inputs>
-            <text id="foo" name="Default is required"/>
+            <boolean id="colors" name="Use colors">
+                <inputs>
+                    <list id="tones" name="Tones">
+                        <option value="dark" name="Dark"/>
+                        <option value="light" name="Light"/>
+                    </list>
+                </inputs>
+            </boolean>
         </inputs>
     </step>
 </archetype-script>
