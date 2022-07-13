@@ -257,10 +257,30 @@ class ContextNodeTest {
            .getOrCreate("alice", Visibility.GLOBAL)
            .putValue("", Value.create("alice1"), ValueKind.USER);
 
-        // query bar.bob.alice as global
+        // create bar.bob.alice as global
         ContextValue value = bar.getOrCreate("bob", Visibility.GLOBAL)
                                 .getOrCreate("alice", Visibility.GLOBAL)
                                 .getValue("");
+
+        assertThat(value, is(not(nullValue())));
+        assertThat(value.asString(), is("alice1"));
+    }
+
+    @Test
+    void testGlobalLookup() {
+        ContextNode root = ContextNode.create();
+
+        // pre-create foo and bar as global
+        ContextNode foo = root.getOrCreate("foo", Visibility.GLOBAL);
+        ContextNode bar = foo.getOrCreate("bar", Visibility.GLOBAL);
+
+        // pre-create foo.bob.alice as global
+        foo.getOrCreate("bob", Visibility.GLOBAL)
+           .getOrCreate("alice", Visibility.GLOBAL)
+           .putValue("", Value.create("alice1"), ValueKind.USER);
+
+        // lookup alice via bar
+        ContextValue value = bar.getValue("alice");
 
         assertThat(value, is(not(nullValue())));
         assertThat(value.asString(), is("alice1"));
