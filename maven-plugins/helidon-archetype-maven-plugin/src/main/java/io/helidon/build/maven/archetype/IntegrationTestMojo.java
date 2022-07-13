@@ -395,7 +395,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     private void logTestDescription(String testName, Map<String, String> externalValues) {
         String description = Bold.apply("Test: ") + BoldBlue.apply(testName);
-        if (index > 0) {
+        if (permutations != null && index > 0) {
             description += BoldBlue.apply(String.format(", permutation: %s/%s", index, permutations.size()));
         }
         log.info("");
