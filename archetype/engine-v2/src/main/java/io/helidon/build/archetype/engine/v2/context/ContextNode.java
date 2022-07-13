@@ -23,8 +23,8 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 
 import static io.helidon.build.archetype.engine.v2.context.ContextPath.PARENT_REF;
 import static io.helidon.build.archetype.engine.v2.context.ContextPath.PATH_SEPARATOR;
@@ -120,11 +120,7 @@ public final class ContextNode implements ContextScope {
         return edge;
     }
 
-    /**
-     * Get the root scope.
-     *
-     * @return root
-     */
+    @Override
     public ContextNode root() {
         return root;
     }
@@ -145,8 +141,8 @@ public final class ContextNode implements ContextScope {
         stack.push(this);
         while (!stack.isEmpty()) {
             ContextNode node = stack.peek();
-            List<ContextNode> nestedNodes = node.edge.nestedNodes();
-            if (nestedNodes.isEmpty()) {
+            List<ContextNode> children = node.edge.children();
+            if (children.isEmpty()) {
                 visitor.visit(node.edge);
                 visitor.postVisit(node.edge);
                 stack.pop();
@@ -158,8 +154,8 @@ public final class ContextNode implements ContextScope {
                     parent = node.parent0;
                 } else {
                     visitor.visit(node.edge);
-                    if (!nestedNodes.isEmpty()) {
-                        ListIterator<ContextNode> it = nestedNodes.listIterator(nestedNodes.size());
+                    if (!children.isEmpty()) {
+                        ListIterator<ContextNode> it = children.listIterator(children.size());
                         while (it.hasPrevious()) {
                             ContextNode previous = it.previous();
                             stack.push(previous);
@@ -199,40 +195,70 @@ public final class ContextNode implements ContextScope {
         return visibility;
     }
 
+    private void copy(ContextNode target) {
+        Deque<ContextNode> stack = new ArrayDeque<>();
+        Deque<ContextNode> copyStack = new ArrayDeque<>();
+        ContextValue value = edge.value();
+        if (value != null) {
+            target.edge.value(value.value(), value.kind());
+        }
+        for (ContextNode child : edge.children()) {
+            stack.push(child);
+            copyStack.push(target);
+        }
+        while (!stack.isEmpty()) {
+            ContextNode src = stack.pop();
+            ContextNode parent = copyStack.pop();
+            ContextEdge parentEdge = parent.edge();
+            ContextNode copy;
+            copy = new ContextNode(parent, parent, src.factory, src.id, src.visibility);
+            value = src.edge.value();
+            if (value != null) {
+                copy.edge.value(value.value(), value.kind());
+            }
+            parentEdge.children().add(copy);
+            for (ContextNode contextScope : src.edge.children()) {
+                copyStack.push(copy);
+                stack.push(contextScope);
+            }
+        }
+    }
+
+    private void updateVisibility(Visibility visibility) {
+        if (this.visibility != visibility && visibility != Visibility.UNSET) {
+            if (this.visibility == Visibility.UNSET) {
+                this.visibility = visibility;
+            } else {
+                throw new IllegalStateException(String.format(
+                        "Visibility mismatch, id=%s, current=%s, requested=%s",
+                        id, this.visibility, visibility));
+            }
+        }
+    }
+
     @Override
     public ContextNode getOrCreate(String path, Visibility visibility) {
         if (path.indexOf(PATH_SEPARATOR_CHAR) >= 0 || path.indexOf(ROOT_REF_CHAR) >= 0) {
             throw new IllegalArgumentException("Invalid id");
         }
-        for (ContextNode node : edge.nestedNodes()) {
+        for (ContextNode node : edge.children()) {
             if (node.id.equals(path)) {
-                if (node.visibility != visibility && visibility != Visibility.UNSET) {
-                    if (node.visibility == Visibility.UNSET) {
-                        node.visibility = visibility;
-                    } else {
-                        throw new IllegalStateException(String.format(
-                                "Visibility mismatch, id=%s, current=%s, requested=%s",
-                                path, node.visibility, visibility));
-                    }
-                }
+                node.updateVisibility(visibility);
                 return node;
             }
         }
         ContextNode node = new ContextNode(this, this, factory, path, visibility);
-        if (visibility == Visibility.GLOBAL) {
-            if (this != root) {
+        if (this != root) {
+            if (visibility == Visibility.GLOBAL || this.visibility == Visibility.GLOBAL) {
                 ContextNode existing = root.find(path);
                 if (existing != null) {
-                    // TODO copy nested nodes and variations
-                    ContextValue existingValue = existing.edge.value();
-                    if (existingValue != null) {
-                        node.edge.value(existingValue.value(), existingValue.kind());
-                    }
-                    existing.parent.edge.nestedNodes().remove(existing);
+                    node.updateVisibility(existing.visibility);
+                    existing.copy(node);
+                    existing.parent.edge.children().remove(existing);
                 }
             }
         }
-        edge.nestedNodes().add(node);
+        edge.children().add(node);
         return node;
     }
 
@@ -248,12 +274,17 @@ public final class ContextNode implements ContextScope {
 
     @Override
     public ContextValue getValue(String path) {
-        String[] segments = ContextPath.parse(path);
-        ContextNode node = resolve(segments, ContextNode::find);
+        ContextNode node = resolve(path);
         if (node != null) {
             return node.edge.value();
         }
         return null;
+    }
+
+    @Override
+    public ContextNode resolve(String path) {
+        String[] segments = ContextPath.parse(path);
+        return resolve(segments, ContextNode::find);
     }
 
     @Override
@@ -326,14 +357,14 @@ public final class ContextNode implements ContextScope {
         if (id.equals(this.id)) {
             return this;
         }
-        Deque<ContextNode> stack = new ArrayDeque<>(edge.nestedNodes());
+        Deque<ContextNode> stack = new ArrayDeque<>(edge.children());
         while (!stack.isEmpty()) {
             ContextNode node = stack.pop();
             if (node.id.equals(id)) {
                 return node;
             }
             if (node.visibility == Visibility.GLOBAL) {
-                stack.addAll(node.edge().nestedNodes());
+                stack.addAll(node.edge().children());
             }
         }
         return null;

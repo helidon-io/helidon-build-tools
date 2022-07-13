@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -83,6 +84,9 @@ public final class DynamicValue implements Value {
         } else if (type.equals(ValueTypes.INT)) {
             return (U) Integer.valueOf(rawValue);
         } else if (type.equals(ValueTypes.STRING_LIST)) {
+            if ("none".equals(rawValue)) {
+                return (U) List.of();
+            }
             return (U) Arrays.stream(rawValue.split(","))
                              .map(String::trim)
                              .filter(s -> !s.isEmpty())

@@ -204,7 +204,11 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Parameter(property = "archetype.test.permutationsOnly", defaultValue = "false")
     private boolean permutationsOnly;
 
-    // TODO resumeFrom
+    /**
+     * Permutations start index.
+     */
+    @Parameter(property = "archetype.test.permutationStartIndex", defaultValue = "1")
+    private int permutationStartIndex;
 
     /**
      * Permutations to process.
@@ -322,7 +326,10 @@ public class IntegrationTestMojo extends AbstractMojo {
         if (permutation == null || permutation.isEmpty()) {
             Iterator<Map<String, String>> it = permutations.iterator();
             for (int i = 1; it.hasNext(); i++) {
-                perms.put(i, it.next());
+                Map<String, String> next = it.next();
+                if (i >= permutationStartIndex) {
+                    perms.put(i, next);
+                }
             }
         } else {
             List<Integer> indices = Arrays.stream(permutation.split(","))

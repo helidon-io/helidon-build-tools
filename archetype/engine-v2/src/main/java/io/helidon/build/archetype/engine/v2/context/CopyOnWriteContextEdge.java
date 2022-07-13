@@ -57,7 +57,7 @@ public final class CopyOnWriteContextEdge implements ContextEdge {
     }
 
     @Override
-    public List<ContextNode> nestedNodes() {
+    public List<ContextNode> children() {
         return children;
     }
 
@@ -87,7 +87,7 @@ public final class CopyOnWriteContextEdge implements ContextEdge {
         ContextNode copyRoot = ContextNode.create();
         Deque<ContextNode> stack = new ArrayDeque<>();
         Deque<ContextNode> copyStack = new ArrayDeque<>();
-        for (ContextNode scope : scope.root().edge().nestedNodes()) {
+        for (ContextNode scope : scope.root().edge().children()) {
             stack.push(scope);
             copyStack.push(copyRoot);
         }
@@ -100,16 +100,16 @@ public final class CopyOnWriteContextEdge implements ContextEdge {
             ContextEdge copyParentEdge = copyParent.edge();
             ContextNode copyScope;
             if (scope == this.scope) {
-                copyScope = ContextNode.create(scope.parent(),
-                        copyParent, s -> new CopyOnWriteContextEdge(s, variations), id, visibility);
+                copyScope = ContextNode.create(scope.parent(), copyParent,
+                        s -> new CopyOnWriteContextEdge(s, variations), id, visibility);
                 result = copyScope.edge().value(value, kind);
             } else {
                 copyScope = ContextNode.create(copyParent, copyParent, CopyOnWriteContextEdge::create, id, visibility);
                 ContextValue currentValue = edge.value();
                 copyScope.edge().value(currentValue.value(), currentValue.kind());
             }
-            copyParentEdge.nestedNodes().add(copyScope);
-            for (ContextNode contextScope : edge.nestedNodes()) {
+            copyParentEdge.children().add(copyScope);
+            for (ContextNode contextScope : edge.children()) {
                 copyStack.push(copyScope);
                 stack.push(contextScope);
             }

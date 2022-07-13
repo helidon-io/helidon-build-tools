@@ -35,7 +35,7 @@ public final class ContextPrinter implements Visitor {
 
     private static boolean isLastChild(ContextNode node) {
         ContextNode parent = node.parent0();
-        List<ContextNode> children = parent.edge().nestedNodes();
+        List<ContextNode> children = parent.edge().children();
         return children.indexOf(node) == children.size() - 1;
     }
 

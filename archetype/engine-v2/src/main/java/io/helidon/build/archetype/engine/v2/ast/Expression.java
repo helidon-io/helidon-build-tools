@@ -119,13 +119,17 @@ public final class Expression {
                             result = operand2.asBoolean() && operand1.asBoolean();
                             break;
                         case EQUAL:
-                            result = operand2.unwrap().equals(operand1.unwrap());
+                            result = Value.equals(operand2, operand1);
                             break;
                         case NOT_EQUAL:
-                            result = !operand2.unwrap().equals(operand1.unwrap());
+                            result = !Value.equals(operand2, operand1);
                             break;
                         case CONTAINS:
-                            result = operand2.asList().contains(operand1.asString());
+                            if (operand1.type() == ValueTypes.STRING_LIST) {
+                                result = operand2.asList().containsAll(operand1.asList());
+                            } else {
+                                result = operand2.asList().contains(operand1.asString());
+                            }
                             break;
                         default:
                             throw new IllegalStateException("Unsupported operator: " + token.operator);

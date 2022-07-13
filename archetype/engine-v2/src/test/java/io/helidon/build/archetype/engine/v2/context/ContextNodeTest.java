@@ -20,7 +20,6 @@ import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -221,6 +220,11 @@ class ContextNodeTest {
 
     @Test
     void testGlobalMismatch() {
+        // test external values "specialized"
+        // external values are always created as direct children of the root scope
+        // If there are multiple global inputs in the input hierarchy, it creates duplicates
+        // When calling getOrCreate() global nodes can be "specialized" in order to avoid duplicates
+        // "specialized" means moved down in the tree
         ContextNode root = ContextNode.create();
 
         // pre-create foo and bar as global
@@ -228,7 +232,7 @@ class ContextNodeTest {
         ContextNode bar = foo.getOrCreate("bar", Visibility.GLOBAL);
 
         // pre-create foo.bob as global
-        foo.getOrCreate("bob", Visibility.GLOBAL)
+        foo.getOrCreate("bob", Visibility.UNSET)
            .putValue("", Value.create("bob1"), ValueKind.USER);
 
         // query bar.bob as global
@@ -237,9 +241,9 @@ class ContextNodeTest {
 
         assertThat(value, is(not(nullValue())));
         assertThat(value.asString(), is("bob1"));
+        assertThat(foo.getValue("bob"), is(value));
     }
 
-    @Disabled()
     @Test
     void testGlobalMismatchDeep() {
         ContextNode root = ContextNode.create();

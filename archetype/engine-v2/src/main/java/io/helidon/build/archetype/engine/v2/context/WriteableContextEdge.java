@@ -85,7 +85,7 @@ public final class WriteableContextEdge implements ContextEdge {
     }
 
     @Override
-    public List<ContextNode> nestedNodes() {
+    public List<ContextNode> children() {
         return children;
     }
 }

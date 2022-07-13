@@ -70,7 +70,7 @@ public final class Permutations {
             }
             started = true;
             int offset = 0;
-            int p_offset = 0;
+            int pOffset = 0;
             permutation = new LinkedList<>();
             for (List<T> list : elements) {
                 int size = list.size();
@@ -79,8 +79,8 @@ public final class Permutations {
                 }
                 int pos = bitSet.nextSetBit(offset);
                 // position relative to element
-                int r_pos = pos - offset;
-                if (r_pos < 0 || r_pos >= size) {
+                int rPos = pos - offset;
+                if (rPos < 0 || rPos >= size) {
                     // out of bound, start over
                     pos = offset;
                     bitSet.set(pos);
@@ -89,7 +89,7 @@ public final class Permutations {
 
                 // if first list
                 // OR not the first AND none of the previous list bit is set
-                if (offset == 0 || offset > 0 && bitSet.previousSetBit(offset - 1) < p_offset) {
+                if (offset == 0 || offset > 0 && bitSet.previousSetBit(offset - 1) < pOffset) {
                     // clear the current bit
                     bitSet.clear(pos);
                     if (pos - offset + 1 < size) {
@@ -98,7 +98,7 @@ public final class Permutations {
                         bitSet.set(pos + 1);
                     }
                 }
-                p_offset = offset;
+                pOffset = offset;
                 offset += size;
             }
             return !permutation.isEmpty();
@@ -148,10 +148,10 @@ public final class Permutations {
             throw new UnsupportedOperationException("list size >= 64");
         }
         int size = list.size();
-        long p_len = 1L << size; // 2 ^ length
+        long len = 1L << size; // 2 ^ length
         List<List<T>> permutations = new LinkedList<>();
         permutations.add(List.of());
-        for (long p = 1; p < p_len; p++) {
+        for (long p = 1; p < len; p++) {
             List<T> permutation = new LinkedList<>();
             // the permutation number (p) is a binary mask to filter the item to include
             for (int i = 0; i < size; i++) {

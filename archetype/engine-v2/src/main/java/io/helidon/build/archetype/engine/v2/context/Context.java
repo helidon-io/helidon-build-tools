@@ -21,9 +21,9 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
-import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 
 import static io.helidon.build.common.PropertyEvaluator.evaluate;
 import static java.util.Objects.requireNonNull;

@@ -15,13 +15,12 @@
  */
 package io.helidon.build.archetype.engine.v2.context;
 
-import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 /**
  * An implementation of {@link ContextEdge} that does not contain a value.
  */
@@ -60,7 +59,7 @@ public final class NoValueContextEdge implements ContextEdge {
     }
 
     @Override
-    public List<ContextNode> nestedNodes() {
+    public List<ContextNode> children() {
         return children;
     }
 }

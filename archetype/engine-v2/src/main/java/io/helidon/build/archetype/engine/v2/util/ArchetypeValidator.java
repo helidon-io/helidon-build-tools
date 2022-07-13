@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.build.archetype.engine.v2.context.Context;
-import io.helidon.build.archetype.engine.v2.context.ContextPath;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -40,7 +38,11 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextPath;
 import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 
 import static java.util.Objects.requireNonNull;
 
@@ -139,18 +141,12 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         if (segments.length == 0) {
             throw new IllegalArgumentException("Invalid ref");
         }
-        String refId;
-        if (ContextPath.ROOT_REF.equals(segments[0])) {
-            refId = path.substring(1);
-        } else {
-            String scopePath = ctx.scope().path();
-            refId = scopePath.isEmpty() ? path : scopePath + "." + path;
+        ContextScope scope = ctx.scope().resolve(path);
+        if (scope != null) {
+            String refId = scope.path();
+            return allRefs.get(refId);
         }
-        List<Block> refs = allRefs.get(refId);
-        if (refs != null) {
-            return refs;
-        }
-        return allRefs.get(path);
+        return null;
     }
 
     @Override
@@ -166,9 +162,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                 switch (kind) {
                     case LIST:
                     case ENUM:
-                        String value = ((Input.Options) ref).options(n -> Condition.filter(n, ctx::getValue))
-                                                            .get(0)
-                                                            .value();
+                        String value = ((Input.Options) ref).options().get(0).value();
                         return kind == Input.Kind.LIST ? Value.create(List.of(value)) : Value.create(value);
                     case TEXT:
                         return Value.create("some text");
@@ -196,13 +190,15 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
+        ctx.scope().root().putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
         presets.add(preset);
         return VisitResult.CONTINUE;
     }
 
     @Override
-    public VisitResult visitVariable(Variable variable, Context arg) {
-        allRefs.computeIfAbsent(variable.path(), k -> new ArrayList<>()).add(variable);
+    public VisitResult visitVariable(Variable variable, Context ctx) {
+        ContextValue value = ctx.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        allRefs.computeIfAbsent(value.scope().path(), k -> new ArrayList<>()).add(variable);
         return VisitResult.CONTINUE;
     }
 
@@ -264,13 +260,17 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
-            ctx.pushScope(input.id(), input.isGlobal());
             ContextScope scope = ctx.scope();
-            inputPath = scope.path();
+            ContextScope nextScope = ctx.pushScope(input.id(), input.isGlobal());
+            inputPath = nextScope.path();
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());
 
             if (input instanceof Input.Options) {
                 options.push(new HashSet<>());
+            } else if (input instanceof Input.Boolean) {
+                scope.putValue(input.id(), Value.TRUE, ValueKind.USER);
+            } else if (input instanceof Input.Text) {
+                scope.putValue(input.id(), Value.create("xxx"), ValueKind.USER);
             }
 
             if (currentScope.containsKey(inputPath)) {
@@ -314,6 +314,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         } else if (input0 instanceof Input.Option) {
             Input.Option option = (Input.Option) input0;
             String value = option.value();
+            ctx.putValue("", Value.create(value), ValueKind.USER);
             if (!requireNonNull(options.peek(), "option values is null").add(value)) {
                 errors.add(String.format(
                         "%s %s: '%s'",

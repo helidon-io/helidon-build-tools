@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,6 @@ class ExpressionTest {
         e = assertThrows(ValueTypeException.class, () -> parse("'true' || 'def'").eval());
         assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
 
-        e = assertThrows(ValueTypeException.class, () -> parse("['', 'adc', 'def'] contains ['', 'adc', 'def']").eval());
         assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
 
         e = assertThrows(UnresolvedVariableException.class, () -> parse("true == ${def}").eval());
@@ -131,6 +130,10 @@ class ExpressionTest {
     @Test
     void testContainsOperator() {
         assertThat(parse("['', 'adc', 'def'] contains 'foo'").eval(), is(false));
+        assertThat(parse("['', 'adc', 'def'] contains ['', 'adc']").eval(), is(true));
+        assertThat(parse("['', 'adc', 'def'] contains ['', 'adc', 'def']").eval(), is(true));
+        assertThat(parse("['', 'adc'] contains ['', 'adc', 'def']").eval(), is(false));
+        assertThat(parse("['', 'adc'] contains ['', 'adc', 'def']").eval(), is(false));
 
         FormatException e = assertThrows(FormatException.class, () -> parse("['', 'adc', 'def'] contains != 'foo'").eval());
         assertThat(e.getMessage(), startsWith("Missing operand"));

@@ -321,9 +321,10 @@ public class Maps {
     /**
      * Get the given entries as a map.
      *
-     * @param entries input entries
-     * @param <K>     key type
-     * @param <V>     value type
+     * @param entries       input entries
+     * @param mergeFunction merge function
+     * @param <K>           key type
+     * @param <V>           value type
      * @return map
      */
     public static <K, V> Map<K, V> fromEntries(Collection<Entry<K, V>> entries, BinaryOperator<V> mergeFunction) {
@@ -356,7 +357,7 @@ public class Maps {
     }
 
     /**
-     * Merge the maps in the given list
+     * Merge the maps in the given list.
      *
      * @param maps          maps to merge
      * @param mergeFunction merge function
@@ -369,7 +370,7 @@ public class Maps {
     }
 
     /**
-     * Merge the maps in the given list
+     * Merge the maps in the given list.
      *
      * @param maps maps to merge
      * @param <K>  key type

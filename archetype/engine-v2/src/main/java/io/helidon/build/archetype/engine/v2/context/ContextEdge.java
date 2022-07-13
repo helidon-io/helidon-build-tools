@@ -49,11 +49,11 @@ public interface ContextEdge {
     ContextNode node();
 
     /**
-     * Get the nested nodes.
+     * Get the children.
      *
-     * @return nested nodes
+     * @return children
      */
-    List<ContextNode> nestedNodes();
+    List<ContextNode> children();
 
     /**
      * Get the variations.

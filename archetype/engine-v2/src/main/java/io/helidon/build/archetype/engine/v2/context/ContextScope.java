@@ -74,6 +74,13 @@ public interface ContextScope extends ContextRegistry {
     }
 
     /**
+     * Get the root scope.
+     *
+     * @return root
+     */
+    ContextScope root();
+
+    /**
      * Get the parent scope.
      *
      * @return parent, or {@code null} if this scope is a root scope.
@@ -92,6 +99,7 @@ public interface ContextScope extends ContextRegistry {
     /**
      * Test if this scope is a child of the given scope.
      *
+     * @param scope scope to test
      * @return {@code true} if a child, {@code false} otherwise
      */
     default boolean isChildOf(ContextScope scope) {
@@ -121,6 +129,14 @@ public interface ContextScope extends ContextRegistry {
     default String path() {
         return path(false);
     }
+
+    /**
+     * Resolve a node by path.
+     *
+     * @param path path to resolve
+     * @return scope or {@code null} if not found
+     */
+    ContextScope resolve(String path);
 
     /**
      * Get or create a scope.

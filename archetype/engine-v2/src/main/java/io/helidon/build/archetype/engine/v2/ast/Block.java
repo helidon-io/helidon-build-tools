@@ -78,6 +78,7 @@ public class Block extends Node {
      * Get the nested nodes stream.
      *
      * @param filter first filter applied
+     * @param clazz  class filter
      * @param <T>    node type
      * @return stream of nodes
      */

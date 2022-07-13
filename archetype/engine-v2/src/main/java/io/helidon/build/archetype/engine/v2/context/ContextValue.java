@@ -17,9 +17,6 @@ package io.helidon.build.archetype.engine.v2.context;
 
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.util.ValueDelegate;
-import io.helidon.build.common.Lists;
-
-import java.util.List;
 
 /**
  * Context value.
@@ -45,6 +42,7 @@ public final class ContextValue extends ValueDelegate {
      * @param scope scope
      * @param value wrapped value
      * @param kind  value kind
+     * @return new instance
      */
     public static ContextValue create(ContextScope scope, Value value, ValueKind kind) {
         return new ContextValue(scope, value, kind);

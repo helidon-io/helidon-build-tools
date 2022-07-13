@@ -22,37 +22,37 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
 
 import io.helidon.build.archetype.engine.v2.Controller;
 import io.helidon.build.archetype.engine.v2.InputResolver;
 import io.helidon.build.archetype.engine.v2.InvocationException;
 import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
+import io.helidon.build.archetype.engine.v2.Walker;
+import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
-import io.helidon.build.archetype.engine.v2.ast.Preset;
-import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
-import io.helidon.build.archetype.engine.v2.ast.Variable;
-import io.helidon.build.archetype.engine.v2.context.Context;
-import io.helidon.build.archetype.engine.v2.context.ContextScope;
-import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
-import io.helidon.build.archetype.engine.v2.Walker;
-import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Value;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Permutations;
@@ -97,37 +97,64 @@ public class InputPermutations {
         // for each permutation, perform a normal execution
         // and use the resulting context values as permutation
         List<Map<String, String>> permutations = Lists.flatMap(visitor.stack.pop());
-        Set<TreeMap<String, String>> result = new LinkedHashSet<>();
+        Map<String, List<TreeMap<String, ContextValue>>> result0 = new LinkedHashMap<>();
         for (Map<String, String> permutation : permutations) {
             if (!filter(permutationFilters, permutation)) {
                 continue;
             }
-            Map<String, String> contextValues = execute(permutation);
+            Map<String, ContextValue> contextValues = execute(permutation);
             if (contextValues != null && !contextValues.isEmpty()) {
-                result.add(new TreeMap<>(contextValues));
+                Map<String, ContextValue> filteredValues = Maps.mapValue(contextValues,
+                        (k, v) -> {
+                            switch (v.kind()) {
+                                case USER:
+                                case DEFAULT:
+                                    return true;
+                                default:
+                                    return false;
+                            }
+                        }, v -> v);
+                if (!filteredValues.isEmpty()) {
+                    String key = Maps.mapValue(filteredValues, Value::asText).toString();
+                    result0.computeIfAbsent(key, k -> new ArrayList<>())
+                          .add(new TreeMap<>(filteredValues));
+                }
             }
         }
 
+        // filter implicit duplicates (default values)
+        List<Map<String, String>> result1 = Lists.map(result0.values(), l -> {
+            List<Map<String, String>> duplicates = Lists.map(l, p -> Maps.mapValue(p,
+                    (k, v) -> v.kind() == ValueKind.USER, Value::asText));
+            Map<String, String> chosen = null;
+            for (Map<String, String> p : duplicates) {
+                if (chosen == null) {
+                    chosen = p;
+                    continue;
+                }
+                if (p.size() > chosen.size()) {
+                    chosen = p;
+                }
+            }
+            return chosen;
+        });
+
         // sort the result
-        List<Map<String, String>> list = new LinkedList<>(result);
+        List<Map<String, String>> list = new LinkedList<>(result1);
         list.sort(Comparator.comparing(m -> m.entrySet().iterator().next().toString()));
         return list;
     }
 
-    private Map<String, String> execute(Map<String, String> permutation) {
+    private Map<String, ContextValue> execute(Map<String, String> permutation) {
+        Context context = Context.builder().cwd(cwd).build();
         try {
-            Context context = Context.builder()
-                                     .cwd(cwd)
-                                     .build();
             Controller.walk(new InputResolverImpl(permutation), script, context);
-            Map<String, String> contextValues = Maps.mapValue(context.scope().values(),
-                    (k, v) -> v.kind() == ValueKind.USER, Value::asText);
-            if (!contextValues.isEmpty()) {
-                return new TreeMap<>(contextValues);
-            }
+            return context.scope().values();
         } catch (InvocationException ex) {
             if (!(ex.getCause() instanceof InvalidOption)) {
-                Log.warn(ex, "Permutation error: " + permutation);
+                Log.warn(ex, "Permutation error: %s, permutation: %s",
+                        ex.getCause().getMessage(),
+                        permutation);
             }
         }
         return null;
@@ -247,7 +274,7 @@ public class InputPermutations {
 
     private final class InputResolverImpl extends InputResolver {
 
-        final Map<String, String> permutation;
+        private final Map<String, String> permutation;
 
         InputResolverImpl(Map<String, String> permutation) {
             this.permutation = permutation;
@@ -322,8 +349,8 @@ public class InputPermutations {
 
     private final class VisitorImpl implements Node.Visitor<Void>, Block.Visitor<Void> {
 
-        final Deque<List<List<Map<String, String>>>> stack = new ArrayDeque<>();
-        final Context context;
+        private final Deque<List<List<Map<String, String>>>> stack = new ArrayDeque<>();
+        private final Context context;
 
         VisitorImpl(Context context) {
             this.context = context;
@@ -331,15 +358,15 @@ public class InputPermutations {
         }
 
         @Override
-        public VisitResult visitVariable(Variable variable, Void arg) {
-            context.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        public VisitResult visitPreset(Preset preset, Void arg) {
+            // Use local var instead of preset to allow overrides
+            context.putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
             return VisitResult.CONTINUE;
         }
 
         @Override
-        public VisitResult visitPreset(Preset preset, Void arg) {
-            // Use local var instead of preset to allow overrides
-            context.putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
+        public VisitResult visitVariable(Variable variable, Void arg) {
+            context.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
             return VisitResult.CONTINUE;
         }
 

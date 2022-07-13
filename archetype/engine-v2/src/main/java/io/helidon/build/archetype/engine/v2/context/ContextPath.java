@@ -66,6 +66,9 @@ public final class ContextPath {
 
     private static final char SEGMENT_SEPARATOR = '-';
 
+    private ContextPath() {
+    }
+
     /**
      * Get the last segment of the path.
      *
