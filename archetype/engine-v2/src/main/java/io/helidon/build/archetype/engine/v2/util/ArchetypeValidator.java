@@ -190,7 +190,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.scope().root().putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
+        ctx.scope().putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
         presets.add(preset);
         return VisitResult.CONTINUE;
     }
