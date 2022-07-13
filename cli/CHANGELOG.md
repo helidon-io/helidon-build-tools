@@ -7,6 +7,14 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-RC1]
+
+- Archetype Context and Expression updates [723](https://github.com/oracle/helidon-build-tools/pull/723)
+
+## 3.0.0-M5
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
 ## [3.0.0-M4]
 
 ### Changes
@@ -208,6 +216,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[3.0.0-RC1]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
 [3.0.0-M4]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M3...3.0.0-M4
 [3.0.0-M3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0-M3
 [3.0.0-M2]:   https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2/cli
