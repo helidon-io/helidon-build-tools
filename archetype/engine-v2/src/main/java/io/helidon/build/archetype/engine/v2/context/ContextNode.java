@@ -241,13 +241,12 @@ public final class ContextNode implements ContextScope {
         if (path.indexOf(PATH_SEPARATOR_CHAR) >= 0 || path.indexOf(ROOT_REF_CHAR) >= 0) {
             throw new IllegalArgumentException("Invalid id");
         }
-        for (ContextNode node : edge.children()) {
-            if (node.id.equals(path)) {
-                node.updateVisibility(visibility);
-                return node;
-            }
+        ContextNode node = find(path);
+        if (node != null) {
+            node.updateVisibility(visibility);
+            return node;
         }
-        ContextNode node = new ContextNode(this, this, factory, path, visibility);
+        node = new ContextNode(this, this, factory, path, visibility);
         if (this != root) {
             if (visibility == Visibility.GLOBAL || this.visibility == Visibility.GLOBAL) {
                 ContextNode existing = root.find(path);
@@ -346,6 +345,9 @@ public final class ContextNode implements ContextScope {
             } else {
                 node = fn.apply(node, segment);
                 if (node == null) {
+                    if (this != root) {
+                        return root.resolve(segments, fn);
+                    }
                     return null;
                 }
             }
