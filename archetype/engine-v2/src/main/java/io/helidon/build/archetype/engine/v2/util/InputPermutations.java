@@ -117,7 +117,7 @@ public class InputPermutations {
                 if (!filteredValues.isEmpty()) {
                     String key = Maps.mapValue(filteredValues, Value::asText).toString();
                     result0.computeIfAbsent(key, k -> new ArrayList<>())
-                          .add(new TreeMap<>(filteredValues));
+                           .add(new TreeMap<>(filteredValues));
                 }
             }
         }
@@ -336,12 +336,11 @@ public class InputPermutations {
         }
 
         private void validateValue(List<String> optionValues, Value value) {
-            if ("none".equals(value.asText())) {
-                return;
-            }
-            for (String opt : value.asList()) {
-                if (!optionValues.contains(opt)) {
-                    throw new InvalidOption(opt, permutation);
+            if (!"none".equals(value.asText())) {
+                for (String opt : value.asList()) {
+                    if (!optionValues.contains(opt)) {
+                        throw new InvalidOption(opt, permutation);
+                    }
                 }
             }
         }
@@ -430,6 +429,7 @@ public class InputPermutations {
 
         @Override
         public VisitResult visitInput(Input input0, Void arg) {
+            // TODO control the flow if there is already a value for the input
             stack.push(Lists.of());
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
