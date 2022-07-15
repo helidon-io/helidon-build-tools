@@ -100,11 +100,15 @@ public abstract class InputResolver implements Input.Visitor<Context> {
      * Compute the default value for an input.
      *
      * @param input   input
+     * @param scope   scope
      * @param context context
      * @return default value or {@code null} if none
      */
-    public static Value defaultValue(DeclaredInput input, Context context) {
-        Value defaultValue = input.defaultValue();
+    public static Value defaultValue(DeclaredInput input, ContextScope scope, Context context) {
+        Value defaultValue = context.defaultValue(scope.path());
+        if (defaultValue == null) {
+            defaultValue = input.defaultValue();
+        }
         if (defaultValue != null) {
             GenericType<?> valueType = defaultValue.type();
             if (valueType == ValueTypes.STRING) {

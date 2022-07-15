@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Value;
@@ -221,6 +222,22 @@ class TerminalInputResolverTest {
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
         assertThat(value.asString(), is("not-value1"));
+    }
+
+    @Test
+    void testExternalDefault() {
+        Block block = step("step", inputText("text-input3", "value1")).build();
+
+        Context context = Context.builder()
+                                 .externalDefaults(Map.of("text-input3", "value2"))
+                                 .build();
+
+        prompt(block, "", context);
+        Value value = context.getValue("text-input3");
+
+        assertThat(value, is(notNullValue()));
+        assertThat(value.type(), is(ValueTypes.STRING));
+        assertThat(value.asString(), is("value2"));
     }
 
     private static Context prompt(Block block, String userInput) {

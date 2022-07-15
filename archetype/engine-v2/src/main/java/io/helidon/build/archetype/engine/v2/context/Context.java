@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.context;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -40,13 +41,13 @@ import static java.util.Objects.requireNonNull;
 public final class Context implements ContextRegistry {
 
     private ContextScope scope;
+    private final Map<String, Value> defaults = new HashMap<>();
     private final Deque<Path> directories = new ArrayDeque<>();
 
     private Context(Builder builder) {
         this.scope = builder.scope;
         requireRootScope();
-        builder.externalDefaults.forEach((k, v) -> scope.putValue(k,
-                DynamicValue.create(() -> scope.interpolate(v)), ValueKind.DEFAULT));
+        builder.externalDefaults.forEach((k, v) -> defaults.put(k, DynamicValue.create(() -> scope.interpolate(v))));
         builder.externalValues.forEach((k, v) -> scope.putValue(k,
                 DynamicValue.create(evaluate(v, builder.externalValues::get)), ValueKind.EXTERNAL));
         directories.push(builder.cwd);
@@ -80,6 +81,16 @@ public final class Context implements ContextRegistry {
      */
     public Path cwd() {
         return directories.peek();
+    }
+
+    /**
+     * Get an external default value.
+     *
+     * @param path input path
+     * @return value, {@code null} if not found
+     */
+    public Value defaultValue(String path) {
+        return defaults.get(path);
     }
 
     /**

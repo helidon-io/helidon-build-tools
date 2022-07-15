@@ -85,7 +85,7 @@ public class TerminalInputResolver extends InputResolver {
         VisitResult result = onVisitInput(input, nextScope, context);
         while (result == null) {
             try {
-                Value defaultValue = defaultValue(input, context);
+                Value defaultValue = defaultValue(input, nextScope, context);
                 String defaultText = defaultValue != null ? BoldBlue.apply(Input.Boolean.asString(defaultValue)) : null;
                 String question = String.format("%s (yes/no)", Bold.apply(input.name()));
                 String response = prompt(question, defaultText);
@@ -128,7 +128,7 @@ public class TerminalInputResolver extends InputResolver {
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             try {
-                String defaultValue = defaultValue(input, context).asString();
+                String defaultValue = defaultValue(input, nextScope, context).asString();
                 String defaultText = defaultValue != null ? BoldBlue.apply(defaultValue) : null;
                 String response = prompt(Bold.apply(input.name()), defaultText);
                 ContextValue.ValueKind valueKind;
@@ -157,7 +157,7 @@ public class TerminalInputResolver extends InputResolver {
         while (result == null) {
             String response = null;
             try {
-                Value defaultValue = defaultValue(input, context);
+                Value defaultValue = defaultValue(input, nextScope, context);
                 List<Input.Option> options = input.options(n -> Condition.filter(n, context::getValue));
                 int defaultIndex = optionIndex(defaultValue.asString(), options);
                 // skip prompting if there is only one option with a default value
@@ -215,7 +215,7 @@ public class TerminalInputResolver extends InputResolver {
                 printName(input);
                 printOptions(options);
 
-                Value defaultValue = defaultValue(input, context);
+                Value defaultValue = defaultValue(input, nextScope, context);
                 String defaultText = BoldBlue.apply(defaultResponse(defaultValue.asList(), options));
 
                 response = prompt(ENTER_LIST_SELECTION, defaultText);

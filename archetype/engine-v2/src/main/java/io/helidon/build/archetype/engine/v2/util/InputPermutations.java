@@ -304,7 +304,7 @@ public class InputPermutations {
                 String path = nextScope.path();
                 String rawValue = permutation.get(path);
                 if (rawValue == null) {
-                    Value defaultValue = InputResolver.defaultValue(input, context);
+                    Value defaultValue = defaultValue(input, nextScope, context);
                     if (defaultValue == null) {
                         throw new UnresolvedInputException(path);
                     }
