@@ -75,7 +75,7 @@ abstract class ArchetypeInvoker {
     /**
      * The first Helidon version that uses the archetype engine V2.
      */
-    private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0");
+    private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0-alpha");
 
 
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
