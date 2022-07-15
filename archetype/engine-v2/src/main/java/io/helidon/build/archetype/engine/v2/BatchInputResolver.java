@@ -59,7 +59,7 @@ public class BatchInputResolver extends InputResolver {
         ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
-            Value defaultValue = defaultValue(input, context);
+            Value defaultValue = defaultValue(input, nextScope, context);
             if (input.isOptional()) {
                 if (defaultValue != null) {
                     context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);

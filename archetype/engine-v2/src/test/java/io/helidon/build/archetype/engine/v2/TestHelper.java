@@ -346,6 +346,7 @@ public class TestHelper {
 
     private static Map<String, Value> inputAttributes(String id, String defaultValue, String prompt) {
         Map<String, Value> attributes = new HashMap<>();
+        attributes.put("name", DynamicValue.create(id));
         attributes.put("id", DynamicValue.create(id));
         attributes.put("default", DynamicValue.create(defaultValue));
         attributes.put("prompt", DynamicValue.create(prompt));
