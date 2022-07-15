@@ -16,9 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.util.List;
-
-import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
@@ -26,8 +23,6 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import io.helidon.build.archetype.engine.v2.context.ContextValue;
-
-import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
 
 /**
  * Batch input resolver.
@@ -72,15 +67,7 @@ public class BatchInputResolver extends InputResolver {
                     throw new UnresolvedInputException(nextScope.path(true));
                 }
             } else if (input instanceof Input.Enum) {
-                List<Input.Option> options = ((Input.Enum) input).options(n -> Condition.filter(n, context::getValue));
-                int defaultIndex = optionIndex(defaultValue.asString(), options);
-                // skip prompting if there is only one option with a default value
-                if (options.size() == 1 && defaultIndex >= 0) {
-                    context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
-                    result = VisitResult.CONTINUE;
-                } else {
-                    throw new UnresolvedInputException(nextScope.path(true));
-                }
+                throw new UnresolvedInputException(nextScope.path(true));
             }
         }
         context.pushScope(nextScope);
