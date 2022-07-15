@@ -19,9 +19,11 @@ package io.helidon.build.archetype.engine.v2;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
@@ -31,7 +33,10 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 import io.helidon.build.common.GenericType;
+
+import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
 
 /**
  * Input resolver.
@@ -84,7 +89,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
         }
         parents.push(input);
-        Value value = context.getValue(input.id());
+        Value value = existingValue(input, scope, context);
         if (value == null) {
             if (!visitedSteps.contains(currentStep)) {
                 visitedSteps.add(currentStep);
@@ -94,6 +99,33 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         }
         input.validate(value, scope.path(true));
         return input.visitValue(value);
+    }
+
+    private Value existingValue(DeclaredInput input, ContextScope scope, Context context) {
+        Value value = context.getValue(input.id());
+        if (value != null) {
+            return value;
+        }
+        if (input instanceof Input.Options) {
+            Input.Options optionsBlock = (Input.Options) input;
+            List<Option> options = optionsBlock.options(n -> Condition.filter(n, context::getValue));
+            if ((input instanceof Input.List)) {
+                // auto create a value for lists without options
+                if (options.isEmpty()) {
+                    return context.putValue(input.id(), Value.create(List.of()), ContextValue.ValueKind.DEFAULT);
+                }
+            } else if (input instanceof Input.Enum) {
+                // auto create a value if there is only one option with a default value
+                Value defaultValue = defaultValue(input, scope, context);
+                if (defaultValue != null) {
+                    int defaultIndex = optionIndex(defaultValue.asString(), options);
+                    if (options.size() == 1 && defaultIndex >= 0) {
+                        return context.putValue(input.id(), defaultValue, ContextValue.ValueKind.DEFAULT);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

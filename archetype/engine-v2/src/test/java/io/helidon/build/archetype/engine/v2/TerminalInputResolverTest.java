@@ -17,10 +17,12 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.context.Context;
@@ -35,6 +37,7 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.inputText;
 import static io.helidon.build.archetype.engine.v2.TestHelper.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -238,6 +241,28 @@ class TerminalInputResolverTest {
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
         assertThat(value.asString(), is("value2"));
+    }
+
+    @Test
+    void testInputEnumWithSingleOptionAndDefault2() {
+        Block block = step("step",
+                inputEnum("enum-input1", "value1",
+                        inputOption("option1", "value1"))).build();
+
+        Context context = Context.builder()
+                                 .externalDefaults(Map.of("text-input3", "value2"))
+                                 .build();
+
+        List<Step> renderedSteps = new ArrayList<>();
+        Controller.walk(new TerminalInputResolver(new ByteArrayInputStream(new byte[0])) {
+            @Override
+            protected void onVisitStep(Step step, Context context) {
+                renderedSteps.add(step);
+                super.onVisitStep(step, context);
+            }
+        }, block, context);
+
+        assertThat(renderedSteps, is(empty()));
     }
 
     private static Context prompt(Block block, String userInput) {
