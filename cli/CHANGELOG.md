@@ -7,6 +7,14 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-RC2]
+
+### Fixes
+
+- Cli does not prompt input with external default in interactive mode [725](https://github.com/oracle/helidon-build-tools/issues/725) [733](https://github.com/oracle/helidon-build-tools/issues/733)
+- Init command uses v1 catalog for a 3.x Helidon version. [727](https://github.com/oracle/helidon-build-tools/issues/727) [728](https://github.com/oracle/helidon-build-tools/pull/728)
+- Interactive prompter display steps without prompting for any inputs. [735](https://github.com/oracle/helidon-build-tools/issues/735) [736](https://github.com/oracle/helidon-build-tools/issues/736)
+
 ## [3.0.0-RC1]
 
 ### Changes
