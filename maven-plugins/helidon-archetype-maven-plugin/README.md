@@ -55,7 +55,9 @@ Maven goal to test Helidon archetypes.
 | permutationsOnly         | boolean | `false`                                         | Whether to only generate input permutations                                                                                |
 | generatePermutations     | boolean | `true`                                          | Whether to auto-compute input permutations                                                                                 |
 | permutationFilters       | List    | `[]`                                            | Permutation filters to filter the computed permutations.                                                                   |
+| permutationFiltersFile   | File    | `null`                                          | Properties file that contains filters to filter the computed permutations.                                                 |
 | inputFilters             | List    | `[]`                                            | Input filters to use when computing permutations                                                                           |
+| inputFiltersFile         | File    | `null`                                          | Properties file that contains filters to use when computing permutations                                                   |
 | externalDefaults         | boolean | `false`                                         | External defaults to use when generating archetypes                                                                        |
 | externalValues           | boolean | `false`                                         | External values to use when generating archetypes                                                                          |
 | testGoal                 | String  | `package`                                       | The goal to use when building archetypes.                                                                                  |

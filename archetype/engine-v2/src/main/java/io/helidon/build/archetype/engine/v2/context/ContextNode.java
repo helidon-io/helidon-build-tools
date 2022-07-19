@@ -262,6 +262,11 @@ public final class ContextNode implements ContextScope {
     }
 
     @Override
+    public void clear() {
+        edge.clear();
+    }
+
+    @Override
     public ContextValue putValue(String path, Value value, ValueKind kind) {
         String[] segments = ContextPath.parse(path);
         ContextNode node = resolve(segments, (s, sid) -> s.getOrCreate(sid, Visibility.UNSET));

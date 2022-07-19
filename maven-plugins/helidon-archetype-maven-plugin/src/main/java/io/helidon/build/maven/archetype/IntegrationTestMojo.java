@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
@@ -26,6 +27,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -187,10 +189,22 @@ public class IntegrationTestMojo extends AbstractMojo {
     private List<String> inputFilters;
 
     /**
-     * Permutation filters to use filter computed permutations.
+     * File that contains input filters to use when computing permutations.
+     */
+    @Parameter(property = "archetype.test.inputFiltersFile")
+    private File inputFiltersFile;
+
+    /**
+     * Permutation filters to filter computed permutations.
      */
     @Parameter(property = "archetype.test.permutationFilters")
     private List<String> permutationFilters;
+
+    /**
+     * File that contains filters to filter computed permutations.
+     */
+    @Parameter(property = "archetype.test.permutationFiltersFile")
+    private File permutationFiltersFile;
 
     /**
      * Whether to generate input permutations.
@@ -289,14 +303,19 @@ public class IntegrationTestMojo extends AbstractMojo {
     private List<Map<String, String>> permutations(Path archetypeFile) {
         try (FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader())) {
             Script script = ScriptLoader.load(fileSystem.getPath("main.xml"));
-            return InputPermutations.builder()
-                                    .script(script)
-                                    .externalValues(externalValues)
-                                    .externalDefaults(externalDefaults)
-                                    .inputFilters(inputFilters)
-                                    .permutationFilters(permutationFilters)
-                                    .build()
-                                    .compute();
+            InputPermutations.Builder builder = InputPermutations.builder()
+                                                       .script(script)
+                                                       .externalValues(externalValues)
+                                                       .externalDefaults(externalDefaults)
+                                                       .inputFilters(inputFilters)
+                                                       .permutationFilters(permutationFilters);
+            if (inputFiltersFile != null) {
+                builder.inputFilters(filtersFromFile(inputFiltersFile));
+            }
+            if (permutationFiltersFile != null) {
+                builder.permutationFilters(filtersFromFile(permutationFiltersFile));
+            }
+            return builder.build().compute();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -541,6 +560,16 @@ public class IntegrationTestMojo extends AbstractMojo {
             getLog().debug("build log initialized in: " + outputLog);
         }
         return logger;
+    }
+
+    private static Collection<String> filtersFromFile(File file) {
+        Properties props = new Properties();
+        try (InputStream is = Files.newInputStream(file.toPath())) {
+            props.load(is);
+            return Maps.fromProperties(props).values();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private static final class FileLogger implements InvocationOutputHandler, Closeable {

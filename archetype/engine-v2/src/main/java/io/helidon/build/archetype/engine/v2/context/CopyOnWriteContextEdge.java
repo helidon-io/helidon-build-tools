@@ -119,4 +119,14 @@ public final class CopyOnWriteContextEdge implements ContextEdge {
         }
         return result;
     }
+
+    @Override
+    public void clear() {
+        variations.forEach(CopyOnWriteContextEdge::clear0);
+    }
+
+    private void clear0() {
+        value = null;
+        children.clear();
+    }
 }

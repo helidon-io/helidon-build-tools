@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2.ast;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -138,7 +139,9 @@ public interface Value {
      * @return Value
      */
     static Value create(List<String> value) {
-        return new TypedValue(value, ValueTypes.STRING_LIST);
+        List<String> copy = new ArrayList<>(value);
+        Collections.sort(copy);
+        return new TypedValue(copy, ValueTypes.STRING_LIST);
     }
 
     /**

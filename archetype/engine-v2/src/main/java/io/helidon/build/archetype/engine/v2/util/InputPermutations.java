@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.util;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -115,9 +116,11 @@ public class InputPermutations {
                             }
                         }, v -> v);
                 if (!filteredValues.isEmpty()) {
-                    String key = Maps.mapValue(filteredValues, Value::asText).toString();
-                    result0.computeIfAbsent(key, k -> new ArrayList<>())
-                           .add(new TreeMap<>(filteredValues));
+                    Map<String, String> effectivePermutation = Maps.mapValue(filteredValues, Value::asText);
+                    if (filter(permutationFilters, effectivePermutation)) {
+                        result0.computeIfAbsent(effectivePermutation.toString(), k -> new ArrayList<>())
+                               .add(new TreeMap<>(filteredValues));
+                    }
                 }
             }
         }
@@ -223,7 +226,7 @@ public class InputPermutations {
          * @param filters filters
          * @return this builder
          */
-        public Builder inputFilters(List<String> filters) {
+        public Builder inputFilters(Collection<String> filters) {
             if (filters != null) {
                 this.inputFilters.addAll(Lists.map(filters, Expression::create));
             }
@@ -236,7 +239,7 @@ public class InputPermutations {
          * @param filters filters
          * @return this builder
          */
-        public Builder permutationFilters(List<String> filters) {
+        public Builder permutationFilters(Collection<String> filters) {
             if (filters != null) {
                 this.permutationFilters.addAll(Lists.map(filters, Expression::create));
             }
@@ -410,7 +413,10 @@ public class InputPermutations {
                     // reduce and merge to avoid computing again at the parent level
                     List<Map<String, String>> merged = Lists.map(computed, Maps::merge);
 
-                    addPermutations(merged);
+                    // filtered
+                    List<Map<String, String>> filtered = filterPermutations(merged);
+
+                    addPermutations(filtered);
                     return VisitResult.CONTINUE;
                 default:
                     return block.acceptAfter((Block.Visitor<Void>) this, null);
@@ -429,7 +435,6 @@ public class InputPermutations {
 
         @Override
         public VisitResult visitInput(Input input0, Void arg) {
-            // TODO control the flow if there is already a value for the input
             stack.push(Lists.of());
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
@@ -443,6 +448,15 @@ public class InputPermutations {
                         return VisitResult.SKIP_SUBTREE;
                     }
                 }
+                ContextValue value = context.getValue("");
+                if (value != null) {
+                    // control the flow if there is a value
+                    // we only maintain values for variables and presets
+                    return input.visitValue(value);
+                }
+            } else if (input0 instanceof Input.Option) {
+                // clear all the nested values from a previous pass
+                context.scope().clear();
             }
             return VisitResult.CONTINUE;
         }
@@ -459,18 +473,28 @@ public class InputPermutations {
             // reduced: [[{colors=red}, {colors=orange}]]
             List<Map<String, String>> reduced = Lists.flatMap(computed);
 
-            addPermutations(reduced);
+            List<Map<String, String>> filtered;
+            if (input instanceof DeclaredInput) {
+                filtered = filterPermutations(reduced);
+            } else {
+                filtered = reduced;
+            }
+            addPermutations(filtered);
             return VisitResult.CONTINUE;
         }
 
         private List<List<Map<String, String>>> compute(Input input0) {
             // nested permutations
             // each element of the list represents the permutations for a child
-            List<List<Map<String, String>>> perms = stack.pop();
+            List<List<Map<String, String>>> perms = Lists.filter(stack.pop(), l -> !l.isEmpty());
             String path = context.scope().path();
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
+                ContextValue value = context.getValue("");
                 context.popScope();
+                if (value != null && input.visitValue(value) != VisitResult.CONTINUE) {
+                    return perms;
+                }
                 switch (input0.kind()) {
                     case BOOLEAN:
                         // add true to all nested permutations and a new permutation for false
@@ -515,20 +539,20 @@ public class InputPermutations {
                             }
                         });
                     case TEXT:
-                        String value = Optional.ofNullable(externalValues.get(path))
-                                               .or(() -> Optional.ofNullable(externalDefaults.get(path)))
-                                               .or(() -> Optional.ofNullable(input.defaultValue())
-                                                                 .filter(v -> v.type() == ValueTypes.STRING)
-                                                                 .map(Value::asString))
-                                               .map(Value::create)
-                                               .map(Value::asString)
-                                               .orElse(input.id() + "-" + RANDOM.nextInt());
+                        String inputValue = Optional.ofNullable(externalValues.get(path))
+                                                    .or(() -> Optional.ofNullable(externalDefaults.get(path)))
+                                                    .or(() -> Optional.ofNullable(input.defaultValue())
+                                                                      .filter(v -> v.type() == ValueTypes.STRING)
+                                                                      .map(Value::asString))
+                                                    .map(Value::create)
+                                                    .map(Value::asString)
+                                                    .orElse(input.id() + "-" + RANDOM.nextInt());
 
                         // add the text value to all nested permutations
                         // e.g.
                         // nested:   [[{colors=red}], [{colors=orange}]]
                         // computed: [[{colors=red, path=xxx}, [{colors=orange, path=xxx}]]
-                        putValue(perms, path, value);
+                        putValue(perms, path, inputValue);
                         return perms;
                     default:
                         // enum does not need computing (one-of)
@@ -549,18 +573,27 @@ public class InputPermutations {
             if (parent == null) {
                 throw new IllegalStateException("Unable to add permutations");
             }
+            parent.add(perms);
+        }
+
+        private List<Map<String, String>> filterPermutations(List<Map<String, String>> perms) {
             if (!perms.isEmpty()) {
-                // apply input filters
-                List<Map<String, String>> filtered = Lists.filter(perms, m -> filter(inputFilters, m));
-                parent.add(filtered);
+                return Lists.filter(perms, m -> filter(inputFilters, m));
             }
+            return perms;
         }
 
         private void putValue(List<List<Map<String, String>>> perms, String path, String value) {
             if (perms.isEmpty()) {
                 perms.add(Lists.of(Maps.of(path, value)));
             } else {
-                perms.forEach(l -> l.forEach(p -> p.put(path, value)));
+                perms.forEach(l -> {
+                    if (l.isEmpty()) {
+                        l.add(Maps.of(path, value));
+                    } else {
+                        l.forEach(p -> p.put(path, value));
+                    }
+                });
             }
         }
     }
