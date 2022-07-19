@@ -20,6 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
+    <methods>
+        <method name="colors-txt">
+            <output>
+                <file source="files/colors.txt" target="colors.txt" />
+            </output>
+        </method>
+    </methods>
     <presets>
         <list path="~theme.base.colors">
             <value>red</value>
@@ -32,6 +39,8 @@
         </list>
         <text path="~theme.base.palette-name">Rainbow</text>
     </presets>
+    <!-- create colors.txt before executing custom to test no overwriting -->
+    <call method="colors-txt" />
     <exec src="../custom/custom.xml"/>
     <output>
         <model>
