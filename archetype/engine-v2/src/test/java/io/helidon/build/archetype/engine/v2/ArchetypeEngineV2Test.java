@@ -390,13 +390,14 @@ class ArchetypeEngineV2Test {
         Path colorsFile = outputDir.resolve("colors.txt");
         assertThat(Files.exists(colorsFile), is(true));
         assertThat(readFile(colorsFile), is(""
-                + "Red\n"
-                + "Orange\n"
-                + "Yellow\n"
-                + "Green\n"
-                + "Blue\n"
-                + "Indigo\n"
-                + "Violet\n"));
+                + "Rainbow colors:\n"
+                + "- Red\n"
+                + "- Orange\n"
+                + "- Yellow\n"
+                + "- Green\n"
+                + "- Blue\n"
+                + "- Indigo\n"
+                + "- Violet\n"));
     }
 
     private void assertCustomColorsModernStyle(Path outputDir) throws IOException {
