@@ -65,6 +65,11 @@ public interface ContextEdge {
     }
 
     /**
+     * Clear the edge.
+     */
+    void clear();
+
+    /**
      * Context edge visitor.
      */
     interface Visitor {

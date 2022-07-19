@@ -196,8 +196,8 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>3.0.0-M4</version.plugin.surefire>
-        <version.plugin.failsafe>3.0.0-M4</version.plugin.failsafe>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.tycho>2.5.0</version.plugin.tycho>
         <version.plugin.shade>3.2.4</version.plugin.shade>

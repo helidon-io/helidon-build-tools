@@ -158,6 +158,12 @@ public interface ContextScope extends ContextRegistry {
      */
     ContextScope getOrCreate(String path, Visibility visibility);
 
+
+    /**
+     * Clear the scope.
+     */
+    void clear();
+
     /**
      * Visit the edges.
      *

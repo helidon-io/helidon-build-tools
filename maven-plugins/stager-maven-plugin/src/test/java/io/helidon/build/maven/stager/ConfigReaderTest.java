@@ -178,7 +178,7 @@ class ConfigReaderTest {
         assertThat(archiveTemplate1.templateVariables().get("cliUpdateMessages"), is(instanceOf(Collection.class)));
 
         DecoratedCollection<Object> cliUpdateMessages = (DecoratedCollection<Object>) archiveTemplate1.templateVariables()
-                                                                                                       .get("cliUpdateMessages");
+                                                                                                      .get("cliUpdateMessages");
 
         int index = 0;
         for (Object cliUpdateMessage : cliUpdateMessages) {

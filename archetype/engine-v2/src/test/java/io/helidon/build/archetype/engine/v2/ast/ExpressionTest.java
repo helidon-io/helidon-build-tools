@@ -23,7 +23,6 @@ import io.helidon.build.archetype.engine.v2.ast.Expression.FormatException;
 import io.helidon.build.archetype.engine.v2.ast.Expression.UnresolvedVariableException;
 import io.helidon.build.archetype.engine.v2.ast.Value.ValueTypeException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.ast.Expression.parse;
@@ -119,9 +118,9 @@ class ExpressionTest {
         Throwable e;
 
         e = assertThrows(ValueTypeException.class, () -> parse("'true' || 'def'").eval());
-        assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
+        assertThat(e.getMessage(), startsWith("Cannot get a value of"));
 
-        assertThat(e.getMessage(), startsWith( "Cannot get a value of"));
+        assertThat(e.getMessage(), startsWith("Cannot get a value of"));
 
         e = assertThrows(UnresolvedVariableException.class, () -> parse("true == ${def}").eval());
         assertThat(e.getMessage(), containsString("Unresolved variable"));
@@ -281,10 +280,9 @@ class ExpressionTest {
         assertThat(parse("['foo'] contains 'bar'").eval(), is(false));
     }
 
-    @Disabled
     @Test
     void testComplex() {
-        Expression expr = parse("(!(${metrics} || ${tracing} || ${health}) || (${metrics} && ${tracing} && ${health}))");
+        Expression expr = parse("!(${metrics} || ${tracing} || ${health}) || (${metrics} && ${tracing} && ${health})");
         assertThat(expr.eval(mapValue(Map.of(
                 "metrics", "true",
                 "tracing", "true",
@@ -296,6 +294,62 @@ class ExpressionTest {
         assertThat(expr.eval(mapValue(Map.of(
                 "metrics", "false",
                 "tracing", "false",
-                "health", "false"), DynamicValue::create)::get), is(false));
+                "health", "false"), DynamicValue::create)::get), is(true));
+    }
+
+    @Test
+    void testUnaryPrecededWithLeftParenthesis() {
+        assertThat(parse("(!true)").eval(), is(false));
+    }
+
+    @Test
+    void testMultilineExpression() {
+        assertThat(parse("true && \ntrue").eval(), is(true));
+    }
+
+    @Test
+    void testMultilineStringLiteral() {
+        Expression expr = parse("${str} == \"f\no\no\no\"");
+        assertThat(expr.eval(mapValue(Map.of("str", "f\no\no\no"), DynamicValue::create)::get), is(true));
+    }
+
+    @Test
+    void testStringContains() {
+        assertThat(parse("'foo' contains 'oo'").eval(), is(true));
+    }
+
+    @Test
+    void testComments() {
+        Expression expr = parse(""
+                + "    # the entire line is a comment\n"
+                + "    true && # inline comment\n"
+                + "    !false\n"
+                + "    && ${char} == \"#\"");
+        assertThat(expr.eval(mapValue(Map.of("char", "#"), DynamicValue::create)::get), is(true));
+    }
+
+    @Test
+    void testCommentWithStringLiteral() {
+        Expression expr = parse(""
+                + "true &&\n"
+                + "\n"
+                + "# 'foo'\n"
+                + "true");
+        assertThat(expr.eval(), is(true));
+    }
+
+    @Test
+    void testNoneList1() {
+        Expression expr = parse("${list} == [] || (${list} contains 'foo' || ${list} contains 'bar')");
+        assertThat(expr.eval(mapValue(Map.of("list", "none"), DynamicValue::create)::get), is(true));
+        assertThat(expr.eval(mapValue(Map.of("list", "foo,bar"), DynamicValue::create)::get), is(true));
+        assertThat(expr.eval(mapValue(Map.of("list", "bob"), DynamicValue::create)::get), is(false));
+    }
+
+    @Test
+    void testNoneList2() {
+        Expression expr = parse("${list1} == [] || (${list1} == ['foo'] && ${list2} == ['bar'])");
+        assertThat(expr.eval(mapValue(Map.of("list1", "none", "list2", "bar"), DynamicValue::create)::get), is(true));
+        assertThat(expr.eval(mapValue(Map.of("list1", "foo", "list2", "bar"), DynamicValue::create)::get), is(true));
     }
 }

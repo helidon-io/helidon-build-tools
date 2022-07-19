@@ -90,6 +90,7 @@ public final class DynamicValue implements Value {
             return (U) Arrays.stream(rawValue.split(","))
                              .map(String::trim)
                              .filter(s -> !s.isEmpty())
+                             .sorted()
                              .collect(toList());
         } else if (type.equals(ValueTypes.STRING)) {
             return (U) rawValue;
