@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,9 +127,13 @@ public final class Expression {
                             break;
                         case CONTAINS:
                             if (operand1.type() == ValueTypes.STRING_LIST) {
-                                result = operand2.asList().containsAll(operand1.asList());
+                                result = new HashSet<>(operand2.asList()).containsAll(operand1.asList());
                             } else {
-                                result = operand2.asList().contains(operand1.asString());
+                                if (operand2.type() == ValueTypes.STRING) {
+                                    result = operand2.asString().contains(operand1.asString());
+                                } else {
+                                    result = operand2.asList().contains(operand1.asString());
+                                }
                             }
                             break;
                         default:
@@ -211,10 +216,11 @@ public final class Expression {
             Symbol symbol = it.next();
             switch (symbol.type) {
                 case BINARY_LOGICAL_OPERATOR:
-                case UNARY_LOGICAL_OPERATOR:
                 case EQUALITY_OPERATOR:
                 case CONTAINS_OPERATOR:
-                    if (previous >= 0 && symbols.get(previous).value.equals("(")) {
+                case UNARY_LOGICAL_OPERATOR:
+                    if (symbol.type != Symbol.Type.UNARY_LOGICAL_OPERATOR
+                            && previous >= 0 && symbols.get(previous).value.equals("(")) {
                         throw new FormatException("Invalid parenthesis");
                     }
                     while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
@@ -248,6 +254,9 @@ public final class Expression {
                 case ARRAY:
                 case VARIABLE:
                     stackSize += 1 - addToken(symbol, tokens);
+                    break;
+                case SKIP:
+                case COMMENT:
                     break;
                 default:
                     throw new IllegalStateException("Unexpected symbol: " + symbol.value);
@@ -513,7 +522,8 @@ public final class Expression {
             BINARY_LOGICAL_OPERATOR("^(\\|\\||&&)"),
             UNARY_LOGICAL_OPERATOR("^[!]"),
             CONTAINS_OPERATOR("^contains"),
-            PARENTHESIS("^[()]");
+            PARENTHESIS("^[()]"),
+            COMMENT("#.*\\R");
 
             private final Pattern pattern;
 
@@ -554,9 +564,6 @@ public final class Expression {
                 if (matcher.find()) {
                     String value = matcher.group();
                     cursor += value.length();
-                    if (type == Symbol.Type.SKIP) {
-                        return next();
-                    }
                     return new Symbol(type, value);
                 }
             }

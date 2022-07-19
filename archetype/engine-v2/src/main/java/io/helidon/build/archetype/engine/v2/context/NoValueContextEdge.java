@@ -59,6 +59,11 @@ public final class NoValueContextEdge implements ContextEdge {
     }
 
     @Override
+    public void clear() {
+        children.clear();
+    }
+
+    @Override
     public List<ContextNode> children() {
         return children;
     }

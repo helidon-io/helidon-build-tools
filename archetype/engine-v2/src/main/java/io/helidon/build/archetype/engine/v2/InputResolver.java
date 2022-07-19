@@ -81,8 +81,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         if (currentStep == null) {
             throw new IllegalStateException(input.location() + " Input not nested inside a step");
         }
-        boolean global = input.isGlobal();
-        if (global) {
+        if (input.isGlobal()) {
             DeclaredInput parent = parents.peek();
             if (parent != null && !parent.isGlobal()) {
                 throw new IllegalStateException(input.location() + " Parent input is not global");
@@ -162,7 +161,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             throw new IllegalStateException("parents is empty");
         }
         DeclaredInput parent = parents.peek();
-        Value inputValue = context.scope().getValue(".." + parent.id());
+        Value inputValue = context.scope().getValue("");
         if (inputValue != null) {
             return parent.visitOption(inputValue, option);
         }

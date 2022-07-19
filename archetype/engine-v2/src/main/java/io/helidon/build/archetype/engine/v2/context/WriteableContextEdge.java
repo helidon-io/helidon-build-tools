@@ -85,6 +85,12 @@ public final class WriteableContextEdge implements ContextEdge {
     }
 
     @Override
+    public void clear() {
+        value = null;
+        children.clear();
+    }
+
+    @Override
     public List<ContextNode> children() {
         return children;
     }
