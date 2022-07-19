@@ -51,6 +51,7 @@ final class UsageCommand extends CommandModel {
         map.put("-D<name>=<value>", "Define a system property");
         map.put(GlobalOptions.VERBOSE_FLAG_ARGUMENT, GlobalOptions.VERBOSE_FLAG_DESCRIPTION);
         map.put(GlobalOptions.DEBUG_FLAG_ARGUMENT, GlobalOptions.DEBUG_FLAG_DESCRIPTION);
+        map.put(GlobalOptions.ERROR_FLAG_ARGUMENT, GlobalOptions.ERROR_FLAG_DESCRIPTION);
         map.put(GlobalOptions.PLAIN_FLAG_ARGUMENT, GlobalOptions.PLAIN_FLAG_DESCRIPTION);
         return map;
     }

@@ -80,7 +80,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for the {@link Command} annotation.
+     * Metamodel for the {@link Command} annotation.
      */
     public static final class CommandInfo {
 
@@ -139,7 +139,7 @@ public abstract class CommandModel extends CommandParameters {
         }
     }
 
-    @SuppressWarnings("rawtypes, unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static String valueSyntax(Class<?> type) {
         String usage = "";
         if (String.class.equals(type)) {
@@ -150,7 +150,7 @@ public abstract class CommandModel extends CommandParameters {
             usage += Italic.apply("PATH");
         } else if (Enum.class.isAssignableFrom(type)) {
             StringBuilder choices = new StringBuilder();
-            Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
+            Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) type;
             for (Enum e : enumClass.getEnumConstants()) {
                 if (choices.length() > 0) {
                     choices.append(" | ");
@@ -163,7 +163,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Common meta-model for {@link Option.Argument} and {@link Option}.
+     * Common metamodel for {@link Option.Argument} and {@link Option}.
      *
      * @param <T> mapped type
      */
@@ -220,7 +220,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for the {@link Option.Argument} annotation.
+     * Metamodel for the {@link Option.Argument} annotation.
      *
      * @param <T> mapped type
      */
@@ -286,7 +286,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for the {@link Option} annotation.
+     * Metamodel for the {@link Option} annotation.
      *
      * @param <T> mapped type
      */
@@ -391,7 +391,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for options with a required attribute.
+     * Metamodel for options with a required attribute.
      */
     public interface RequiredOption {
 
@@ -404,7 +404,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for the {@link Option.KeyValue} annotation.
+     * Metamodel for the {@link Option.KeyValue} annotation.
      *
      * @param <T> item type
      */
@@ -475,7 +475,7 @@ public abstract class CommandModel extends CommandParameters {
     }
 
     /**
-     * Meta model for the {@link Option.KeyValues} annotation.
+     * Metamodel for the {@link Option.KeyValues} annotation.
      *
      * @param <T> item type
      */

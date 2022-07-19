@@ -38,6 +38,8 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
+import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_DESCRIPTION;
+import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
@@ -61,6 +63,7 @@ final class CommonOptions {
     private final boolean verbose;
     private final boolean debug;
     private final boolean plain;
+    private final boolean error;
     private final boolean projectDirSpecified;
     private final Path projectDir;
     private final String metadataUrl;
@@ -72,6 +75,7 @@ final class CommonOptions {
     CommonOptions(@Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
                   @Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
                   @Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
+                  @Flag(name = ERROR_FLAG_NAME, description = ERROR_FLAG_DESCRIPTION, visible = false) boolean error,
                   @Argument(description = "project_dir") File projectDirArgument,
                   @KeyValue(name = "project", description = "Project directory") File projectDirOption,
                   @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
@@ -80,6 +84,7 @@ final class CommonOptions {
                           visible = false) String since) {
         this.verbose = verbose || debug;
         this.debug = debug;
+        this.error = error;
         this.plain = plain || Config.userConfig().richTextDisabled();
         this.projectDirSpecified = projectDirOption != null || projectDirArgument != null;
         this.projectDir = projectDir(projectDirOption, projectDirArgument);
@@ -92,6 +97,7 @@ final class CommonOptions {
         this.verbose = options.verbose;
         this.debug = options.debug;
         this.plain = options.plain;
+        this.error = options.error;
         this.projectDirSpecified = options.projectDirSpecified;
         this.projectDir = projectDir;
         this.metadataUrl = options.metadataUrl;
@@ -110,6 +116,10 @@ final class CommonOptions {
 
     boolean plain() {
         return plain;
+    }
+
+    boolean error() {
+        return error;
     }
 
     boolean projectSpecified() {
