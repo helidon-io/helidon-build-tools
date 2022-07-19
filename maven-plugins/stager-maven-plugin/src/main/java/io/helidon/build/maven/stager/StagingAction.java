@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,8 @@ package io.helidon.build.maven.stager;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
@@ -79,27 +76,6 @@ interface StagingAction extends StagingElement {
      */
     static List<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
         PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
-        Map<PlexusConfigNode, Map<String, List<StagingElement>>> mappings = new LinkedHashMap<>();
-        parent.visit(node -> {
-            PlexusConfigNode nodeParent = node.parent();
-            String nodeName = node.name();
-            mappings.computeIfAbsent(node, n -> new LinkedHashMap<>());
-            mappings.computeIfAbsent(nodeParent, n -> new LinkedHashMap<>());
-            if (factory.isWrapperElement(nodeName)) {
-                String wrappedName = factory.wrappedElementName(nodeName);
-                mappings.get(nodeParent).put(wrappedName, mappings.get(node).get(wrappedName));
-            } else {
-                mappings.get(nodeParent)
-                        .computeIfAbsent(nodeName, n -> new LinkedList<>())
-                        .add(factory.create(nodeName, node.attributes(), mappings.get(node), node.value()));
-            }
-        });
-        return mappings.get(parent)
-                .values()
-                .stream()
-                .flatMap(List::stream)
-                .filter(StagingAction.class::isInstance)
-                .map(StagingAction.class::cast)
-                .collect(Collectors.toList());
+        return new ConfigReader(factory).read(parent);
     }
 }

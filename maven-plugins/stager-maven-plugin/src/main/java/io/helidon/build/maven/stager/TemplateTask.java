@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.util.DecoratedCollection;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Render a mustache template.
@@ -43,8 +45,7 @@ final class TemplateTask extends StagingTask {
             throw new IllegalArgumentException("source is required");
         }
         this.source = source;
-        this.templateVariables = variables.stream()
-                                          .collect(Collectors.toMap(Variable::name, v -> v.value().unwrap()));
+        this.templateVariables = variables.stream().collect(toMap(Variable::name, TemplateTask::mapValue));
     }
 
     /**
@@ -96,5 +97,13 @@ final class TemplateTask extends StagingTask {
                 + ", target=" + resolveVar(target(), variables)
                 + ", vars" + templateVariables
                 + '}';
+    }
+
+    private static Object mapValue(Variable variable) {
+        VariableValue value = variable.value();
+        if (value instanceof VariableValue.ListValue) {
+            return new DecoratedCollection<>(((VariableValue.ListValue) value).unwrap());
+        }
+        return value.unwrap();
     }
 }
