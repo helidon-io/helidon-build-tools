@@ -92,6 +92,26 @@ public class GlobalOptions {
     public static final String DEBUG_FLAG_ARGUMENT = "--" + DEBUG_FLAG_NAME;
 
     /**
+     * The --error flag name.
+     */
+    public static final String ERROR_FLAG_NAME = "error";
+
+    /**
+     * The --error flag description.
+     */
+    public static final String ERROR_FLAG_DESCRIPTION = "Print error stack traces";
+
+    /**
+     * The --error flag info.
+     */
+    public static final FlagInfo ERROR_FLAG_INFO = new FlagInfo(ERROR_FLAG_NAME, ERROR_FLAG_DESCRIPTION, false);
+
+    /**
+     * The --error flag argument.
+     */
+    public static final String ERROR_FLAG_ARGUMENT = "--" + ERROR_FLAG_NAME;
+
+    /**
      * The --plain flag name.
      */
     public static final String PLAIN_FLAG_NAME = "plain";
@@ -112,7 +132,7 @@ public class GlobalOptions {
     public static final String PLAIN_FLAG_ARGUMENT = "--" + PLAIN_FLAG_NAME;
 
     /**
-     * Tests whether or not the given argument is a global flag.
+     * Tests whether the given argument is a global flag.
      *
      * @param argument The argument.
      * @return {@code true} if a global flag.
@@ -128,6 +148,7 @@ public class GlobalOptions {
             HELP_FLAG_INFO,
             VERBOSE_FLAG_INFO,
             DEBUG_FLAG_INFO,
+            ERROR_FLAG_INFO,
             PLAIN_FLAG_INFO
     };
 
