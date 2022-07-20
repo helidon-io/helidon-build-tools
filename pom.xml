@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools</groupId>
     <artifactId>helidon-build-tools-project</artifactId>
-    <version>3.0.0-RC3-SNAPSHOT</version>
+    <version>3.0.0-RC3</version>
     <packaging>pom</packaging>
     <name>Helidon Build Tools Project</name>
 
