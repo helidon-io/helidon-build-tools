@@ -7,6 +7,12 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-RC3]
+
+### Fixes
+
+- Add --errors options to print the exception stack traces [702](https://github.com/oracle/helidon-build-tools/issues/702) [741](https://github.com/oracle/helidon-build-tools/pull/741)
+
 ## [3.0.0-RC2]
 
 ### Fixes
@@ -226,6 +232,8 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[3.0.0-RC3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC2...3.0.0-RC3
+[3.0.0-RC2]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC1...3.0.0-RC2
 [3.0.0-RC1]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
 [3.0.0-M4]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M3...3.0.0-M4
 [3.0.0-M3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0-M3
