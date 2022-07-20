@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
+    <!-- This is a specimen file used to exercise the schema -->
     <presets>
         <boolean path="test.option1">true</boolean>
         <list path="test.array1">
@@ -29,7 +30,7 @@
         <enum path="test.array1">bob</enum> <!-- error, this is declared as an array -->
         <text path="test.text1">foo</text>
     </presets>
-    <step label="A Step Title">
+    <step name="A Step Title">
         <help><![CDATA[
 Some **rich** help text !
 
@@ -38,30 +39,30 @@ System.out.println("YEAH");
 ```
 ]]></help>
         <inputs>
-            <text name="some-input" label="Some text input"/>
+            <text id="some-input" name="Some text input"/>
         </inputs>
     </step>
     <inputs>
-        <text name="test" label="test"></text>
-        <boolean name="" label="" />
+        <text id="test" name="test"/>
+        <boolean id="" name="" />
         <exec src="test.xml" />
-        <step label="next">
-            <help></help>
+        <step name="next">
+            <help>Help text..</help>
             <inputs>
-                <text name="project-name" label="Project Name" default="my-project" global="true"/>
-                <boolean name="option1" label="Option1">
+                <text id="project-name" name="Project Name" default="my-project" global="true"/>
+                <boolean id="option1" name="Option1">
                     <inputs />
                 </boolean>
-                <enum name="enum1" label="Enum1">
+                <enum id="enum1" name="Enum1" description="A description">
                     <help/>
-                    <option label="Foo" value="foo">
+                    <option name="Foo" value="foo">
                         <help/>
                     </option>
-                    <option label="Bar" value="bar" />
+                    <option name="Bar" value="bar" />
                 </enum>
-                <list name="array1" label="Select1" min="0" max="100">
-                    <help></help>
-                    <option label="Foo" value="foo">
+                <list id="array1" name="Select1">
+                    <help>Help text..</help>
+                    <option name="Foo" value="foo">
                         <help/>
                     </option>
                 </list>
@@ -69,20 +70,20 @@ System.out.println("YEAH");
         </step>
     </inputs>
     <inputs>
-        <list name="foo" label="Foo" prompt="Select a foo">
+        <list id="foo" name="Foo" prompt="Select a foo">
             <help>Text to help the user make a decision</help>
-            <option label="Bar" value="bar" />
+            <option name="Bar" value="bar" />
         </list>
-        <boolean name="bar" label="Bar">
+        <boolean id="bar" name="Bar">
             <help>Talk about bar</help>
-            <step label="yeah">
+            <step name="yeah">
                 <help>Well.. yeah!</help>
                 <inputs>
-                    <text name="foo-again" label="Foo again !"/>
+                    <text id="foo-again" name="Foo again !"/>
                 </inputs>
             </step>
             <inputs>
-                <boolean name="a-super-option" label="A super option">
+                <boolean id="a-super-option" name="A super option">
                     <output>
                         <template engine="mustache" source="Dockerfile.mustache" target="Dockerfile.native">
                             <model>
@@ -100,16 +101,16 @@ System.out.println("YEAH");
                         </templates>
                     </output>
                 </boolean>
-                <text name="your-name" label="Your Name"/>
+                <text id="your-name" name="Your Name"/>
             </inputs>
         </boolean>
-        <text name="some-input" label="Some input" default="The place-holder" />
+        <text id="some-input" name="Some input" default="The place-holder" />
     </inputs>
     <source src="dir1/dir2/file.xml"/>
     <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
     <output if="${foo} == 'bar'">
         <transformation id="t1">
-            <replace replacement="token" regex="foo"></replace>
+            <replace replacement="token" regex="foo" />
         </transformation>
         <templates transformations="t1" engine="mustache">
             <directory>files</directory>
@@ -128,7 +129,7 @@ System.out.println("YEAH");
                     <value>How is the foo?</value>
                 </list>
             </map>
-            <value key="" order="100"></value>
+            <value key="key" order="101">a-value</value>
             <list key="dependencies">
                 <value>you depend on ME</value>
                 <list>
