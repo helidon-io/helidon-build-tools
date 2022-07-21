@@ -74,7 +74,7 @@ class MustacheSupportTest {
         Block block = model(modelList("data",
                 modelMap(modelValue("name", "bar"), modelValue("id", "1")),
                 modelMap(modelValue("name", "foo"), modelValue("id", "2")))).build();
-        assertThat(render("{{#data}}{{name}}={{id}},{{/data}}", block), is("bar=1,foo=2,"));
+        assertThat(render("{{#data}}{{name}}={{id}}{{^last}},{{/last}}{{/data}}", block), is("bar=1,foo=2"));
     }
 
     @Test
@@ -87,8 +87,8 @@ class MustacheSupportTest {
                         modelMap(modelValue("name", "bob"), modelValue("id", "3")),
                         modelMap(modelValue("name", "alice"), modelValue("id", "4"))))).build();
 
-        String rendered = render("{{#data}}{{#.}}{{name}}={{id}},{{/.}}{{/data}}", block);
-        assertThat(rendered, is("bar=1,foo=2,bob=3,alice=4,"));
+        String rendered = render("{{#data}}{{#.}}{{name}}={{id}}{{^last}},{{/last}}{{/.}}{{^last}},{{/last}}{{/data}}", block);
+        assertThat(rendered, is("bar=1,foo=2,bob=3,alice=4"));
     }
 
     @Test

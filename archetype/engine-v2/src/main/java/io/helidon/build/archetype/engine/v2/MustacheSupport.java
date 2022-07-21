@@ -127,6 +127,18 @@ public class MustacheSupport implements TemplateSupport {
                 ListIterator<Object> it = scopes.listIterator(scopes.size());
                 while (it.hasPrevious()) {
                     Object scope = it.previous();
+                    if (scope instanceof MergedModel.Element) {
+                        MergedModel.Element<?> elt = (MergedModel.Element<?>) scope;
+                        switch (name) {
+                            case "first":
+                                return elt.first();
+                            case "last":
+                                return elt.last();
+                            case "index":
+                                return elt.index();
+                            default:
+                        }
+                    }
                     if (scope instanceof MergedModel.Node) {
                         result = ((MergedModel.Node) scope).get(name);
                         if (result != null) {
@@ -159,6 +171,9 @@ public class MustacheSupport implements TemplateSupport {
 
         @Override
         public String stringify(Object object) {
+            if (object instanceof MergedModel.Element) {
+                object = ((MergedModel.Element<?>) object).wrapped();
+            }
             if (object instanceof Value) {
                 return preprocess((Value) object);
             }
