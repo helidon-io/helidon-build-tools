@@ -15,6 +15,7 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -86,6 +87,10 @@ public final class MergedModel {
         private final String key;
         private final int order;
 
+        private Node(Node node) {
+            this(node.parent, node.key, node.order);
+        }
+
         private Node(Node parent, String key, int order) {
             this.parent = parent;
             this.key = key;
@@ -130,9 +135,86 @@ public final class MergedModel {
     }
 
     /**
+     * List element.
+     *
+     * @param <T> node type
+     */
+    public static class Element<T extends Node> extends Node {
+
+        private final int index;
+        private final boolean first;
+        private final boolean last;
+        private final T wrapped;
+
+        private Element(int index, boolean first, boolean last, T wrapped) {
+            super(wrapped);
+            this.index = index;
+            this.first = first;
+            this.last = last;
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public Node get(String key) {
+            return wrapped.get(key);
+        }
+
+        /**
+         * Get the wrapped node.
+         *
+         * @return node
+         */
+        public T wrapped() {
+            return wrapped;
+        }
+
+        /**
+         * Get the index.
+         *
+         * @return index
+         */
+        public int index() {
+            return index;
+        }
+
+        /**
+         * Test if this element is first in the enclosing list.
+         *
+         * @return {@code true} if first, {@code false} otherwise
+         */
+        public boolean first() {
+            return first;
+        }
+
+        /**
+         * Test if this element is last in the enclosing list.
+         *
+         * @return {@code true} if last, {@code false} otherwise
+         */
+        public boolean last() {
+            return last;
+        }
+    }
+
+    /**
+     * Iterable list element.
+     */
+    public static class IterableElement extends Element<List> implements Iterable<Element<?>> {
+
+        private IterableElement(int index, boolean first, boolean last, List wrapped) {
+            super(index, first, last, wrapped);
+        }
+
+        @Override
+        public Iterator<Element<?>> iterator() {
+            return wrapped().iterator();
+        }
+    }
+
+    /**
      * List node.
      */
-    public static class List extends Node implements Iterable<Node> {
+    public static class List extends Node implements Iterable<Element<?>> {
 
         private final java.util.List<Node> value = new LinkedList<>();
 
@@ -147,9 +229,41 @@ public final class MergedModel {
             super(parent, key, order);
         }
 
+        /**
+         * Get the values.
+         *
+         * @return values
+         */
+        public Collection<Node> list() {
+            return value;
+        }
+
         @Override
-        public Iterator<Node> iterator() {
-            return value.iterator();
+        public Iterator<Element<?>> iterator() {
+            final Iterator<Node> iterator = value.iterator();
+            return new Iterator<>() {
+                private int index = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+
+                @Override
+                public Element<?> next() {
+                    Node next = iterator.next();
+                    int current = index++;
+                    if (next instanceof List) {
+                        return new IterableElement(current, current == 0, !iterator.hasNext(), (List) next);
+                    }
+                    return new Element<>(current, current == 0, !iterator.hasNext(), next);
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
 
         @Override
