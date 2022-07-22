@@ -17,7 +17,7 @@
 
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <step name="Flavor" optional="true">
         <inputs>
@@ -28,12 +28,12 @@
                   optional="true">
                 <option value="mp"
                         name="Flavor 1"
-                        description="A simple greet application">
+                        description="A simple Helidon MP greet application">
                     <exec src="flavor1/flavor1.xml"/>
                 </option>
                 <option value="se"
-                        name="Dummy archetype"
-                        description="Nothing interesting there">
+                        name="Flavor 2"
+                        description="A simple Helidon SE greet application">
                     <exec src="flavor2/flavor2.xml"/>
                 </option>
             </enum>

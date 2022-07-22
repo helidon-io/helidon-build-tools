@@ -17,7 +17,23 @@
 
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
+    <exec src="/common/common.xml"/>
+    <output>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.java.mustache</include>
+                <include>pom.xml.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml</include>
+                <include>src/*/resources/**/logging.properties</include>
+            </includes>
+        </files>
+    </output>
 </archetype-script>

@@ -43,6 +43,18 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-archetype-maven-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-stager-maven-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-maven</artifactId>
@@ -99,14 +111,13 @@
 
     <build>
         <plugins>
-            <!-- TODO: FIXME this is some hack to prevent maven-jar-plugin to create a jar twice and throw exception -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>default-jar</id>
-                        <phase/>
+                        <phase>test-compile</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -116,63 +127,23 @@
                 <configuration>
                     <skipTests>true</skipTests>
                     <systemPropertyVariables>
-                        <helidon.version>${project.version}</helidon.version>
+                        <cli.version>${project.version}</cli.version>
                         <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
+                        <io.helidon.build.common.maven.url.localRepo>${user.home}/.m2/repository</io.helidon.build.common.maven.url.localRepo>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <extensions>true</extensions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>test-compile</phase>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>install</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <entrypoint>
-                        <variables>
-                            <text path="helidon-version" transient="true">${project.version}</text>
-                        </variables>
-                        <exec src="flavor.xml"/>
-                    </entrypoint>
-                    <sourceDirectory>${project.basedir}/src/test/resources/archetypev2</sourceDirectory>
-                    <jarName>helidon-${project.version}</jarName>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-stager-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <executions>
-                    <execution>
                         <phase>test-compile</phase>
-                        <goals>
-                            <goal>stage</goal>
-                        </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}">
-                                    <archives>
-                                        <archive target="cli-data/${project.version}/cli-data.zip">
-                                            <files>
-                                                <file source="${project.build.directory}/helidon-${project.version}.jar"
-                                                      target="helidon-${project.version}.jar"/>
-                                            </files>
-                                        </archive>
-                                    </archives>
-                                    <files>
-                                        <file target="cli-data/latest">${project.version}</file>
-                                    </files>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -17,7 +17,7 @@
 
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <source src="test.xml"/>
     <output>

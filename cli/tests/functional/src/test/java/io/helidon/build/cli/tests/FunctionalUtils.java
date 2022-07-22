@@ -21,8 +21,8 @@ import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.Proxies;
-import io.helidon.build.common.maven.MavenCommand;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,21 +33,20 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static java.io.File.pathSeparator;
 
 public class FunctionalUtils {
 
     private static final Logger LOGGER = Logger.getLogger(FunctionalUtils.class.getName());
     private static final String MAVEN_DIST_URL = "https://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
+
+    static final String ARCHETYPE_URL = String.format("file://%s/cli-data", targetDir(FunctionalUtils.class));
+    static final String CLI_VERSION = getProperty("cli.version");
 
     static {
         Proxies.setProxyPropertiesFromEnv();
@@ -90,7 +89,7 @@ public class FunctionalUtils {
         }
     }
 
-    static void waitForApplication(int port, OutputStream os) throws Exception {
+    static void waitForApplication(int port, ByteArrayOutputStream os) throws Exception {
         long timeout = 60 * 1000;
         long now = System.currentTimeMillis();
         URL url = new URL("http://localhost:" + port + "/greet");
@@ -100,9 +99,7 @@ public class FunctionalUtils {
         do {
             Thread.sleep(1000);
             if ((System.currentTimeMillis() - now) > timeout) {
-                Path failingTestReport = FileUtils.ensureFile(targetDir(FunctionalUtils.class)
-                        .resolve("surefire-reports/failing-test-output.txt"));
-                Files.writeString(failingTestReport, os.toString());
+                Path failingTestReport = writeReport(os);
                 throw new Exception(String.format("Application failed to start on port : %s. \nCheck %s file\n",
                         port,
                         failingTestReport));
@@ -130,29 +127,17 @@ public class FunctionalUtils {
         }
     }
 
-    static void generateBareSe(Path wd, Path mavenBinDir) {
-        List<String> mavenArgs = List.of(
-                "archetype:generate",
-                "-DinteractiveMode=false",
-                "-DarchetypeGroupId=io.helidon.archetypes",
-                "-DarchetypeArtifactId=helidon",
-                "-DarchetypeVersion=3.0.0-M1",
-                "-DgroupId=groupid",
-                "-DartifactId=bare-se",
-                "-Dpackage=custom.pack.name",
-                "-Dflavor=se",
-                "-Dbase=bare");
-
-        try {
-            MavenCommand.builder()
-                    .executable(mavenBinDir.resolve(getMvnExecutable(mavenBinDir)))
-                    .directory(wd)
-                    .addArguments(mavenArgs)
-                    .build()
-                    .execute();
-        } catch (Exception e) {
-            throw new IllegalStateException("Cannot generate bare-mp project", e);
-        }
+    static void generateBareSe(Path wd) {
+        Helidon.execute(
+                "init",
+                "--reset",
+                "--url", ARCHETYPE_URL,
+                "--batch",
+                "--project", wd.resolve("bare-se").toString(),
+                "--version", CLI_VERSION,
+                "--artifactId", "bare-se",
+                "--package", "custom.pack.name",
+                "--flavor", "se");
     }
 
     static String getMvnExecutable(Path mavenBinDir) {
@@ -167,14 +152,18 @@ public class FunctionalUtils {
         throw new IllegalStateException(String.format("mvn executable not found in %s directory.", mavenBinDir));
     }
 
-    static List<String> buildJavaCommand() {
-        List<String> cmdArgs = new ArrayList<>(List.of(javaPath(), "-Xmx128M", "-cp", "\"" + classpath() + "\""));
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+    static String getProperty(String key) {
+        String version = System.getProperty(key);
         if (version != null) {
-            cmdArgs.add("-D" + HELIDON_VERSION_PROPERTY + "=" + version);
+            return version;
+        } else {
+            throw new IllegalStateException("helidon.version is not set");
         }
-        cmdArgs.add(Helidon.class.getName());
-        return cmdArgs;
+    }
+
+    static List<String> buildJavaCommand() {
+        Path jar = Path.of(getProperty("helidon.executable.directory")).resolve("target/helidon.jar");
+        return new ArrayList<>(List.of(javaPath(), "-Xmx128M", "-jar", jar.toString()));
     }
 
     static String javaPath() {
@@ -191,14 +180,19 @@ public class FunctionalUtils {
         return "java";
     }
 
-    static String classpath() {
-        List<String> classPath = new LinkedList<>();
-        classPath.addAll(Arrays.asList(System.getProperty("surefire.test.class.path", "").split(pathSeparator)));
-        classPath.addAll(Arrays.asList(System.getProperty("java.class.path", "").split(pathSeparator)));
-        classPath.addAll(Arrays.asList(System.getProperty("jdk.module.path", "").split(pathSeparator)));
-        return classPath.stream()
-                .distinct()
-                .collect(Collectors.joining(pathSeparator));
+    private static Path writeReport(ByteArrayOutputStream os) {
+        try {
+            Path failingTestReport = FileUtils.ensureFile(targetDir(FunctionalUtils.class)
+                    .resolve("surefire-reports/failing-test-output.txt"));
+            Files.writeString(failingTestReport,
+                    os.toString(),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND,
+                    StandardOpenOption.WRITE);
+            return failingTestReport;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException("Could not create failing test file containing Console output", ioe);
+        }
     }
 
 }
