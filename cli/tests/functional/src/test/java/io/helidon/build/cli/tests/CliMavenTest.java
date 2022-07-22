@@ -39,24 +39,13 @@ import java.util.stream.Stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
-public class CliMavenTest {
+public class CliMavenTest extends BaseFunctionalTest {
 
-    private static final String CLI_VERSION = getProperty("helidon.cli.version");
-    private static final String PLUGIN_VERSION = getProperty("helidon.plugin.version");
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
 
     private static Path workDir;
     private static Path mavenDirectory;
-
-    private static String getProperty(String property) {
-        String version = System.getProperty(property);
-        if (version != null) {
-            return version;
-        } else {
-            throw new IllegalStateException(String.format("%s is not set", property));
-        }
-    }
 
     @BeforeAll
     static void setUp() throws IOException {
@@ -64,7 +53,7 @@ public class CliMavenTest {
         mavenDirectory = Files.createTempDirectory("maven");
 
         for (String version : MAVEN_VERSIONS) {
-            TestUtils.downloadMavenDist(mavenDirectory, version);
+            FunctionalUtils.downloadMavenDist(mavenDirectory, version);
         }
     }
 
@@ -73,6 +62,7 @@ public class CliMavenTest {
         workDir = Files.createTempDirectory("generated");
     }
 
+    @SuppressWarnings("unused")
     static Stream<String> getValidMavenVersions() {
         return MAVEN_VERSIONS.stream()
                 .filter(v -> MavenVersion.toMavenVersion(v).isGreaterThanOrEqualTo(MAVEN_3_2_5));
@@ -87,16 +77,15 @@ public class CliMavenTest {
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
-                "-DarchetypeVersion=" + CLI_VERSION,
+                "-DarchetypeVersion=3.0.0-M1",
                 "-DgroupId=groupid",
                 "-DartifactId=artifactid",
                 "-Dpackage=custom.pack.name",
                 "-Dflavor=se",
                 "-Dbase=bare");
-
         try {
             MavenCommand.builder()
-                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
+                    .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -120,7 +109,7 @@ public class CliMavenTest {
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void catchDevloopRecompilationFails() {
+    public void catchDevLoopRecompilationFails() {
         try {
             runIssue499("2.2.3");
         } catch (Exception e) {
@@ -131,8 +120,8 @@ public class CliMavenTest {
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void testDevloopRecompilationFails() throws Exception {
-        runIssue499(PLUGIN_VERSION);
+    public void testDevLoopRecompilationFails() throws Exception {
+        runIssue499(HELIDON_VERSION);
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
@@ -149,26 +138,28 @@ public class CliMavenTest {
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
     public void testFixJansiIssue() throws Exception {
-        String output = runCliMavenPluginJansiIssue(PLUGIN_VERSION);
+        String output = runCliMavenPluginJansiIssue(HELIDON_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
+        validateSeProject(workDir);
     }
 
     @Test
     public void testCliMavenPlugin() throws Exception {
-        int port = TestUtils.getAvailablePort();
+        int port = FunctionalUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
-        TestUtils.generateBareSe(workDir, mavenBinDir);
+        FunctionalUtils.generateBareSe(workDir, mavenBinDir);
+        validateSeProject(workDir);
 
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
-                .directory(workDir.resolve("artifactid"))
+                .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
+                .directory(workDir.resolve("bare-se"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + PLUGIN_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + HELIDON_VERSION + ":dev")
                 .build()
                 .start();
-        TestUtils.waitForApplication(port);
+        FunctionalUtils.waitForApplication(port, stream);
         monitor.stop();
         stream.close();
 
@@ -176,22 +167,23 @@ public class CliMavenTest {
     }
 
     private String runCliMavenPluginJansiIssue(String pluginVersion) throws Exception {
-        int port = TestUtils.getAvailablePort();
+        int port = FunctionalUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
-        TestUtils.generateBareSe(workDir, mavenBinDir);
+        FunctionalUtils.generateBareSe(workDir, mavenBinDir);
+        validateSeProject(workDir);
         ProcessMonitor monitor = null;
         try {
              monitor = MavenCommand.builder()
-                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
-                    .directory(workDir.resolve("artifactid"))
+                    .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
+                    .directory(workDir.resolve("bare-se"))
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                     .build()
                     .start();
-            TestUtils.waitForApplication(port);
+            FunctionalUtils.waitForApplication(port, stream);
             monitor.stop();
             stream.close();
         } catch (Exception e) {
@@ -203,21 +195,22 @@ public class CliMavenTest {
     }
 
     public void runIssue499(String pluginVersion) throws Exception {
-        int port = TestUtils.getAvailablePort();
+        int port = FunctionalUtils.getAvailablePort();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
 
-        TestUtils.generateBareSe(workDir, mavenBinDir);
+        FunctionalUtils.generateBareSe(workDir, mavenBinDir);
+        validateSeProject(workDir);
         ProcessMonitor monitor = MavenCommand.builder()
-                .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
-                .directory(workDir.resolve("artifactid"))
+                .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
+                .directory(workDir.resolve("bare-se"))
                 .stdOut(new PrintStream(stream))
                 .stdErr(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                 .build()
                 .start();
-        TestUtils.waitForApplication(port);
+        FunctionalUtils.waitForApplication(port, stream);
 
         Files.walk(workDir)
                 .filter(p -> p.toString().endsWith("GreetService.java"))
@@ -225,7 +218,7 @@ public class CliMavenTest {
                 .ifPresent(path -> {
                     try {
                         String content = Files.readString(path);
-                        content = content.replaceAll("\"World\"", "\"Jhon\"");
+                        content = content.replaceAll("\"World\"", "\"John\"");
                         Files.write(path, content.getBytes(StandardCharsets.UTF_8));
                     } catch (IOException ioException) {
                         throw new UncheckedIOException(ioException);
@@ -233,7 +226,7 @@ public class CliMavenTest {
                 });
 
         try {
-            TestUtils.waitForApplication(port);
+            FunctionalUtils.waitForApplication(port, stream);
         } catch (Exception e) {
             monitor.stop();
             stream.close();
@@ -245,7 +238,7 @@ public class CliMavenTest {
                 .build()
                 .get().request(String.class)
                 .thenAccept(
-                        s -> assertThat(s, containsString("Jhon"))
+                        s -> assertThat(s, containsString("John"))
                 )
                 .toCompletableFuture().get();
 
@@ -258,7 +251,7 @@ public class CliMavenTest {
         Path mavenBinDir = mavenDirectory.resolve(String.format("apache-maven-%s/bin", mavenVersion));
         try {
             MavenCommand.builder()
-                    .executable(mavenBinDir.resolve(TestUtils.getMvnExecutable(mavenBinDir)))
+                    .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
@@ -278,7 +271,7 @@ public class CliMavenTest {
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
-                "-DarchetypeVersion=" + CLI_VERSION);
+                "-DarchetypeVersion=3.0.0-M1");
         String output = runMissingValueTest(mvnArgs, mavenVersion);
         assertThat(output, containsString("Property groupId is missing."));
         assertThat(output, containsString("Property artifactId is missing."));
@@ -292,7 +285,7 @@ public class CliMavenTest {
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
-                "-DarchetypeVersion=" + CLI_VERSION,
+                "-DarchetypeVersion=3.0.0-M1",
                 "-DgroupId=groupid",
                 "-DartifactId=artifactid",
                 "-Dpackage=me.pack.name"
@@ -308,7 +301,7 @@ public class CliMavenTest {
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
-                "-DarchetypeVersion=" + CLI_VERSION,
+                "-DarchetypeVersion=3.0.0-M1",
                 "-DgroupId=groupid",
                 "-DartifactId=artifactid",
                 "-Dpackage=me.pack.name",
