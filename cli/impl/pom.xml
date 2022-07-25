@@ -204,6 +204,9 @@
                     <systemProperties>
                         <helidon.test.version>2.5.0</helidon.test.version>
                     </systemProperties>
+                    <environmentVariables>
+                        <formatEnv>%s</formatEnv>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

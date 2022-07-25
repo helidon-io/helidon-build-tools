@@ -114,6 +114,19 @@ class EmbeddedModeTest {
         assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
     }
 
+    @Test
+    void testFormatStringInProperties() {
+        System.setProperty("format", "%s");
+        Helidon.execute("info", "--verbose");
+        long lineCount = loggedLines().stream()
+                .distinct()
+                .filter(l -> l.contains("%s"))
+                .filter(l -> l.contains("format") || l.contains("formatEnv") )
+                .count();
+        assertThat(lineCount, is(2L));
+        System.clearProperty("format");
+    }
+
     private static List<String> loggedLines() {
         return LOG_RECORDER.entries()
                            .stream()

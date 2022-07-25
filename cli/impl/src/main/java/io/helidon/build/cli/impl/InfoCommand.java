@@ -234,6 +234,8 @@ public final class InfoCommand extends BaseCommand {
             appendLine("$(bold | %s)", header);
             appendLine();
             map.forEach((key, value) -> {
+                key = key.toString().replace("%", "%%");
+                value = value.toString().replace("%", "%%");
                 String padding = padding(PAD, maxKeyWidth, key.toString());
                 appendLine("%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
             });
