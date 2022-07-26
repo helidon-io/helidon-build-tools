@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 
 import io.helidon.build.archetype.engine.v2.MergedModel;
@@ -48,7 +49,7 @@ public interface TemplateSupport {
     /**
      * Template supports cache by block.
      */
-    Map<Block, Map<String, TemplateSupport>> CACHE = new WeakHashMap<>();
+    Map<CacheKey, Map<String, TemplateSupport>> CACHE = new WeakHashMap<>();
 
     /**
      * Get a template support.
@@ -63,7 +64,34 @@ public interface TemplateSupport {
         if (provider == null) {
             throw new IllegalArgumentException("Unknown template support provider: " + engine);
         }
-        return CACHE.computeIfAbsent(scope.block(), b -> new HashMap<>())
+        return CACHE.computeIfAbsent(new CacheKey(scope, context), b -> new HashMap<>())
                     .computeIfAbsent(engine, e -> provider.create(scope, context));
+    }
+
+    /**
+     * Cache key.
+     */
+    final class CacheKey {
+
+        private final MergedModel scope;
+        private final Context context;
+
+        private CacheKey(MergedModel scope, Context context) {
+            this.scope = Objects.requireNonNull(scope, "scope is null");
+            this.context = Objects.requireNonNull(context, "context is null");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CacheKey cacheKey = (CacheKey) o;
+            return scope.equals(cacheKey.scope) && context.equals(cacheKey.context);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(scope, context);
+        }
     }
 }
