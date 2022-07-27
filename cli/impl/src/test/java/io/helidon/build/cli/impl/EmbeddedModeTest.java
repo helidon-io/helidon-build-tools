@@ -109,7 +109,9 @@ class EmbeddedModeTest {
         assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
         assertThat(lines.get(2), isNotStyled());
-        assertThat(lines.get(2), containsStringIgnoringStyle("Updating metadata for Helidon version 99.99"));
+        assertThat(lines.get(3), isStyled());
+        assertThat(lines.get(4), isStyled());
+        assertThat(lines.get(2), is("Updating metadata for Helidon version 99.99"));
         assertThat(lines.get(3), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
         assertThat(lines.get(4), equalToIgnoringStyle("Helidon version lookup failed."));
     }
