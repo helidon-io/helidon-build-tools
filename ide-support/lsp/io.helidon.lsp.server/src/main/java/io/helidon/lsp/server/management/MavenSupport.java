@@ -16,11 +16,16 @@
 
 package io.helidon.lsp.server.management;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -141,6 +146,72 @@ public class MavenSupport {
         }
 
         return result;
+    }
+
+    public List<String> getAllDependencies(final String pomPath) {
+        if (!isMavenInstalled) {
+            return null;
+        }
+
+        int[] serverPort={0};
+        System.out.println("Thread Running");
+        try (ServerSocket serverSocket = new ServerSocket(33133)) {
+            Socket clientSocket;
+            PrintWriter out;
+            BufferedReader in;
+
+            serverPort[0] = serverSocket.getLocalPort();
+/////////////////////////////////////////
+//            Thread thread = new Thread(){
+//                public void run(){
+//
+//                }
+//            };
+//
+//            thread.start();
+
+////////////////////////////////////////
+
+            String mvnCommand = "io.helidon.ide-support:helidon-lsp-maven-plugin:dependency-counter";//build-classpath
+
+            MavenPrintStream mavenPrintStream = new MavenPrintStream();
+            try {
+                MavenCommand.builder()
+                            .addArgument(mvnCommand)
+                            .stdOut(mavenPrintStream)//mavenPrintStream  System.out
+                            .directory(new File(pomPath).getParentFile())
+                            .verbose(false)
+                            .build().execute();
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + mvnCommand, e);
+//                        return Collections.emptyList();
+            }
+
+            clientSocket = serverSocket.accept();
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            String greeting = in.readLine();
+            System.out.println(greeting);
+            out.println("hello client");
+            in.close();
+            out.close();
+            clientSocket.close();
+
+        } catch (IOException e) {
+            System.out.println("Port is not available");
+        }
+
+
+
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
+
+
+        return List.of();
     }
 
     /**

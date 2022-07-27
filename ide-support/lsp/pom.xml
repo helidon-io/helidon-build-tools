@@ -40,6 +40,7 @@
 
     <modules>
         <module>io.helidon.lsp.server</module>
+        <module>lsp-maven-plugin</module>
     </modules>
 
 </project>

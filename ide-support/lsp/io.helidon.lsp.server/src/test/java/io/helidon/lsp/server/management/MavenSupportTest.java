@@ -19,6 +19,7 @@ package io.helidon.lsp.server.management;
 import com.google.inject.Module;
 import io.helidon.build.common.maven.MavenCommand;
 import org.apache.maven.RepositoryUtils;
+import org.apache.maven.cli.CliRequest;
 import org.apache.maven.cli.MavenCli;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
@@ -42,6 +43,7 @@ import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectDependenciesResolver;
 //import org.apache.maven.repository.internal.MavenRepositorySystemSession;
+import org.apache.maven.repository.internal.DefaultVersionRangeResolver;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
@@ -56,6 +58,7 @@ import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.PlexusContainerException;
 import org.codehaus.plexus.classworlds.ClassWorld;
+import org.codehaus.plexus.classworlds.launcher.Launcher;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -73,6 +76,7 @@ import org.eclipse.aether.impl.ArtifactResolver;
 import org.eclipse.aether.impl.RemoteRepositoryManager;
 import org.eclipse.aether.impl.VersionRangeResolver;
 import org.eclipse.aether.internal.impl.DefaultArtifactResolver;
+import org.eclipse.aether.internal.impl.DefaultRemoteRepositoryManager;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -84,13 +88,20 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -124,6 +135,50 @@ class MavenSupportTest {
 
     private PlexusContainer container;
 
+    @Test
+    public void testMainCLI() throws Exception {
+        String[] args = {"io.helidon.ide-support:helidon-lsp-maven-plugin:3.0.0-SNAPSHOT:build-classpath"};
+        String pomPath = "/home/aserkes/IdeaProjects/helidon-build-tools/ide-support/lsp/io.helidon.lsp.server";
+
+        String CLASSWORLDS_CONF = "classworlds.conf";
+        String UBERJAR_CONF_DIR = "WORLDS-INF/conf/";
+        String classworldsConf = System.getProperty( CLASSWORLDS_CONF );
+        InputStream is;
+        Launcher launcher = new Launcher();
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        launcher.setSystemClassLoader( cl );
+        if ( classworldsConf != null ) {
+            is = new FileInputStream( classworldsConf );
+        } else {
+            if ( "true".equals( System.getProperty( "classworlds.bootstrapped" ) ) ) {
+                is = cl.getResourceAsStream( UBERJAR_CONF_DIR + CLASSWORLDS_CONF );
+            } else {
+                is = cl.getResourceAsStream( CLASSWORLDS_CONF );
+            }
+        }
+
+        if ( is == null ) {
+            throw new Exception( "classworlds configuration not specified nor found in the classpath" );
+        }
+
+        launcher.configure( is );
+        ClassWorld world = launcher.getWorld();
+        is.close();
+
+        MavenCli cli = new MavenCli();
+        Class c = Class.forName("org.apache.maven.cli.CliRequest");
+        Constructor ct = //c.getDeclaredConstructors()[1];
+                c.getDeclaredConstructor(new Class[]{
+                        Arrays.class,
+                        ClassWorld.class});
+        ct.setAccessible(true);
+        CliRequest cliRequest = (CliRequest) ct.newInstance(args, world);
+        int result = cli.doMain(cliRequest);
+
+        System.out.println(result);
+    }
+
+    @Deprecated
     @Test
     public void testResolveDependency() throws Exception {
         String pomPath = "/home/aserkes/IdeaProjects/helidon-build-tools/ide-support/lsp/io.helidon.lsp.server/pom.xml";
@@ -164,6 +219,9 @@ class MavenSupportTest {
                 modelBuilder,
                 modelResolver
         );
+
+        List<org.apache.maven.model.Dependency> dependencies = model.getDependencies();
+//        dependencies.forEach(dep->dep.get);
         System.out.println();
     }
 
@@ -208,13 +266,16 @@ class MavenSupportTest {
             ct.setAccessible(true);
             DefaultArtifactResolver artifactResolver = (DefaultArtifactResolver) container.lookup(ArtifactResolver.class,
                     "artifactResolver");
+            DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+            LocalRepositoryManager localRepositoryManager = newLocalRepositoryManager(localRepoDir());
+            session.setLocalRepositoryManager(localRepositoryManager);
             return (org.apache.maven.model.resolution.ModelResolver) ct.newInstance(new Object[]{
-                    MavenRepositorySystemUtils.newSession(),
+                    session,
                     null,
                     null,
                     artifactResolver,
-                    null,
-                    null,
+                    new DefaultVersionRangeResolver(),
+                    new DefaultRemoteRepositoryManager(),
                     List.of()});
         } catch (Exception e) {
             throw new MojoExecutionException("Error instantiating DefaultModelResolver", e);
@@ -518,8 +579,31 @@ class MavenSupportTest {
         assertTrue(dependencies.size() > 0);
     }
 
+    @Test
+    public void getAllDependenciesTest() throws URISyntaxException, IOException {
+        String pomForFile = getPomForCurrentClass();
+        List<String> dependencies = MavenSupport.getInstance().getAllDependencies(pomForFile);
+        assertTrue(dependencies.size() > 0);
+    }
+
     private String getPomForCurrentClass() throws IOException, URISyntaxException {
         URI uri = MavenSupportTest.class.getProtectionDomain().getCodeSource().getLocation().toURI();
         return MavenSupport.getInstance().getPomForFile(uri.getPath());
+    }
+
+    @Test
+    public void clientSocketTest() throws IOException {
+         ServerSocket serverSocket;
+         Socket clientSocket;
+         PrintWriter out;
+         BufferedReader in;
+
+
+            serverSocket = new ServerSocket(33133);
+            clientSocket = serverSocket.accept();
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        String greeting = in.readLine();
+        System.out.println(greeting);
     }
 }
