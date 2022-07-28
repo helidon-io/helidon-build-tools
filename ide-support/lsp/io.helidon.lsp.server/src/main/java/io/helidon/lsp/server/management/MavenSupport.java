@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -32,10 +33,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.helidon.build.common.maven.MavenCommand;
+import io.helidon.lsp.common.Dependency;
 
 /**
  * Support operations with maven.
@@ -44,6 +53,9 @@ public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
     private static final String POM_FILE_NAME = "pom.xml";
+    private static final Gson GSON = new Gson();
+    private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support" +
+            ".lsp:helidon-lsp-maven-plugin:list-dependencies";
     private static MavenSupport instance;
 
     private boolean isMavenInstalled = false;
@@ -148,14 +160,45 @@ public class MavenSupport {
         return result;
     }
 
+
+    public Set<Dependency> getDependencies(final String pomPath, int timeout) {
+        if (!isMavenInstalled) {
+            return null;
+        }
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            MavenCommand.builder()
+                        .addArgument(DEPENDENCIES_MVN_COMMAND)
+                        .addArgument("-Dport=" + serverSocket.getLocalPort())
+                        .directory(new File(pomPath).getParentFile())
+                        .verbose(false)
+                        .build().execute();
+
+            return CompletableFuture.supplyAsync(() -> {
+                Set<Dependency> result = null;
+                try (
+                        Socket clientSocket = serverSocket.accept();
+                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                ) {
+                    result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {}.getType());
+                } catch (IOException e) {
+                    LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
+                }
+                return result;
+            }).get(timeout, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
+        }
+        return null;
+    }
+
     public List<String> getAllDependencies(final String pomPath) {
         if (!isMavenInstalled) {
             return null;
         }
 
-        int[] serverPort={0};
+        int[] serverPort = {0};
         System.out.println("Thread Running");
-        try (ServerSocket serverSocket = new ServerSocket(33133)) {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
             Socket clientSocket;
             PrintWriter out;
             BufferedReader in;
@@ -190,8 +233,8 @@ public class MavenSupport {
             clientSocket = serverSocket.accept();
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String greeting = in.readLine();
-            System.out.println(greeting);
+            String dependencies = in.readLine();
+//            System.out.println(greeting);
             out.println("hello client");
             in.close();
             out.close();
@@ -202,13 +245,11 @@ public class MavenSupport {
         }
 
 
-
 //        try {
 //            Thread.sleep(1000);
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-
 
 
         return List.of();

@@ -580,6 +580,13 @@ class MavenSupportTest {
     }
 
     @Test
+    public void getDependenciesTest1() throws URISyntaxException, IOException {
+        String pomForFile = getPomForCurrentClass();
+        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.getInstance().getDependencies(pomForFile, 3000);
+        assertTrue(dependencies.size() > 0);
+    }
+
+    @Test
     public void getAllDependenciesTest() throws URISyntaxException, IOException {
         String pomForFile = getPomForCurrentClass();
         List<String> dependencies = MavenSupport.getInstance().getAllDependencies(pomForFile);
@@ -591,6 +598,7 @@ class MavenSupportTest {
         return MavenSupport.getInstance().getPomForFile(uri.getPath());
     }
 
+    @Disabled
     @Test
     public void clientSocketTest() throws IOException {
          ServerSocket serverSocket;
@@ -599,7 +607,7 @@ class MavenSupportTest {
          BufferedReader in;
 
 
-            serverSocket = new ServerSocket(33133);
+            serverSocket = new ServerSocket(40000);
             clientSocket = serverSocket.accept();
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));

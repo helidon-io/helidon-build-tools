@@ -28,6 +28,7 @@ module io.helidon.lsp.server {
     requires io.helidon.security.providers.common;
     requires io.helidon.build.common.maven;
     requires io.helidon.build.common;
+    requires common;
     opens io.helidon.lsp.server.service.config;
     opens io.helidon.lsp.server.model;
 }

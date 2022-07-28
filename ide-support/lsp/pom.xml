@@ -36,11 +36,16 @@
             <groupId>org.eclipse.lsp4j</groupId>
             <artifactId>org.eclipse.lsp4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
     </dependencies>
 
     <modules>
         <module>io.helidon.lsp.server</module>
-        <module>lsp-maven-plugin</module>
+        <module>helidon-lsp-maven-plugin</module>
+        <module>common</module>
     </modules>
 
 </project>

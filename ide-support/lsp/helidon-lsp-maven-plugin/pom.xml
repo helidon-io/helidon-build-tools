@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>helidon-ide-support-project</artifactId>
-        <groupId>io.helidon.ide-support</groupId>
+        <groupId>io.helidon.ide-support.lsp</groupId>
+        <artifactId>helidon-ide-support-lsp-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+<!--        <relativePath>../../pom.xml</relativePath>-->
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,6 +14,11 @@
 <!--    <url>http://maven.apache.org</url>-->
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.ide-support.lsp</groupId>
+            <artifactId>helidon-ide-support-lsp-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
@@ -72,6 +77,12 @@
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-artifact-transfer</artifactId>
 <!--            <version>${version.lib.maven-artifact-transfer}</version>-->
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.ide-support.lsp</groupId>
+            <artifactId>common</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
