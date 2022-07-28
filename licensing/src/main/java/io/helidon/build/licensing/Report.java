@@ -40,6 +40,8 @@ import io.helidon.build.licensing.model.AttributionDependency;
 import io.helidon.build.licensing.model.AttributionDocument;
 import io.helidon.build.licensing.model.AttributionLicense;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 /**
  * Generate a report from attribution xml file.
  */
@@ -77,6 +79,11 @@ public class Report {
     public static final String OUTPUT_FILE_NAME_PROPERTY_NAME = "outputFileName";
 
     /**
+     * Name of Ouput File Format property.
+     */
+    public static final String OUTPUT_FILE_FORMAT_PROPERTY_NAME = "outputFileFormat";
+
+    /**
      * Name of Modules property.
      */
     public static final String MODULES_PROPERTY_NAME = "modules";
@@ -95,6 +102,11 @@ public class Report {
      * Default input file directory.
      */
     public static final String DEFAULT_INPUT_FILE_DIR = "";
+
+    /**
+     * Default output file format.
+     */
+    public static final String DEFAULT_OUTPUT_FILE_FORMAT = "txt";
 
     /**
      * Default output file name.
@@ -121,16 +133,20 @@ public class Report {
 
     private String outputFileDir;
     private String outputFileName;
+    private String outputFileFormat;
+
     private Set<String> moduleList;
     private Boolean includeVersion;
 
     private Consumer<String> outputHandler;
+    private Consumer<String> errorHandler;
 
     private Report() {
     }
 
     /**
      * Constuct a Report from a Report.Builder.
+     *
      * @param builder Builder with configuration to use for construction
      */
     private Report(Builder builder) {
@@ -139,18 +155,21 @@ public class Report {
 
         this.outputFileDir = builder.outputFileDir();
         this.outputFileName = builder.outputFileName();
+        this.outputFileFormat = builder.outputFileFormat();
 
         this.moduleList = builder.moduleList();
 
         this.outputHandler = builder.outputHandler();
+        this.errorHandler = builder.errorHandler();
 
         this.includeVersion = builder.includeVersion();
     }
 
     /**
      * Supports running Report from command line.
+     *
      * @param args command line arguments
-     * @throws IOException on IOExceptions when accessing files
+     * @throws IOException   on IOExceptions when accessing files
      * @throws JAXBException on JAXBExceptions
      */
     public static void main(String[] args) throws IOException, JAXBException {
@@ -160,6 +179,7 @@ public class Report {
                 .inputFileName(System.getProperty(INPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_INPUT_FILE_NAME))
                 .outputFileDir(System.getProperty(OUTPUT_FILE_DIR_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_DIR))
                 .outputFileName(System.getProperty(OUTPUT_FILE_NAME_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_NAME))
+                .outputFileFormat(System.getProperty(OUTPUT_FILE_FORMAT_PROPERTY_NAME, DEFAULT_OUTPUT_FILE_FORMAT))
                 .includeVersion(Boolean.valueOf(System.getProperty(INCLUDE_VERSION_PROPERTY_NAME, DEFAULT_INCLUDE_VERSION)))
                 .build()
                 .execute();
@@ -167,6 +187,7 @@ public class Report {
 
     /**
      * Converts a path to a jar, or a jar, or a module name to a module name.
+     *
      * @param s jar file name, path to a jar file, or a Helidon module name
      * @return String representing a helidon module name
      */
@@ -190,7 +211,7 @@ public class Report {
     /**
      * Execute the Report.
      *
-     * @throws IOException if can't perform IO on files
+     * @throws IOException   if can't perform IO on files
      * @throws JAXBException if can't parse input xml file
      */
     public void execute() throws IOException, JAXBException {
@@ -206,7 +227,7 @@ public class Report {
             inputFile = new File(inputFileDir, inputFileName);
         }
         try (FileWriter w = new FileWriter(outputFile)) {
-            info("Reading input from " + (inputFile != null ? inputFile.getCanonicalPath() :  inputFileName + " on classpath"));
+            info("Reading input from " + (inputFile != null ? inputFile.getCanonicalPath() : inputFileName + " on classpath"));
             info("Writing output to " + outputFile.getCanonicalPath());
 
             AttributionDocument document;
@@ -215,8 +236,21 @@ public class Report {
             } else {
                 document = loadAttributionDocumentFromClasspath("META-INF/" + inputFileName);
             }
-            if (generateAttributionFile(document, w)) {
-                w.flush();
+            switch (outputFileFormat) {
+                case "json":
+                    generateAttributionFileJson(document, w);
+                    break;
+                case "html":
+                    if (generateAttributionFileHtml(document, w)) {
+                        w.flush();
+                    }
+                    break;
+                case "txt":
+                    if (generateAttributionFile(document, w)) {
+                        w.flush();
+                    }
+                    break;
+                default:
             }
         } catch (IOException e) {
             String s = "Error writing file " + outputFile.getPath();
@@ -231,7 +265,6 @@ public class Report {
      * Loads XML and return the attribution document model.
      *
      * @param file XML file to load.
-     *
      * @throws IOException, JAXBException
      */
     private AttributionDocument loadAttributionDocument(File file) throws IOException, JAXBException {
@@ -271,7 +304,7 @@ public class Report {
      * Generates a third party attribution file from all found BAs.
      *
      * @param attributionDocument AttributionDocument to generate attribution report from
-     * @param w FileWriter to write report to
+     * @param w                   FileWriter to write report to
      * @return true if something was written, else false
      * @throws IOException if trouble writing to file
      */
@@ -330,10 +363,176 @@ public class Report {
         return true;
     }
 
+    /**
+     * Generates a third party attribution file from all found BAs in JSON format.
+     *
+     * @param attributionDocument AttributionDocument to generate attribution report from
+     * @param w                   FileWriter to write report to
+     * @return true if something was written, else false
+     * @throws IOException if trouble writing to file
+     */
+    private boolean generateAttributionFileJson(AttributionDocument attributionDocument, FileWriter w) throws IOException {
+        w.write("{\n");
+
+        List<AttributionDependency> deps = attributionDocument.getDependencies();
+        Set<String> licensesUsed = new HashSet<>();
+        boolean first = true;
+        for (AttributionDependency d : deps) {
+            HashSet<String> intersection = new HashSet<>(moduleList);
+            intersection.retainAll(d.getConsumers());
+            if (moduleList.isEmpty() || !intersection.isEmpty()) {
+                if (first) {
+                    w.write("\t\"dependencies\": [\n");
+                    w.write("\t\t{\n");
+                    first = false;
+                } else {
+                    w.write("\t\t, {\n");
+                }
+
+                w.write(String.format("\t\t\t\"name\": \"%s\"%n", jsonEscape(d.getName())));
+                if (includeVersion) {
+                    w.write(String.format("\t\t\t, \"version\": \"%s\"%n", jsonEscape(d.getVersion())));
+                }
+                w.write(String.format("\t\t\t, \"licensor\": \"%s\"%n", jsonEscape(d.getLicensor())));
+                w.write(String.format("\t\t\t, \"license-name\": \"%s\"%n", jsonEscape(d.getLicenseName())));
+                w.write(String.format("\t\t\t, \"attribution\": \"%s\"%n", jsonEscape(d.getAttribution())));
+                w.write(String.format("\t\t\t, \"used-by\": [%n"));
+                boolean firstConsumer = true;
+                for (String consumer : d.getConsumers()) {
+                    if (firstConsumer) {
+                        w.write(String.format("\t\t\t\t\"%s\"%n", jsonEscape(consumer)));
+                        firstConsumer = false;
+                    } else {
+                        w.write(String.format("\t\t\t\t, \"%s\"%n", jsonEscape(consumer)));
+                    }
+                }
+                w.write("\t\t\t]\n");
+                w.write("\t\t}\n");
+
+                detectLicenses(licensesUsed, d.getAttribution());
+            }
+        }
+        w.write("\t]\n");
+
+        // If we haven't written anything, then let the caller know
+        if (first) {
+            w.write("}\n");
+            return false;
+        }
+
+        // Write full text of licenses used (that were squashed out of report) to the
+        // end of the file.
+        first = true;
+        for (String s : licensesUsed) {
+            if (first) {
+                w.write("\t, \"licenses\" : {\n");
+            }
+
+            // Get license text for AttributionDocument
+            AttributionLicense license = getLicense(attributionDocument, s);
+            String sJson = jsonEscape(s);
+            if (license != null) {
+                w.write(String.format("\t\t%s\"%s\": \"%s\"%n", (first ? "" : ", "), sJson, jsonEscape(license.getText())));
+            } else {
+                w.write(String.format("\t\t%s\"%s\": \"\"No license text found for %s\"%n", (first ? "" : ", "), sJson, sJson));
+            }
+
+            first = false;
+        }
+        w.write("\t}\n");
+
+        w.write("}\n");
+
+        return true;
+    }
+
+    private static String jsonEscape(String str) {
+        if (str == null) {
+            return "";
+        }
+
+        return str
+                .replaceAll("\\\\", "\\\\\\\\")
+                .replaceAll("\n", "\\\\n")
+                .replaceAll("\"", "\\\\\"");
+    }
+
+    /**
+     * Generates a third party attribution file from all found BAs in XLS format.
+     *
+     * @param attributionDocument AttributionDocument to generate attribution report from
+     * @param w                   FileWriter to write report to
+     * @return true if something was written, else false
+     * @throws IOException if trouble writing to file
+     */
+    private boolean generateAttributionFileHtml(AttributionDocument attributionDocument, FileWriter w) throws IOException {
+        w.write("<html>\n");
+        w.write("<body>\n");
+        w.write("<h1>Third Party Attributions");
+        w.write("<table border=1>");
+        w.write(String.format("<tr><th>Name</th>%s<th>Licensor</th><th>License Name</th>",
+                includeVersion ? "<th>Version</th>" : ""));
+        w.write("<th>Attribution</th><th>Used By</th></tr>\n");
+        List<AttributionDependency> deps = attributionDocument.getDependencies();
+        Set<String> licensesUsed = new HashSet<>();
+        boolean first = true;
+        for (AttributionDependency d : deps) {
+            HashSet<String> intersection = new HashSet<>(moduleList);
+            intersection.retainAll(d.getConsumers());
+            if (moduleList.isEmpty() || !intersection.isEmpty()) {
+                w.write("<tr valign=top>");
+                w.write(String.format("<td>%s</td>", d.getName()));
+                if (includeVersion) {
+                    w.write(String.format("<td>%s</td>", d.getVersion()));
+                }
+                w.write(String.format("<td>%s</td>", d.getLicensor()));
+                w.write(String.format("<td>%s</td>", d.getLicenseName()));
+                w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td>",
+                        StringEscapeUtils.escapeHtml4(d.getAttribution())));
+                w.write(String.format("<td><ul><li>%s</ul></td>",
+                        String.join("<li>", d.getConsumers())));
+                w.write("</tr>");
+
+                detectLicenses(licensesUsed, d.getAttribution());
+
+                first = false;
+            }
+        }
+        w.write("</table>\n");
+
+        // If we haven't written anything, then let the caller know
+        if (first) {
+            return false;
+        }
+
+        // Write full text of licenses used (that were squashed out of report) to the
+        // end of the file.
+        w.write("<h1>License Text");
+        w.write("<table border=1>\n");
+        w.write("<tr><th>Name</th><th>Text</th></tr>\n");
+        for (String s : licensesUsed) {
+            AttributionLicense license = getLicense(attributionDocument, s);
+            String licenseText;
+            if (license != null) {
+                licenseText = license.getText();
+            } else {
+                licenseText = "No license text found for " + s;
+            }
+            w.write(String.format("<tr valign=top><td>%s</td>", s));
+            w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td></tr>%n",
+                    StringEscapeUtils.escapeHtml4(licenseText)));
+        }
+        w.write("</table>\n");
+
+        w.write("</body></html>\n");
+
+        return true;
+    }
+
     private AttributionLicense getLicense(AttributionDocument attributionDocument, String licenseName) {
         List<AttributionLicense> licenses = attributionDocument.getLicenses();
 
-        for (AttributionLicense l: licenses) {
+        for (AttributionLicense l : licenses) {
             if (licenseName.equals(l.getName())) {
                 return l;
             }
@@ -345,7 +544,8 @@ public class Report {
      * Search the attribution for references to the licenses that we might have compressed
      * out. We keep track of these so that we can add the fully expanded licenses to the
      * end of the file. This is super inefficient, but we really don't care how slow this is.
-     * @param licenseSet Set of license IDs to add to
+     *
+     * @param licenseSet  Set of license IDs to add to
      * @param attribution Attribution to search for license IDs
      */
     void detectLicenses(Set<String> licenseSet, String attribution) {
@@ -360,7 +560,7 @@ public class Report {
      * Append the contents of a resource file to the passed FileWriter.
      *
      * @param resourceName Name of resource
-     * @param writer file to append resource to
+     * @param writer       file to append resource to
      * @throws IOException if trouble writing file
      */
     private void appendResourceToFile(String resourceName, FileWriter writer) throws IOException {
@@ -388,8 +588,17 @@ public class Report {
         }
     }
 
+    private void error(String s) {
+        if (errorHandler != null) {
+            errorHandler.accept(s);
+        } else {
+            System.out.println(s);
+        }
+    }
+
     /**
      * Return the Builder for Report.
+     *
      * @return a builder for Report
      */
     public static Builder builder() {
@@ -404,16 +613,19 @@ public class Report {
         private String inputFileName = DEFAULT_INPUT_FILE_NAME;
         private String outputFileDir = DEFAULT_OUTPUT_FILE_DIR;
         private String outputFileName = DEFAULT_OUTPUT_FILE_NAME;
+        private String outputFileFormat = DEFAULT_OUTPUT_FILE_FORMAT;
 
         private Boolean includeVersion = Boolean.valueOf(DEFAULT_INCLUDE_VERSION);
         private Set<String> moduleList = Collections.emptySet();
         private Consumer<String> outputHandler = (s) -> System.out.println(s);
+        private Consumer<String> errorHandler = (s) -> System.err.println(s);
 
         private Builder() {
         }
 
         /**
          * Get the directory containing the XML input file.
+         *
          * @return the directory containing the XML input file.
          */
         public String inputFileDir() {
@@ -422,6 +634,7 @@ public class Report {
 
         /**
          * Set the directory containing the XML input file.
+         *
          * @param inputFileDir the directory contain the XML input file.
          * @return this Builder
          */
@@ -432,6 +645,7 @@ public class Report {
 
         /**
          * Get the name of the XML input file.
+         *
          * @return the name of the XML input file
          */
         public String inputFileName() {
@@ -440,6 +654,7 @@ public class Report {
 
         /**
          * Set the name of the XML input file.
+         *
          * @param inputFileName name of the XML input file
          * @return this Builder
          */
@@ -450,6 +665,7 @@ public class Report {
 
         /**
          * Get the directory to put the generated output file.
+         *
          * @return the directory to put the generated output file.
          */
         public String outputFileDir() {
@@ -458,6 +674,7 @@ public class Report {
 
         /**
          * Set the directory to put the generated output file.
+         *
          * @param outputFileDir the directory to put the generatd output file.
          * @return this Builder
          */
@@ -468,6 +685,7 @@ public class Report {
 
         /**
          * Get the name of the generated output file.
+         *
          * @return the name of the generated output file.
          */
         public String outputFileName() {
@@ -476,11 +694,32 @@ public class Report {
 
         /**
          * Set the name of the generated output file.
+         *
          * @param outputFileName Name of output file
          * @return this builder
          */
         public Builder outputFileName(String outputFileName) {
             this.outputFileName = outputFileName;
+            return this;
+        }
+
+        /**
+         * Get the format of the generated output file.
+         *
+         * @return the format of the generated output file.
+         */
+        public String outputFileFormat() {
+            return outputFileFormat;
+        }
+
+        /**
+         * Set the format of the generated output file.
+         *
+         * @param outputFileFormat Name of output file
+         * @return the name of the generated output file.
+         */
+        public Builder outputFileFormat(String outputFileFormat) {
+            this.outputFileFormat = outputFileFormat;
             return this;
         }
 
@@ -505,6 +744,7 @@ public class Report {
 
         /**
          * Get the list of Helidon modules to get third party attributions for.
+         *
          * @return the list of Helidon modules to get third party attributions for
          */
         public Set<String> moduleList() {
@@ -513,6 +753,7 @@ public class Report {
 
         /**
          * Set the list of Helidon modules to get third party attributions for.
+         *
          * @param moduleList the list of Helidon modules
          * @return this Builder
          */
@@ -523,6 +764,7 @@ public class Report {
 
         /**
          * Set the list of Helidon modules to get third party attributions for.
+         *
          * @param moduleList the list of Helidon modules as a comma seperated string. Can
          *                   also be a list of Helidon jar files.
          * @return this Builder
@@ -541,6 +783,7 @@ public class Report {
 
         /**
          * Set the handler for informational output.
+         *
          * @return the handler for informational output
          */
         public Consumer<String> outputHandler() {
@@ -549,6 +792,7 @@ public class Report {
 
         /**
          * Set the handler for informational output.
+         *
          * @param outputHandler the handler for informational output
          * @return this Builder
          */
@@ -558,7 +802,28 @@ public class Report {
         }
 
         /**
+         * Set the handler for error output.
+         *
+         * @return the handler for error output
+         */
+        public Consumer<String> errorHandler() {
+            return errorHandler;
+        }
+
+        /**
+         * Set the handler for error output.
+         *
+         * @param errorHandler the handler for error output
+         * @return this Builder
+         */
+        public Builder errorHandler(Consumer<String> errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        /**
          * Build a Report from this builder.
+         *
          * @return a new Report
          */
         public Report build() {
