@@ -25,7 +25,7 @@
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/*.java.mustache</include>
-                <include>pom.xml.mustache</include>
+                <include>*.mustache</include>
             </includes>
         </templates>
         <files>
