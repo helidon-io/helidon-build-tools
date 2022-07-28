@@ -29,12 +29,41 @@ import static org.junit.jupiter.api.Assertions.*;
 class LicenseDocumentTest {
     @Test
     void testGenerateReport(@TempDir Path tempDir) {
+            String outputFileDir = tempDir.toAbsolutePath().toString();
             assertDoesNotThrow( () -> {
                 Report.builder()
                         .moduleList("helidon-webserver,helidon-grpc-server,helidon-microprofile")
-                        .outputFileDir(tempDir.toAbsolutePath().toString())
+                        .outputFileDir(outputFileDir)
                         .build()
                         .execute();
             });
+    }
+
+    @Test
+    void testGenerateReportJson(@TempDir Path tempDir) {
+        String outputFileDir = tempDir.toAbsolutePath().toString();
+        assertDoesNotThrow( () -> {
+            Report.builder()
+                    .moduleList("helidon-webserver,helidon-grpc-server,helidon-microprofile")
+                    .outputFileDir(outputFileDir)
+                    .outputFileName("HELIDON_THIRD_PARTY_LICENSE.json")
+                    .outputFileFormat("json")
+                    .build()
+                    .execute();
+        });
+    }
+
+    @Test
+    void testGenerateReportHtml(@TempDir Path tempDir) {
+        String outputFileDir = tempDir.toAbsolutePath().toString();
+        assertDoesNotThrow( () -> {
+            Report.builder()
+                    .moduleList("helidon-webserver,helidon-grpc-server,helidon-microprofile")
+                    .outputFileDir(outputFileDir)
+                    .outputFileName("HELIDON_THIRD_PARTY_LICENSE.html")
+                    .outputFileFormat("html")
+                    .build()
+                    .execute();
+        });
     }
 }

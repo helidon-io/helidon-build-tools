@@ -111,6 +111,7 @@
                     <pomIncludes combine.self="override">
                         <include>projects/report-test1/pom.xml</include>
                         <include>projects/report-test2/pom.xml</include>
+                        <include>projects/report-test3/pom.xml</include>
                     </pomIncludes>
                 </configuration>
                 <executions>
