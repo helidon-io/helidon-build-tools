@@ -389,20 +389,21 @@ public class Report {
                     w.write("\t\t, {\n");
                 }
 
-                w.write(String.format("\t\t\t\"name\": \"%s\"\n", jsonEscape(d.getName())));
-                if (includeVersion)
-                    w.write(String.format("\t\t\t, \"version\": \"%s\"\n", jsonEscape(d.getVersion())));
-                w.write(String.format("\t\t\t, \"licensor\": \"%s\"\n", jsonEscape(d.getLicensor())));
-                w.write(String.format("\t\t\t, \"license-name\": \"%s\"\n", jsonEscape(d.getLicenseName())));
-                w.write(String.format("\t\t\t, \"attribution\": \"%s\"\n", jsonEscape(d.getAttribution())));
-                w.write(String.format("\t\t\t, \"used-by\": [\n"));
+                w.write(String.format("\t\t\t\"name\": \"%s\"%n", jsonEscape(d.getName())));
+                if (includeVersion) {
+                    w.write(String.format("\t\t\t, \"version\": \"%s\"%n", jsonEscape(d.getVersion())));
+                }
+                w.write(String.format("\t\t\t, \"licensor\": \"%s\"%n", jsonEscape(d.getLicensor())));
+                w.write(String.format("\t\t\t, \"license-name\": \"%s\"%n", jsonEscape(d.getLicenseName())));
+                w.write(String.format("\t\t\t, \"attribution\": \"%s\"%n", jsonEscape(d.getAttribution())));
+                w.write(String.format("\t\t\t, \"used-by\": [%n"));
                 boolean firstConsumer = true;
                 for (String consumer : d.getConsumers()) {
                     if (firstConsumer) {
-                        w.write(String.format("\t\t\t\t\"%s\"\n", jsonEscape(consumer)));
+                        w.write(String.format("\t\t\t\t\"%s\"%n", jsonEscape(consumer)));
                         firstConsumer = false;
                     } else {
-                        w.write(String.format("\t\t\t\t, \"%s\"\n", jsonEscape(consumer)));
+                        w.write(String.format("\t\t\t\t, \"%s\"%n", jsonEscape(consumer)));
                     }
                 }
                 w.write("\t\t\t]\n");
@@ -431,9 +432,9 @@ public class Report {
             AttributionLicense license = getLicense(attributionDocument, s);
             String sJson = jsonEscape(s);
             if (license != null) {
-                w.write(String.format("\t\t%s\"%s\": \"%s\"\n", (first ? "":", "), sJson, jsonEscape(license.getText())));
+                w.write(String.format("\t\t%s\"%s\": \"%s\"%n", (first ? "" : ", "), sJson, jsonEscape(license.getText())));
             } else {
-                w.write(String.format("\t\t%s\"%s\": \"\"No license text found for %s\"\n", (first ? "":", "), sJson, sJson));
+                w.write(String.format("\t\t%s\"%s\": \"\"No license text found for %s\"%n", (first ? "" : ", "), sJson, sJson));
             }
 
             first = false;
@@ -446,6 +447,10 @@ public class Report {
     }
 
     private static String jsonEscape(String str) {
+        if (str == null) {
+            return "";
+        }
+
         return str
                 .replaceAll("\\\\", "\\\\\\\\")
                 .replaceAll("\n", "\\\\n")
@@ -465,7 +470,8 @@ public class Report {
         w.write("<body>\n");
         w.write("<h1>Third Party Attributions");
         w.write("<table border=1>");
-        w.write(String.format("<tr><th>Name</th>%s<th>Licensor</th><th>License Name</th>", includeVersion ? "<th>Version</th>":""));
+        w.write(String.format("<tr><th>Name</th>%s<th>Licensor</th><th>License Name</th>",
+                includeVersion ? "<th>Version</th>" : ""));
         w.write("<th>Attribution</th><th>Used By</th></tr>\n");
         List<AttributionDependency> deps = attributionDocument.getDependencies();
         Set<String> licensesUsed = new HashSet<>();
@@ -476,8 +482,9 @@ public class Report {
             if (moduleList.isEmpty() || !intersection.isEmpty()) {
                 w.write("<tr valign=top>");
                 w.write(String.format("<td>%s</td>", d.getName()));
-                if (includeVersion)
+                if (includeVersion) {
                     w.write(String.format("<td>%s</td>", d.getVersion()));
+                }
                 w.write(String.format("<td>%s</td>", d.getLicensor()));
                 w.write(String.format("<td>%s</td>", d.getLicenseName()));
                 w.write(String.format("<td><textarea readonly style=\"width: 900px; height: 283px;\">%s</textarea></td>",
