@@ -539,12 +539,23 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             InvocationResult result = invoker.execute(request);
             getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
+            ensureNoTemplates(basedir);
             if (result.getExitCode() != 0) {
                 throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
                         result.getExecutionException());
             }
         } catch (MavenInvocationException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
+        }
+    }
+
+    private void ensureNoTemplates(File basedir) throws MojoExecutionException, IOException {
+        boolean isTemplatePresent = Files.walk(basedir.toPath())
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .anyMatch(s -> s.endsWith(".mustache"));
+        if (isTemplatePresent) {
+            throw new MojoExecutionException("There is template present in generated directory " + basedir);
         }
     }
 
