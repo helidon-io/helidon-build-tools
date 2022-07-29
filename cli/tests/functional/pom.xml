@@ -125,7 +125,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skipTests>true</skipTests>
                     <systemPropertyVariables>
                         <cli.version>${project.version}</cli.version>
                         <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
