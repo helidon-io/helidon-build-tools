@@ -15,20 +15,6 @@
  */
 
 /**
- * Helidon Language Server.
+ * Helidon LSP Common.
  */
-module io.helidon.lsp.server {
-    requires java.logging;
-    requires com.fasterxml.jackson.core;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.dataformat.yaml;
-    requires org.eclipse.lsp4j;
-    requires org.eclipse.lsp4j.jsonrpc;
-    requires gson;
-    requires io.helidon.security.providers.common;
-    requires io.helidon.build.common.maven;
-    requires io.helidon.build.common;
-    requires io.helidon.lsp.common;
-    opens io.helidon.lsp.server.service.config;
-    opens io.helidon.lsp.server.model;
-}
+package io.helidon.lsp.common;

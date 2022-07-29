@@ -35,6 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.lsp.common.Dependency;
 import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.model.ConfigurationMetadata;
 import io.helidon.lsp.server.model.ConfigurationProperty;
@@ -100,7 +101,10 @@ public class ConfigurationPropertiesService {
             return metadataList;
         }
 
-        List<String> dependencies = MavenSupport.getInstance().getDependencies(pomForFile);
+        List<String> dependencies = MavenSupport.getInstance()
+                                                .getDependencies(pomForFile).stream()
+                                                .map(Dependency::path)
+                                                .collect(Collectors.toList());
         dependencies = dependencies.stream().filter(d -> d.contains("helidon")).collect(Collectors.toList());
         ConfigurationPropertiesService service = new ConfigurationPropertiesService();
         for (String dependency : dependencies) {

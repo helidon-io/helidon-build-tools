@@ -21,23 +21,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +47,7 @@ public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
     private static final String POM_FILE_NAME = "pom.xml";
+    private static final int DEFAULT_TIMEOUT = 3000;
     private static final Gson GSON = new Gson();
     private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support" +
             ".lsp:helidon-lsp-maven-plugin:list-dependencies";
@@ -113,54 +108,12 @@ public class MavenSupport {
     }
 
     /**
-     * Get paths for the dependency jars for the given pom file.
+     * Get information about all dependencies for the given pom file.
      *
      * @param pomPath Path to the pom file.
-     * @return List that contains paths for the dependency jars.
+     * @param timeout time in milliseconds to wait for maven command execution.
+     * @return List that contains information about the dependencies.
      */
-    public List<String> getDependencies(final String pomPath) {
-        if (!isMavenInstalled) {
-            return null;
-        }
-
-        List<String> output = new ArrayList<>();
-        List<String> result = new ArrayList<>();
-        String mvnCommand = "dependency:build-classpath";//build-classpath
-        String dependencyMarker = "Dependencies classpath:";
-        String stopDependenciesMarker = "-------------";
-
-        MavenPrintStream mavenPrintStream = new MavenPrintStream();
-        try {
-            MavenCommand.builder()
-                        .addArgument(mvnCommand)
-                        .stdOut(mavenPrintStream)//mavenPrintStream  System.out
-                        .directory(new File(pomPath).getParentFile())
-                        .verbose(false)
-                        .build().execute();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + mvnCommand, e);
-            return Collections.emptyList();
-        }
-        for (int x = 0; x < mavenPrintStream.content().size(); x++) {
-            if (mavenPrintStream.content().get(x).contains(dependencyMarker)) {
-                StringBuilder dependencies = new StringBuilder();
-
-                for (int y = x + 1; y < mavenPrintStream.content().size(); y++) {
-                    String content = mavenPrintStream.content().get(y);
-                    if (content.contains(stopDependenciesMarker)) {
-                        break;
-                    }
-                    dependencies.append(content);
-                }
-                result.addAll(Arrays.asList(dependencies.toString().split(File.pathSeparator)));
-                break;
-            }
-        }
-
-        return result;
-    }
-
-
     public Set<Dependency> getDependencies(final String pomPath, int timeout) {
         if (!isMavenInstalled) {
             return null;
@@ -191,68 +144,14 @@ public class MavenSupport {
         return null;
     }
 
-    public List<String> getAllDependencies(final String pomPath) {
-        if (!isMavenInstalled) {
-            return null;
-        }
-
-        int[] serverPort = {0};
-        System.out.println("Thread Running");
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            Socket clientSocket;
-            PrintWriter out;
-            BufferedReader in;
-
-            serverPort[0] = serverSocket.getLocalPort();
-/////////////////////////////////////////
-//            Thread thread = new Thread(){
-//                public void run(){
-//
-//                }
-//            };
-//
-//            thread.start();
-
-////////////////////////////////////////
-
-            String mvnCommand = "io.helidon.ide-support:helidon-lsp-maven-plugin:dependency-counter";//build-classpath
-
-            MavenPrintStream mavenPrintStream = new MavenPrintStream();
-            try {
-                MavenCommand.builder()
-                            .addArgument(mvnCommand)
-                            .stdOut(mavenPrintStream)//mavenPrintStream  System.out
-                            .directory(new File(pomPath).getParentFile())
-                            .verbose(false)
-                            .build().execute();
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + mvnCommand, e);
-//                        return Collections.emptyList();
-            }
-
-            clientSocket = serverSocket.accept();
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String dependencies = in.readLine();
-//            System.out.println(greeting);
-            out.println("hello client");
-            in.close();
-            out.close();
-            clientSocket.close();
-
-        } catch (IOException e) {
-            System.out.println("Port is not available");
-        }
-
-
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-
-        return List.of();
+    /**
+     * Get information about all dependencies for the given pom file.
+     *
+     * @param pomPath Path to the pom file.
+     * @return List that contains information about the dependencies.
+     */
+    public Set<Dependency> getDependencies(final String pomPath) {
+        return getDependencies(pomPath, DEFAULT_TIMEOUT);
     }
 
     /**
