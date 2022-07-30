@@ -46,6 +46,7 @@ import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.util.InputPermutations;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
@@ -88,6 +89,7 @@ import static java.nio.file.FileSystems.newFileSystem;
 @Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
     private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? "  " : "  =  ";
+    private static final List<String> templatePatterns = List.of("**/*/*.mustache");
 
     /**
      * Archetype generate to invoke Maven compatible archetypes.
@@ -549,12 +551,8 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private void ensureNoTemplates(File basedir) throws MojoExecutionException, IOException {
-        boolean isTemplatePresent = Files.walk(basedir.toPath())
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .anyMatch(s -> s.endsWith(".mustache"));
-        if (isTemplatePresent) {
+    private void ensureNoTemplates(File basedir) throws MojoExecutionException {
+        if (!SourcePath.filter(SourcePath.scan(basedir), templatePatterns, null).isEmpty()) {
             throw new MojoExecutionException("There is template present in generated directory " + basedir);
         }
     }
