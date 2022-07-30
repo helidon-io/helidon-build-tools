@@ -552,7 +552,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void ensureNoTemplates(File basedir) throws MojoExecutionException {
-        if (!SourcePath.filter(SourcePath.scan(basedir), templatePatterns, null).isEmpty()) {
+        if (SourcePath.scan(basedir).stream().anyMatch(path -> path.matches(templatePatterns))) {
             throw new MojoExecutionException("There is template present in generated directory " + basedir);
         }
     }
