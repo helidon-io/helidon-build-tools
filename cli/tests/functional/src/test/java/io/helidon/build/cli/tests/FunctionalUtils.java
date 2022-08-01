@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +40,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class FunctionalUtils {
 
@@ -138,6 +141,13 @@ public class FunctionalUtils {
                 "--artifactId", "bare-se",
                 "--package", "custom.pack.name",
                 "--flavor", "se");
+        validateSeProject(wd);
+    }
+
+    static void validateSeProject(Path wd) {
+        Path projectDir = wd.resolve("bare-se");
+        assertThat(Files.exists(projectDir.resolve("pom.xml")), is(true));
+        assertThat(Files.exists(projectDir.resolve("src/main/resources/application.yaml")), is(true));
     }
 
     static String getMvnExecutable(Path mavenBinDir) {
@@ -157,7 +167,7 @@ public class FunctionalUtils {
         if (version != null) {
             return version;
         } else {
-            throw new IllegalStateException("helidon.version is not set");
+            throw new IllegalStateException(String.format("System property %s is not set",  key));
         }
     }
 
@@ -192,6 +202,23 @@ public class FunctionalUtils {
             return failingTestReport;
         } catch (IOException ioe) {
             throw new UncheckedIOException("Could not create failing test file containing Console output", ioe);
+        }
+    }
+
+    static void setMavenLocalRepoUrl() {
+        try {
+            String url = FunctionalUtils.class
+                    .getClassLoader()
+                    .loadClass("org.hamcrest.MatcherAssert")
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI()
+                    .resolve("../../../..")
+                    .getPath();
+            System.setProperty("io.helidon.build.common.maven.url.localRepo", url);
+        } catch (ClassNotFoundException | URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 

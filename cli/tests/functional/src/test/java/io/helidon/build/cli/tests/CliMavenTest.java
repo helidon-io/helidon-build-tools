@@ -55,6 +55,7 @@ public class CliMavenTest {
 
     @BeforeAll
     static void setUp() throws IOException {
+        FunctionalUtils.setMavenLocalRepoUrl();
         workDir = Files.createTempDirectory("generated");
         mavenDirectory = Files.createTempDirectory("maven");
 
@@ -138,7 +139,7 @@ public class CliMavenTest {
     public void testFixJansiIssue() throws Exception {
         String output = runCliMavenPluginJansiIssue(FunctionalUtils.CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
-        validateSeProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -146,7 +147,6 @@ public class CliMavenTest {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
         FunctionalUtils.generateBareSe(workDir);
-        validateSeProject(workDir);
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
@@ -166,7 +166,6 @@ public class CliMavenTest {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
         FunctionalUtils.generateBareSe(workDir);
-        validateSeProject(workDir);
         try {
              ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
@@ -189,8 +188,6 @@ public class CliMavenTest {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
         FunctionalUtils.generateBareSe(workDir);
-        validateSeProject(workDir);
-
         try {
             ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
@@ -296,12 +293,6 @@ public class CliMavenTest {
         Exception e = assertThrows(Exception.class, () -> runMissingValueTest(args, mavenVersion));
         assertThat(e.getMessage(), containsString("Unresolved input: base"));
         assertThat(e.getMessage(), containsString("BUILD FAILURE"));
-    }
-
-    private void validateSeProject(Path wd) {
-        Path projectDir = wd.resolve("bare-se");
-        assertThat(Files.exists(projectDir.resolve("pom.xml")), is(true));
-        assertThat(Files.exists(projectDir.resolve("src/main/resources/application.yaml")), is(true));
     }
 
 }

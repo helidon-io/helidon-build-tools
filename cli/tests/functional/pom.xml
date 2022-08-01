@@ -43,7 +43,6 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
             <artifactId>helidon-archetype-maven-plugin</artifactId>
@@ -128,7 +127,6 @@
                     <systemPropertyVariables>
                         <cli.version>${project.version}</cli.version>
                         <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
-                        <io.helidon.build.common.maven.url.localRepo>${user.home}/.m2/repository</io.helidon.build.common.maven.url.localRepo>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

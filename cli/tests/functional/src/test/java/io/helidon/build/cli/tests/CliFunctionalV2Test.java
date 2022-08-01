@@ -38,12 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 
 public class CliFunctionalV2Test {
-
-    private static final String ARTIFACT_ID = "bare-mp";
-    private static final String PACKAGE = "custom.pack.name";
 
     private static String expectedOutput;
 
@@ -55,6 +51,7 @@ public class CliFunctionalV2Test {
 
     @BeforeAll
     static void setup() throws IOException {
+        FunctionalUtils.setMavenLocalRepoUrl();
         Path input = Files.createTempFile("input","txt");
         Path executableDir = Path.of(FunctionalUtils.getProperty("helidon.executable.directory"));
         workDir = Files.createTempDirectory("generated");
@@ -62,7 +59,7 @@ public class CliFunctionalV2Test {
         helidonBatch = executableDir.resolve("helidon.bat");
         helidonShell = executableDir.resolve("helidon.sh");
         helidonNativeImage = executableDir.resolve("target/helidon");
-        expectedOutput = String.format("Switch directory to %s to use CLI", workDir.resolve("bare-mp"));
+        expectedOutput = String.format("Switch directory to %s to use CLI", workDir.resolve("bare-se"));
     }
 
     @AfterEach
@@ -80,7 +77,7 @@ public class CliFunctionalV2Test {
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -91,7 +88,7 @@ public class CliFunctionalV2Test {
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -102,15 +99,15 @@ public class CliFunctionalV2Test {
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
     void batchTestEmbedded() {
         buildArchetype()
                 .addOption("--batch")
-                .execute(workDir.resolve(ARTIFACT_ID));
-        validateMpProject(workDir);
+                .execute(workDir.resolve("bare-se"));
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -121,7 +118,7 @@ public class CliFunctionalV2Test {
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -130,7 +127,7 @@ public class CliFunctionalV2Test {
                 .input(inputFile)
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -143,7 +140,7 @@ public class CliFunctionalV2Test {
                 .init()
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -156,7 +153,7 @@ public class CliFunctionalV2Test {
                 .init()
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -167,7 +164,7 @@ public class CliFunctionalV2Test {
                 .executable(helidonNativeImage)
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -178,7 +175,7 @@ public class CliFunctionalV2Test {
                 .start(5, TimeUnit.MINUTES);
 
         assertThat(output, containsString("Found maven executable"));
-        validateMpProject(workDir);
+        FunctionalUtils.validateSeProject(workDir);
     }
 
     @Test
@@ -198,8 +195,6 @@ public class CliFunctionalV2Test {
         try {
             cliProcessBuilder()
                     .addArg("flavor", "wrongFlavor")
-                    .addArg("artifactId", ARTIFACT_ID)
-                    .addArg("package", PACKAGE)
                     .addArg("version", FunctionalUtils.CLI_VERSION)
                     .workDirectory(workDir)
                     .init()
@@ -215,9 +210,6 @@ public class CliFunctionalV2Test {
     public void IncorrectHelidonVersionTest() {
         try {
             cliProcessBuilder()
-                    .addArg("flavor", "mp")
-                    .addArg("artifactId", ARTIFACT_ID)
-                    .addArg("package", PACKAGE)
                     .addArg("version", "0.0.0")
                     .workDirectory(workDir)
                     .init()
@@ -235,17 +227,10 @@ public class CliFunctionalV2Test {
         assertThat(output, containsString(FunctionalUtils.CLI_VERSION));
     }
 
-    private void validateMpProject(Path wd) {
-        Path projectDir = wd.resolve("bare-mp");
-        assertThat(Files.exists(projectDir.resolve("pom.xml")), is(true));
-        assertThat(Files.exists(projectDir.resolve("src/main/resources/META-INF/microprofile-config.properties")), is(true));
-    }
-
     private Builder buildArchetype() {
         return cliProcessBuilder()
-                .addArg("flavor", "mp")
-                .addArg("artifactId", ARTIFACT_ID)
-                .addArg("package", PACKAGE)
+                .addArg("artifactId", "bare-se")
+                .addArg("package", "custom.pack.name")
                 .addArg("version", FunctionalUtils.CLI_VERSION)
                 .workDirectory(workDir)
                 .init();

@@ -19,13 +19,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.build-tools.cli.tests.functional</groupId>
     <artifactId>helidon-tests-functional</artifactId>
     <version>3.0.0-SNAPSHOT</version>
-    <name>Generate Archetype Locally</name>
+    <description>Generate Archetype Locally</description>
 
     <build>
         <plugins>
@@ -49,7 +48,7 @@
                         </variables>
                         <exec src="flavor.xml"/>
                     </entrypoint>
-                    <sourceDirectory>${project.basedir}/../../../../src/test/resources/archetypev2</sourceDirectory>
+                    <sourceDirectory>${project.basedir}/archetype</sourceDirectory>
                     <jarName>helidon-${project.version}</jarName>
                 </configuration>
             </plugin>

@@ -19,30 +19,15 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <variables>
+        <text path="flavor">se</text>
+        <text path="app-type">bare</text>
+    </variables>
+    <exec src="content.xml"/>
     <output>
         <model>
-            <list key="MainTest-imports">
-                <value>jakarta.inject.Inject</value>
-                <value>jakarta.ws.rs.client.WebTarget</value>
-                <value>io.helidon.microprofile.tests.junit5.HelidonTest</value>
-                <value>org.junit.jupiter.api.Test</value>
-
-                <value>static org.hamcrest.MatcherAssert.assertThat</value>
-                <value>static org.hamcrest.Matchers.is</value>
-            </list>
-            <list key="MainTest-methods">
-                <value><![CDATA[
-    @Test
-    public void testGreet() throws Exception {
-        String message = target
-                .path("greet")
-                .request()
-                .get(String.class);
-        assertThat(message, is("Hello World!"));
-    }
-
-]]></value>
-            </list>
+            <value key="flavor">${flavor}</value>
+            <value key="app-type">${app-type}</value>
         </model>
     </output>
 </archetype-script>

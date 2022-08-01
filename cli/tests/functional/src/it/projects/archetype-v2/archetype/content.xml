@@ -19,17 +19,11 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <step name="Customization" optional="true">
+    <step name="Customize" optional="true">
         <inputs>
-            <text id="artifactId" name="Project artifactId" optional="true" default="myproject"/>
-            <text id="package"    name="Java package name"  optional="true" default="com.example.myproject"/>
+            <text id="artifactId" name="ArtifactId" optional="true" default="myartifactid"/>
+            <text id="package" name="Package name" optional="true" default="custom.pack.name"/>
         </inputs>
-        <output>
-            <model>
-                <value key="artifactId">${artifactId}</value>
-                <value key="package">${package}</value>
-            </model>
-        </output>
     </step>
     <output>
         <transformation id="mustache">
@@ -38,12 +32,23 @@
         <transformation id="packaged">
             <replace regex="__pkg__" replacement="${package/\./\/}"/>
         </transformation>
-        <templates engine="mustache" transformations="mustache">
+        <templates engine="mustache" transformations="mustache,packaged">
             <directory>files</directory>
             <includes>
-                <include>app.yaml.mustache</include>
+                <include>src/*/java/**/*.java.mustache</include>
+                <include>*.mustache</include>
             </includes>
         </templates>
-        <file source="files/README.md" target="README.md"/>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml</include>
+                <include>src/*/resources/**/logging.properties</include>
+            </includes>
+        </files>
+        <model>
+            <value key="package">${package}</value>
+            <value key="artifactId">${artifactId}</value>
+        </model>
     </output>
 </archetype-script>
