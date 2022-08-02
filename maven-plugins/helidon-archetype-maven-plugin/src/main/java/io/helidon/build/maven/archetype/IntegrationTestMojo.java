@@ -89,7 +89,6 @@ import static java.nio.file.FileSystems.newFileSystem;
 @Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
     private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? "  " : "  =  ";
-    private static final List<String> TEMPLATE_PATTERNS = List.of("**/*/*.mustache");
 
     /**
      * Archetype generate to invoke Maven compatible archetypes.
@@ -240,6 +239,9 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     @Component
     private ProjectInstaller installer;
+
+    @Parameter
+    private List<String> templatePattern;
 
     private List<Map<String, String>> permutations;
     private int index = 1;
@@ -552,7 +554,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void ensureNoTemplates(File basedir) throws MojoExecutionException {
-        if (SourcePath.scan(basedir).stream().anyMatch(path -> path.matches(TEMPLATE_PATTERNS))) {
+        if (SourcePath.scan(basedir).stream().anyMatch(path -> path.matches(templatePattern))) {
             throw new MojoExecutionException("There is template present in generated directory " + basedir);
         }
     }
