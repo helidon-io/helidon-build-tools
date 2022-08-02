@@ -27,7 +27,6 @@ This plugin binds to the `package` phase by default.
 | reportExceptionStackTraces | boolean | `true` | Show exception stack traces for exceptions during image building |
 | buildShared | boolean | `false` | Build shared library |
 | buildStatic | boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
-| noServer | boolean | `true` | Do not use image-build server |
 | addProjectResources | boolean | `true` | Indicates if project build resources should be added to the image |
 | includeResources | List | [] | List of regexp matching names of resources to be included in the image |
 | additionalArgs | List | [] | Additional command line arguments |
