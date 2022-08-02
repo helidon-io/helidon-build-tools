@@ -73,9 +73,7 @@ class ValidatorJava extends ValidatorBase {
 
     @Override
     protected boolean allowTrailEmptyLine(String modifiedYear) {
-        // we have a leeway here - for files modified before current year, we allow a trailing line
-        //return !currentYear().equals(modifiedYear);
-        return true;
+        return false;
     }
 
     @Override

@@ -79,6 +79,7 @@ public class Copyright {
         builtIns.add(new ValidatorAsciidoc(builder.validatorConfig, builder.templateLines));
         builtIns.add(new ValidatorBat(builder.validatorConfig, builder.templateLines));
         builtIns.add(new ValidatorJsp(builder.validatorConfig, builder.templateLines));
+        builtIns.add(new ValidatorHandlebars(builder.validatorConfig, builder.templateLines));
         this.textValidator = new ValidatorText(builder.validatorConfig, builder.templateLines);
         builtIns.add(this.textValidator);
 
