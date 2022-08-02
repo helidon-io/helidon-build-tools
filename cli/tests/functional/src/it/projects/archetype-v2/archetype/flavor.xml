@@ -23,11 +23,37 @@
         <text path="flavor">se</text>
         <text path="app-type">bare</text>
     </variables>
-    <exec src="content.xml"/>
+    <step name="Customize" optional="true">
+        <inputs>
+            <text id="artifactId" name="ArtifactId" optional="true" default="myartifactid"/>
+            <text id="package" name="Package name" optional="true" default="custom.pack.name"/>
+        </inputs>
+    </step>
     <output>
+        <transformation id="mustache">
+            <replace regex="\.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="packaged">
+            <replace regex="__pkg__" replacement="${package/\./\/}"/>
+        </transformation>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.java.mustache</include>
+                <include>*.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>.helidon</include>
+            </includes>
+        </files>
         <model>
             <value key="flavor">${flavor}</value>
             <value key="app-type">${app-type}</value>
+            <value key="package">${package}</value>
+            <value key="artifactId">${artifactId}</value>
         </model>
     </output>
 </archetype-script>

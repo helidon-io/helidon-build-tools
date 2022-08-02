@@ -147,7 +147,7 @@ public class FunctionalUtils {
     static void validateSeProject(Path wd) {
         Path projectDir = wd.resolve("bare-se");
         assertThat(Files.exists(projectDir.resolve("pom.xml")), is(true));
-        assertThat(Files.exists(projectDir.resolve("src/main/resources/application.yaml")), is(true));
+        assertThat(Files.isDirectory(projectDir.resolve("src/main/java")), is(true));
     }
 
     static String getMvnExecutable(Path mavenBinDir) {

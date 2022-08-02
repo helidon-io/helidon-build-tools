@@ -124,7 +124,7 @@ public class CliMavenTest {
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void testDevLoopRecompilationFails() throws Exception {
+    public void testDevLoopRecompilationFails() {
         runIssue499(FunctionalUtils.CLI_VERSION);
     }
 
@@ -136,7 +136,7 @@ public class CliMavenTest {
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
-    public void testFixJansiIssue() throws Exception {
+    public void testFixJansiIssue() {
         String output = runCliMavenPluginJansiIssue(FunctionalUtils.CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
         FunctionalUtils.validateSeProject(workDir);
@@ -201,7 +201,7 @@ public class CliMavenTest {
             FunctionalUtils.waitForApplication(port, stream);
 
             Files.walk(workDir)
-                    .filter(p -> p.toString().endsWith("GreetService.java"))
+                    .filter(p -> p.toString().endsWith("Main.java"))
                     .findAny()
                     .ifPresent(path -> {
                         try {
@@ -219,9 +219,7 @@ public class CliMavenTest {
                     .baseUri("http://localhost:" + port + "/greet")
                     .build()
                     .get().request(String.class)
-                    .thenAccept(
-                            s -> assertThat(s, containsString("John"))
-                    )
+                    .thenAccept(s -> assertThat(s, containsString("John")))
                     .toCompletableFuture().get();
 
             monitor.stop();
