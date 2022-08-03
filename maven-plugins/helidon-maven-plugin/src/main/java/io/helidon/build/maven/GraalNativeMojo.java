@@ -124,13 +124,6 @@ public class GraalNativeMojo extends AbstractMojo {
     private boolean reportExceptionStackTraces;
 
     /**
-     * Do not use image-build server.
-     */
-    @Parameter(defaultValue = "true",
-            property = "native.image.noServer")
-    private boolean noServer;
-
-    /**
      * Indicates if project resources should be added to the image.
      */
     @Parameter(defaultValue = "true", property = "native.image.addProjectResources")
@@ -215,9 +208,6 @@ public class GraalNativeMojo extends AbstractMojo {
 
         if (reportExceptionStackTraces) {
             command.add("-H:+ReportExceptionStackTraces");
-        }
-        if (noServer) {
-            command.add("--no-server");
         }
 
         if (context.addClasspath()) {
