@@ -35,8 +35,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
@@ -240,8 +242,11 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Component
     private ProjectInstaller installer;
 
+    /**
+     * Generated code inspection.
+     */
     @Parameter
-    private List<String> templatePattern;
+    private List<Validation> validations;
 
     private List<Map<String, String>> permutations;
     private int index = 1;
@@ -543,7 +548,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             InvocationResult result = invoker.execute(request);
             getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
-            ensureNoTemplates(basedir);
+            validate(basedir);
             if (result.getExitCode() != 0) {
                 throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
                         result.getExecutionException());
@@ -553,9 +558,33 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private void ensureNoTemplates(File basedir) throws MojoExecutionException {
-        if (SourcePath.scan(basedir).stream().anyMatch(path -> path.matches(templatePattern))) {
-            throw new MojoExecutionException("There is template present in generated directory " + basedir);
+    private void validate(File basedir) throws MojoExecutionException {
+        if (Objects.isNull(validations)) {
+            return;
+        }
+        List<SourcePath> paths = SourcePath.scan(basedir);
+        String error = String.format("Validation failed in directory %s", basedir);
+        for (Validation validation : validations) {
+            String match = validation.getMatch();
+            boolean fail = validation.getFail();
+            boolean isMatch;
+            Predicate<SourcePath> matches = path -> path.matches(validation.getPatterns());
+            switch (match) {
+                case "all":
+                    isMatch = paths.stream().allMatch(matches);
+                    break;
+                case "any":
+                    isMatch = paths.stream().anyMatch(matches);
+                    break;
+                case "none":
+                    isMatch = paths.stream().noneMatch(matches);
+                    break;
+                default:
+                    throw new MojoExecutionException("Wrong validation match value: " + match);
+            }
+            if (isMatch == fail) {
+                throw new MojoExecutionException(String.format("%s with match: %s, fail: %s", error, match, fail));
+            }
         }
     }
 
