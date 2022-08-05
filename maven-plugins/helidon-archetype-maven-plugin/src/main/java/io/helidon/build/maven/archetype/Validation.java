@@ -17,6 +17,9 @@ package io.helidon.build.maven.archetype;
 
 import java.util.Set;
 
+/**
+ * Validation for plugin configuration.
+ */
 @SuppressWarnings("unused")
 public class Validation {
 
