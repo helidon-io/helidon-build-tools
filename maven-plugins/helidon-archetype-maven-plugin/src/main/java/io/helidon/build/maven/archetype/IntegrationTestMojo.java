@@ -567,8 +567,9 @@ public class IntegrationTestMojo extends AbstractMojo {
         for (Validation validation : validations) {
             String match = validation.getMatch();
             boolean fail = validation.getFail();
+            Set<String> patterns = validation.getPatterns();
             boolean isMatch;
-            Predicate<SourcePath> matches = path -> path.matches(validation.getPatterns());
+            Predicate<SourcePath> matches = path -> path.matches(patterns);
             switch (match) {
                 case "all":
                     isMatch = paths.stream().allMatch(matches);
@@ -583,7 +584,8 @@ public class IntegrationTestMojo extends AbstractMojo {
                     throw new MojoExecutionException("Wrong validation match value: " + match);
             }
             if (isMatch == fail) {
-                throw new MojoExecutionException(String.format("%s with match: %s, fail: %s", error, match, fail));
+                throw new MojoExecutionException(
+                        String.format("%s with patterns: %s match: %s, fail: %s", error, patterns, match, fail));
             }
         }
     }
