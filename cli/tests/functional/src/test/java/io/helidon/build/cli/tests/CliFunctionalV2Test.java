@@ -73,7 +73,7 @@ public class CliFunctionalV2Test {
 
     @Test
     void batchTest() {
-        String output = buildArchetype()
+        String output = buildArchetype("batchTest")
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
@@ -83,7 +83,7 @@ public class CliFunctionalV2Test {
     @Test
     @EnabledOnOs(OS.LINUX)
     void batchTestShellScript() {
-        String output = buildArchetype()
+        String output = buildArchetype("batchTestShellScript")
                 .executable(helidonShell)
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
@@ -94,7 +94,7 @@ public class CliFunctionalV2Test {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     void batchTestBatScript() {
-        String output = buildArchetype()
+        String output = buildArchetype("batchTestShellScript")
                 .executable(helidonBatch)
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
@@ -104,7 +104,7 @@ public class CliFunctionalV2Test {
 
     @Test
     void batchTestEmbedded() {
-        buildArchetype()
+        buildArchetype("batchTestEmbedded")
                 .addOption("--batch")
                 .execute(workDir.resolve("bare-se"));
         FunctionalUtils.validateSeProject(workDir);
@@ -113,7 +113,7 @@ public class CliFunctionalV2Test {
     @Test
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
     void batchTestNativeImage() {
-        String output = buildArchetype()
+        String output = buildArchetype("batchTestNativeImage")
                 .executable(helidonNativeImage)
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
@@ -123,7 +123,7 @@ public class CliFunctionalV2Test {
 
     @Test
     void interactiveTest() {
-        String output = buildArchetype()
+        String output = buildArchetype("interactiveTest")
                 .input(inputFile)
                 .start(5, TimeUnit.MINUTES);
         assertThat(output, containsString(expectedOutput));
@@ -159,7 +159,7 @@ public class CliFunctionalV2Test {
     @Test
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
     void interactiveTestNativeImage() {
-        String output = buildArchetype()
+        String output = buildArchetype("interactiveTestNativeImage")
                 .input(inputFile)
                 .executable(helidonNativeImage)
                 .start(5, TimeUnit.MINUTES);
@@ -169,7 +169,7 @@ public class CliFunctionalV2Test {
 
     @Test
     public void testDebug() {
-        String output = buildArchetype()
+        String output = buildArchetype("testDebug")
                 .addOption("batch")
                 .addOption("debug")
                 .start(5, TimeUnit.MINUTES);
@@ -227,9 +227,11 @@ public class CliFunctionalV2Test {
         assertThat(output, containsString(FunctionalUtils.CLI_VERSION));
     }
 
-    private Builder buildArchetype() {
+    private Builder buildArchetype(String artifactId) {
         return cliProcessBuilder()
-                .addArg("artifactId", "bare-se")
+                .addArg("project", workDir.resolve("bare-se").toString())
+                .addArg("groupId", getClass().getName())
+                .addArg("artifactId", artifactId)
                 .addArg("package", "custom.pack.name")
                 .addArg("version", FunctionalUtils.CLI_VERSION)
                 .workDirectory(workDir)

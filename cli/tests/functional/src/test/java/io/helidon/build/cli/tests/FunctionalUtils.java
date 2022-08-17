@@ -16,11 +16,11 @@
 
 package io.helidon.build.cli.tests;
 
-import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.Proxies;
+import io.helidon.build.common.SourcePath;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -102,10 +101,9 @@ public class FunctionalUtils {
         do {
             Thread.sleep(1000);
             if ((System.currentTimeMillis() - now) > timeout) {
-                Path failingTestReport = writeReport(os);
-                throw new Exception(String.format("Application failed to start on port : %s. \nCheck %s file\n",
+                throw new Exception(String.format("Application failed to start on port : %s\nProcess output:\n %s",
                         port,
-                        failingTestReport));
+                        os.toString()));
             }
             try {
                 conn = (HttpURLConnection) url.openConnection();
@@ -130,24 +128,10 @@ public class FunctionalUtils {
         }
     }
 
-    static void generateBareSe(Path wd) {
-        Helidon.execute(
-                "init",
-                "--reset",
-                "--url", ARCHETYPE_URL,
-                "--batch",
-                "--project", wd.resolve("bare-se").toString(),
-                "--version", CLI_VERSION,
-                "--artifactId", "bare-se",
-                "--package", "custom.pack.name",
-                "--flavor", "se");
-        validateSeProject(wd);
-    }
-
     static void validateSeProject(Path wd) {
-        Path projectDir = wd.resolve("bare-se");
-        assertThat(Files.exists(projectDir.resolve("pom.xml")), is(true));
-        assertThat(Files.isDirectory(projectDir.resolve("src/main/java")), is(true));
+        List<SourcePath> files = SourcePath.scan(wd.resolve("bare-se"));
+        assertThat(files.stream().anyMatch(path -> path.matches("pom.xml")), is(true));
+        assertThat(files.stream().anyMatch(path -> path.matches("**/*.java")), is(true));
     }
 
     static String getMvnExecutable(Path mavenBinDir) {
@@ -188,21 +172,6 @@ public class FunctionalUtils {
             }
         }
         return "java";
-    }
-
-    private static Path writeReport(ByteArrayOutputStream os) {
-        try {
-            Path failingTestReport = FileUtils.ensureFile(targetDir(FunctionalUtils.class)
-                    .resolve("surefire-reports/failing-test-output.txt"));
-            Files.writeString(failingTestReport,
-                    os.toString(),
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND,
-                    StandardOpenOption.WRITE);
-            return failingTestReport;
-        } catch (IOException ioe) {
-            throw new UncheckedIOException("Could not create failing test file containing Console output", ioe);
-        }
     }
 
     static void setMavenLocalRepoUrl() {

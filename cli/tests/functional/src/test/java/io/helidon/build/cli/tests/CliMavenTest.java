@@ -16,6 +16,8 @@
 
 package io.helidon.build.cli.tests;
 
+import io.helidon.build.cli.impl.Helidon;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
@@ -38,6 +40,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static io.helidon.build.cli.tests.FunctionalUtils.ARCHETYPE_URL;
+import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
+import static io.helidon.build.cli.tests.FunctionalUtils.validateSeProject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -125,7 +130,7 @@ public class CliMavenTest {
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
     public void testDevLoopRecompilationFails() {
-        runIssue499(FunctionalUtils.CLI_VERSION);
+        runIssue499(CLI_VERSION);
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
@@ -137,23 +142,23 @@ public class CliMavenTest {
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
     public void testFixJansiIssue() {
-        String output = runCliMavenPluginJansiIssue(FunctionalUtils.CLI_VERSION);
+        String output = runCliMavenPluginJansiIssue(CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
-        FunctionalUtils.validateSeProject(workDir);
+        validateSeProject(workDir);
     }
 
     @Test
     public void testCliMavenPlugin() throws Exception {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
-        FunctionalUtils.generateBareSe(workDir);
+        generateBareSe(workDir, "testCliMavenPlugin");
 
         ProcessMonitor monitor = MavenCommand.builder()
                 .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("bare-se"))
                 .stdOut(new PrintStream(stream))
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
-                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + FunctionalUtils.CLI_VERSION + ":dev")
+                .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
                 .build()
                 .start();
         FunctionalUtils.waitForApplication(port, stream);
@@ -165,7 +170,7 @@ public class CliMavenTest {
     private String runCliMavenPluginJansiIssue(String pluginVersion) {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
-        FunctionalUtils.generateBareSe(workDir);
+        generateBareSe(workDir, "runCliMavenPluginJansiIssue" + pluginVersion);
         try {
              ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
@@ -187,7 +192,7 @@ public class CliMavenTest {
     public String runIssue499(String pluginVersion) {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
-        FunctionalUtils.generateBareSe(workDir);
+        generateBareSe(workDir, "runIssue499-" + pluginVersion);
         try {
             ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
@@ -291,6 +296,23 @@ public class CliMavenTest {
         Exception e = assertThrows(Exception.class, () -> runMissingValueTest(args, mavenVersion));
         assertThat(e.getMessage(), containsString("Unresolved input: base"));
         assertThat(e.getMessage(), containsString("BUILD FAILURE"));
+    }
+
+    void generateBareSe(Path wd,  String artifactId) {
+        FileUtils.requireDirectory(wd);
+        assertThat(FileUtils.list(wd).size(), is(1));
+        Helidon.execute(
+                "init",
+                "--reset",
+                "--url", ARCHETYPE_URL,
+                "--batch",
+                "--project", wd.resolve("bare-se").toString(),
+                "--version", CLI_VERSION,
+                "--groupId", getClass().getName(),
+                "--artifactId", artifactId,
+                "--package", "custom.pack.name",
+                "--flavor", "se");
+        validateSeProject(wd);
     }
 
 }
