@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.maven.archetype;
+package io.helidon.build.maven.archetype.configuration;
 
 import java.util.Set;
 
@@ -23,11 +23,15 @@ import java.util.Set;
 @SuppressWarnings("unused")
 public class Validation {
 
-    private Set<String> patterns;
+    private UniqueKeyMap<String, String> patterns;
     private String match;
     private boolean fail;
 
-    public Set<String> getPatterns() {
+    public Set<String> patterns() {
+        return patterns.values();
+    }
+
+    public UniqueKeyMap<String, String> getPatterns() {
         return patterns;
     }
 
@@ -39,7 +43,7 @@ public class Validation {
         return fail;
     }
 
-    public void setPatterns(Set<String> patterns) {
+    public void setPatterns(UniqueKeyMap<String, String> patterns) {
         this.patterns = patterns;
     }
 

@@ -51,6 +51,7 @@ import io.helidon.build.common.Maps;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 
+import io.helidon.build.maven.archetype.configuration.Validation;
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
 import org.apache.maven.archetype.exception.ArchetypeNotConfigured;
@@ -559,7 +560,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void validate(File basedir) throws MojoExecutionException {
-        if (Objects.isNull(validations)) {
+        if (Objects.isNull(validations) || validations.isEmpty()) {
             return;
         }
         List<SourcePath> paths = SourcePath.scan(basedir);
@@ -567,7 +568,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         for (Validation validation : validations) {
             String match = validation.getMatch();
             boolean fail = validation.getFail();
-            Set<String> patterns = validation.getPatterns();
+            Set<String> patterns = validation.patterns();
             boolean isMatch;
             Predicate<SourcePath> matches = path -> path.matches(patterns);
             switch (match) {
