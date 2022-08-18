@@ -27,6 +27,11 @@ public class Validation {
     private String match;
     private boolean fail;
 
+    /**
+     * Return the patterns values as a {@link Set}.
+     *
+     * @return patterns
+     */
     public Set<String> patterns() {
         return patterns.values();
     }

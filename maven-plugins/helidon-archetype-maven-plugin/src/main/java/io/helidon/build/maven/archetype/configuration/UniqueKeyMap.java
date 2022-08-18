@@ -28,8 +28,8 @@ import java.util.Set;
  */
 public class UniqueKeyMap<K, V> extends HashMap<K, V> {
 
-    K key = null;
-    Set<V> values = new HashSet<>();
+    private K key = null;
+    private final Set<V> values = new HashSet<>();
 
     @Override
     public V put(K key, V value) {
@@ -43,6 +43,11 @@ public class UniqueKeyMap<K, V> extends HashMap<K, V> {
         return value;
     }
 
+    /**
+     * Return a {@link Set} of values corresponding to the unique key.
+     *
+     * @return values
+     */
     public Set<V> values() {
         return values;
     }
