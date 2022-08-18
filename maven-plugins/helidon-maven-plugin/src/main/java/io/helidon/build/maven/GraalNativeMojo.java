@@ -176,6 +176,12 @@ public class GraalNativeMojo extends AbstractMojo {
     private String module;
 
     /**
+     * Module path for {@code --module-path} argument.
+     */
+    @Parameter()
+    private List<String> modulePath;
+
+    /**
      * The {@code native-image} execution process.
      */
     private Process process;
@@ -250,14 +256,12 @@ public class GraalNativeMojo extends AbstractMojo {
             if (module.isBlank()) {
                 throw new MojoExecutionException("Module name is required, use \"native.image.module\" property");
             }
-            if (!mainClass.isBlank()) {
-                if (!module.endsWith("/")) {
-                    module += "/";
-                }
-                module += mainClass;
-            }
             command.add("--module");
             command.add(module);
+            if (!modulePath.isEmpty()) {
+                command.add("--module-path");
+                command.add(String.join(";", modulePath));
+            }
         }
 
         // -H:Name must be after -jar
