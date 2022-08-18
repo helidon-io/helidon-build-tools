@@ -45,7 +45,7 @@ class Schema {
     /**
      * Schema location.
      */
-    static final String LOCATION = "https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-script-2.0.xsd";
+    static final String LOCATION = "https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd";
 
     /**
      * Schema namespace.
