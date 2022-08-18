@@ -53,6 +53,7 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_MAIN_CLASS = "main";
     private static final String EXEC_MODE_JAR = "jar";
     private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
+    private static final String EXEC_MODE_MODULE = "module";
     private static final String PATH_ENV_VAR = "PATH";
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
 
@@ -169,6 +170,12 @@ public class GraalNativeMojo extends AbstractMojo {
     private boolean skipNativeImage;
 
     /**
+     * Module name for {@code --module} argument.
+     */
+    @Parameter(property = "native.image.module")
+    private String module;
+
+    /**
      * The {@code native-image} execution process.
      */
     private Process process;
@@ -237,6 +244,20 @@ public class GraalNativeMojo extends AbstractMojo {
             }
             command.add("-jar");
             command.add(jarFile.getAbsolutePath());
+        }
+
+        if (context.useModule()) {
+            if (module.isBlank()) {
+                throw new MojoExecutionException("Module name is required, use \"native.image.module\" property");
+            }
+            if (!mainClass.isBlank()) {
+                if (!module.endsWith("/")) {
+                    module += "/";
+                }
+                module += mainClass;
+            }
+            command.add("--module");
+            command.add(module);
         }
 
         // -H:Name must be after -jar
@@ -530,6 +551,7 @@ public class GraalNativeMojo extends AbstractMojo {
         private final boolean useJar;
         private final boolean useMain;
         private final boolean addClasspath;
+        private final boolean useModule;
 
         private NativeContext(String execMode) throws MojoFailureException {
             switch (execMode) {
@@ -537,21 +559,31 @@ public class GraalNativeMojo extends AbstractMojo {
                 useJar = true;
                 useMain = false;
                 addClasspath = false;
+                useModule = false;
                 break;
             case EXEC_MODE_JAR_WITH_CP:
                 useJar = true;
                 useMain = false;
                 addClasspath = true;
+                useModule = false;
                 break;
             case EXEC_MODE_MAIN_CLASS:
                 useJar = false;
                 useMain = true;
                 addClasspath = true;
+                useModule = false;
+                break;
+            case EXEC_MODE_MODULE:
+                useJar = false;
+                useMain = false;
+                addClasspath = false;
+                useModule = true;
                 break;
             default:
                 throw new MojoFailureException("Invalid configuration of \"execMode\". Has to be one of: "
                                                        + EXEC_MODE_JAR + ", "
-                                                       + EXEC_MODE_JAR_WITH_CP + ", or "
+                                                       + EXEC_MODE_JAR_WITH_CP + ", "
+                                                       + EXEC_MODE_MODULE + ", or "
                                                        + EXEC_MODE_MAIN_CLASS);
             }
         }
@@ -562,6 +594,10 @@ public class GraalNativeMojo extends AbstractMojo {
 
         boolean useMain() {
             return useMain;
+        }
+
+        boolean useModule() {
+            return useModule;
         }
 
         boolean addClasspath() {
