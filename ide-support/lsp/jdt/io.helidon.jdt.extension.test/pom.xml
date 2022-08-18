@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.ide-support.jdt</groupId>
         <artifactId>helidon-ide-support-jdt-project</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.0.1</version>
     </parent>
     <artifactId>io.helidon.jdt.extension.test</artifactId>
     <packaging>eclipse-test-plugin</packaging>

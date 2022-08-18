@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-build-tools-project</artifactId>
         <groupId>io.helidon.build-tools</groupId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.0.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
