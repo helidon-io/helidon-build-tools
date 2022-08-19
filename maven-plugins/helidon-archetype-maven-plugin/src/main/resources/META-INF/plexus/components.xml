@@ -46,5 +46,14 @@
                 </lifecycles>
             </configuration>
         </component>
+        <component>
+            <role>io.helidon.build.maven.archetype.Validation</role>
+            <implementation>io.helidon.build.maven.archetype.Validation</implementation>
+            <requirements>
+                <requirement>
+                    <field-name>patterns</field-name>
+                </requirement>
+            </requirements>
+        </component>
     </components>
 </component-set>

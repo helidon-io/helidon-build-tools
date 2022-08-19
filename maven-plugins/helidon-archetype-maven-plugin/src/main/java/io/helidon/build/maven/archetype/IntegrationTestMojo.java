@@ -50,7 +50,6 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
-import io.helidon.build.maven.archetype.configuration.Validation;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.archetype.ArchetypeGenerationResult;
