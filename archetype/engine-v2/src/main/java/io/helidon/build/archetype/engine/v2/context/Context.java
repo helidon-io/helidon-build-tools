@@ -21,6 +21,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Value;
@@ -48,8 +49,12 @@ public final class Context implements ContextRegistry {
         this.scope = builder.scope;
         requireRootScope();
         builder.externalDefaults.forEach((k, v) -> defaults.put(k, DynamicValue.create(() -> scope.interpolate(v))));
+        Function<String, String> externalValueResolver = value -> {
+            String result = builder.externalValues.get(value);
+            return result != null ? result : builder.externalDefaults.get(value);
+        };
         builder.externalValues.forEach((k, v) -> scope.putValue(k,
-                DynamicValue.create(evaluate(v, builder.externalValues::get)), ValueKind.EXTERNAL));
+                DynamicValue.create(evaluate(v, externalValueResolver)), ValueKind.EXTERNAL));
         directories.push(builder.cwd);
     }
 

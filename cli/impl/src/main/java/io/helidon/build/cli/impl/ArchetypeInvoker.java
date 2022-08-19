@@ -448,6 +448,10 @@ abstract class ArchetypeInvoker {
             } else {
                 resolver = new BatchInputResolver();
 
+                // Add defaults in case of the user has not specify mandatory options
+                externalDefaults.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
+                externalDefaults.put(FLAVOR_PROPERTY, initOptions.flavor().toString());
+
                 // Batch mode, so pass merged init options as external values
                 externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
                 externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
