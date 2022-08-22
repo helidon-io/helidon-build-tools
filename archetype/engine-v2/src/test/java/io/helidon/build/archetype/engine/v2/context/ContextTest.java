@@ -70,8 +70,22 @@ class ContextTest {
     @Test
     void testExternalValuesSubstitution() {
         Context context = Context.builder()
-                                 .externalValues(Map.of("foo", "foo", "bar", "${foo}"))
+                                 .externalDefaults(Map.of(
+                                         "some_var", "some_var_default",
+                                         "bar1", "bar1_default_value"
+                                 ))
+                                 .externalValues(Map.of(
+                                         "foo", "foo",
+                                         "bar", "${foo}",
+                                         "foo1", "${non_exist_var}",
+                                         "foo2", "${some_var}",
+                                         "bar1", "bar1_value",
+                                         "foo3", "${bar1}"
+                                 ))
                                  .build();
         assertThat(context.scope().getValue("bar").asString(), is("foo"));
+        assertThat(context.scope().getValue("foo1").asString(), is(""));
+        assertThat(context.scope().getValue("foo2").asString(), is("some_var_default"));
+        assertThat(context.scope().getValue("foo3").asString(), is("bar1_value"));
     }
 }
