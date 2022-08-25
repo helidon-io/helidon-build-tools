@@ -74,6 +74,10 @@
             <artifactId>helidon-linker</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-java</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

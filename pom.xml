@@ -157,6 +157,7 @@
         <version.lib.plexus-archiver>4.1.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.plexus-component>2.0.0</version.lib.plexus-component>
+        <version.lib.plexus-java>1.1.1</version.lib.plexus-java>
         <version.lib.plexus-utils>3.3.0</version.lib.plexus-utils>
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
@@ -685,6 +686,11 @@
                 <groupId>org.apache.maven.plugin-testing</groupId>
                 <artifactId>maven-plugin-testing-harness</artifactId>
                 <version>${version.lib.maven-plugin-testing-harness}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-java</artifactId>
+                <version>${version.lib.plexus-java}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
