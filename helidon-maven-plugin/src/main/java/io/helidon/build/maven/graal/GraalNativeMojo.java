@@ -23,11 +23,9 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -65,8 +63,6 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_MODULE = "module";
     private static final String PATH_ENV_VAR = "PATH";
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
-    private static final String MODULE_PATH = "module-path";
-    private static final String CLASS_PATH = "class-path";
 
     /**
      * {@code true} if running on WINDOWS.
@@ -271,19 +267,9 @@ public class GraalNativeMojo extends AbstractMojo {
             if (module.isBlank()) {
                 throw new MojoExecutionException("Module name is required, use \"native.image.module\" property");
             }
-            Map<String, String> paths = buildModuleAndClassPath();
-            String modulePath = paths.get(MODULE_PATH);
-            String classPath = paths.get(CLASS_PATH);
             command.add("--module");
             command.add(module);
-            if (!modulePath.isEmpty()) {
-                command.add("--module-path");
-                command.add(modulePath);
-            }
-            if (!classPath.isEmpty()) {
-                command.add("--class-path");
-                command.add(classPath);
-            }
+            addModuleAndClassPath(command);
         }
 
         // -H:Name must be after -jar
@@ -317,30 +303,25 @@ public class GraalNativeMojo extends AbstractMojo {
     }
 
     /**
-     * Build module-path and class-path. Both key will be present in the returned map.
+     * Build module-path, class-path, and add them to the provided list.
      *
-     * @return map containing class-path and module-path
+     * @param command where the module-path and/or class-path will be added
      */
-    private Map<String, String> buildModuleAndClassPath() {
+    private void addModuleAndClassPath(List<String> command) {
         getLog().debug("Building module-path string");
         List<String> modules = new LinkedList<>();
         List<String> cp = new LinkedList<>();
         File jarFile = new File(buildDirectory, finalName + ".jar");
         LocationManager locationManager = new LocationManager();
 
-        Optional<SourcePath> moduleDescriptor = SourcePath.scan(Path.of(project.getBuild().getSourceDirectory()).toFile())
-                .stream()
-                .filter(p -> p.matches("module-info.java"))
-                .findAny();
-
         if (jarFile.exists()) {
-            if (moduleDescriptor.isPresent()) {
+            if (getProjectModuleDescriptor().isPresent()) {
                 modules.add(jarFile.getAbsolutePath());
             } else {
                 cp.add(jarFile.getAbsolutePath());
             }
         } else {
-            getLog().debug(String.format("Jar file %s does not exist, won't be present on module/class path", jarFile.getName()));
+            getLog().warn(String.format("Jar file %s does not exist, won't be present on module/class path", jarFile.getName()));
         }
 
         for (Artifact artifact : project.getArtifacts()) {
@@ -351,9 +332,9 @@ public class GraalNativeMojo extends AbstractMojo {
                     modules.add(file.getPath());
                     continue;
                 }
-                addRuntimeClassPathArtifact(artifact, cp);
+                addRuntimeClasspathArtifact(artifact, cp);
             } catch (IOException e) {
-                addRuntimeClassPathArtifact(artifact, cp);
+                addRuntimeClasspathArtifact(artifact, cp);
             }
         }
 
@@ -361,13 +342,24 @@ public class GraalNativeMojo extends AbstractMojo {
         String classPath = String.join(File.pathSeparator, cp);
         getLog().debug("Built module-path: " + modulePath);
         getLog().debug("Built class-path: " + classPath);
-        Map<String, String> result = new HashMap<>();
-        result.put(MODULE_PATH, modulePath);
-        result.put(CLASS_PATH, classPath);
-        return result;
+        if (!modulePath.isEmpty()) {
+            command.add("--module-path");
+            command.add(modulePath);
+        }
+        if (!classPath.isEmpty()) {
+            command.add("--class-path");
+            command.add(classPath);
+        }
     }
 
-    private void addRuntimeClassPathArtifact(Artifact artifact, List<String> list) {
+    private Optional<SourcePath> getProjectModuleDescriptor() {
+        return SourcePath.scan(Path.of(project.getBuild().getSourceDirectory()).toFile())
+                .stream()
+                .filter(p -> p.matches("module-info.java"))
+                .findAny();
+    }
+
+    private void addRuntimeClasspathArtifact(Artifact artifact, List<String> list) {
         if (artifact.getArtifactHandler().isAddedToClasspath()
                 && (Artifact.SCOPE_COMPILE.equals(artifact.getScope())
                 || Artifact.SCOPE_RUNTIME.equals(artifact.getScope()))) {
