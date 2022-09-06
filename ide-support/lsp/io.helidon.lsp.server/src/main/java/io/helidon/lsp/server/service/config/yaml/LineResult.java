@@ -14,7 +14,25 @@
  * limitations under the License.
  */
 
-/**
- * Prepare data for auto-completion in Helidon config files for the Helidon Language Server.
- */
-package io.helidon.lsp.server.service.config;
+package io.helidon.lsp.server.service.config.yaml;
+
+import java.util.Queue;
+
+public class LineResult {
+
+    private final int indent;
+    private final Queue<Token> tokens;
+
+    public LineResult(int indent, Queue<Token> tokens) {
+        this.indent = indent;
+        this.tokens = tokens;
+    }
+
+    public int indent() {
+        return indent;
+    }
+
+    public Queue<Token> tokens() {
+        return tokens;
+    }
+}

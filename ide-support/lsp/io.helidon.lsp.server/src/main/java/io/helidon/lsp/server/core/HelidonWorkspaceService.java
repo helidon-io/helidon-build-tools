@@ -76,11 +76,12 @@ public class HelidonWorkspaceService implements WorkspaceService {
                 .filter(uri -> uri.endsWith("pom.xml"))
                 .forEach(
                         pom -> {
-                            try {
-                                configurationPropertiesService.getConfigMetadataForFile(pom);
-                            } catch (URISyntaxException | IOException e) {
-                                LOGGER.log(Level.SEVERE, "exception while processing the file " + pom, e);
-                            }
+                            //TODO RELOAD CACHE
+//                            try {
+//                                configurationPropertiesService.getConfigMetadataForFile(pom);
+//                            } catch (URISyntaxException | IOException e) {
+//                                LOGGER.log(Level.SEVERE, "exception while processing the file " + pom, e);
+//                            }
                         }
                 );
     }

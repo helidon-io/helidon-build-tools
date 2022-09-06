@@ -44,4 +44,16 @@ public class LspStringUtils {
         }
         return count;
     }
+
+    public static int indentSize(String line) {
+        int result = 0;
+        for (char symbol : line.toCharArray()) {
+            if (symbol == ' ' || symbol == '-') {
+                result++;
+            } else {
+                return result;
+            }
+        }
+        return result;
+    }
 }

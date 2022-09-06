@@ -16,93 +16,75 @@
 
 package io.helidon.lsp.server.service.config.yaml;
 
-import io.helidon.lsp.server.service.config.PropsDocument;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+@Disabled
+//TODO change it for the new implementation or remove it
 class YamlParserTest {
 
     @Test
-    public void testGetSiblings() throws IOException, URISyntaxException {
+    public void testIncorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
-        PropsDocument yaml = getYaml();
-        List<String> fileContent = getFileContent();
-        yamlParser.setBinding(yaml, new LinkedList<>(fileContent));
-        LinkedHashMap<Map.Entry<String, Object>, PropsDocument.FileBinding> binding = yaml.getBinding();
-        for (Map.Entry<Map.Entry<String, Object>, PropsDocument.FileBinding> entry : binding.entrySet()) {
-            if (entry.getKey().getKey().equals("field1")) {
-                Set<Map.Entry<String, Object>> siblings = yaml.getSiblings(entry.getKey());
-                assertEquals(2, siblings.size());
-                return;
-            }
-        }
-        fail();
+        List<String> strings = readFile("incorrect-yaml-file.yaml");
+        Map<String, LineResult> result = yamlParser.parse(strings);
+
+        assertThat(result.get("firstName").indent(), is(0));
+        assertThat(result.get("firstName").tokens().peek().value(), is("firstName"));
+        assertThat(result.get("lastName.age").indent(), is(2));
+        assertThat(result.get("lastName.age").tokens().peek().value(), is("age"));
+        assertThat(result.get("lastName.address.street").indent(), is(4));
+        assertThat(result.get("lastName.address.street").tokens().peek().value(), is("street"));
     }
 
     @Test
-    public void testSetBinding() throws IOException, URISyntaxException {
+    public void testCorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
-        Map<String, Object> map = new LinkedHashMap<>();
-        PropsDocument yaml = getYaml();
-        List<String> fileContent = getFileContent();
-        yamlParser.setBinding(yaml, new LinkedList<>(fileContent));
-        LinkedHashMap<Map.Entry<String, Object>, PropsDocument.FileBinding> binding = yaml.getBinding();
-        for (Map.Entry<Map.Entry<String, Object>, PropsDocument.FileBinding> entry : binding.entrySet()) {
-            if (entry.getKey().getKey().equals("parent")) {
-                assertEquals(0, entry.getValue().getLevel());
-                assertEquals(15, entry.getValue().getRow());
-                assertEquals(0, entry.getValue().getColumn());
-            }
-            if (entry.getKey().getKey().equals("second")) {
-                assertEquals(2, entry.getValue().getLevel());
-                assertEquals(18, entry.getValue().getRow());
-                assertEquals(4, entry.getValue().getColumn());
-            }
-            if (entry.getKey().getKey().equals("field1")) {
-                assertEquals(3, entry.getValue().getLevel());
-                assertEquals(26, entry.getValue().getRow());
-                assertEquals(6, entry.getValue().getColumn());
-            }
-            return;
+        List<String> strings = readFile("correct-yaml-file.yaml");
+        Map<String, LineResult> resultMap = yamlParser.parse(strings);
+
+        assertThat(resultMap.size(), is(53));
+
+        assertThat(resultMap.get("security").indent(), is(0));
+        assertThat(resultMap.get("security").tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(resultMap.get("security").tokens().peek().value(), is("security"));
+
+        assertThat(resultMap.get("security.provider-policy.type").indent(), is(2));
+        assertThat(resultMap.get("security.provider-policy.type").tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(resultMap.get("security.provider-policy.type").tokens().peek().value(), is("provider-policy.type"));
+
+        assertThat(resultMap.get("security.secrets.provider").indent(), is(4));
+        assertThat(resultMap.get("security.secrets.provider").tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(resultMap.get("security.secrets.provider").tokens().peek().value(), is("provider"));
+
+        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").indent(), is(6));
+        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").tokens().peek().value(), is("session-timeout-seconds"));
+
+        System.out.println(resultMap);
+    }
+
+    private List<String> readFile(String path) throws IOException {
+        String path1 = URLDecoder.decode(
+                this.getClass().getClassLoader().getResource(path).getPath(),
+                "UTF-8"
+        );
+        List<String> result = null;
+        try (Stream<String> lines = Files.lines(Paths.get(path1))) {
+            result = lines.collect(Collectors.toList());
         }
-        fail();
-    }
-
-    private PropsDocument getYaml() throws IOException, URISyntaxException {
-        YamlParser yamlParser = new YamlParser();
-        List<String> strings = getFileContent();
-        return yamlParser.parse(strings);
-    }
-
-    private List<String> getFileContent() throws IOException, URISyntaxException {
-        URL resource = YamlParserTest.class.getResource("/test.yaml");
-        Path path = Paths.get(resource.toURI());
-        return Files.readAllLines(path);
-    }
-
-    @Test
-    public void testParseYaml() throws URISyntaxException, IOException {
-        YamlParser yamlParser = new YamlParser();
-        URL resource = YamlParserTest.class.getResource("/test.yaml");
-        Path path = Paths.get(resource.toURI());
-        List<String> strings = Files.readAllLines(path);
-        int expectedParentNodesCount = 2;
-
-        PropsDocument propsDocument = yamlParser.parse(strings);
-
-        assertEquals(expectedParentNodesCount, propsDocument.keySet().size());
+        return result;
     }
 }

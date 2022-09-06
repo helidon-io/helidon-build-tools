@@ -36,13 +36,13 @@ class MavenSupportTest {
     @Test
     public void getDependenciesTest() throws URISyntaxException, IOException {
         String pomForFile = getPomForCurrentClass();
-        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.getInstance().getDependencies(pomForFile, 3000);
+        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.instance().getDependencies(pomForFile, 3000);
         assertTrue(dependencies.size() > 0);
     }
 
     private String getPomForCurrentClass() throws IOException, URISyntaxException {
         URI uri = MavenSupportTest.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-        return MavenSupport.getInstance().getPomForFile(uri.getPath());
+        return MavenSupport.instance().getPomForFile(uri.getPath());
     }
 
 }

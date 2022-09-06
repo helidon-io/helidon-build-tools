@@ -13,22 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-parent:
-  test:
-    value1: 10
-    second: true
-    #it is a comment
-    third:
-      - arrayValue1
-        - arrayValue2
-    -arrayValue3
-    - arrayValue4
-    other-object:
-      field1: 1
-      field2: two
-      field3: 3
-  test1: aaa
-parent2:
-  test2: value2
-  test3:
-    [ one, two ]
+firstName: "John"
+  - incorrectListPoint: 1
+lastName: "Doe"
+  age: 20
+  address:
+    street: "Street"
+work:

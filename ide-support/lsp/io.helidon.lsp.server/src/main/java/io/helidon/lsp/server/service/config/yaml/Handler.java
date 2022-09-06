@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-/**
- * Prepare data for auto-completion in Helidon config files for the Helidon Language Server.
- */
-package io.helidon.lsp.server.service.config;
+package io.helidon.lsp.server.service.config.yaml;
+//TODO add JavaDocs
+public interface Handler {
+
+    LineResult process(String line);
+
+}

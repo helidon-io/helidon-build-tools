@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.lsp.server.service.metadata;
 
-/**
- * Prepare data for auto-completion in Helidon config files for the Helidon Language Server.
- */
-package io.helidon.lsp.server.service.config;
+import java.util.Set;
+
+public class ContainerConfigMetadata extends ConfigMetadata {
+
+    public ContainerConfigMetadata(String key, String type, String description, int level, Set<ConfigMetadata> content) {
+        super(key, type, description, level, content);
+    }
+}

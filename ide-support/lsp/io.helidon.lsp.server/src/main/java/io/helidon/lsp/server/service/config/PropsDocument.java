@@ -27,6 +27,7 @@ import java.util.Set;
 /**
  * Represents content of the meta configuration file.
  */
+//TODO change or remove it
 public class PropsDocument extends LinkedHashMap<String, Object> {
 
     private LinkedHashMap<Map.Entry<String, Object>, FileBinding> binding = new LinkedHashMap<>();

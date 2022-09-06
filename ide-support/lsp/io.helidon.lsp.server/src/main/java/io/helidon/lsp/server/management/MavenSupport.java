@@ -64,7 +64,7 @@ public class MavenSupport {
      *
      * @return Instance of the MavenSupport class.
      */
-    public static MavenSupport getInstance() {
+    public static MavenSupport instance() {
         if (instance == null) {
             instance = new MavenSupport();
         }

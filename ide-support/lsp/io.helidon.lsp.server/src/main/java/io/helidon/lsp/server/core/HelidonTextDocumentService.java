@@ -238,12 +238,14 @@ public class HelidonTextDocumentService implements TextDocumentService {
         LOGGER.log(Level.FINEST, () -> "opening the file " + docUri);
 
         if (PROPS_FILE_PATTERN.stream().anyMatch(docUri::endsWith)) {
-            try {
+            //TODO process the file
+//            try {
                 //fill the cache
-                configurationPropertiesService.getConfigMetadataForFile(docUri);
-            } catch (URISyntaxException | IOException e) {
-                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
-            }
+
+//                configurationPropertiesService.getConfigMetadataForFile(docUri);
+//            } catch (URISyntaxException | IOException e) {
+//                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+//            }
         }
     }
 

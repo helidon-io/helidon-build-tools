@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +33,7 @@ import io.helidon.lsp.server.model.ConfigurationMetadata;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 
+import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionParams;
@@ -67,28 +69,29 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         List<CompletionItem> completionItems = new ArrayList<>();
         try {
             String fileUri = position.getTextDocument().getUri();
-            List<ConfigurationMetadata> metadataList =
-                    configurationPropertiesService.getConfigMetadataForFile(fileUri);
+            Map<String, ConfigMetadata> configMetadata =
+                    configurationPropertiesService.metadataForFile(fileUri);
 
             Properties existedProperties = loadPropertiesFile(fileUri);
-            for (ConfigurationMetadata metadata : metadataList) {
-                if (metadata.getProperties() == null) {
-                    continue;
-                }
-                metadata.getProperties().stream()
-                        .filter(property -> !existedProperties.containsKey(property.getName()))
-                        .forEach(property -> {
-                            CompletionItem item = new CompletionItem();
-                            item.setKind(CompletionItemKind.Snippet);
-                            item.setLabel(property.getName());
-                            item.setDetail(property.getType());
-                            item.setInsertTextFormat(InsertTextFormat.Snippet);
-                            item.setDocumentation(getDocumentation(property));
-                            String value = getValue(property, metadata);
-                            item.setInsertText(property.getName() + SEPARATOR + value);
-                            completionItems.add(item);
-                        });
-            }
+            //TODO process metadata
+//            for (ConfigurationMetadata metadata : metadataList) {
+//                if (metadata.getProperties() == null) {
+//                    continue;
+//                }
+//                metadata.getProperties().stream()
+//                        .filter(property -> !existedProperties.containsKey(property.getName()))
+//                        .forEach(property -> {
+//                            CompletionItem item = new CompletionItem();
+//                            item.setKind(CompletionItemKind.Snippet);
+//                            item.setLabel(property.getName());
+//                            item.setDetail(property.getType());
+//                            item.setInsertTextFormat(InsertTextFormat.Snippet);
+//                            item.setDocumentation(getDocumentation(property));
+//                            String value = getValue(property, metadata);
+//                            item.setInsertText(property.getName() + SEPARATOR + value);
+//                            completionItems.add(item);
+//                        });
+//            }
         } catch (Exception e) {
             LOGGER.log(
                     Level.SEVERE,
@@ -98,6 +101,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         return completionItems;
     }
 
+    //TODO check does it work if file contains exceptions
     private Properties loadPropertiesFile(String fileUri) throws IOException, URISyntaxException {
         InputStream input = new FileInputStream(new URI(fileUri).getPath());
         Properties properties = new Properties();

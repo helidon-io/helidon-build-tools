@@ -29,6 +29,8 @@ module io.helidon.lsp.server {
     requires io.helidon.build.common.maven;
     requires io.helidon.build.common;
     requires io.helidon.lsp.common;
+    requires io.helidon.config.metadata;
+    requires java.json;
     opens io.helidon.lsp.server.service.config;
     opens io.helidon.lsp.server.model;
 }

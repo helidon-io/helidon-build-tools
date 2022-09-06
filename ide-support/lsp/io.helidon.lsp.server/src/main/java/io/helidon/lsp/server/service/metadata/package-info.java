@@ -15,6 +15,6 @@
  */
 
 /**
- * Prepare data for auto-completion in Helidon config files for the Helidon Language Server.
+ * Obtain and process metadata related to the configuration properties from the Helidon dependencies of the project.
  */
-package io.helidon.lsp.server.service.config;
+package io.helidon.lsp.server.service.metadata;
