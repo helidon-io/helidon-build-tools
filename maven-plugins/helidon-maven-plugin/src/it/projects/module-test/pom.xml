@@ -1,0 +1,87 @@
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.helidon.build-tools.module.tests</groupId>
+    <artifactId>module-test</artifactId>
+    <version>@project.version@</version>
+    <name>Test Native Image With Module</name>
+    <packaging>jar</packaging>
+
+    <properties>
+        <compiler.plugin.version>3.8.1</compiler.plugin.version>
+        <jakarta.activation.version>2.1.0</jakarta.activation.version>
+        <javax.annotation.version>1.2</javax.annotation.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.plugin.version}</version>
+                <configuration>
+                    <release>11</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>graal</id>
+                        <goals>
+                            <goal>native-image</goal>
+                        </goals>
+                        <configuration>
+                            <execMode>module</execMode>
+                            <module>my.own.module/my.own.module.Main</module>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- profiles are needed to test module execution mode of GraalNativeMojo -->
+    <profiles>
+        <profile>
+            <id>module-path</id>
+            <dependencies>
+                <dependency>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                    <version>${jakarta.activation.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>class-path</id>
+            <dependencies>
+                <dependency>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                    <version>${javax.annotation.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+</project>
