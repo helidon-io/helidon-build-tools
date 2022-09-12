@@ -36,10 +36,10 @@ def findLines(actualIndex, actualLines, fname) {
     while (!found && actualIndex < actualLines.size() - 1) {
         // seek
         for (; actualIndex < actualLines.size(); actualIndex++) {
-            if (actualLines[actualIndex].contains(expectedLines[0])
-                    && actualLines[actualIndex].contains(expectedLines[1])
-                    && actualLines[actualIndex+1].contains(expectedLines[2])
-                    && actualLines[actualIndex+1].contains(expectedLines[3])) {
+            if (actualLines[actualIndex].contains("[DEBUG] Built module-path:")
+                    && actualLines[actualIndex].contains(expectedLines[0])
+                    && actualLines[actualIndex+1].contains("[DEBUG] Built class-path:")
+                    && actualLines[actualIndex+1].contains(expectedLines[1])) {
                 found = true
                 break
             }
