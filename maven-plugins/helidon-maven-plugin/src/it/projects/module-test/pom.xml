@@ -25,12 +25,18 @@
     <name>Test Native Image With Module</name>
     <packaging>jar</packaging>
 
+    <properties>
+        <compiler.plugin.version>3.8.1</compiler.plugin.version>
+        <jakarta.activation.version>2.1.0</jakarta.activation.version>
+        <javax.annotation.version>1.2</javax.annotation.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>${compiler.plugin.version}</version>
                 <configuration>
                     <release>11</release>
                 </configuration>
@@ -55,6 +61,7 @@
         </plugins>
     </build>
 
+    <!-- profiles are needed to test module execution mode of GraalNativeMojo -->
     <profiles>
         <profile>
             <id>module-path</id>
@@ -62,7 +69,7 @@
                 <dependency>
                     <groupId>jakarta.activation</groupId>
                     <artifactId>jakarta.activation-api</artifactId>
-                    <version>2.1.0</version>
+                    <version>${jakarta.activation.version}</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -70,9 +77,9 @@
             <id>class-path</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                    <version>1.11</version>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                    <version>${javax.annotation.version}</version>
                 </dependency>
             </dependencies>
         </profile>
