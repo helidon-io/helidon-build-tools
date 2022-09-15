@@ -38,6 +38,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 class SimpleMXLParserTest {
 
     @Test
+    void testParseProcessInstruction() throws IOException {
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test1.xml");
+        assertThat(inputStream, is(not(nullValue())));
+        Test1Reader reader = new Test1Reader();
+        SimpleXMLParser.parse(inputStream, reader);
+        assertThat(reader.m2e, is("execute onConfiguration,onIncremental"));
+    }
+
+    @Test
     void testParse() throws IOException {
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test1.xml");
         assertThat(inputStream, is(not(nullValue())));
@@ -117,6 +126,7 @@ class SimpleMXLParserTest {
         String rootQName;
         String foo;
         String bob;
+        String m2e;
 
         @Override
         public void startElement(String name, Map<String, String> attributes) {
@@ -139,6 +149,16 @@ class SimpleMXLParserTest {
                     foo = data;
                 } else if ("bob".equals(qName)) {
                     bob = data;
+                }
+            }
+        }
+
+        @Override
+        public void processInstructionContent(String data) {
+            String target = stack.peek();
+            if (target != null) {
+                if ("m2e".equals(target)) {
+                    m2e = data;
                 }
             }
         }

@@ -221,6 +221,15 @@ public final class SimpleXMLParser {
             Collections.addAll(values, value.split(","));
             return values;
         }
+
+        /**
+         * Receive notification of content data inside a Processing instructions element.
+         *
+         * @param data the content data of Processing instructions
+         * @throws XMLReaderException if any error occurs
+         */
+        default void processInstructionContent(String data) {
+        }
     }
 
     private enum STATE {
@@ -236,10 +245,14 @@ public final class SimpleXMLParser {
         ATTRIBUTE_VALUE,
         SINGLE_QUOTED_VALUE,
         DOUBLE_QUOTED_VALUE,
+        PI_TARGET,
+        PI_CONTENT
     }
 
-    private static final String PROLOG_START = "<?";
+    private static final String PROLOG_START = "<?xml";
     private static final String PROLOG_END = "?>";
+    private static final String PI_START = "<?";
+    private static final String PI_END = "?>";
     private static final String COMMENT_START = "<!--";
     private static final String COMMENT_END = "-->";
     private static final String ELEMENT_SELF_CLOSE = "/>";
@@ -367,6 +380,13 @@ public final class SimpleXMLParser {
         } else if (hasToken(CLOSE_MARKUP_START)) {
             state = STATE.END_ELEMENT;
             position++;
+        } else if (hasToken(PI_START)) {
+            resumeState = STATE.PI_CONTENT;
+            state = STATE.PI_TARGET;
+            position += PI_START.length();
+        } else if (hasToken(PI_END)) {
+            state = STATE.END_ELEMENT;
+            position += PI_END.length();
         } else if (hasToken(MARKUP_START)) {
             resumeState = STATE.ATTRIBUTES;
             state = STATE.NAME;
@@ -511,6 +531,36 @@ public final class SimpleXMLParser {
         }
     }
 
+    private void processPIContent() throws IOException {
+        if (hasToken(PI_END)) {
+            position += PI_END.length();
+            state = STATE.ELEMENT;
+            String target = nameBuilder.toString();
+            reader.startElement(target, attributes);
+            reader.processInstructionContent(decode(textBuilder.toString()));
+            reader.endElement(target);
+            nameBuilder = new StringBuilder();
+            textBuilder = new StringBuilder();
+        } else {
+            position++;
+            textBuilder.append(c);
+        }
+    }
+
+    private void processPITarget() throws IOException {
+        if (hasToken(PI_END)) {
+            state = resumeState;
+        } else if (Character.isWhitespace(c)) {
+            position++;
+            state = resumeState;
+        } else {
+            validateNameChar(c, nameBuilder.length() == 0);
+            position++;
+            nameBuilder.append(c);
+        }
+    }
+
+
     /**
      * Start parsing.
      *
@@ -563,6 +613,12 @@ public final class SimpleXMLParser {
                         break;
                     case CDATA:
                         processCdata();
+                        break;
+                    case PI_TARGET:
+                        processPITarget();
+                        break;
+                    case PI_CONTENT:
+                        processPIContent();
                         break;
                     default:
                         throw new IllegalStateException(String.format(
