@@ -29,6 +29,7 @@
         <compiler.plugin.version>3.8.1</compiler.plugin.version>
         <jakarta.activation.version>2.1.0</jakarta.activation.version>
         <javax.annotation.version>1.2</javax.annotation.version>
+        <jar.plugin.version>3.0.2</jar.plugin.version>
     </properties>
 
     <build>
@@ -82,6 +83,115 @@
                     <version>${javax.annotation.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>test1</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>graal</id>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <configuration>
+                                    <execMode>module</execMode>
+                                    <module>my.own.module</module>
+                                    <mainClass>my.own.module.Main</mainClass>
+                                    <classPath>
+                                        <includes>
+                                            <include>some/path/to/jar</include>
+                                            <include>dummy/path</include>
+                                        </includes>
+                                        <excludes>
+                                            <exclude>dummy/*</exclude>
+                                        </excludes>
+                                    </classPath>
+                                    <modulePath>
+                                        <includes>
+                                            <include>target/classes</include>
+                                        </includes>
+                                    </modulePath>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test2</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>${jar.plugin.version}</version>
+                        <configuration>
+                            <archive>
+                                <index>true</index>
+                                <manifestEntries>
+                                    <mainClass>my.own.module.Main</mainClass>
+                                </manifestEntries>
+                            </archive>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>graal</id>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <configuration>
+                                    <execMode>module</execMode>
+                                    <modulePath>
+                                        <includes>
+                                            <include>target/module-test-${project.version}.jar</include>
+                                        </includes>
+                                    </modulePath>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>test3</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>graal</id>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <configuration>
+                                    <execMode>none</execMode>
+                                    <additionalArgs>
+                                        <arg>--module</arg>
+                                        <arg>my.own.module/my.own.module.Main</arg>
+                                        <arg>--module-path</arg>
+                                        <arg>target/classes</arg>
+                                    </additionalArgs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
