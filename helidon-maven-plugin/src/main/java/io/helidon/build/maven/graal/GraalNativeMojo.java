@@ -44,6 +44,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathResult;
@@ -61,6 +62,7 @@ public class GraalNativeMojo extends AbstractMojo {
     private static final String EXEC_MODE_JAR = "jar";
     private static final String EXEC_MODE_JAR_WITH_CP = "jar-cp";
     private static final String EXEC_MODE_MODULE = "module";
+    private static final String EXEC_MODE_NONE = "none";
     private static final String PATH_ENV_VAR = "PATH";
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
 
@@ -190,9 +192,26 @@ public class GraalNativeMojo extends AbstractMojo {
     private String module;
 
     /**
+     * Custom class-path in module execution mode only.
+     */
+    @Parameter
+    private FilteringComponent classPath;
+
+    /**
+     * Custom module-path in module execution mode only.
+     */
+    @Parameter
+    private FilteringComponent modulePath;
+
+    /**
      * The {@code native-image} execution process.
      */
     private Process process;
+
+    /**
+     * The {@link LocationManager} parsing artifacts.
+     */
+    private final LocationManager locationManager = new LocationManager();
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -249,27 +268,36 @@ public class GraalNativeMojo extends AbstractMojo {
          * classpath automatically.
          */
         if (context.useJar()) {
-            if (jarFile == null) {
-                File artifact = project.getArtifact().getFile();
-                if (artifact == null) {
-                    artifact = new File(buildDirectory, finalName + ".jar");
-                }
-                jarFile = artifact;
-            }
-            if (!jarFile.exists()) {
-                throw new MojoFailureException("Artifact does not exist: " + jarFile.getAbsolutePath());
-            }
+            resolveJarFile();
             command.add("-jar");
             command.add(jarFile.getAbsolutePath());
         }
 
         if (context.useModule()) {
-            if (module.isBlank()) {
-                throw new MojoExecutionException("Module name is required, use \"native.image.module\" property");
-            }
+            resolveJarFile();
             command.add("--module");
+            if (Objects.isNull(module) || module.isBlank()) {
+                module = extractModuleNameFromJar();
+            }
+            if (Objects.nonNull(mainClass)) {
+                module = module.endsWith("/")
+                        ? module.substring(0, module.length() - 1)
+                        : module;
+                module = String.join("/", module, mainClass);
+            }
             command.add(module);
-            addModuleAndClassPath(command);
+            getLog().debug("Module: " + module);
+            if (Objects.nonNull(classPath) || Objects.nonNull(modulePath)) {
+                buildFilteredModuleAndClassPath(command);
+            } else {
+                addModuleAndClassPath(command);
+            }
+        }
+
+        if (context.useNone()) {
+            if (Objects.isNull(additionalArgs) || additionalArgs.isEmpty()) {
+                throw new MojoExecutionException("\"additionalArgs\" must be specified when using \"none\" execution mode.");
+            }
         }
 
         // -H:Name must be after -jar
@@ -302,72 +330,30 @@ public class GraalNativeMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Build module-path, class-path, and add them to the provided list.
-     *
-     * @param command where the module-path and/or class-path will be added
-     */
-    private void addModuleAndClassPath(List<String> command) {
-        getLog().debug("Building module-path string");
-        List<String> modules = new LinkedList<>();
-        List<String> cp = new LinkedList<>();
-        File jarFile = new File(buildDirectory, finalName + ".jar");
-        LocationManager locationManager = new LocationManager();
-
-        if (jarFile.exists()) {
-            if (getProjectModuleDescriptor().isPresent()) {
-                modules.add(jarFile.getAbsolutePath());
-            } else {
-                cp.add(jarFile.getAbsolutePath());
+    private String extractModuleNameFromJar() throws MojoExecutionException {
+        Objects.requireNonNull(jarFile);
+        try {
+            ResolvePathResult result = locationManager.resolvePath(ResolvePathRequest.ofFile(jarFile));
+            JavaModuleDescriptor descriptor = result.getModuleDescriptor();
+            if (!descriptor.isAutomatic()) {
+                return descriptor.name();
             }
-        } else {
-            getLog().warn(String.format("Jar file %s does not exist, won't be present on module/class path", jarFile.getName()));
-        }
-
-        for (Artifact artifact : project.getArtifacts()) {
-            File file = artifact.getFile();
-            try {
-                ResolvePathResult result = locationManager.resolvePath(ResolvePathRequest.ofFile(file));
-                if (!result.getModuleDescriptor().isAutomatic()) {
-                    modules.add(file.getPath());
-                    continue;
-                }
-                addRuntimeClasspathArtifact(artifact, cp);
-            } catch (IOException e) {
-                addRuntimeClasspathArtifact(artifact, cp);
-            }
-        }
-
-        String modulePath = String.join(File.pathSeparator, modules);
-        String classPath = String.join(File.pathSeparator, cp);
-        getLog().debug("Built module-path: " + modulePath);
-        getLog().debug("Built class-path: " + classPath);
-        if (!modulePath.isEmpty()) {
-            command.add("--module-path");
-            command.add(modulePath);
-        }
-        if (!classPath.isEmpty()) {
-            command.add("--class-path");
-            command.add(classPath);
+            throw new MojoExecutionException(String.format("Jar file %s does not contain module descriptor", jarFile.getName()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private Optional<SourcePath> getProjectModuleDescriptor() {
-        return SourcePath.scan(Path.of(project.getBuild().getSourceDirectory()).toFile())
-                .stream()
-                .filter(p -> p.matches("module-info.java"))
-                .findAny();
-    }
-
-    private void addRuntimeClasspathArtifact(Artifact artifact, List<String> list) {
-        if (artifact.getArtifactHandler().isAddedToClasspath()
-                && (Artifact.SCOPE_COMPILE.equals(artifact.getScope())
-                || Artifact.SCOPE_RUNTIME.equals(artifact.getScope()))) {
-
-            File file = artifact.getFile();
-            if (Objects.nonNull(file)) {
-                list.add(file.getPath());
+    private void resolveJarFile() throws MojoFailureException {
+        if (jarFile == null) {
+            File artifact = project.getArtifact().getFile();
+            if (artifact == null) {
+                artifact = new File(buildDirectory, finalName + ".jar");
             }
+            jarFile = artifact;
+        }
+        if (!jarFile.exists()) {
+            throw new MojoFailureException("Artifact does not exist: " + jarFile.getAbsolutePath());
         }
     }
 
@@ -527,6 +513,89 @@ public class GraalNativeMojo extends AbstractMojo {
     }
 
     /**
+     * Build module-path, class-path, and add them to the provided list.
+     *
+     * @param command where the module-path and/or class-path will be added
+     */
+    private void addModuleAndClassPath(List<String> command) {
+        getLog().debug("Building module-path string");
+        List<String> modules = new LinkedList<>();
+        List<String> cp = new LinkedList<>();
+        File jarFile = new File(buildDirectory, finalName + ".jar");
+
+        if (jarFile.exists()) {
+            if (getProjectModuleDescriptor().isPresent()) {
+                modules.add(jarFile.getAbsolutePath());
+            } else {
+                cp.add(jarFile.getAbsolutePath());
+            }
+        } else {
+            getLog().warn(String.format("Jar file %s does not exist, won't be present on module/class path", jarFile.getName()));
+        }
+
+        for (Artifact artifact : project.getArtifacts()) {
+            File file = artifact.getFile();
+            try {
+                ResolvePathResult result = locationManager.resolvePath(ResolvePathRequest.ofFile(file));
+                if (!result.getModuleDescriptor().isAutomatic()) {
+                    modules.add(file.getPath());
+                    continue;
+                }
+                addRuntimeClasspathArtifact(artifact, cp);
+            } catch (IOException e) {
+                addRuntimeClasspathArtifact(artifact, cp);
+            }
+        }
+
+        String modulePath = String.join(File.pathSeparator, modules);
+        String classPath = String.join(File.pathSeparator, cp);
+        getLog().debug("Built module-path: " + modulePath);
+        getLog().debug("Built class-path: " + classPath);
+        if (!modulePath.isEmpty()) {
+            command.add("--module-path");
+            command.add(modulePath);
+        }
+        if (!classPath.isEmpty()) {
+            command.add("--class-path");
+            command.add(classPath);
+        }
+    }
+
+    private void buildFilteredModuleAndClassPath(List<String> command) {
+        if (Objects.nonNull(classPath)) {
+            String cp = String.join(File.pathSeparator, classPath.filter());
+            command.add("--class-path");
+            command.add(cp);
+            getLog().debug("Built class-path: " + cp);
+        }
+        if (Objects.nonNull(modulePath)) {
+            String mp = String.join(File.pathSeparator, modulePath.filter());
+            command.add("--module-path");
+            command.add(mp);
+            getLog().debug("Built module-path: " + mp);
+        }
+    }
+
+    private Optional<SourcePath> getProjectModuleDescriptor() {
+        return SourcePath.scan(Path.of(project.getBuild().getSourceDirectory()).toFile())
+                .stream()
+                .filter(p -> p.matches("module-info.java"))
+                .findAny();
+    }
+
+    private void addRuntimeClasspathArtifact(Artifact artifact, List<String> list) {
+        if (artifact.getArtifactHandler().isAddedToClasspath()
+                && (Artifact.SCOPE_COMPILE.equals(artifact.getScope())
+                || Artifact.SCOPE_RUNTIME.equals(artifact.getScope()))) {
+
+            File file = artifact.getFile();
+            if (Objects.nonNull(file)) {
+                list.add(file.getPath());
+            }
+        }
+    }
+
+    /**
      * Find the first command file for the specified name with a known windows executable extension.
      *
      * @param dir directory
@@ -633,6 +702,7 @@ public class GraalNativeMojo extends AbstractMojo {
         private final boolean useMain;
         private final boolean addClasspath;
         private final boolean useModule;
+        private final boolean none;
 
         private NativeContext(String execMode) throws MojoFailureException {
             switch (execMode) {
@@ -641,29 +711,41 @@ public class GraalNativeMojo extends AbstractMojo {
                 useMain = false;
                 addClasspath = false;
                 useModule = false;
+                none = false;
                 break;
             case EXEC_MODE_JAR_WITH_CP:
                 useJar = true;
                 useMain = false;
                 addClasspath = true;
                 useModule = false;
+                none = false;
                 break;
             case EXEC_MODE_MAIN_CLASS:
                 useJar = false;
                 useMain = true;
                 addClasspath = true;
                 useModule = false;
+                none = false;
                 break;
             case EXEC_MODE_MODULE:
                 useJar = false;
                 useMain = false;
                 addClasspath = false;
                 useModule = true;
+                none = false;
+                break;
+            case EXEC_MODE_NONE:
+                useJar = false;
+                useMain = false;
+                addClasspath = false;
+                useModule = false;
+                none = true;
                 break;
             default:
                 throw new MojoFailureException("Invalid configuration of \"execMode\". Has to be one of: "
                                                        + EXEC_MODE_JAR + ", "
                                                        + EXEC_MODE_JAR_WITH_CP + ", "
+                                                       + EXEC_MODE_NONE + ", "
                                                        + EXEC_MODE_MODULE + ", or "
                                                        + EXEC_MODE_MAIN_CLASS);
             }
@@ -677,12 +759,16 @@ public class GraalNativeMojo extends AbstractMojo {
             return useMain;
         }
 
-        boolean addClasspath() {
-            return addClasspath;
-        }
-
         boolean useModule() {
             return useModule;
+        }
+
+        boolean useNone() {
+            return none;
+        }
+
+        boolean addClasspath() {
+            return addClasspath;
         }
     }
 }

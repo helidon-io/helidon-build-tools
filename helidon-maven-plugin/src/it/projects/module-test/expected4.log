@@ -1,0 +1,3 @@
+[DEBUG] Module: my.own.module/my.own.module.Main
+[DEBUG] Built class-path: some/path/to/jar
+[DEBUG] Built module-path: target/classes

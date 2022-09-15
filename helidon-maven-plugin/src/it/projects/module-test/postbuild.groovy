@@ -36,6 +36,32 @@ def findLines(actualIndex, actualLines, fname) {
     while (!found && actualIndex < actualLines.size() - 1) {
         // seek
         for (; actualIndex < actualLines.size(); actualIndex++) {
+            if (actualLines[actualIndex].contains(expectedLines[0])) {
+                break;
+            }
+        }
+        for (def expectedIndex = 1; expectedIndex < expectedLines.size() && actualIndex < actualLines.size() - 1; expectedIndex++) {
+            def expected = expectedLines[expectedIndex]
+            def actual = actualLines[++actualIndex]
+            if (!actual.endsWith(expected)) {
+                errors.add("line: ${('' + actualIndex).padRight(5)} >>${expected}<< != >>${actual}<<")
+                break;
+            }
+            if (expectedIndex == expectedLines.size() -1) {
+                found = true
+            }
+        }
+    }
+    assertTrue(found, errors)
+}
+
+def findElementsInClassAndModulePath(actualIndex, actualLines, fname) {
+    def expectedLines = new File(basedir, fname).readLines()
+    def found = false
+    def errors = ["build.log does not contain ${fname}"]
+    while (!found && actualIndex < actualLines.size() - 1) {
+        // seek
+        for (; actualIndex < actualLines.size(); actualIndex++) {
             if (actualLines[actualIndex].contains("[DEBUG] Built module-path:")
                     && actualLines[actualIndex].contains(expectedLines[0])
                     && actualLines[actualIndex+1].contains("[DEBUG] Built class-path:")
@@ -45,6 +71,10 @@ def findLines(actualIndex, actualLines, fname) {
             }
         }
     }
+    assertTrue(found, errors)
+}
+
+def assertTrue(found, errors) {
     if (!found) {
         throw new AssertionError("""
 
@@ -56,6 +86,9 @@ ${errors.join('\n')}
     }
 }
 
-findLines(actualIndex, actualLines, "expected1.log")
-findLines(actualIndex, actualLines, "expected2.log")
-findLines(actualIndex, actualLines, "expected3.log")
+findElementsInClassAndModulePath(actualIndex, actualLines, "expected1.log")
+findElementsInClassAndModulePath(actualIndex, actualLines, "expected2.log")
+findElementsInClassAndModulePath(actualIndex, actualLines, "expected3.log")
+findLines(actualIndex, actualLines, "expected4.log")
+findLines(actualIndex, actualLines, "expected5.log")
+findLines(actualIndex, actualLines, "expected6.log")
