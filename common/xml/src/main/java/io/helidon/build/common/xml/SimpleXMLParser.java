@@ -223,12 +223,13 @@ public final class SimpleXMLParser {
         }
 
         /**
-         * Receive notification of content data inside a Processing instructions element.
+         * Receive notification of content data inside a processing instruction element.
          *
-         * @param data the content data of Processing instructions
+         * @param data the content data of a processing instruction
+         * @param target the name of an application to which the instruction is directed
          * @throws XMLReaderException if any error occurs
          */
-        default void processInstructionContent(String data) {
+        default void processingInstruction(String target, String data) {
         }
     }
 
@@ -537,7 +538,7 @@ public final class SimpleXMLParser {
             state = STATE.ELEMENT;
             String target = nameBuilder.toString();
             reader.startElement(target, attributes);
-            reader.processInstructionContent(decode(textBuilder.toString()));
+            reader.processingInstruction(target, decode(textBuilder.toString()));
             reader.endElement(target);
             nameBuilder = new StringBuilder();
             textBuilder = new StringBuilder();

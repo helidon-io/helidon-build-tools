@@ -154,8 +154,7 @@ class SimpleMXLParserTest {
         }
 
         @Override
-        public void processInstructionContent(String data) {
-            String target = stack.peek();
+        public void processingInstruction(String target, String data) {
             if (target != null) {
                 if ("m2e".equals(target)) {
                     m2e = data;
