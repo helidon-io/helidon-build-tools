@@ -29,6 +29,7 @@ public class FilteringComponent {
 
     private List<String> excludes;
     private List<String> includes;
+    private List<String> additionalEntries;
 
     private void excludes(List<String> excludes) {
         this.excludes = excludes;
@@ -36,6 +37,10 @@ public class FilteringComponent {
 
     private void includes(List<String> includes) {
         this.includes = includes;
+    }
+
+    private void additionalEntries(List<String> includes) {
+        this.additionalEntries = includes;
     }
 
     private List<String> excludes() {
@@ -46,19 +51,28 @@ public class FilteringComponent {
         return this.includes;
     }
 
+    private List<String> additionalEntries() {
+        return this.additionalEntries;
+    }
+
     /**
-     * Merge includes and excludes list.
+     * Filter the provided list with includes and excludes and add additional entries if exists.
      *
-     * @return the merged list
+     * @param list to be filtered
+     * @return the filtered list
      */
-    public List<String> filter() {
-        Objects.requireNonNull(includes);
-        List<SourcePath> paths = includes.stream()
+    public List<String> filter(List<String> list) {
+        Objects.requireNonNull(list);
+        List<SourcePath> paths = list.stream()
                 .map(SourcePath::new)
                 .collect(Collectors.toList());
-        return SourcePath.filter(paths, includes, excludes)
+        List<String> result = SourcePath.filter(paths, includes, excludes)
                 .stream()
                 .map(p -> p.asString(false))
                 .collect(Collectors.toList());
+        if (Objects.nonNull(additionalEntries)) {
+            result.addAll(additionalEntries);
+        }
+        return result;
     }
 }

@@ -24,6 +24,7 @@
                 <requirement>
                     <field-name>includes</field-name>
                     <field-name>excludes</field-name>
+                    <field-name>additionalEntries</field-name>
                 </requirement>
             </requirements>
         </component>

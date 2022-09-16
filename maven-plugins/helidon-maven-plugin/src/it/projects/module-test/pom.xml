@@ -103,18 +103,21 @@
                                     <module>my.own.module</module>
                                     <mainClass>my.own.module.Main</mainClass>
                                     <classPath>
-                                        <includes>
-                                            <include>some/path/to/jar</include>
-                                            <include>dummy/path</include>
-                                        </includes>
                                         <excludes>
-                                            <exclude>dummy/*</exclude>
+                                            <exclude>**/*/javax.annotation-api-${javax.annotation.version}.jar</exclude>
                                         </excludes>
+                                        <additionalEntries>
+                                            <entry>my/dummy/jar</entry>
+                                        </additionalEntries>
                                     </classPath>
                                     <modulePath>
-                                        <includes>
-                                            <include>target/classes</include>
-                                        </includes>
+                                        <excludes>
+                                            <exclude>**/*/jakarta.activation-api-${jakarta.activation.version}.jar</exclude>
+                                            <exclude>**/*/target/module-test-${project.version}.jar</exclude>
+                                        </excludes>
+                                        <additionalEntries>
+                                            <entry>target/classes</entry>
+                                        </additionalEntries>
                                     </modulePath>
                                 </configuration>
                             </execution>
@@ -152,10 +155,21 @@
                                 </goals>
                                 <configuration>
                                     <execMode>module</execMode>
+                                    <classPath>
+                                        <excludes>
+                                            <exclude>**/*</exclude>
+                                        </excludes>
+                                        <additionalEntries>
+                                            <entry>my/dummy/jar</entry>
+                                        </additionalEntries>
+                                    </classPath>
                                     <modulePath>
-                                        <includes>
-                                            <include>target/module-test-${project.version}.jar</include>
-                                        </includes>
+                                        <excludes>
+                                            <exclude>**/*</exclude>
+                                        </excludes>
+                                        <additionalEntries>
+                                            <entry>target/module-test-${project.version}.jar</entry>
+                                        </additionalEntries>
                                     </modulePath>
                                 </configuration>
                             </execution>
