@@ -285,13 +285,9 @@ public class GraalNativeMojo extends AbstractMojo {
                         : module;
                 module = String.join("/", module, mainClass);
             }
-            command.add(module);
             getLog().debug("Module: " + module);
-            if (Objects.nonNull(classPath) || Objects.nonNull(modulePath)) {
-                buildFilteredModuleAndClassPath(command);
-            } else {
-                addModuleAndClassPath(command);
-            }
+            command.add(module);
+            addModuleAndClassPath(command);
         }
 
         if (context.useNone()) {
@@ -547,6 +543,8 @@ public class GraalNativeMojo extends AbstractMojo {
             }
         }
 
+        cp = filter(cp, classPath);
+        modules = filter(modules, modulePath);
         String modulePath = String.join(File.pathSeparator, modules);
         String classPath = String.join(File.pathSeparator, cp);
         getLog().debug("Built module-path: " + modulePath);
@@ -561,19 +559,8 @@ public class GraalNativeMojo extends AbstractMojo {
         }
     }
 
-    private void buildFilteredModuleAndClassPath(List<String> command) {
-        if (Objects.nonNull(classPath)) {
-            String cp = String.join(File.pathSeparator, classPath.filter());
-            command.add("--class-path");
-            command.add(cp);
-            getLog().debug("Built class-path: " + cp);
-        }
-        if (Objects.nonNull(modulePath)) {
-            String mp = String.join(File.pathSeparator, modulePath.filter());
-            command.add("--module-path");
-            command.add(mp);
-            getLog().debug("Built module-path: " + mp);
-        }
+    private List<String> filter(List<String> list, FilteringComponent filter) {
+        return Objects.isNull(filter) ? list : filter.filter(list);
     }
 
     private Optional<SourcePath> getProjectModuleDescriptor() {
