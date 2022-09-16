@@ -23,35 +23,35 @@ import java.util.stream.Collectors;
 import io.helidon.build.util.SourcePath;
 
 /**
- * A configuration filtering component using excludes and includes list.
+ * A configuration path component.
  */
-public class FilteringComponent {
+public class PathComponent {
 
     private List<String> excludes;
     private List<String> includes;
     private List<String> additionalEntries;
 
-    private void excludes(List<String> excludes) {
+    public void setExcludes(List<String> excludes) {
         this.excludes = excludes;
     }
 
-    private void includes(List<String> includes) {
+    public void setIncludes(List<String> includes) {
         this.includes = includes;
     }
 
-    private void additionalEntries(List<String> includes) {
+    public void setAdditionalEntries(List<String> includes) {
         this.additionalEntries = includes;
     }
 
-    private List<String> excludes() {
+    public List<String> getExcludes() {
         return this.excludes;
     }
 
-    private List<String> includes() {
+    public List<String> getIncludes() {
         return this.includes;
     }
 
-    private List<String> additionalEntries() {
+    public List<String> getAdditionalEntries() {
         return this.additionalEntries;
     }
 
