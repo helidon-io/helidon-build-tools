@@ -567,7 +567,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         for (Validation validation : validations) {
             String match = validation.getMatch();
             boolean fail = validation.getFail();
-            Set<String> patterns = validation.patterns();
+            Set<String> patterns = validation.getPatterns();
             boolean isMatch;
             Predicate<SourcePath> matches = path -> path.matches(patterns);
             switch (match) {
