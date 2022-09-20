@@ -32,7 +32,7 @@ public class Validation {
      *
      * @return patterns
      */
-    public Set<String> patterns() {
+    public Set<String> getPatterns() {
         return patterns;
     }
 
