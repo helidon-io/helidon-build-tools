@@ -20,10 +20,12 @@ import java.util.Queue;
 
 public class LineResult {
 
+    private final int line;
     private final int indent;
     private final Queue<Token> tokens;
 
-    public LineResult(int indent, Queue<Token> tokens) {
+    public LineResult(int line, int indent, Queue<Token> tokens) {
+        this.line = line;
         this.indent = indent;
         this.tokens = tokens;
     }
@@ -34,5 +36,24 @@ public class LineResult {
 
     public Queue<Token> tokens() {
         return tokens;
+    }
+
+    public int line() {
+        return line;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LineResult that = (LineResult) o;
+
+        return line == that.line;
+    }
+
+    @Override
+    public int hashCode() {
+        return line;
     }
 }

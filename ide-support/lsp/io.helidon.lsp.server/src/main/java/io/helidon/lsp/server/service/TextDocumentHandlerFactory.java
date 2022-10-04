@@ -51,7 +51,7 @@ public class TextDocumentHandlerFactory {
         }
         if (fileExtension.equalsIgnoreCase("yaml") || fileExtension.equalsIgnoreCase("yml")) {
             if (!FILE_EXTENSION_TO_HANDLER_MAP.containsKey("yaml")) {
-                FILE_EXTENSION_TO_HANDLER_MAP.put("yaml", new YamlTextDocumentHandler(languageServerContext));
+                FILE_EXTENSION_TO_HANDLER_MAP.put("yaml", YamlTextDocumentHandler.instance());
             }
         }
         return FILE_EXTENSION_TO_HANDLER_MAP.getOrDefault(fileExtension, EMPTY_TEXT_DOCUMENT_HANDLER);

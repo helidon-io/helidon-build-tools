@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled
+//@Disabled
 //TODO change it for the new implementation or remove it
 class YamlParserTest {
 
@@ -39,41 +39,49 @@ class YamlParserTest {
     public void testIncorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
         List<String> strings = readFile("incorrect-yaml-file.yaml");
-        Map<String, LineResult> result = yamlParser.parse(strings);
+        Map<LineResult, String> result = yamlParser.parse(strings);
 
-        assertThat(result.get("firstName").indent(), is(0));
-        assertThat(result.get("firstName").tokens().peek().value(), is("firstName"));
-        assertThat(result.get("lastName.age").indent(), is(2));
-        assertThat(result.get("lastName.age").tokens().peek().value(), is("age"));
-        assertThat(result.get("lastName.address.street").indent(), is(4));
-        assertThat(result.get("lastName.address.street").tokens().peek().value(), is("street"));
+        assertThat(getKey("firstName", result).indent(), is(0));
+        assertThat(getKey("firstName", result).line(), is(15));
+        assertThat(getKey("firstName", result).tokens().peek().value(), is("firstName"));
+
+        assertThat(getKey("lastName.age", result).indent(), is(2));
+        assertThat(getKey("lastName.age", result).tokens().peek().value(), is("age"));
+        assertThat(getKey("lastName.age", result).line(), is(18));
+
+        assertThat(getKey("lastName.address.street", result).indent(), is(4));
+        assertThat(getKey("lastName.address.street", result).tokens().peek().value(), is("street"));
+        assertThat(getKey("lastName.address.street", result).line(), is(20));
     }
 
     @Test
     public void testCorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
         List<String> strings = readFile("correct-yaml-file.yaml");
-        Map<String, LineResult> resultMap = yamlParser.parse(strings);
+        Map<LineResult, String> result = yamlParser.parse(strings);
 
-        assertThat(resultMap.size(), is(53));
+        assertThat(result.size(), is(53));
 
-        assertThat(resultMap.get("security").indent(), is(0));
-        assertThat(resultMap.get("security").tokens().peek().type(), is(Token.Type.KEY));
-        assertThat(resultMap.get("security").tokens().peek().value(), is("security"));
+        assertThat(getKey("security", result).indent(), is(0));
+        assertThat(getKey("security", result).line(), is(18));
+        assertThat(getKey("security", result).tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(getKey("security", result).tokens().peek().value(), is("security"));
 
-        assertThat(resultMap.get("security.provider-policy.type").indent(), is(2));
-        assertThat(resultMap.get("security.provider-policy.type").tokens().peek().type(), is(Token.Type.KEY));
-        assertThat(resultMap.get("security.provider-policy.type").tokens().peek().value(), is("provider-policy.type"));
+        assertThat(getKey("security.provider-policy.type", result).indent(), is(2));
+        assertThat(getKey("security.provider-policy.type", result).line(), is(24));
+        assertThat(getKey("security.provider-policy.type", result).tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(getKey("security.provider-policy.type", result).tokens().peek().value(), is("provider-policy.type"));
 
-        assertThat(resultMap.get("security.secrets.provider").indent(), is(4));
-        assertThat(resultMap.get("security.secrets.provider").tokens().peek().type(), is(Token.Type.KEY));
-        assertThat(resultMap.get("security.secrets.provider").tokens().peek().value(), is("provider"));
+        assertThat(getKey("security.secrets.provider", result).indent(), is(4));
+        assertThat(getKey("security.secrets.provider", result).line(), is(103));
+        assertThat(getKey("security.secrets.provider", result).tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(getKey("security.secrets.provider", result).tokens().peek().value(), is("provider"));
 
-        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").indent(), is(6));
-        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").tokens().peek().type(), is(Token.Type.KEY));
-        assertThat(resultMap.get("server.sockets.tls.session-timeout-seconds").tokens().peek().value(), is("session-timeout-seconds"));
-
-        System.out.println(resultMap);
+        assertThat(getKey("server.sockets.tls.session-timeout-seconds", result).indent(), is(6));
+        assertThat(getKey("server.sockets.tls.session-timeout-seconds", result).line(), is(189));
+        assertThat(getKey("server.sockets.tls.session-timeout-seconds", result).tokens().peek().type(), is(Token.Type.KEY));
+        assertThat(getKey("server.sockets.tls.session-timeout-seconds", result).tokens().peek()
+                            .value(), is("session-timeout-seconds"));
     }
 
     private List<String> readFile(String path) throws IOException {
@@ -86,5 +94,12 @@ class YamlParserTest {
             result = lines.collect(Collectors.toList());
         }
         return result;
+    }
+
+    private LineResult getKey(String value, Map<LineResult, String> map) {
+        return map.entrySet().stream()
+                  .filter(entry -> entry.getValue().equals(value))
+                  .map(Map.Entry::getKey)
+                  .findFirst().orElse(null);
     }
 }

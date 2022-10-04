@@ -29,6 +29,15 @@ import java.util.List;
  */
 public class FileUtils {
 
+    private static FileUtils INSTANCE = new FileUtils();
+
+    private FileUtils() {
+    }
+
+    public static FileUtils instance() {
+        return INSTANCE;
+    }
+
     /**
      * Get the text file content as a list of strings by its URI.
      *

@@ -16,21 +16,30 @@
 package io.helidon.lsp.server.service.metadata;
 
 import java.util.Set;
+
+import io.helidon.config.metadata.ConfiguredOption;
+
 //TODO add javadocs for every class in this package
 public abstract class ConfigMetadata {
 
     private final String key;
     private final String type;
+    private final ConfiguredOption.Kind kind;
     private final String description;
     private final int level;
     private final Set<ConfigMetadata> content;
 
-    public ConfigMetadata(String key, String type, String description, int level, Set<ConfigMetadata> content) {
+    public ConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level, Set<ConfigMetadata> content) {
         this.key = key;
         this.type = type;
+        this.kind = kind;
         this.description = description;
         this.level = level;
         this.content = content;
+    }
+
+    public ConfiguredOption.Kind kind() {
+        return kind;
     }
 
     public Set<ConfigMetadata> content() {

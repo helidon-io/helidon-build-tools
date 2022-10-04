@@ -24,17 +24,24 @@ import java.util.Objects;
 /**
  * Parser for the files in YAML format.
  */
-public class YamlParser {
+class YamlParser {
 
     private Handler currentHandler;
 
-    public Map<String, LineResult> parse(List<String> yaml) {
-        Map<String, LineResult> result = new LinkedHashMap<>();
+    /**
+     * Process yaml file and return Map that represent full paths to found keys and recognized tokens in corresponded lines.
+     *
+     * @param yaml content of the yaml file.
+     * @return Map that represent full paths to found keys and recognized tokens in corresponded lines.
+     */
+    public LinkedHashMap<LineResult, String> parse(List<String> yaml) {
+        LinkedHashMap<LineResult, String> result = new LinkedHashMap<>();
         currentHandler = InitialHandler.INSTANCE(this);
-        for (String line : yaml) {
-            LineResult lineResult = currentHandler.process(line);
+        for (int i = 0; i < yaml.size(); i++) {
+            String line = yaml.get(i);
+            LineResult lineResult = currentHandler.process(i, line);
             if (lineResult != null) {
-                result.put(getPath(lineResult, result), lineResult);
+                result.put(lineResult, getPath(lineResult, result));
             }
         }
         return result;
@@ -44,12 +51,13 @@ public class YamlParser {
         this.currentHandler = currentHandler;
     }
 
-    private String getPath(LineResult lineResult, Map<String, LineResult> previousResults) {
+    private String getPath(LineResult lineResult, Map<LineResult, String> previousResults) {
         StringBuilder path = new StringBuilder();
         Map<Integer, String> parents = new LinkedHashMap<>();
-        previousResults.values().forEach(prev->parents.put(prev.indent(), Objects.requireNonNull(prev.tokens().peek()).value()));
+        previousResults.keySet()
+                       .forEach(prev -> parents.put(prev.indent(), Objects.requireNonNull(prev.tokens().peek()).value()));
         parents.entrySet().removeIf(e -> e.getKey() >= lineResult.indent());//entry.getValue().indent()
-        parents.values().forEach(parent->path.append(parent).append("."));
+        parents.values().forEach(parent -> path.append(parent).append("."));
         return path.append(Objects.requireNonNull(lineResult.tokens().peek()).value()).toString();
     }
 }

@@ -56,10 +56,6 @@ public class HelidonLanguageServer implements LanguageServer, LanguageClientAwar
 
     private void initContext() {
         languageServerContext = new LanguageServerContext();
-        ConfigurationPropertiesService configurationPropertiesService = ConfigurationPropertiesService.instance();
-        FileUtils fileUtils = new FileUtils();
-        languageServerContext.setBean(ConfigurationPropertiesService.class, configurationPropertiesService);
-        languageServerContext.setBean(FileUtils.class, fileUtils);
     }
 
     @Override

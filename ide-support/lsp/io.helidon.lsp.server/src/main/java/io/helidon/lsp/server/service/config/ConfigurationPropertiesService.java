@@ -46,7 +46,7 @@ import io.helidon.security.providers.common.EvictableCache;
 //TODO change or remove it
 public class ConfigurationPropertiesService {
 
-    private static ConfigurationPropertiesService INSTANCE = new ConfigurationPropertiesService();
+    private static final ConfigurationPropertiesService INSTANCE = new ConfigurationPropertiesService();
 
     private static final Logger LOGGER = Logger.getLogger(ConfigurationPropertiesService.class.getName());
     private static final Set<String> TYPED_VALUES = Set.of(
@@ -136,6 +136,7 @@ public class ConfigurationPropertiesService {
         ConfigMetadata data = new ContainerConfigMetadata(
                 configuredType.prefix(),
                 configuredType.targetClass(),
+                null,
                 prepareDocs(configuredType.description(), true),
                 0,
                 configuredType.properties().stream()
@@ -211,6 +212,7 @@ public class ConfigurationPropertiesService {
                     ConfigMetadata metadata = new ContainerConfigMetadata(
                             property.outputKey(),
                             property.type(),
+                            property.kind(),
                             prepareDocs(property.description(), property.optional()),
                             level,
                             nestedType.properties().stream()
@@ -303,6 +305,7 @@ public class ConfigurationPropertiesService {
                          .map(provider -> new ContainerConfigMetadata(
                                  provider.prefix(),
                                  provider.targetClass(),
+                                 null,
                                  prepareDocs(provider.description(), true),
                                  level + 1,
                                  null))
@@ -317,6 +320,7 @@ public class ConfigurationPropertiesService {
                 ConfigMetadata data = new ContainerConfigMetadata(
                         provider.prefix(),
                         provider.targetClass(),
+                        null,
                         prepareDocs(provider.description(), true),
                         level + 1,
                         provider.properties().stream()
@@ -449,6 +453,7 @@ public class ConfigurationPropertiesService {
             ConfigMetadata data = new ContainerConfigMetadata(
                     property.outputKey(),
                     property.type(),
+                    property.kind(),
                     prepareDocs(property.description(), property.optional()),
                     level,
                     listType.properties().stream()

@@ -21,7 +21,7 @@ import java.util.Queue;
 
 import io.helidon.lsp.server.utils.LspStringUtils;
 
-public class InitialHandler implements Handler {
+class InitialHandler implements Handler {
 
     private static YamlParser parser;
     private static InitialHandler instance;
@@ -39,9 +39,12 @@ public class InitialHandler implements Handler {
     }
 
     @Override
-    public LineResult process(String line) {
+    public LineResult process(int lineIndex, String line) {
         Tokenizer tokenizer = new Tokenizer(line);
         Token token = tokenizer.next();
+        if (token == null) {
+            return null;
+        }
         if (token.type() == Token.Type.KEY) {
             Queue<Token> tokens = new LinkedList<>();
             Token keyToken = new Token(
@@ -55,7 +58,7 @@ public class InitialHandler implements Handler {
             );
             tokens.add(keyToken);
             int indent = LspStringUtils.indentSize(token.value());
-            return new LineResult(indent, tokens);
+            return new LineResult(lineIndex, indent, tokens);
         }
         return null;
     }

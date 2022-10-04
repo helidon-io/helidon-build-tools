@@ -17,7 +17,7 @@
 package io.helidon.lsp.server.service.config.yaml;
 //TODO add JavaDocs
 public interface Handler {
-
-    LineResult process(String line);
+//Line position in a document (zero-based)
+    LineResult process(int lineIndex, String line);
 
 }

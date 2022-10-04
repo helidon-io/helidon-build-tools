@@ -23,24 +23,18 @@ import io.helidon.config.metadata.ConfiguredOption;
 public class ValueConfigMetadata extends ConfigMetadata {
 
     private final String defaultValue;
-    private final ConfiguredOption.Kind kind;
     private final List<ConfiguredType.AllowedValue> allowedValues;
 
     public ValueConfigMetadata(String key, String defaultValue, String type, String description, int level,
                                Set<ConfigMetadata> content, ConfiguredOption.Kind kind,
                                List<ConfiguredType.AllowedValue> allowedValues) {
-        super(key, type, description, level, content);
+        super(key, type, kind, description, level, content);
         this.defaultValue = defaultValue;
-        this.kind = kind;
         this.allowedValues = allowedValues;
     }
 
     public String defaultValue() {
         return defaultValue;
-    }
-
-    public ConfiguredOption.Kind kind() {
-        return kind;
     }
 
     public List<ConfiguredType.AllowedValue> allowedValues() {

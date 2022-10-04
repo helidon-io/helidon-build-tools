@@ -19,7 +19,7 @@ package io.helidon.lsp.server.service.config.yaml;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 
-public class Tokenizer {
+class Tokenizer {
 
     private final String line;
     private int cursor;
@@ -35,7 +35,7 @@ public class Tokenizer {
 
     public Token next() {
         if (!hasNext()) {
-            throw new NoSuchElementException();
+            return null;
         }
         String current = line.substring(cursor);
         for (Token.Type type : Token.Type.values()) {

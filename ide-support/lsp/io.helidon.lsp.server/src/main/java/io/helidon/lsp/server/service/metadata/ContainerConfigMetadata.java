@@ -17,9 +17,11 @@ package io.helidon.lsp.server.service.metadata;
 
 import java.util.Set;
 
+import io.helidon.config.metadata.ConfiguredOption;
+
 public class ContainerConfigMetadata extends ConfigMetadata {
 
-    public ContainerConfigMetadata(String key, String type, String description, int level, Set<ConfigMetadata> content) {
-        super(key, type, description, level, content);
+    public ContainerConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level, Set<ConfigMetadata> content) {
+        super(key, type, kind, description, level, content);
     }
 }

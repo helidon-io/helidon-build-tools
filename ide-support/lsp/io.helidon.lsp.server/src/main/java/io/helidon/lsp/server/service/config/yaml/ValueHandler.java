@@ -16,7 +16,7 @@
 
 package io.helidon.lsp.server.service.config.yaml;
 
-public class ValueHandler implements Handler {
+class ValueHandler implements Handler {
 
     private static YamlParser parser;
     private static ValueHandler instance;
@@ -34,7 +34,7 @@ public class ValueHandler implements Handler {
     }
 
     @Override
-    public LineResult process(String line) {
+    public LineResult process(int lineIndex, String line) {
         return null;
     }
 }

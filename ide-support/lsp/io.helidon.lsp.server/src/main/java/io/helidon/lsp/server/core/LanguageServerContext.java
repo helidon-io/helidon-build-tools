@@ -28,6 +28,7 @@ import org.eclipse.lsp4j.WorkspaceFolder;
 public class LanguageServerContext {
 
     private List<WorkspaceFolder> workspaceFolders;
+    //TODO remove it
     private Map<Class, Object> beans = new HashMap<>();
 
     /**
