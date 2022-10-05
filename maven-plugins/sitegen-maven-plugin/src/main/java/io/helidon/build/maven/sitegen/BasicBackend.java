@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,6 @@
 
 package io.helidon.build.maven.sitegen;
 
-import java.util.Map;
-
-import io.helidon.build.maven.sitegen.asciidoctor.AsciidocPageRenderer;
-
-import static io.helidon.build.maven.sitegen.asciidoctor.AsciidocPageRenderer.ADOC_EXT;
-
 /**
  * A basic backend implementation.
  */
@@ -31,26 +25,24 @@ public class BasicBackend extends Backend {
      * The basic backend name.
      */
     public static final String BACKEND_NAME = "basic";
-    private final Map<String, PageRenderer> pageRenderers;
+
+
+    private BasicBackend() {
+        super(BACKEND_NAME);
+    }
+
+    @Override
+    public void generate(Context ctx) {
+        ctx.processPages(ctx.outputDir(), "html");
+        ctx.copyStaticAssets();
+    }
 
     /**
-     * Create a new instance of {@link BasicBackend}.
+     * Create a new instance.
+     *
+     * @return new instance
      */
-    public BasicBackend() {
-        super(BACKEND_NAME);
-        this.pageRenderers = Map.of(
-                ADOC_EXT, new AsciidocPageRenderer(BACKEND_NAME)
-        );
-    }
-
-    @Override
-    public Map<String, PageRenderer> pageRenderers() {
-        return pageRenderers;
-    }
-
-    @Override
-    public void generate(RenderingContext ctx) {
-        ctx.processPages(ctx.getOutputdir(), "html");
-        ctx.copyStaticAssets();
+    public static BasicBackend create() {
+        return new BasicBackend();
     }
 }

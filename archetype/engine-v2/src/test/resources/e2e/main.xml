@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="Theme">
+    <step name="Theme">
         <inputs>
-            <enum name="theme" label="Select a theme">
-                <option value="colors" label="Colors">
+            <enum id="theme" name="Select a theme">
+                <option value="colors" name="Colors">
                     <exec src="colors/colors.xml"/>
                 </option>
-                <option value="shapes" label="Shapes">
+                <option value="shapes" name="Shapes">
                     <exec src="shapes/shapes.xml"/>
                 </option>
             </enum>

@@ -92,12 +92,6 @@ class ArchetypeValidatorTest {
     }
 
     @Test
-    void testUnresolvablePreset() {
-        List<String> errors = validate("unresolvable-preset.xml");
-        assertThat(errors.size(), is(0));
-    }
-
-    @Test
     void testPresetTypeMismatch() {
         List<String> errors = validate("preset-type-mismatch.xml");
         assertThat(errors.size(), is(1));

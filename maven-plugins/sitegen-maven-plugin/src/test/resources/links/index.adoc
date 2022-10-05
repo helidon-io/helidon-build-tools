@@ -1,0 +1,141 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+= Links
+:doctitle: Links
+
+== Auto Links
+
+\https://example.org
+
+https://github.com
+
+== URL Macros
+
+https://github.com[]
+
+https://github.com[GitHub]
+
+link:report.pdf[Get Report]
+
+=== Passthroughs
+
+link:pass:[My Documents/report.pdf][Get Report]
+
+link:My%20Documents/report.pdf[Get Report]
+
+link:My&#32;Documents/report.pdf[Get Report]
+
+link:++https://example.org/now_this__link_works.html++[]
+
+|link:https://github.com[]|
+
+|link:file:///home/username[Your files]|
+
+=== Macro Attributes
+
+https://github.com[GitHub,role=resource,window=_blank]
+
+https://github.com["1=2 posits the problem of inequality"]
+
+https://github.com["href=\"#top\" attribute"]
+
+https://github.com[GitHub,window=read-later,opts=noopener]
+
+https://github.com[GitHub,window=_blank,opts=nofollow]
+
+https://github.com[GitHub,window=read-later,opts="noopener,nofollow"]
+
+Let's view the raw HTML of the link:view-source:index.html[GitHub Source^].
+
+== Cross-References
+
+xref:b.adoc[B]
+
+<<b#bottom,B Bottom>>
+
+xref:b.adoc#bottom[B Bottom]
+
+<<bottom, Bottom>>
+
+(scroll-down)
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+ +
+[[bottom]]
+Bottom

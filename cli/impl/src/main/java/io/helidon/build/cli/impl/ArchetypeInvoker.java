@@ -75,7 +75,7 @@ abstract class ArchetypeInvoker {
     /**
      * The first Helidon version that uses the archetype engine V2.
      */
-    private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0");
+    private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0-alpha");
 
 
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
@@ -85,6 +85,7 @@ abstract class ArchetypeInvoker {
     private final Map<String, String> initProperties;
     private final Function<String, Path> projectDirSupplier;
     private final UserConfig userConfig;
+    private final Runnable onResolved;
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
@@ -92,6 +93,7 @@ abstract class ArchetypeInvoker {
         initProperties = unmodifiableMap(builder.initProperties);
         projectDirSupplier = builder.projectDirSupplier;
         userConfig = builder.userConfig;
+        onResolved = builder.onResolved;
     }
 
     /**
@@ -128,6 +130,15 @@ abstract class ArchetypeInvoker {
      */
     protected UserConfig userConfig() {
         return userConfig;
+    }
+
+    /**
+     * Get the {@code onResolved} callback.
+     *
+     * @return Runnable
+     */
+    protected Runnable onResolved() {
+        return onResolved;
     }
 
     /**
@@ -183,6 +194,7 @@ abstract class ArchetypeInvoker {
         private final Map<String, String> initProperties;
         private Function<String, Path> projectDirSupplier;
         private UserConfig userConfig;
+        private Runnable onResolved;
 
         private Builder() {
             initProperties = new HashMap<>();
@@ -229,6 +241,17 @@ abstract class ArchetypeInvoker {
          */
         Builder userConfig(UserConfig config) {
             this.userConfig = config;
+            return this;
+        }
+
+        /**
+         * Set the callback to be invoked when inputs are fully resolved.
+         *
+         * @param onResolved callback
+         * @return this builder
+         */
+        Builder onResolved(Runnable onResolved) {
+            this.onResolved = onResolved;
             return this;
         }
 
@@ -341,7 +364,7 @@ abstract class ArchetypeInvoker {
             }
 
             Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
-            engine.generate(projectDir.toFile());
+            engine.generate(projectDir);
 
             // Create config file that includes feature information
             ProjectConfig configFile = createProjectConfig(projectDir, helidonVersion);
@@ -363,7 +386,7 @@ abstract class ArchetypeInvoker {
         private static final String ARTIFACT_ID_PROPERTY = "artifactId";
         private static final String PACKAGE_NAME_PROPERTY = "package";
         private static final String BUILD_SYSTEM_PROPERTY = "build-system";
-        private static final String ARCHETYPE_BASE_PROPERTY = "base";
+        private static final String ARCHETYPE_BASE_PROPERTY = "app-type";
 
         private V2Invoker(Builder builder) {
             super(builder);
@@ -373,6 +396,7 @@ abstract class ArchetypeInvoker {
         Path invoke() {
             InitOptions initOptions = initOptions();
             initOptions.applyConfig(userConfig(), EngineVersion.V2);
+            initOptions.applyOverrides(initProperties());
             Map<String, String> externalDefaults = new HashMap<>();
 
             // Initialize params with any properties passed on the command-line; options will take precedence
@@ -401,9 +425,9 @@ abstract class ArchetypeInvoker {
                 Log.warn("--name option is not used in Helidon 3.x");
             }
 
-            InputResolver inputResolver;
+            InputResolver resolver;
             if (isInteractive()) {
-                inputResolver = new TerminalInputResolver(System.in);
+                resolver = new TerminalInputResolver(System.in);
 
                 // Set remaining command-line options as external values and user config as external defaults
                 if (initOptions.groupIdOption() != null) {
@@ -422,7 +446,11 @@ abstract class ArchetypeInvoker {
                     externalDefaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
                 }
             } else {
-                inputResolver = new BatchInputResolver();
+                resolver = new BatchInputResolver();
+
+                // Add defaults in case of the user has not specify mandatory options
+                externalDefaults.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
+                externalDefaults.put(FLAVOR_PROPERTY, initOptions.flavor().toString());
 
                 // Batch mode, so pass merged init options as external values
                 externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
@@ -433,7 +461,7 @@ abstract class ArchetypeInvoker {
             //noinspection ConstantConditions
             ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype());
             try {
-                return engine.generate(inputResolver, externalValues, externalDefaults, projectDirSupplier());
+                return engine.generate(resolver, externalValues, externalDefaults, onResolved(), projectDirSupplier());
             } catch (InvocationException ie) {
                 Throwable cause = ie.getCause();
                 if (cause instanceof UnresolvedInputException) {

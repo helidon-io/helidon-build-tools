@@ -31,6 +31,8 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
+import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.Assertions;
@@ -59,8 +61,9 @@ class ScriptLoaderTest {
             public VisitResult visitText(Input.Text input, Void arg) {
                 switch (++index[0]) {
                     case 1:
-                        assertThat(input.name(), is("input1"));
-                        assertThat(input.label(), is("Text input"));
+                        assertThat(input.id(), is("input1"));
+                        assertThat(input.name(), is("Text input"));
+                        assertThat(input.description(), is("A text input"));
                         assertThat(input.help(), is("Help 1"));
                         assertThat(input.isOptional(), is(true));
                         assertThat(input.defaultValue(), is(not(nullValue())));
@@ -68,8 +71,9 @@ class ScriptLoaderTest {
                         assertThat(input.prompt(), is("Enter 1"));
                         break;
                     case 5:
-                        assertThat(input.name(), is("more-input1"));
-                        assertThat(input.label(), is("More input 1"));
+                        assertThat(input.id(), is("more-input1"));
+                        assertThat(input.name(), is("More input 1"));
+                        assertThat(input.description(), is("Another text input"));
                         assertThat(input.help(), is("More Help 1"));
                         assertThat(input.isOptional(), is(true));
                         assertThat(input.defaultValue(), is(not(nullValue())));
@@ -85,8 +89,9 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                 assertThat(++index[0], is(2));
-                assertThat(input.name(), is("input2"));
-                assertThat(input.label(), is("Boolean input"));
+                assertThat(input.id(), is("input2"));
+                assertThat(input.name(), is("Boolean input"));
+                assertThat(input.description(), is("A boolean input"));
                 assertThat(input.help(), is("Help 2"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.defaultValue().asBoolean(), is(true));
@@ -97,15 +102,18 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitEnum(Input.Enum input, Void arg) {
                 assertThat(++index[0], is(3));
-                assertThat(input.name(), is("input3"));
-                assertThat(input.label(), is("Enum input"));
+                assertThat(input.id(), is("input3"));
+                assertThat(input.name(), is("Enum input"));
+                assertThat(input.description(), is("An enum input"));
                 assertThat(input.help(), is("Help 3"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.options().size(), is(2));
                 assertThat(input.options().get(0).value(), is("option3.1"));
-                assertThat(input.options().get(0).label(), is("Option 3.1"));
+                assertThat(input.options().get(0).name(), is("Option 3.1"));
+                assertThat(input.options().get(0).description(), is("An option"));
                 assertThat(input.options().get(1).value(), is("option3.2"));
-                assertThat(input.options().get(1).label(), is("Option 3.2"));
+                assertThat(input.options().get(1).name(), is("Option 3.2"));
+                assertThat(input.options().get(1).description(), is("Another option"));
                 assertThat(input.defaultValue(), is(not(nullValue())));
                 assertThat(input.defaultValue().asString(), is("option3.1"));
                 assertThat(input.prompt(), is("Enter 3"));
@@ -115,14 +123,17 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitList(Input.List input, Void arg) {
                 assertThat(++index[0], is(4));
-                assertThat(input.name(), is("input4"));
-                assertThat(input.label(), is("List input"));
+                assertThat(input.id(), is("input4"));
+                assertThat(input.name(), is("List input"));
+                assertThat(input.description(), is("A list input"));
                 assertThat(input.help(), is("Help 4"));
                 assertThat(input.isOptional(), is(false));
                 assertThat(input.options().get(0).value(), is("item4.1"));
-                assertThat(input.options().get(0).label(), is("Item 4.1"));
+                assertThat(input.options().get(0).name(), is("Item 4.1"));
+                assertThat(input.options().get(0).description(), is("An option"));
                 assertThat(input.options().get(1).value(), is("item4.2"));
-                assertThat(input.options().get(1).label(), is("Item 4.2"));
+                assertThat(input.options().get(1).name(), is("Item 4.2"));
+                assertThat(input.options().get(1).description(), is("Another option"));
                 assertThat(input.defaultValue().asList(), contains("item4.1", "item4.2"));
                 assertThat(input.prompt(), is("Enter 4"));
                 return VisitResult.CONTINUE;
@@ -139,8 +150,8 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitBoolean(Input.Boolean input, Void arg) {
                 assertThat(++index[0] <= 5, is(true));
-                assertThat(input.name(), is("input" + index[0]));
-                assertThat(input.label(), is("label" + index[0]));
+                assertThat(input.id(), is("input" + index[0]));
+                assertThat(input.name(), is("label" + index[0]));
                 return VisitResult.CONTINUE;
             }
         }, script);
@@ -260,6 +271,44 @@ class ScriptLoaderTest {
                         assertThat(preset.kind(), is(Preset.Kind.LIST));
                         assertThat(preset.value().asList(), contains("list1"));
                         assertThat(preset.children().isEmpty(), is(true));
+                        break;
+                }
+                return VisitResult.CONTINUE;
+            }
+        }, script);
+        assertThat(index[0], is(4));
+    }
+
+    @Test
+    void testVariables() {
+        Script script = load("loader/variables.xml");
+        int[] index = new int[]{0};
+        walk(new VisitorAdapter<>(null, null, null) {
+
+            @Override
+            public VisitResult visitVariable(Variable variable, Void arg) {
+                switch (++index[0]) {
+                    case 1:
+                        assertThat(variable.path(), is("var1"));
+                        assertThat(variable.kind(), is(Variable.Kind.BOOLEAN));
+                        assertThat(variable.value().asBoolean(), is(true));
+                        break;
+                    case 2:
+                        assertThat(variable.path(), is("var2"));
+                        assertThat(variable.kind(), is(Variable.Kind.TEXT));
+                        assertThat(variable.value().asString(), is("text1"));
+                        assertThat(variable.isTransient(), is(true));
+                        break;
+                    case 3:
+                        assertThat(variable.path(), is("var3"));
+                        assertThat(variable.kind(), is(Variable.Kind.ENUM));
+                        assertThat(variable.value().asString(), is("enum1"));
+                        break;
+                    case 4:
+                        assertThat(variable.path(), is("var4"));
+                        assertThat(variable.kind(), is(Variable.Kind.LIST));
+                        assertThat(variable.value().asList(), contains("list1"));
+                        assertThat(variable.children().isEmpty(), is(true));
                         break;
                 }
                 return VisitResult.CONTINUE;
@@ -456,9 +505,10 @@ class ScriptLoaderTest {
         Script script = load("loader/conditional.xml");
         int[] index = new int[]{0};
         Output.Visitor<Void> outputVisitor = new Output.Visitor<>() {
+
             @Override
             public VisitResult visitFile(Output.File file, Void arg) {
-                assertThat(++index[0], is(3));
+                assertThat(++index[0], is(4));
                 assertThat(file.source(), is("file1.txt"));
                 assertThat(file.target(), is("file2.txt"));
                 return VisitResult.CONTINUE;
@@ -466,7 +516,7 @@ class ScriptLoaderTest {
 
             @Override
             public VisitResult visitTemplate(Output.Template template, Void arg) {
-                assertThat(++index[0], is(4));
+                assertThat(++index[0], is(5));
                 assertThat(template.source(), is("file1.tpl"));
                 assertThat(template.target(), is("file2.txt"));
                 assertThat(template.engine(), is("foo"));
@@ -475,7 +525,7 @@ class ScriptLoaderTest {
 
             @Override
             public VisitResult visitFiles(Output.Files files, Void arg) {
-                assertThat(++index[0], is(5));
+                assertThat(++index[0], is(6));
                 assertThat(files.directory(), is("colors"));
                 return VisitResult.CONTINUE;
             }
@@ -483,10 +533,10 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitInclude(Output.Include include, Void arg) {
                 switch (++index[0]) {
-                    case (6):
+                    case (7):
                         assertThat(include.value(), is("red"));
                         break;
-                    case (7):
+                    case (8):
                         assertThat(include.value(), is("green"));
                         break;
                     default:
@@ -498,10 +548,10 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitExclude(Output.Exclude exclude, Void arg) {
                 switch (++index[0]) {
-                    case (8):
+                    case (9):
                         assertThat(exclude.value(), is("yellow"));
                         break;
-                    case (9):
+                    case (10):
                         assertThat(exclude.value(), is("pink"));
                         break;
                     default:
@@ -514,23 +564,23 @@ class ScriptLoaderTest {
             @Override
             public VisitResult visitValue(Model.Value value, Void arg) {
                 switch (++index[0]) {
-                    case (10):
+                    case (11):
                         assertThat(value.value(), is("red"));
                         break;
-                    case (11):
+                    case (12):
                         assertThat(value.value(), is("green"));
                         break;
-                    case (13):
+                    case (14):
                         assertThat(value.value(), is("yellow"));
                         break;
-                    case (14):
+                    case (15):
                         assertThat(value.value(), is("pink"));
                         break;
-                    case (16):
+                    case (17):
                         assertThat(value.key(), is("rectangle"));
                         assertThat(value.value(), is("orange"));
                         break;
-                    case (17):
+                    case (18):
                         assertThat(value.key(), is("circle"));
                         assertThat(value.value(), is("lavender"));
                         break;
@@ -542,19 +592,28 @@ class ScriptLoaderTest {
 
             @Override
             public VisitResult visitList(Model.List list, Void arg) {
-                assertThat(++index[0], is(12));
+                assertThat(++index[0], is(13));
                 assertThat(list.key(), is("colors1"));
                 return VisitResult.CONTINUE;
             }
 
             @Override
             public VisitResult visitMap(Model.Map map, Void arg) {
-                assertThat(++index[0], is(15));
+                assertThat(++index[0], is(16));
                 assertThat(map.key(), is("shapes1"));
                 return VisitResult.CONTINUE;
             }
         };
         walk(new VisitorAdapter<>(null, outputVisitor, modelVisitor) {
+            @Override
+            public VisitResult visitPreset(Preset preset, Void arg) {
+                assertThat(++index[0], is(1));
+                assertThat(preset.path(), is("path1"));
+                assertThat(preset.value().type(), is(ValueTypes.BOOLEAN));
+                assertThat(preset.value().asBoolean(), is(true));
+                return VisitResult.CONTINUE;
+            }
+
             @Override
             public VisitResult visitCondition(Condition condition, Void arg) {
                 if (condition.expression().eval()) {
@@ -565,8 +624,8 @@ class ScriptLoaderTest {
 
             @Override
             public VisitResult visitStep(Step step, Void arg) {
-                assertThat(++index[0], is(1));
-                assertThat(step.label(), is("Step 1"));
+                assertThat(++index[0], is(2));
+                assertThat(step.name(), is("Step 1"));
                 assertThat(step.help(), is("Help about step 1"));
                 return VisitResult.CONTINUE;
             }
@@ -576,15 +635,15 @@ class ScriptLoaderTest {
                 return input.accept(new Input.Visitor<>() {
                     @Override
                     public VisitResult visitBoolean(Input.Boolean input, Void arg) {
-                        assertThat(++index[0], is(2));
-                        assertThat(input.name(), is("input1"));
-                        assertThat(input.label(), is("Input 1"));
+                        assertThat(++index[0], is(3));
+                        assertThat(input.id(), is("input1"));
+                        assertThat(input.name(), is("Input 1"));
                         return VisitResult.CONTINUE;
                     }
                 }, arg);
             }
         }, script);
-        assertThat(index[0], is(17));
+        assertThat(index[0], is(18));
     }
 
     @Test

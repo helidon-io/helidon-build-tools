@@ -86,7 +86,7 @@ public final class CommandRunner {
      */
     private void doExecuteCommand(CommandModel command) {
         CommandParser.Resolver globalResolver = parser.globalResolver();
-        if (globalResolver.resolve(GlobalOptions.PLAIN_FLAG_INFO) || context.internalOptions().richTextDisabled()) {
+        if (context.richTextDisabled()) {
             AnsiConsoleInstaller.disable();
         }
         if (globalResolver.resolve(GlobalOptions.VERBOSE_FLAG_INFO)) {

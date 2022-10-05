@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
     <inputs>
-        <boolean name="input1" label="label1">
+        <boolean id="input1" name="label1">
             <inputs>
-                <boolean name="input2" label="label2">
+                <boolean id="input2" name="label2">
                     <inputs>
-                        <boolean name="input3" label="label3">
+                        <boolean id="input3" name="label3">
                             <inputs>
-                                <boolean name="input4" label="label4">
+                                <boolean id="input4" name="label4">
                                     <inputs>
-                                        <boolean name="input5" label="label5"/>
+                                        <boolean id="input5" name="label5"/>
                                     </inputs>
                                 </boolean>
                             </inputs>

@@ -31,6 +31,7 @@ module io.helidon.build.archetype.engine.v2 {
     exports io.helidon.build.archetype.engine.v2.ast;
     exports io.helidon.build.archetype.engine.v2.spi;
     exports io.helidon.build.archetype.engine.v2.util;
+    exports io.helidon.build.archetype.engine.v2.context;
 
     uses TemplateSupportProvider;
     provides TemplateSupportProvider with MustacheProvider;

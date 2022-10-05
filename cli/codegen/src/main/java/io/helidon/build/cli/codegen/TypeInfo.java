@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -190,7 +189,7 @@ interface TypeInfo extends Comparable<TypeInfo> {
         List<TypeInfo> allTypes = new LinkedList<>();
         allTypes.add(this);
         allTypes.addAll(Arrays.asList(interfaces()));
-        allTypes.addAll(superClass().stream().flatMap(s -> s.allTypes().stream()).collect(Collectors.toList()));
+        allTypes.addAll(superClass().stream().flatMap(s -> s.allTypes().stream()).toList());
         return allTypes;
     }
 
@@ -735,10 +734,10 @@ interface TypeInfo extends Comparable<TypeInfo> {
             StringBuilder key = new StringBuilder(variableElement.toString());
             Element element = variableElement.getEnclosingElement();
             while (element.accept(IS_NOT_TYPE_VISITOR, null)) {
-                key.insert(0, element.toString() + ".");
+                key.insert(0, element + ".");
                 element = element.getEnclosingElement();
             }
-            key.insert(0, element.toString() + ".");
+            key.insert(0, element + ".");
             return key.toString();
         }
 

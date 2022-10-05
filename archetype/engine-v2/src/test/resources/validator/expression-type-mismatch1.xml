@@ -20,9 +20,9 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <step label="My Step">
+    <step name="My Step">
         <inputs>
-            <text name="input1" label="Input 1"/>
+            <text id="input1" name="Input 1"/>
         </inputs>
     </step>
     <output if="${input1}"/>

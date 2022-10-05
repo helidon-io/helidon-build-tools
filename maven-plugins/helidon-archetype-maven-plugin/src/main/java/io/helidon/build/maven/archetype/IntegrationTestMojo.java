@@ -19,21 +19,36 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.BatchInputResolver;
-import io.helidon.build.archetype.engine.v2.util.InputCombinations;
-import io.helidon.build.common.FileUtils;
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
+import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.util.InputPermutations;
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
@@ -61,6 +76,8 @@ import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.util.StringUtils;
 
+import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
@@ -169,10 +186,52 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalDefaults;
 
     /**
-     * Whether to generate input combinations.
+     * Input filters to use when computing permutations.
      */
-    @Parameter(property = "archetype.test.generateCombinations", defaultValue = "true")
-    private boolean generateCombinations;
+    @Parameter(property = "archetype.test.inputFilters")
+    private List<String> inputFilters;
+
+    /**
+     * File that contains input filters to use when computing permutations.
+     */
+    @Parameter(property = "archetype.test.inputFiltersFile")
+    private File inputFiltersFile;
+
+    /**
+     * Permutation filters to filter computed permutations.
+     */
+    @Parameter(property = "archetype.test.permutationFilters")
+    private List<String> permutationFilters;
+
+    /**
+     * File that contains filters to filter computed permutations.
+     */
+    @Parameter(property = "archetype.test.permutationFiltersFile")
+    private File permutationFiltersFile;
+
+    /**
+     * Whether to generate input permutations.
+     */
+    @Parameter(property = "archetype.test.generatePermutations", defaultValue = "true")
+    private boolean generatePermutations;
+
+    /**
+     * Whether to only generate input permutations.
+     */
+    @Parameter(property = "archetype.test.permutationsOnly", defaultValue = "false")
+    private boolean permutationsOnly;
+
+    /**
+     * Permutations start index.
+     */
+    @Parameter(property = "archetype.test.permutationStartIndex", defaultValue = "1")
+    private int permutationStartIndex;
+
+    /**
+     * Permutations to process.
+     */
+    @Parameter(property = "archetype.test.permutation")
+    private String permutation;
 
     /**
      * Invoker environment variables.
@@ -183,7 +242,14 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Component
     private ProjectInstaller installer;
 
-    private int combinationNumber;
+    /**
+     * Generated code inspection.
+     */
+    @Parameter
+    private List<Validation> validations;
+
+    private List<Map<String, String>> permutations;
+    private int index = 1;
     private Log log;
 
     @Override
@@ -194,7 +260,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             return;
         }
 
-        // support -DskipTests
+        // support skipTests
         String skipTests = session.getUserProperties().getProperty("skipTests");
         if (skipTests != null && !"false".equalsIgnoreCase(skipTests)) {
             return;
@@ -207,16 +273,31 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         String testName = project.getFile().toPath().getParent().getFileName().toString();
         try {
-            if (generateCombinations) {
-                logCombinationsInput(testName);
-                InputCombinations combinations = InputCombinations.builder()
-                                                                  .archetypePath(archetypeFile.toPath())
-                                                                  .externalValues(externalValues)
-                                                                  .externalDefaults(externalDefaults)
-                                                                  .build();
-                for (Map<String, String> combination : combinations) {
-                    combinationNumber++;
-                    processIntegrationTest(testName, combination, archetypeFile);
+            if (generatePermutations) {
+                logPermutationsInput(testName);
+
+                log.info("");
+                log.info("Computing permutations...");
+                permutations = permutations(archetypeFile.toPath());
+                Path permutationsFile = writePermutations();
+                log.info("");
+                log.info("Total permutations: " + permutations.size());
+                log.info("Permutations file: " + permutationsFile);
+
+                if (permutationsOnly) {
+                    return;
+                }
+
+                Set<String> artifactIds = new HashSet<>();
+                Map<Integer, Map<String, String>> perms = filterPermutations();
+                for (Map.Entry<Integer, Map<String, String>> entry : perms.entrySet()) {
+                    index = entry.getKey();
+                    Map<String, String> permutation = entry.getValue();
+                    String artifactId = permutation.getOrDefault("artifactId", "my-project");
+                    if (!artifactIds.add(artifactId)) {
+                        permutation.put("artifactId", artifactId + "-" + index);
+                    }
+                    processIntegrationTest(testName, permutation, archetypeFile);
                 }
             } else {
                 processIntegrationTest(testName, externalValues, archetypeFile);
@@ -226,6 +307,71 @@ public class IntegrationTestMojo extends AbstractMojo {
             getLog().error(e);
             throw new MojoExecutionException("Integration test failed with error(s)");
         }
+    }
+
+    private List<Map<String, String>> permutations(Path archetypeFile) {
+        try (FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader())) {
+            Script script = ScriptLoader.load(fileSystem.getPath("main.xml"));
+            InputPermutations.Builder builder = InputPermutations.builder()
+                                                       .script(script)
+                                                       .externalValues(externalValues)
+                                                       .externalDefaults(externalDefaults)
+                                                       .inputFilters(inputFilters)
+                                                       .permutationFilters(permutationFilters);
+            if (inputFiltersFile != null) {
+                builder.inputFilters(filtersFromFile(inputFiltersFile));
+            }
+            if (permutationFiltersFile != null) {
+                builder.permutationFilters(filtersFromFile(permutationFiltersFile));
+            }
+            return builder.build().compute();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private Path writePermutations() {
+        try {
+            Path projectDir = project.getFile().toPath().getParent();
+            Path targetDir = projectDir.resolve("target");
+            Path permutationsFile = targetDir.resolve("permutations.txt");
+            Files.createDirectories(targetDir);
+            try (PrintWriter csvWriter = new PrintWriter(Files.newBufferedWriter(permutationsFile))) {
+                for (Map<String, String> permutation : permutations) {
+                    String line = Lists.join(Maps.entries(permutation), e -> e.getKey() + "=" + e.getValue(), " ");
+                    csvWriter.println(line);
+                }
+                csvWriter.flush();
+            }
+            return permutationsFile;
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private Map<Integer, Map<String, String>> filterPermutations() {
+        Map<Integer, Map<String, String>> perms = new LinkedHashMap<>();
+        if (permutation == null || permutation.isEmpty()) {
+            Iterator<Map<String, String>> it = permutations.iterator();
+            for (int i = 1; it.hasNext(); i++) {
+                Map<String, String> next = it.next();
+                if (i >= permutationStartIndex) {
+                    perms.put(i, next);
+                }
+            }
+        } else {
+            List<Integer> indices = Arrays.stream(permutation.split(","))
+                                          .map(Integer::valueOf)
+                                          .collect(Collectors.toList());
+            Iterator<Map<String, String>> it = permutations.iterator();
+            for (int i = 1; it.hasNext(); i++) {
+                Map<String, String> next = it.next();
+                if (indices.contains(i)) {
+                    perms.put(i, next);
+                }
+            }
+        }
+        return perms;
     }
 
     private void processIntegrationTest(String testName,
@@ -239,10 +385,11 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         Path ourProjectDir = project.getFile().toPath();
         Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
-        FileUtils.ensureDirectory(projectsDir);
+        ensureDirectory(projectsDir);
         String projectName = props.getProperty("artifactId");
-        Path outputDir = projectsDir.resolve(projectName);
-        FileUtils.deleteDirectory(outputDir);
+        Path outputDir = unique(projectsDir, projectName);
+        projectName = outputDir.getFileName().toString();
+        props.setProperty("artifactId", projectName);
 
         if (mavenArchetypeCompatible) {
             log.info("Generating project '" + projectName + "' using Maven archetype");
@@ -262,10 +409,10 @@ public class IntegrationTestMojo extends AbstractMojo {
         invokePostArchetypeGenerationGoals(outputDir.toFile());
     }
 
-    private void logCombinationsInput(String testName) {
+    private void logPermutationsInput(String testName) {
         log.info("");
         log.info("--------------------------------------");
-        log.info("Generating Archetype Test Combinations");
+        log.info("Generating Archetype Permutations");
         log.info("--------------------------------------");
         log.info("");
         log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));
@@ -275,16 +422,16 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void logTestDescription(String testName, Map<String, String> externalValues) {
-        String testDescription = Bold.apply("Test: ") + BoldBlue.apply(testName);
-        if (combinationNumber > 0) {
-            testDescription += BoldBlue.apply(", combination " + combinationNumber);
+        String description = Bold.apply("Test: ") + BoldBlue.apply(testName);
+        if (permutations != null && index > 0) {
+            description += BoldBlue.apply(String.format(", permutation: %s/%s", index, permutations.size()));
         }
         log.info("");
         log.info("-------------------------------------");
         log.info("Processing Archetype Integration Test");
         log.info("-------------------------------------");
         log.info("");
-        log.info(testDescription);
+        log.info(description);
         int maxKeyWidth = maxKeyWidth(externalValues);
         logInputs("externalValues", externalValues, maxKeyWidth);
         log.info("");
@@ -362,7 +509,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 ArchetypeNotConfigured anc = (ArchetypeNotConfigured) result.getCause();
                 throw new MojoExecutionException(
                         "Missing required properties in archetype.properties: "
-                        + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
+                                + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
             }
             throw new MojoExecutionException(result.getCause().getMessage(), result.getCause());
         }
@@ -401,12 +548,45 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             InvocationResult result = invoker.execute(request);
             getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
+            validate(basedir);
             if (result.getExitCode() != 0) {
                 throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
-                                                 result.getExecutionException());
+                        result.getExecutionException());
             }
         } catch (MavenInvocationException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
+        }
+    }
+
+    private void validate(File basedir) throws MojoExecutionException {
+        if (Objects.isNull(validations) || validations.isEmpty()) {
+            return;
+        }
+        List<SourcePath> paths = SourcePath.scan(basedir);
+        String error = String.format("Validation failed in directory %s", basedir);
+        for (Validation validation : validations) {
+            String match = validation.getMatch();
+            boolean fail = validation.getFail();
+            Set<String> patterns = validation.getPatterns();
+            boolean isMatch;
+            Predicate<SourcePath> matches = path -> path.matches(patterns);
+            switch (match) {
+                case "all":
+                    isMatch = paths.stream().allMatch(matches);
+                    break;
+                case "any":
+                    isMatch = paths.stream().anyMatch(matches);
+                    break;
+                case "none":
+                    isMatch = paths.stream().noneMatch(matches);
+                    break;
+                default:
+                    throw new MojoExecutionException("Wrong validation match value: " + match);
+            }
+            if (isMatch == fail) {
+                throw new MojoExecutionException(
+                        String.format("%s with patterns: %s match: %s, fail: %s", error, patterns, match, fail));
+            }
         }
     }
 
@@ -422,6 +602,16 @@ public class IntegrationTestMojo extends AbstractMojo {
             getLog().debug("build log initialized in: " + outputLog);
         }
         return logger;
+    }
+
+    private static Collection<String> filtersFromFile(File file) {
+        Properties props = new Properties();
+        try (InputStream is = Files.newInputStream(file.toPath())) {
+            props.load(is);
+            return Maps.fromProperties(props).values();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     private static final class FileLogger implements InvocationOutputHandler, Closeable {

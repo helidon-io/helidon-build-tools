@@ -23,7 +23,7 @@
     <methods>
         <method name="method3">
             <inputs>
-                <boolean name="boolean2" label="Boolean2"/>
+                <boolean id="boolean2" name="Boolean2"/>
             </inputs>
         </method>
     </methods>

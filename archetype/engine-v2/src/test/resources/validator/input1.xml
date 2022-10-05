@@ -21,6 +21,6 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
     <inputs>
-        <text name="input1" label="Input 1"/>
+        <text id="input1" name="Input 1"/>
     </inputs>
 </archetype-script>

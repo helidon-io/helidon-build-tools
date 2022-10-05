@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -119,13 +120,21 @@ public final class Expression {
                             result = operand2.asBoolean() && operand1.asBoolean();
                             break;
                         case EQUAL:
-                            result = operand2.unwrap().equals(operand1.unwrap());
+                            result = Value.equals(operand2, operand1);
                             break;
                         case NOT_EQUAL:
-                            result = !operand2.unwrap().equals(operand1.unwrap());
+                            result = !Value.equals(operand2, operand1);
                             break;
                         case CONTAINS:
-                            result = operand2.asList().contains(operand1.asString());
+                            if (operand1.type() == ValueTypes.STRING_LIST) {
+                                result = new HashSet<>(operand2.asList()).containsAll(operand1.asList());
+                            } else {
+                                if (operand2.type() == ValueTypes.STRING) {
+                                    result = operand2.asString().contains(operand1.asString());
+                                } else {
+                                    result = operand2.asList().contains(operand1.asString());
+                                }
+                            }
                             break;
                         default:
                             throw new IllegalStateException("Unsupported operator: " + token.operator);
@@ -207,10 +216,11 @@ public final class Expression {
             Symbol symbol = it.next();
             switch (symbol.type) {
                 case BINARY_LOGICAL_OPERATOR:
-                case UNARY_LOGICAL_OPERATOR:
                 case EQUALITY_OPERATOR:
                 case CONTAINS_OPERATOR:
-                    if (previous >= 0 && symbols.get(previous).value.equals("(")) {
+                case UNARY_LOGICAL_OPERATOR:
+                    if (symbol.type != Symbol.Type.UNARY_LOGICAL_OPERATOR
+                            && previous >= 0 && symbols.get(previous).value.equals("(")) {
                         throw new FormatException("Invalid parenthesis");
                     }
                     while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
@@ -244,6 +254,9 @@ public final class Expression {
                 case ARRAY:
                 case VARIABLE:
                     stackSize += 1 - addToken(symbol, tokens);
+                    break;
+                case SKIP:
+                case COMMENT:
                     break;
                 default:
                     throw new IllegalStateException("Unexpected symbol: " + symbol.value);
@@ -345,7 +358,7 @@ public final class Expression {
     public static final class Token {
 
         private static final Pattern ARRAY_PATTERN = Pattern.compile("(?<element>'[^']*')((\\s*,\\s*)|(\\s*]))");
-        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>[\\w.-]+)}");
+        private static final Pattern VAR_PATTERN = Pattern.compile("^\\$\\{(?<varName>~?[\\w.-]+)}");
 
         private final Operator operator;
         private final String variable;
@@ -504,12 +517,13 @@ public final class Expression {
             ARRAY("^\\[[^]\\[]*]"),
             BOOLEAN("^(true|false)"),
             STRING("^['\"][^'\"]*['\"]"),
-            VARIABLE("^\\$\\{(?<varName>[\\w.-]+)}"),
+            VARIABLE("^\\$\\{(?<varName>~?[\\w.-]+)}"),
             EQUALITY_OPERATOR("^(!=|==)"),
             BINARY_LOGICAL_OPERATOR("^(\\|\\||&&)"),
             UNARY_LOGICAL_OPERATOR("^[!]"),
             CONTAINS_OPERATOR("^contains"),
-            PARENTHESIS("^[()]");
+            PARENTHESIS("^[()]"),
+            COMMENT("#.*\\R");
 
             private final Pattern pattern;
 
@@ -550,9 +564,6 @@ public final class Expression {
                 if (matcher.find()) {
                     String value = matcher.group();
                     cursor += value.length();
-                    if (type == Symbol.Type.SKIP) {
-                        return next();
-                    }
                     return new Symbol(type, value);
                 }
             }

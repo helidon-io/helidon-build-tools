@@ -105,13 +105,28 @@ class EmbeddedModeTest {
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version lookup failed."));
         List<String> lines = loggedLines();
-        assertThat(lines.size(), is(3));
-        assertThat(lines.get(0), isNotStyled());
+        assertThat(lines.size(), is(5));
+        assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(2), isStyled());
-        assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
-        assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
-        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
+        assertThat(lines.get(2), isNotStyled());
+        assertThat(lines.get(3), isStyled());
+        assertThat(lines.get(4), isStyled());
+        assertThat(lines.get(2), is("Updating metadata for Helidon version 99.99"));
+        assertThat(lines.get(3), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
+        assertThat(lines.get(4), equalToIgnoringStyle("Helidon version lookup failed."));
+    }
+
+    @Test
+    void testFormatStringInProperties() {
+        System.setProperty("format", "%s");
+        Helidon.execute("info", "--verbose");
+        long lineCount = loggedLines().stream()
+                .distinct()
+                .filter(l -> l.contains("%s"))
+                .filter(l -> l.contains("format") || l.contains("formatEnv") )
+                .count();
+        assertThat(lineCount, is(2L));
+        System.clearProperty("format");
     }
 
     private static List<String> loggedLines() {

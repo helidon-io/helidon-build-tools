@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import io.helidon.build.maven.stager.ConfigReader.Scope;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Staging element factory.
@@ -30,6 +33,7 @@ import java.util.stream.Stream;
 class StagingElementFactory {
 
     private static final List<String> WRAPPED_ELEMENTS = List.of(
+            StagingDirectory.ELEMENT_NAME,
             ArchiveTask.ELEMENT_NAME,
             DownloadTask.ELEMENT_NAME,
             CopyArtifactTask.ELEMENT_NAME,
@@ -40,7 +44,7 @@ class StagingElementFactory {
 
     private static final Map<String, String> WRAPPER_ELEMENTS = WRAPPED_ELEMENTS
             .stream()
-            .collect(Collectors.toMap(n -> n + "s", n -> n));
+            .collect(toMap(n -> n.endsWith("y") ? n.substring(0, n.length() - 1) + "ies" : n + "s", n -> n));
 
     /**
      * Create a staging element.
@@ -49,12 +53,14 @@ class StagingElementFactory {
      * @param attrs    attributes, never {@code null}
      * @param children nested children {@code null}
      * @param text     element text, may be {@code null}
+     * @param scope    variables scope
      * @return StagingAction
      */
     StagingElement create(String name,
                           Map<String, String> attrs,
                           Map<String, List<StagingElement>> children,
-                          String text) {
+                          String text,
+                          Scope scope) {
 
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
@@ -71,6 +77,9 @@ class StagingElementFactory {
             case Variables.ELEMENT_NAME:
                 return variables(children);
             case Variable.ELEMENT_NAME:
+                if (attrs.containsKey("ref")) {
+                    return scope.resolve(attrs.get("ref"));
+                }
                 return variable(attrs.get("name"), children, attrs.get("value"));
             case VariableValue.ELEMENT_NAME:
                 return variableValue(children, text);
@@ -86,7 +95,7 @@ class StagingElementFactory {
      * @return {@code true} if the name is a wrapper element, {@code false} otherwise
      */
     boolean isWrapperElement(String name) {
-        return WRAPPER_ELEMENTS.keySet().contains(name);
+        return WRAPPER_ELEMENTS.containsKey(name);
     }
 
     /**
@@ -109,7 +118,7 @@ class StagingElementFactory {
         return new ActionIterators(filterChildren(children, Variables.ELEMENT_NAME, Variables.class)
                 .stream()
                 .map(ActionIterator::new)
-                .collect(Collectors.toList()));
+                .collect(toList()));
     }
 
     /**
@@ -157,7 +166,7 @@ class StagingElementFactory {
      * @param attrs    element attributes, should not be {@code null}
      * @param children child elements to process, should not be {@code null}
      * @param text     element text, may be {@code null}
-     * @return
+     * @return action
      */
     StagingAction createAction(String name,
                                Map<String, String> attrs,
@@ -206,12 +215,11 @@ class StagingElementFactory {
      * @return list of children, never {@code null}
      */
     <T> List<T> filterChildren(Map<String, List<StagingElement>> mappings, String elementName, Class<T> type) {
-        return Optional.ofNullable(mappings.get(elementName))
-                .map(List::stream)
-                .orElseGet(Stream::of)
-                .filter(type::isInstance)
-                .map(type::cast)
-                .collect(Collectors.toList());
+        return Optional.ofNullable(mappings.get(elementName)).stream()
+                       .flatMap(Collection::stream)
+                       .filter(type::isInstance)
+                       .map(type::cast)
+                       .collect(toList());
     }
 
     /**
@@ -223,13 +231,13 @@ class StagingElementFactory {
      * @return list of children, never {@code null}
      */
     <T> List<T> filterChildren(Map<String, List<StagingElement>> mappings, Class<T> type) {
-        return Optional.ofNullable(mappings.values())
-                .map(Collection::stream)
-                .orElseGet(Stream::of)
-                .flatMap(List::stream)
-                .filter(type::isInstance)
-                .map(type::cast)
-                .collect(Collectors.toList());
+        return Optional.of(mappings.values())
+                       .stream()
+                       .flatMap(Collection::stream)
+                       .flatMap(List::stream)
+                       .filter(type::isInstance)
+                       .map(type::cast)
+                       .collect(toList());
     }
 
     <T> T firstChild(Map<String, List<StagingElement>> mappings, Class<T> type, Supplier<T> defaultValue) {

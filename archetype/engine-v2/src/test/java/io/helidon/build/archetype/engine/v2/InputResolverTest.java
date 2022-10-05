@@ -20,6 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
+import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
@@ -36,6 +39,7 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.model;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelValue;
 import static io.helidon.build.archetype.engine.v2.TestHelper.output;
+import static io.helidon.build.archetype.engine.v2.TestHelper.step;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
@@ -51,41 +55,41 @@ public class InputResolverTest {
 
     @Test
     void testEnumOption() {
-        Block block = inputEnum("enum-input", "value3",
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option2", "value2", output(model(modelList("colors", modelValue("green"))))),
-                                inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue")))))).build();
+        Block block = step("step",
+                inputEnum("enum-input", "value3",
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option2", "value2", output(model(modelList("colors", modelValue("green"))))),
+                        inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue"))))))).build();
 
         Context context = Context.create();
-        context.put("enum-input", Value.create("value2"));
+        context.putValue("enum-input", Value.create("value2"), ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("green"));
     }
 
     @Test
     void testListOptions() {
-        Block block = inputList("list-input", List.of(),
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option2", "value2", output(model(modelList("colors", modelValue("green"))))),
-                                inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue")))))).build();
+        Block block = step("step",
+                inputList("list-input", List.of(),
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option2", "value2", output(model(modelList("colors", modelValue("green"))))),
+                        inputOption("option3", "value3", output(model(modelList("colors", modelValue("blue")))))))
+                .build();
 
         Context context = Context.create();
-        context.put("list-input", Value.create(List.of("value1", "value3")));
+        context.putValue("list-input", Value.create(List.of("value1", "value3")), ValueKind.EXTERNAL);
 
         assertThat(resolveInputs(block, context), contains("red", "blue"));
     }
 
     @Test
     void testDefaultValueSubstitutions() {
-        Block block = inputText("text-input4", "${foo}")
-                .attribute("optional", Value.TRUE)
-                .build();
-
+        Block block = step("step", inputText("text-input4", "${foo}").attribute("optional", Value.TRUE)).build();
         Context context = Context.create();
-        context.put("foo", Value.create("bar"));
+        context.putValue("foo", Value.create("bar"), ValueKind.EXTERNAL);
         resolveInputs(block, context, null);
 
-        Value value = context.lookup("text-input4");
+        Value value = context.getValue("text-input4");
 
         assertThat(value, is(notNullValue()));
         assertThat(value.type(), is(ValueTypes.STRING));
@@ -94,25 +98,26 @@ public class InputResolverTest {
 
     @Test
     void testExternalDefaultValueSubstitutions() {
-        Block block = inputText("text-input5", "foo")
-                .attribute("optional", Value.TRUE)
-                .build();
+        Context context = Context.builder()
+                                 .externalDefaults(Map.of("text-input5", "${foo}"))
+                                 .build();
+        context.putValue("foo", Value.create("bar"), ValueKind.EXTERNAL);
 
-        Context context = Context.create(null, null, Map.of("text-input5", "${foo}"));
-        context.put("foo", Value.create("bar"));
+        Block block = step("step", inputText("text-input5", "foo").attribute("optional", Value.TRUE)).build();
         resolveInputs(block, context, null);
 
-        Value value = context.lookup("text-input5");
+        Value value = context.getValue("text-input5");
 
         assertThat(value, is(notNullValue()));
-        assertThat(value.type(), is(ValueTypes.STRING));
         assertThat(value.asString(), is("bar"));
     }
 
     @Test
     void testInvalidEnumExternalValue() {
-        Block block = inputEnum("enum-input", null, inputOption("option1", "value1")).build();
-        Context context = Context.create(null, Map.of("enum-input", ""), null);
+        Block block = step("step", inputEnum("enum-input", null, inputOption("option1", "value1"))).build();
+        Context context = Context.builder()
+                                 .externalValues(Map.of("enum-input", ""))
+                                 .build();
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
         assertThat(ex.getCause(), is(instanceOf(InvalidInputException.class)));
         assertThat(ex.getCause().getMessage(), is("Invalid input: enum-input=''"));
@@ -120,21 +125,24 @@ public class InputResolverTest {
 
     @Test
     void testEnumIgnoreCase() {
-        Block block = inputEnum("enum-input2", "value1",
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue")))))).build();
+        Block block = step("step",
+                inputEnum("enum-input2", "value1",
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue")))))))
+                .build();
 
         Context context = Context.create();
-        context.put("enum-input2", Value.create("VALUE2"));
+        context.putValue("enum-input2", Value.create("VALUE2"), ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("blue"));
     }
 
     @Test
     void testEnumDefaultIgnoreCase() {
-        Block block = inputEnum("enum-input3", "VALUE2",
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
-                .attribute("optional", Value.TRUE)
+        Block block = step("step",
+                inputEnum("enum-input3", "VALUE2",
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
+                        .attribute("optional", Value.TRUE))
                 .build();
 
         Context context = Context.create();
@@ -143,23 +151,26 @@ public class InputResolverTest {
 
     @Test
     void testListIgnoreCase() {
-        Block block = inputList("list-input", List.of("value1"),
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option1", "value2", output(model(modelList("colors", modelValue("green"))))),
-                                inputOption("option2", "value3", output(model(modelList("colors", modelValue("blue")))))).build();
+        Block block = step("step",
+                inputList("list-input", List.of("value1"),
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option1", "value2", output(model(modelList("colors", modelValue("green"))))),
+                        inputOption("option2", "value3", output(model(modelList("colors", modelValue("blue")))))))
+                .build();
 
         Context context = Context.create();
-        context.put("list-input", Value.create(List.of("VALUE2", "VALUE3")));
+        context.putValue("list-input", Value.create(List.of("VALUE2", "VALUE3")), ValueKind.EXTERNAL);
         assertThat(resolveInputs(block, context), contains("green", "blue"));
     }
 
     @Test
     void testListDefaultIgnoreCase() {
-        Block block = inputList("list-input", List.of("VALUE2,VALUE3"),
-                                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                inputOption("option1", "value2", output(model(modelList("colors", modelValue("green"))))),
-                                inputOption("option2", "value3", output(model(modelList("colors", modelValue("blue"))))))
-                .attribute("optional", Value.TRUE)
+        Block block = step("step",
+                inputList("list-input", List.of("VALUE2,VALUE3"),
+                        inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                        inputOption("option1", "value2", output(model(modelList("colors", modelValue("green"))))),
+                        inputOption("option2", "value3", output(model(modelList("colors", modelValue("blue"))))))
+                        .attribute("optional", Value.TRUE))
                 .build();
 
         Context context = Context.create();
@@ -168,28 +179,39 @@ public class InputResolverTest {
 
     @Test
     void testGlobalInputs() {
-        Block.Builder nestedScope = inputEnum("nested-scope", "value1",
-                                              inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                              inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))));
+        Block.Builder nested2 = inputEnum("nested", "value1",
+                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))));
 
-        Block.Builder scope = inputEnum("scope", "value1",
-                                         inputOption("option1", "value1", output(model(modelList("style", modelValue("plain"))))),
-                                         inputOption("option2", "value2", nestedScope));
+        Block.Builder nested1 = inputEnum("nested-local", "value1",
+                inputOption("option1", "value1", output(model(modelList("style", modelValue("plain"))))),
+                inputOption("option2", "value2", nested2));
 
         Block.Builder nestedGlobal = inputEnum("nested-global", "value1",
-                                               inputOption("option1", "value1", scope))
+                inputOption("option1", "value1", nested1))
                 .attribute("global", Value.TRUE);
 
-        Block global = inputEnum("global", "value1",
-                                 inputOption("option1", "value1", nestedGlobal))
-                .attribute("global", Value.TRUE)
+        Block global = step("step",
+                inputEnum("global", "value1",
+                        inputOption("option1", "value1", nestedGlobal))
+                        .attribute("global", Value.TRUE))
                 .build();
 
         Context context = Context.create();
-        context.put("global", Value.create("value1"));
-        context.put("nested-global", Value.create("value1"));
-        context.put("scope", Value.create("value2"));
-        context.put("scope.nested-scope", Value.create("value2"));
+
+        context.scope()
+               .getOrCreate("global", ContextScope.Visibility.GLOBAL)
+               .putValue("", Value.create("value1"), ValueKind.EXTERNAL)
+               .scope()
+               .getOrCreate("nested-global", ContextScope.Visibility.GLOBAL)
+               .putValue("", Value.create("value1"), ValueKind.EXTERNAL)
+               .scope()
+               .getOrCreate("nested-local", ContextScope.Visibility.LOCAL)
+               .putValue("", Value.create("value2"), ValueKind.EXTERNAL)
+               .scope()
+               .getOrCreate("nested", ContextScope.Visibility.LOCAL)
+               .putValue("", Value.create("value2"), ValueKind.EXTERNAL);
+
         List<String> resolvedInputs = resolveInputs(global, context);
         assertThat(resolvedInputs.size(), is(1));
         assertThat(resolvedInputs, contains("blue"));
@@ -198,29 +220,34 @@ public class InputResolverTest {
     @Test
     void testInvalidGlobalInputs() {
         Block.Builder invalidGlobal = inputEnum("invalid-global", "value1",
-                                         inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
-                                         inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
+                inputOption("option1", "value1", output(model(modelList("colors", modelValue("red"))))),
+                inputOption("option2", "value2", output(model(modelList("colors", modelValue("blue"))))))
+                .attribute("optional", Value.TRUE)
                 .attribute("global", Value.TRUE);
 
-        Block.Builder nonGlobal = inputEnum("nested-global", "value1",
-                                               inputOption("option1", "value1", invalidGlobal));
+        Block.Builder nested = inputEnum("nested", "value1",
+                inputOption("option1", "value1", invalidGlobal));
 
-        Block global = inputEnum("global", "value1",
-                                 inputOption("option1", "value1", nonGlobal))
-                .attribute("global", Value.TRUE)
+        Block global = step("step",
+                inputEnum("global", "value1",
+                        inputOption("option1", "value1", nested))
+                        .attribute("global", Value.TRUE))
                 .build();
 
         Context context = Context.create();
-        context.put("global", Value.create("value1"));
-        context.put("nested-global", Value.create("value1"));
+        context.scope()
+               .putValue("global", Value.create("value1"), ValueKind.EXTERNAL)
+               .scope()
+               .getOrCreate("global", true)
+               .putValue("nested", Value.create("value1"), ValueKind.EXTERNAL);
 
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
-        assertThat(ex.getCause().getMessage(), endsWith("input 'nested-global.invalid-global' cannot be global"));
+        assertThat(ex.getCause().getMessage(), endsWith("Parent input is not global"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {
-        Walker.walk(new VisitorAdapter<>(new BatchInputResolver(), null, modelVisitor), block, context);
+        Controller.walk(new BatchInputResolver(), null, modelVisitor, block, context);
     }
 
     private static List<String> resolveInputs(Block block, Context context) {

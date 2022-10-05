@@ -31,6 +31,10 @@
     <artifactId>helidon-cli-functional</artifactId>
     <name>Helidon Command Line Interface Functional Tests</name>
 
+    <properties>
+        <version.lib.helidon>2.5.1</version.lib.helidon>
+    </properties>
+
     <dependencies>
         <dependency>
             <!-- Ensure helidon cli maven plugin is built before running functional test -->
@@ -39,6 +43,17 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-archetype-maven-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>helidon-stager-maven-plugin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-maven</artifactId>
@@ -82,6 +97,13 @@
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
+            <version>${version.lib.helidon}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-test-utils</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -90,16 +112,37 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>test-compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <!-- version should be upgraded to 3.0.0 once released-->
-                        <helidon.test.version>2.4.0</helidon.test.version>
+                        <cli.version>${project.version}</cli.version>
                         <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
-                        <helidon.cli.version>3.0.0-M1</helidon.cli.version>
-                        <helidon.plugin.version>${project.version}</helidon.plugin.version>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <phase>test-compile</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

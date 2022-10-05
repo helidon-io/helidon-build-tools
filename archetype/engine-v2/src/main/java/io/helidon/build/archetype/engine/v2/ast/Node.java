@@ -36,15 +36,12 @@ import static java.util.Objects.requireNonNull;
  */
 public abstract class Node {
 
+    // TODO get the id from the script loader
     private static final AtomicInteger NEXT_ID = new AtomicInteger();
 
-    private final int id;
+    private final int uid;
     private final ScriptLoader loader;
     private final Path scriptPath;
-    // TODO use a "Location" that captures lineNo + charNo + original scriptPath
-    //  this will provide good stack traces even for compiled scripts
-    //  use workDir instead of scriptPath
-    //  use node.id() as the key in ScriptLoader
     private final Location location;
     private final Map<String, Value> attributes;
 
@@ -54,23 +51,21 @@ public abstract class Node {
      * @param builder builder
      */
     protected Node(Builder<?, ?> builder) {
-        this(builder.loader, builder.scriptPath, builder.location, builder.attributes);
+        this(builder.info, builder.attributes);
     }
 
     /**
      * Create a new node.
      *
-     * @param loader     script loader
-     * @param scriptPath script path
-     * @param location   location
+     * @param info       builder info
      * @param attributes attributes map
      */
-    protected Node(ScriptLoader loader, Path scriptPath, Location location, Map<String, Value> attributes) {
-        this.loader = requireNonNull(loader, "loader is null");
-        this.scriptPath = requireNonNull(scriptPath, "scriptPath is null");
-        this.location = requireNonNull(location, "location is null");
+    protected Node(BuilderInfo info, Map<String, Value> attributes) {
+        this.loader = info.loader;
+        this.scriptPath = info.scriptPath;
+        this.location = info.location;
         this.attributes = requireNonNull(attributes, "attributes is null");
-        this.id = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
+        this.uid = NEXT_ID.updateAndGet(i -> i == Integer.MAX_VALUE ? 1 : i + 1);
     }
 
     /**
@@ -119,12 +114,12 @@ public abstract class Node {
     }
 
     /**
-     * Get the node id.
+     * Get the unique id.
      *
      * @return id
      */
-    public int nodeId() {
-        return id;
+    public int uid() {
+        return uid;
     }
 
     @Override
@@ -132,12 +127,13 @@ public abstract class Node {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return id == node.id;
+        //  TODO use both id and loader
+        return uid == node.uid;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(uid);
     }
 
     /**
@@ -265,6 +261,55 @@ public abstract class Node {
     }
 
     /**
+     * Builder info.
+     */
+    public static final class BuilderInfo {
+
+        private final ScriptLoader loader;
+        private final Path scriptPath;
+        private final Location location;
+
+        private BuilderInfo(ScriptLoader loader, Path scriptPath, Location location) {
+            this.loader = requireNonNull(loader, "loader is null");
+            this.scriptPath = requireNonNull(scriptPath, "scriptPath is null").toAbsolutePath().normalize();
+            this.location = location == null ? Location.of(scriptPath, 0, 0) : location;
+        }
+
+        /**
+         * Create a new builder info instance.
+         *
+         * @param loader     script loader
+         * @param scriptPath script path
+         * @return builder info
+         */
+        public static BuilderInfo of(ScriptLoader loader, Path scriptPath) {
+            return new BuilderInfo(loader, scriptPath, null);
+        }
+
+        /**
+         * Create a new builder info instance.
+         *
+         * @param loader     script loader
+         * @param scriptPath script path
+         * @param location   location
+         * @return builder info
+         */
+        public static BuilderInfo of(ScriptLoader loader, Path scriptPath, Location location) {
+            return new BuilderInfo(loader, scriptPath, location);
+        }
+
+        /**
+         * Create a new builder info instance.
+         *
+         * @param node node
+         * @return builder info
+         */
+        public static BuilderInfo of(Node node) {
+            return new BuilderInfo(node.loader, node.scriptPath, node.location);
+        }
+    }
+
+    /**
      * Node builder.
      *
      * @param <T> node sub-type
@@ -275,41 +320,26 @@ public abstract class Node {
 
         private final List<Node.Builder<? extends Node, ?>> children = new LinkedList<>();
         private final Map<String, Value> attributes = new HashMap<>();
-        private final ScriptLoader loader;
-        private final Path scriptPath;
-        private final Location location;
+        private final BuilderInfo info;
         private String value;
         private T instance;
 
         /**
          * Create a new node builder.
          *
-         * @param loader     script loader
-         * @param scriptPath script path
-         * @param location   location
+         * @param info builder info
          */
-        protected Builder(ScriptLoader loader, Path scriptPath, Location location) {
-            this.loader = requireNonNull(loader, "loader is null");
-            this.scriptPath = requireNonNull(scriptPath, "scriptPath is null").toAbsolutePath().normalize();
-            this.location = location == null ? Location.of(scriptPath, 0, 0) : location;
+        protected Builder(BuilderInfo info) {
+            this.info = requireNonNull(info, "info is null");
         }
 
         /**
-         * Get the script loader.
+         * Get the builder info.
          *
-         * @return ScriptLoader
+         * @return builder info
          */
-        public ScriptLoader loader() {
-            return loader;
-        }
-
-        /**
-         * Get the script path.
-         *
-         * @return Path
-         */
-        public Path scriptPath() {
-            return scriptPath;
+        public BuilderInfo info() {
+            return info;
         }
 
         /**
@@ -351,7 +381,8 @@ public abstract class Node {
          * @return children
          */
         public <V> Stream<V> childrenStream(Class<V> clazz) {
-            return children.stream().map(Node.Builder::build)
+            return children.stream()
+                           .map(Node.Builder::build)
                            .filter(clazz::isInstance)
                            .map(clazz::cast);
         }
@@ -423,8 +454,8 @@ public abstract class Node {
             if (value == null) {
                 if (required) {
                     throw new IllegalStateException(String.format(
-                            "Unable to get attribute '%s', file=%s, location=%s",
-                            key, scriptPath, location));
+                            "Unable to get attribute '%s', location=%s",
+                            key, info.location));
                 }
                 return Value.NULL;
             }

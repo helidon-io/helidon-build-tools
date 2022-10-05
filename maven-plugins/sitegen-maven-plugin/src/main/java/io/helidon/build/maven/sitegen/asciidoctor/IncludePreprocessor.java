@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.asciidoctor.extension.PreprocessorReader;
 
 /**
  * AsciiDoc preprocessor which pulls in and describes included text.
- *
+ * <p>
  * The preprocessor uses the preprocessor reader to bring in the text indicated
  * by the normal include directive as in
  * <pre>
@@ -62,7 +62,7 @@ public class IncludePreprocessor extends Preprocessor {
      * include:: and // _include:: turned into bracketed includes.
      *
      * @param lines possibly hybrid format containing Asciidoc {@code include::}
-     * and our numbered commented includes
+     *              and our numbered commented includes
      * @return lines with beginning and ending comments bracketing the includes
      */
     static List<String> convertHybridToBracketed(List<String> lines) {
@@ -85,7 +85,7 @@ public class IncludePreprocessor extends Preprocessor {
     }
 
     /**
-     * Converts the bracketed form to the natural form (with normal AsciiDoc
+     * Converts the bracketed form to the natural form with normal AsciiDoc
      * {@code include::} directories.
      *
      * @param lines bracketed form content
@@ -121,10 +121,11 @@ public class IncludePreprocessor extends Preprocessor {
         while (lineNumber.get() < content.size()) {
             String line = content.get(lineNumber.get());
             if (Include.isIncludeStart(line)) {
-                Include ia = Include.consumeBracketedInclude(
-                        content, lineNumber, result, result.size());
-                result.add(ia.asNumberedAsciiDocInclude());
-                result.addAll(ia.body());
+                Include ia = Include.consumeBracketedInclude(content, lineNumber, result, result.size());
+                if (ia != null) {
+                    result.add(ia.asNumberedAsciiDocInclude());
+                    result.addAll(ia.body());
+                }
             } else if (Block.isBlockStart(line)) {
                 Block sba = Block.consumeBlock(content, lineNumber);
                 result.addAll(sba.asBlockWithNumberedIncludes());
@@ -143,18 +144,18 @@ public class IncludePreprocessor extends Preprocessor {
             return;
         }
         List<String> processedContent = markIncludes(reader, outputType, doc.getAttributes());
-        savePreincludedDocIfRequested(processedContent, doc);
+        savePrecludedDocIfRequested(processedContent, doc);
     }
 
-     enum OutputType {
+    enum OutputType {
         PREPROCESSED,
         NATURAL;
 
         static OutputType match(Object outputType) {
             Optional<OutputType> match = Arrays.stream(OutputType.values())
-                    .filter(ot -> ot.toString().toLowerCase().equals(outputType))
-                    .findFirst();
-            if (!match.isPresent()) {
+                                               .filter(ot -> ot.toString().toLowerCase().equals(outputType))
+                                               .findFirst();
+            if (match.isEmpty()) {
                 return null;
             }
             return match.get();
@@ -177,7 +178,7 @@ public class IncludePreprocessor extends Preprocessor {
          */
         readAndClearReader(reader);
         String origWithBracketedIncludesContent = linesToString(origWithBracketedIncludes);
-        reader.push_include(origWithBracketedIncludesContent, null, null, 1, attributes);
+        reader.pushInclude(origWithBracketedIncludesContent, null, null, 1, attributes);
 
         /*
          * Have the reader consume the bracketed-include content which will
@@ -196,7 +197,7 @@ public class IncludePreprocessor extends Preprocessor {
          * Prepare the reader to consume the numbered format just computed.
          */
         String numberedIncludesWithIncludedTextContent = linesToString(numberedIncludesWithIncludedText);
-        reader.push_include(
+        reader.pushInclude(
                 numberedIncludesWithIncludedTextContent,
                 null,
                 null,
@@ -213,8 +214,8 @@ public class IncludePreprocessor extends Preprocessor {
             default:
                 throw new IllegalArgumentException(
                         String.format("outputType %s is not one of %s",
-                            outputType == null ? "null" : outputType.toString().toLowerCase(),
-                            Arrays.toString(OutputType.values())));
+                                outputType.toString().toLowerCase(),
+                                Arrays.toString(OutputType.values())));
         }
     }
 
@@ -226,11 +227,11 @@ public class IncludePreprocessor extends Preprocessor {
 
     private static String linesToString(List<String> lines) {
         return lines.stream()
-                .collect(Collectors.joining(System.lineSeparator()));
+                    .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    private void savePreincludedDocIfRequested(List<String> content, Document doc) {
-        Path outputPath = Path.class.cast(doc.getOptions().get("preincludeOutputPath"));
+    private void savePrecludedDocIfRequested(List<String> content, Document doc) {
+        Path outputPath = (Path) doc.getOptions().get("preincludeOutputPath");
         if (outputPath != null) {
             try {
                 Files.createDirectories(outputPath.getParent());
@@ -268,7 +269,9 @@ public class IncludePreprocessor extends Preprocessor {
     private static List<String> bracketedIncludeToNatural(List<String> lines, AtomicInteger lineNumber) {
         List<String> result = new ArrayList<>();
         Include inc = Include.consumeBracketedInclude(lines, lineNumber, result, 0);
-        result.addAll(inc.asAsciiDocInclude());
+        if (inc != null) {
+            result.addAll(inc.asAsciiDocInclude());
+        }
         return result;
     }
 }

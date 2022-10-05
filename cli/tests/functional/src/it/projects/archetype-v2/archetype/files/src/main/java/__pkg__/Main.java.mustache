@@ -1,0 +1,28 @@
+package {{package}};
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+
+import com.sun.net.httpserver.HttpServer;
+import jakarta.xml.bind.JAXBException;
+
+public class Main {
+
+    public static void main(String[] args) throws IOException {
+        String port = System.getProperty("server.port");
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", Integer.parseInt(port)), 0);
+        server.createContext("/greet", exchange -> {
+            String response = "Hello World!";
+            exchange.sendResponseHeaders(200, response.length());
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes(StandardCharsets.UTF_8));
+            os.flush();
+            os.close();
+        });
+        server.start();
+        System.out.println("Server started at " + server.getAddress());
+    }
+
+}

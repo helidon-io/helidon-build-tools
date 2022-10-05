@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,39 @@
 
 package io.helidon.build.maven.sitegen;
 
-import java.io.File;
+import java.nio.file.Path;
 
-import io.helidon.build.maven.sitegen.Page.Metadata;
+import io.helidon.build.maven.sitegen.models.Page;
+import io.helidon.build.maven.sitegen.models.Page.Metadata;
 
 /**
- * Capability to render and read metadata for specific type of document.
+ * Render and read metadata for specific type of document.
  */
 public interface PageRenderer {
 
     /**
+     * Test if this renderer supports a given file.
+     *
+     * @param source source path
+     * @return {@code true} if supported, {@code false} otherwise
+     */
+    boolean supports(Path source);
+
+    /**
      * Read a given document metadata.
+     *
      * @param source the file to read the metadata from
      * @return the {@link Metadata} instance, never {@code null}
      */
-    Metadata readMetadata(File source);
+    Metadata readMetadata(Path source);
 
     /**
      * Process the rendering of a given document.
-     * @param page the {@link Page} representing the document
-     * @param ctx the context representing the site processing invocation
-     * @param pagesdir the directory where to generate the rendered pages
-     * @param ext the file extension to use for the rendered pages
+     *
+     * @param page      the {@link Page} representing the document
+     * @param ctx       the context representing the site processing invocation
+     * @param outputDir the directory where to generate the rendered pages
+     * @param ext       the file extension to use for the rendered pages
      */
-    void process(Page page, RenderingContext ctx, File pagesdir, String ext);
+    void process(Page page, Context ctx, Path outputDir, String ext);
 }

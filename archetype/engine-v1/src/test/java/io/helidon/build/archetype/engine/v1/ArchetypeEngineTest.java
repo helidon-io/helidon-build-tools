@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.build.common.Strings;
 import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.Unchecked.unchecked;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -121,16 +122,14 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
         properties.put("package", "com.example.myproject");
         properties.put("maven", "true");
         File targetDir = new File(new File("").getAbsolutePath(), "target");
-        File outputDir = new File(targetDir, "test-project");
-        Path outputDirPath = outputDir.toPath();
+        Path outputDirPath = targetDir.toPath().resolve("test-project");
         if (Files.exists(outputDirPath)) {
             Files.walk(outputDirPath)
                     .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+                    .forEach(unchecked(Files::delete));
         }
         assertThat(Files.exists(outputDirPath), is(false));
-        new ArchetypeEngine(targetDir(), properties).generate(outputDir);
+        new ArchetypeEngine(targetDir(), properties).generate(outputDirPath);
         assertThat(Files.exists(outputDirPath), is(true));
         assertThat(Files.walk(outputDirPath)
                 .filter(p -> !Files.isDirectory(p))
