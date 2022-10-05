@@ -32,6 +32,7 @@ import java.util.Optional;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
 import io.helidon.build.maven.component.PathComponent;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.Resource;

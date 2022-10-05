@@ -15,11 +15,11 @@
  */
 package io.helidon.build.maven.component;
 
-import io.helidon.build.common.SourcePath;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import io.helidon.build.common.SourcePath;
 
 /**
  * A configuration path component.

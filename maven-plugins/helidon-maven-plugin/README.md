@@ -21,20 +21,20 @@ This plugin binds to the `package` phase by default.
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description                                                            |
-| --- | --- | --- |------------------------------------------------------------------------|
-| graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home                                                           |
-| reportExceptionStackTraces | boolean | `true` | Show exception stack traces for exceptions during image building       |
-| buildShared | boolean | `false` | Build shared library                                                   |
-| buildStatic | boolean | `false` | Build statically linked executable (requires static `libc` and `zlib`  |
-| addProjectResources | boolean | `true` | Indicates if project build resources should be added to the image      |
+| Property | Type | Default<br/>Value | Description |
+| --- | --- | --- | --- |
+| graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home |
+| reportExceptionStackTraces | boolean | `true` | Show exception stack traces for exceptions during image building |
+| buildShared | boolean | `false` | Build shared library |
+| buildStatic | boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
+| addProjectResources | boolean | `true` | Indicates if project build resources should be added to the image |
 | includeResources | List | [] | List of regexp matching names of resources to be included in the image |
-| additionalArgs | List | [] | Additional command line arguments                                      |
-| skipNativeImage | boolean | `false` | Skip this goal execution                                               |
-| execMode | enum | `jar` | Execution mode - `jar`, `jar-cp`, `module`, `none` or `main`           |
-| mainClass | String | `${mainClass}` | Main class to use when execMode is set to `main`                       | 
-| finalName | String  | `${project.build.finalName}` | Name of the output file to be generated                                |
-| jarFile | File | `target/${finalName}.jar` | Project JAR file                                                       |
+| additionalArgs | List | [] | Additional command line arguments |
+| skipNativeImage | boolean | `false` | Skip this goal execution |
+| execMode | enum | `jar` | Execution mode - `jar`, `jar-cp`, `module`, `none` or `main` |
+| mainClass | String | `${mainClass}` | Main class to use when execMode is set to `main` | 
+| finalName | String  | `${project.build.finalName}` | Name of the output file to be generated |
+| jarFile | File | `target/${finalName}.jar` | Project JAR file |
 
 Except for `skipNativeImage`, the above parameters are mapped to user properties of the form `native.image.PROPERTY`; 
 `skipNativeImage` is mapped to `native.image.skip`. Multiple values for the `native.image.additonalArgs` and 
