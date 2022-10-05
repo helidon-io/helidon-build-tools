@@ -24,7 +24,6 @@ module io.helidon.lsp.server {
     requires com.fasterxml.jackson.dataformat.yaml;
     requires org.eclipse.lsp4j;
     requires org.eclipse.lsp4j.jsonrpc;
-    requires gson;
     requires io.helidon.security.providers.common;
     requires io.helidon.build.common.maven;
     requires io.helidon.build.common;
@@ -32,5 +31,6 @@ module io.helidon.lsp.server {
     requires io.helidon.config.metadata;
     requires java.json;
     requires org.apache.commons.lang3;
+    requires com.google.gson;
     opens io.helidon.lsp.server.service.config;
 }
