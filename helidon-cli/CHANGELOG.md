@@ -7,6 +7,16 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.6]
+
+### Fixes
+
+- Fix isSupportedVersion to handle PluginFailedException correctly. [639](https://github.com/helidon-io/helidon-build-tools/pull/790) [788](https://github.com/helidon-io/helidon-build-tools/issues/788)
+
+## 2.3.5
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
 ## 2.3.4
 
 This release of helidon-build-tools does not contain changes related to the Helidon CLI.
@@ -169,6 +179,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[2.3.6]: https://github.com/oracle/helidon-build-tools/compare/2.3.5...2.3.6
 [2.3.3]: https://github.com/oracle/helidon-build-tools/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/oracle/helidon-build-tools/compare/2.3.0...2.3.2
 [2.3.0]: https://github.com/oracle/helidon-build-tools/compare/2.2.3...2.3.0
