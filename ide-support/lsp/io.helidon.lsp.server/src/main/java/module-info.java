@@ -31,6 +31,6 @@ module io.helidon.lsp.server {
     requires io.helidon.lsp.common;
     requires io.helidon.config.metadata;
     requires java.json;
+    requires org.apache.commons.lang3;
     opens io.helidon.lsp.server.service.config;
-    opens io.helidon.lsp.server.model;
 }

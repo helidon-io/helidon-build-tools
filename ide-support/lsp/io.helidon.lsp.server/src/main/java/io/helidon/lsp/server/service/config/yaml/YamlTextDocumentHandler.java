@@ -36,8 +36,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
-import io.helidon.lsp.server.service.metadata.ConfiguredType;
-import io.helidon.lsp.server.service.metadata.ValueConfigMetadata;
 import io.helidon.lsp.server.utils.FileUtils;
 
 import org.eclipse.lsp4j.CompletionItem;
@@ -152,25 +150,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     }
 
     private List<CompletionItem> prepareCompletionItemsForValue(ConfigMetadata configMetadata) {
-        if (configMetadata == null) {
-            return List.of();
-        }
-        List<CompletionItem> result = new ArrayList<>();
-        if (configMetadata instanceof ValueConfigMetadata) {
-            ValueConfigMetadata vValue = (ValueConfigMetadata) configMetadata;
-            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
-                for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
-                    CompletionItem item = new CompletionItem();
-                    item.setKind(CompletionItemKind.Snippet);
-                    item.setLabel(allowedValue.value());
-                    item.setInsertText(allowedValue.value());
-                    item.setDocumentation(allowedValue.description());
-                    item.setInsertTextFormat(InsertTextFormat.Snippet);
-                    result.add(item);
-                }
-            }
-        }
-        return result;
+        return prepareCompletionForAllowedValues(configMetadata);
     }
 
     private String currentKey(CompletionDetails completionDetails) {
@@ -258,26 +238,6 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
             ;
         }
         return endListElementLine;
-    }
-
-    private String prepareDetailsForKey(ConfigMetadata value) {
-        StringBuilder details = new StringBuilder(value.type());
-        if (value instanceof ValueConfigMetadata) {
-            ValueConfigMetadata vValue = (ValueConfigMetadata) value;
-            if (vValue.defaultValue() != null && !vValue.defaultValue().isBlank()) {
-                details.append("\nDefault value: ").append(vValue.defaultValue());
-            }
-            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
-                details.append("\nAllowed values: ");
-                for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
-                    details.append("\n  ").append(allowedValue.value());
-                    if (allowedValue.description() != null && !allowedValue.description().isBlank()) {
-                        details.append(" (").append(allowedValue.description()).append(")");
-                    }
-                }
-            }
-        }
-        return details.toString();
     }
 
     /**
@@ -408,16 +368,5 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         LinkedHashMap<LineResult, String> yamlFileResult;
         Map.Entry<LineResult, String> parentLineResultEntry;
         ConfigMetadata parentConfig;
-
-        CompletionDetails() {
-        }
-
-        CompletionDetails(CompletionDetails details) {
-            this.proposedMetadata = details.proposedMetadata;
-            this.position = details.position;
-            this.yamlFileResult = details.yamlFileResult;
-            this.parentLineResultEntry = details.parentLineResultEntry;
-            this.parentConfig = details.parentConfig;
-        }
     }
 }

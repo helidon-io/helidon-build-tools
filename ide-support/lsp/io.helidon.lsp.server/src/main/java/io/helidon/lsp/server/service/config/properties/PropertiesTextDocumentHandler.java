@@ -27,81 +27,121 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import io.helidon.lsp.server.core.LanguageServerContext;
-import io.helidon.lsp.server.model.ConfigurationMetadata;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+import io.helidon.lsp.server.utils.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.InsertTextFormat;
+import org.eclipse.lsp4j.Position;
 
 /**
  * Proposes completion for the given position in the meta configuration file in Java Properties format.
  */
 public class PropertiesTextDocumentHandler implements TextDocumentHandler {
 
+    private static final PropertiesTextDocumentHandler INSTANCE = new PropertiesTextDocumentHandler();
     private static final Logger LOGGER = Logger.getLogger(PropertiesTextDocumentHandler.class.getName());
+    private static final Pattern KEY_PATTERN = Pattern.compile("\\s*(?<key>[\\w\\-.]+)[:=]\\s*");
     private static final String SEPARATOR = "=";
-    private final LanguageServerContext languageServerContext;
-    private ConfigurationPropertiesService configurationPropertiesService;
 
-    /**
-     * Create a new instance.
-     *
-     * @param languageServerContext languageServerContext.
-     */
-    public PropertiesTextDocumentHandler(LanguageServerContext languageServerContext) {
-        this.languageServerContext = languageServerContext;
+    private ConfigurationPropertiesService propertiesService;
+    private FileUtils fileUtils;
+
+    private PropertiesTextDocumentHandler() {
         init();
     }
 
+    public static PropertiesTextDocumentHandler instance() {
+        return INSTANCE;
+    }
+
     private void init() {
-        configurationPropertiesService = (ConfigurationPropertiesService) languageServerContext
-                .getBean(ConfigurationPropertiesService.class);
+        fileUtils = FileUtils.instance();
+    }
+
+    public void propertiesService(ConfigurationPropertiesService propertiesService) {
+        this.propertiesService = propertiesService;
     }
 
     @Override
-    public List<CompletionItem> completion(CompletionParams position) {
+    public List<CompletionItem> completion(CompletionParams completionParams) {
         List<CompletionItem> completionItems = new ArrayList<>();
+        String fileUri = completionParams.getTextDocument().getUri();
         try {
-            String fileUri = position.getTextDocument().getUri();
-            Map<String, ConfigMetadata> configMetadata =
-                    configurationPropertiesService.metadataForFile(fileUri);
+            Map<String, ConfigMetadata> configMetadata = propertiesService.metadataForFile(fileUri);
+            List<String> fileContent = fileUtils.getTextDocContentByURI(fileUri);
+            Position position = completionParams.getPosition();
+            String currentLine = fileContent.get(position.getLine());
+            String baseForCompletion = currentLine.substring(0, position.getCharacter());
+            String currentKey = currentKey(baseForCompletion);
+            String filter = currentKey != null ? currentKey : baseForCompletion;
 
-            Properties existedProperties = loadPropertiesFile(fileUri);
-            //TODO process metadata
-//            for (ConfigurationMetadata metadata : metadataList) {
-//                if (metadata.getProperties() == null) {
-//                    continue;
-//                }
-//                metadata.getProperties().stream()
-//                        .filter(property -> !existedProperties.containsKey(property.getName()))
-//                        .forEach(property -> {
-//                            CompletionItem item = new CompletionItem();
-//                            item.setKind(CompletionItemKind.Snippet);
-//                            item.setLabel(property.getName());
-//                            item.setDetail(property.getType());
-//                            item.setInsertTextFormat(InsertTextFormat.Snippet);
-//                            item.setDocumentation(getDocumentation(property));
-//                            String value = getValue(property, metadata);
-//                            item.setInsertText(property.getName() + SEPARATOR + value);
-//                            completionItems.add(item);
-//                        });
-//            }
+            Map<String, ConfigMetadata> proposedMetadata =
+                    configMetadata.entrySet().stream()
+                                  .filter(entry -> entry.getKey().startsWith(filter)
+                                          && !entry.getKey().equals(filter)
+                                          && entry.getValue().content() == null
+                                  )
+                                  .collect(Collectors.toMap(
+                                          Map.Entry::getKey,
+                                          Map.Entry::getValue
+                                  ));
+
+            if (currentKey == null) {
+                return completionItemsForKey(proposedMetadata, baseForCompletion);
+            } else {
+                return completionItemsForValue(configMetadata.get(currentKey));
+            }
         } catch (Exception e) {
             LOGGER.log(
                     Level.SEVERE,
-                    "Exception when trying to get auto-completion data for CompletionParams position " + position,
+                    "Exception when trying to get auto-completion data for CompletionParams position in " + fileUri,
                     e);
         }
         return completionItems;
     }
 
-    //TODO check does it work if file contains exceptions
+    private List<CompletionItem> completionItemsForValue(ConfigMetadata proposedMetadata) {
+        return prepareCompletionForAllowedValues(proposedMetadata);
+    }
+
+    private List<CompletionItem> completionItemsForKey(Map<String, ConfigMetadata> proposedMetadata,
+                                                       String baseForCompletion) {
+        if (proposedMetadata == null) {
+            return List.of();
+        }
+        List<CompletionItem> result = new ArrayList<>();
+        proposedMetadata.forEach((key, value) -> {
+                    CompletionItem item = new CompletionItem();
+                    item.setKind(CompletionItemKind.Snippet);
+                    item.setLabel(key);
+                    item.setInsertText(StringUtils.difference(baseForCompletion, key) + SEPARATOR);
+                    item.setDocumentation(value.description());
+                    item.setDetail(prepareDetailsForKey(value));
+                    item.setInsertTextFormat(InsertTextFormat.Snippet);
+                    result.add(item);
+                }
+        );
+        return result;
+    }
+
+    private String currentKey(String input) {
+        Matcher matcher = KEY_PATTERN.matcher(input);
+        if (matcher.find()) {
+            return matcher.group("key");
+        }
+        return null;
+    }
+
     private Properties loadPropertiesFile(String fileUri) throws IOException, URISyntaxException {
         InputStream input = new FileInputStream(new URI(fileUri).getPath());
         Properties properties = new Properties();
@@ -109,4 +149,5 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         input.close();
         return properties;
     }
+
 }

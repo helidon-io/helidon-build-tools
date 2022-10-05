@@ -16,16 +16,16 @@
 
 package io.helidon.lsp.server.service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import io.helidon.lsp.server.model.ConfigurationHint;
-import io.helidon.lsp.server.model.ConfigurationMetadata;
-import io.helidon.lsp.server.model.ConfigurationProperty;
-
+import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+import io.helidon.lsp.server.service.metadata.ConfiguredType;
+import io.helidon.lsp.server.service.metadata.ValueConfigMetadata;
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.InsertTextFormat;
 
 /**
  * Provides the method to propose completion for the given position in the meta configuration file.
@@ -40,46 +40,60 @@ public interface TextDocumentHandler {
      */
     List<CompletionItem> completion(CompletionParams position);
 
-    /**
-     * Get the documentation for the property attribute.
-     *
-     * @param property ConfigurationProperty object.
-     * @return documentation.
-     */
-    default String getDocumentation(ConfigurationProperty property) {
-        if (property.getDefaultValue() != null && !property.getDefaultValue().trim().isEmpty()) {
-            return String.format(
-                    "Default value = %s\n\n%s",
-                    property.getDefaultValue(),
-                    property.getDescription()
-            );
+    default String prepareDetailsForKey(ConfigMetadata value) {
+        StringBuilder details = new StringBuilder(value.type());
+        if (value instanceof ValueConfigMetadata) {
+            ValueConfigMetadata vValue = (ValueConfigMetadata) value;
+            if (vValue.defaultValue() != null && !vValue.defaultValue().isBlank()) {
+                details.append("\nDefault value: ").append(vValue.defaultValue());
+            }
+            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
+                details.append("\nAllowed values: ");
+                for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
+                    details.append("\n  ").append(allowedValue.value());
+                    if (allowedValue.description() != null && !allowedValue.description().isBlank()) {
+                        details.append(" (").append(allowedValue.description()).append(")");
+                    }
+                }
+            }
         }
-        return property.getDescription();
+        return details.toString();
     }
 
-    /**
-     * Get the value from the Hint attribute for the appropriate property attribute from the given ConfigurationMetadata object.
-     *
-     * @param property property attribute.
-     * @param metadata ConfigurationMetadata object.
-     * @return the value from the Hint attribute for the appropriate property attribute.
-     */
-    default String getValue(ConfigurationProperty property, final ConfigurationMetadata metadata) {
-        if (metadata.getHints() == null || metadata.getHints().isEmpty()) {
-            if (property.getDefaultValue() == null || property.getDefaultValue().isEmpty()) {
-                return "";
-            }
-            return property.getDefaultValue();
+    default List<CompletionItem> prepareCompletionForAllowedValues(ConfigMetadata proposedMetadata) {
+        if (proposedMetadata == null) {
+            return List.of();
         }
-        return metadata
-                .getHints().stream()
-                .filter(hint -> hint.getName().equals(property.getName()))
-                .findFirst()
-                .map(ConfigurationHint::getValues)
-                .map(values -> values.stream()
-                        .map(ConfigurationHint.Value::getValue)
-                        .collect(Collectors.joining(",")))
-                .map(value -> String.format("${1|%s|}", value))
-                .orElseGet(() -> Optional.ofNullable(property.getDefaultValue()).orElse(""));
+        List<CompletionItem> result = new ArrayList<>();
+        if (proposedMetadata instanceof ValueConfigMetadata) {
+            ValueConfigMetadata vValue = (ValueConfigMetadata) proposedMetadata;
+            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
+                for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
+                    CompletionItem item = new CompletionItem();
+                    item.setKind(CompletionItemKind.Snippet);
+                    item.setLabel(allowedValue.value());
+                    item.setInsertText(allowedValue.value());
+                    item.setDocumentation(allowedValue.description());
+                    item.setInsertTextFormat(InsertTextFormat.Snippet);
+                    result.add(item);
+                }
+                return result;
+            }
+            if (vValue.type().equals("java.lang.Boolean")) {
+                CompletionItem trueItem = new CompletionItem();
+                trueItem.setKind(CompletionItemKind.Value);
+                trueItem.setLabel("true");
+                trueItem.setInsertText("true");
+                result.add(trueItem);
+                CompletionItem falseItem = new CompletionItem();
+                falseItem.setKind(CompletionItemKind.Value);
+                falseItem.setLabel("false");
+                falseItem.setInsertText("false");
+                result.add(falseItem);
+            }
+            return result;
+        }
+        return result;
     }
+
 }

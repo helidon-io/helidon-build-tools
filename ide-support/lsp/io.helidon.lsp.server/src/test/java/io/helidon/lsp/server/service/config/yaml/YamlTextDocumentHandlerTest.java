@@ -16,65 +16,29 @@
 
 package io.helidon.lsp.server.service.config.yaml;
 
-import io.helidon.lsp.common.Dependency;
-import io.helidon.lsp.server.management.MavenSupport;
-import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
-import io.helidon.lsp.server.service.metadata.ConfigMetadata;
-import io.helidon.lsp.server.service.metadata.ConfiguredType;
-import io.helidon.lsp.server.service.metadata.MetadataProvider;
+import io.helidon.lsp.server.service.config.CompletionTestBase;
 import org.eclipse.lsp4j.CompletionItem;
-import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
-class YamlTextDocumentHandlerTest {
+class YamlTextDocumentHandlerTest extends CompletionTestBase {
 
-    private YamlTextDocumentHandler handler = YamlTextDocumentHandler.instance();
-    @Mock
-    ConfigurationPropertiesService propertiesService;
-    @Mock
-    MavenSupport mavenSupport;
-    @Spy
-    MetadataProvider provider = MetadataProvider.instance();
+    private final YamlTextDocumentHandler handler = YamlTextDocumentHandler.instance();
 
     @BeforeEach
     public void before() throws URISyntaxException, IOException {
+        super.before();
         handler.propertiesService(propertiesService);
-        Map<String, ConfigMetadata> stringConfigMetadataMap = metadataForFile();
-        Mockito.when(propertiesService.metadataForFile(any())).thenReturn(stringConfigMetadataMap);
     }
 
     @Test
@@ -162,49 +126,7 @@ class YamlTextDocumentHandlerTest {
         assertThat(completion.size(), is(3));
     }
 
-    private CompletionItem completionItemByLabel(String label, List<CompletionItem> completion) {
-        return completion.stream()
-                         .filter(item -> item.getLabel().equals(label))
-                         .findFirst().orElse(null);
-    }
-
     private List<CompletionItem> completionItems(Position position, String fileName) throws URISyntaxException {
-        CompletionParams completionParams = new CompletionParams(
-                new TextDocumentIdentifier(getClass().getClassLoader().getResource(fileName).toURI().toString()),
-                position
-        );
-        return handler.completion(completionParams);
-    }
-
-    private Map<String, ConfigMetadata> metadataForFile() throws IOException {
-        ConfigurationPropertiesService service = ConfigurationPropertiesService.instance();
-        service.mavenSupport(mavenSupport);
-        service.metadataProvider(provider);
-        Set<Dependency> dependencies = getDependencies();
-        Mockito.when(mavenSupport.getDependencies(anyString())).thenReturn(dependencies);
-        JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
-        for (Dependency dependency : dependencies) {
-            InputStream is = new FileInputStream(dependency.path());
-            JsonReader reader = readerFactory.createReader(is, StandardCharsets.UTF_8);
-            List<ConfiguredType> configuredTypes = provider.processMetadataJson(reader.readArray());
-            Mockito.doReturn(configuredTypes).when(provider).readMetadata(dependency.path());
-        }
-
-        return service.metadataForPom("pom.xml");
-    }
-
-    private Set<Dependency> getDependencies() {
-        File metadataDirectory = new File("src/test/resources/metadata");
-        File[] files = metadataDirectory.listFiles();
-        Set<Dependency> dependencies = new HashSet<>();
-
-        for (File file : files) {
-            if (file.getName().endsWith("json")) {
-                Dependency dependency = new Dependency(null, null, null, null, null, file.getPath());
-                dependencies.add(dependency);
-            }
-        }
-
-        return dependencies;
+        return completionItems(position, fileName, handler);
     }
 }

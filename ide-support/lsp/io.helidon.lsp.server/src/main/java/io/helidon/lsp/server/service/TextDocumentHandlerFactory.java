@@ -46,7 +46,7 @@ public class TextDocumentHandlerFactory {
         final String fileExtension = getFileExtension(fileName);
         if (fileExtension.equalsIgnoreCase("properties")) {
             if (!FILE_EXTENSION_TO_HANDLER_MAP.containsKey("properties")) {
-                FILE_EXTENSION_TO_HANDLER_MAP.put("properties", new PropertiesTextDocumentHandler(languageServerContext));
+                FILE_EXTENSION_TO_HANDLER_MAP.put("properties", PropertiesTextDocumentHandler.instance());
             }
         }
         if (fileExtension.equalsIgnoreCase("yaml") || fileExtension.equalsIgnoreCase("yml")) {
