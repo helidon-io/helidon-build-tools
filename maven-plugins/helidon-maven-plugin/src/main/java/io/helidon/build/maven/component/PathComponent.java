@@ -13,45 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.build.maven.component;
+
+import io.helidon.build.common.SourcePath;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.SourcePath;
-
 /**
- * A configuration filtering component using excludes and includes list.
+ * A configuration path component.
  */
-public class FilteringComponent {
+public class PathComponent {
 
     private List<String> excludes;
     private List<String> includes;
     private List<String> additionalEntries;
 
-    private void excludes(List<String> excludes) {
+    public void setExcludes(List<String> excludes) {
         this.excludes = excludes;
     }
 
-    private void includes(List<String> includes) {
+    public void setIncludes(List<String> includes) {
         this.includes = includes;
     }
 
-    private void additionalEntries(List<String> includes) {
+    public void setAdditionalEntries(List<String> includes) {
         this.additionalEntries = includes;
     }
 
-    private List<String> excludes() {
+    public List<String> getExcludes() {
         return this.excludes;
     }
 
-    private List<String> includes() {
+    public List<String> getIncludes() {
         return this.includes;
     }
 
-    private List<String> additionalEntries() {
+    public List<String> getAdditionalEntries() {
         return this.additionalEntries;
     }
 
@@ -76,3 +75,4 @@ public class FilteringComponent {
         return result;
     }
 }
+

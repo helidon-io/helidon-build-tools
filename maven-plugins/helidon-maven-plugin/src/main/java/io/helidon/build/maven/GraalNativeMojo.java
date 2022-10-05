@@ -31,8 +31,7 @@ import java.util.Optional;
 
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
-import io.helidon.build.maven.component.FilteringComponent;
-
+import io.helidon.build.maven.component.PathComponent;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.model.Resource;
@@ -189,13 +188,13 @@ public class GraalNativeMojo extends AbstractMojo {
      * Custom class-path in module execution mode only.
      */
     @Parameter
-    private FilteringComponent classPath;
+    private PathComponent classPath;
 
     /**
      * Custom module-path in module execution mode only.
      */
     @Parameter
-    private FilteringComponent modulePath;
+    private PathComponent modulePath;
 
     /**
      * The {@code native-image} execution process.
@@ -550,7 +549,7 @@ public class GraalNativeMojo extends AbstractMojo {
         }
     }
 
-    private List<String> filter(List<String> list, FilteringComponent filter) {
+    private List<String> filter(List<String> list, PathComponent filter) {
         return Objects.isNull(filter) ? list : filter.filter(list);
     }
 
