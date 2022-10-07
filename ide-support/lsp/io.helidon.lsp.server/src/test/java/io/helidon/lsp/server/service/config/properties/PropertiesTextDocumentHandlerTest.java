@@ -110,11 +110,11 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
         List<CompletionItem> completion = completionItems(new Position(24, 14), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.private-key.pem.key.resource.content-plain",
                 completion);
-        assertThat(completionItem.getDetail().contains("Default value"), is(false));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value"), is(false));
 
         completion = completionItems(new Position(21, 37), "test-config.properties");
         completionItem = completionItemByLabel("security.environment.executor-service.keep-alive-minutes", completion);
-        assertThat(completionItem.getDetail().contains("Default value: 3"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value: 3"), is(true));
     }
 
     @Test
@@ -122,10 +122,10 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
         List<CompletionItem> completion = completionItems(new Position(25, 26), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.client-auth", completion);
         assertThat(completion.size(), is(1));
-        assertThat(completionItem.getDetail().contains("Allowed values: "), is(true));
-        assertThat(completionItem.getDetail().contains("REQUIRE (Authentication is required.)"), is(true));
-        assertThat(completionItem.getDetail().contains("OPTIONAL (Authentication is optional.)"), is(true));
-        assertThat(completionItem.getDetail().contains("NONE (Authentication is not required.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Allowed values: "), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("REQUIRE (Authentication is required.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("OPTIONAL (Authentication is optional.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("NONE (Authentication is not required.)"), is(true));
     }
 
     private List<CompletionItem> completionItems(Position position, String fileName) throws URISyntaxException {

@@ -51,7 +51,8 @@ public class MavenSupport {
     private static final Gson GSON = new Gson();
     private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support" +
             ".lsp:helidon-lsp-maven-plugin:list-dependencies";
-    private static MavenSupport instance;
+    private static final MavenSupport instance = new MavenSupport();
+    ;
 
     private boolean isMavenInstalled = false;
 
@@ -65,9 +66,6 @@ public class MavenSupport {
      * @return Instance of the MavenSupport class.
      */
     public static MavenSupport instance() {
-        if (instance == null) {
-            instance = new MavenSupport();
-        }
         return instance;
     }
 
@@ -118,6 +116,7 @@ public class MavenSupport {
         if (!isMavenInstalled) {
             return null;
         }
+        long startTime = System.currentTimeMillis();
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             MavenCommand.builder()
                         .addArgument(DEPENDENCIES_MVN_COMMAND)
@@ -132,15 +131,26 @@ public class MavenSupport {
                         Socket clientSocket = serverSocket.accept();
                         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 ) {
-                    result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {}.getType());
+                    result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
+                    }.getType());
                 } catch (IOException e) {
                     LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
                 }
+                LOGGER.log(
+                        Level.FINEST,
+                        "getDependencies() for pom file '{0}' took {1} seconds",
+                        new Object[]{pomPath, (double) (System.currentTimeMillis() - startTime) / 1000}
+                );
                 return result;
             }).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
         }
+        LOGGER.log(
+                Level.FINEST,
+                "getDependencies() for pom file '{0}' took {1} seconds",
+                new Object[]{pomPath, (double) (System.currentTimeMillis() - startTime) / 1000}
+        );
         return null;
     }
 

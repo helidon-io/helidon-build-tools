@@ -42,11 +42,14 @@ export async function startSocketLangServer(context: ExtensionContext): Promise<
             port: await getPort(),
             host: "localhost"
         };
-        const args: string[] = [
-            '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10001',
-            '-jar', 'io.helidon.lsp.server.jar',
-            connectionInfo.port
-        ];
+        
+        const args: string[] = [];
+        if (debugMode()){
+            args.push('-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10001');
+        }
+        args.push('-jar', 'io.helidon.lsp.server.jar');
+        args.push(connectionInfo.port);
+        
         langServerProcess = ChildProcessAPI.spawnProcess(excecutable, args, opts);
         configureLangServer(langServerProcess);
 
@@ -75,7 +78,7 @@ export async function startSocketLangServer(context: ExtensionContext): Promise<
                 },
                 {
                     scheme: 'file',
-                    pattern: '**/application.properties'
+                    pattern: '**/*.properties'
                 }
             ],
             synchronize: {
@@ -92,6 +95,10 @@ export async function startSocketLangServer(context: ExtensionContext): Promise<
     // }
 
     return langServerProcess;
+}
+
+function debugMode() : boolean {
+    return process.env['DEBUG_VSCODE_HELIDON'] === 'true';
 }
 
 function configureLangClient(

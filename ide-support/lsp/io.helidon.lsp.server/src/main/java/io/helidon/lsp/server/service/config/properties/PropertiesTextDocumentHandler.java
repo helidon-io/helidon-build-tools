@@ -66,6 +66,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
 
     private void init() {
         fileUtils = FileUtils.instance();
+        propertiesService = ConfigurationPropertiesService.instance();
     }
 
     public void propertiesService(ConfigurationPropertiesService propertiesService) {
@@ -125,8 +126,8 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
                     item.setKind(CompletionItemKind.Snippet);
                     item.setLabel(key);
                     item.setInsertText(StringUtils.difference(baseForCompletion, key) + SEPARATOR);
-                    item.setDocumentation(value.description());
-                    item.setDetail(prepareDetailsForKey(value));
+                    item.setDocumentation(prepareInfoForKey(value));
+                    item.setDetail(value.description());
                     item.setInsertTextFormat(InsertTextFormat.Snippet);
                     result.add(item);
                 }

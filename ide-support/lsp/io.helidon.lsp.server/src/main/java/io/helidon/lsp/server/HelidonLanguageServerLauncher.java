@@ -20,6 +20,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.LogManager;
@@ -51,6 +54,9 @@ public class HelidonLanguageServerLauncher {
      */
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
         try {
+            String tmpDir = System.getProperty("java.io.tmpdir");
+            Path logFolder = Paths.get(tmpDir,"vscode-helidon","logs","server");
+            Files.createDirectories(logFolder);
             LogManager.getLogManager().readConfiguration(new FileInputStream("logging.properties"));
         } catch (SecurityException | IOException e1) {
             LOGGER.warning(e1.getMessage());

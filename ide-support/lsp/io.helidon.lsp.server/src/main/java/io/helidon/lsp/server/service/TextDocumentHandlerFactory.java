@@ -42,7 +42,7 @@ public class TextDocumentHandlerFactory {
      * @param languageServerContext languageServerContext.
      * @return TextDocumentHandler instance for the file.
      */
-    public static TextDocumentHandler getByFileExtension(String fileName, LanguageServerContext languageServerContext) {
+    public static TextDocumentHandler   getByFileExtension(String fileName, LanguageServerContext languageServerContext) {
         final String fileExtension = getFileExtension(fileName);
         if (fileExtension.equalsIgnoreCase("properties")) {
             if (!FILE_EXTENSION_TO_HANDLER_MAP.containsKey("properties")) {

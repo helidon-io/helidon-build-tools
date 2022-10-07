@@ -40,7 +40,7 @@ public interface TextDocumentHandler {
      */
     List<CompletionItem> completion(CompletionParams position);
 
-    default String prepareDetailsForKey(ConfigMetadata value) {
+    default String prepareInfoForKey(ConfigMetadata value) {
         StringBuilder details = new StringBuilder(value.type());
         if (value instanceof ValueConfigMetadata) {
             ValueConfigMetadata vValue = (ValueConfigMetadata) value;

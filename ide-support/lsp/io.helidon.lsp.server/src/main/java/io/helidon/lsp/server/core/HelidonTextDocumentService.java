@@ -126,7 +126,17 @@ public class HelidonTextDocumentService implements TextDocumentService {
         TextDocumentHandler textDocumentHandler = TextDocumentHandlerFactory
                 .getByFileExtension(position.getTextDocument().getUri(), languageServerContext);
         return CompletableFuture.supplyAsync(() -> {
+            long startTime = System.currentTimeMillis();
             List<CompletionItem> completionItems = textDocumentHandler.completion(position);
+            LOGGER.log(
+                    Level.FINEST,
+                    "Completion for {0} with handler {1} took {2} seconds",
+                    new Object[]{
+                            position.getTextDocument().getUri(),
+                            textDocumentHandler.getClass(),
+                            (double) (System.currentTimeMillis() - startTime) / 1000
+                    }
+            );
             return Either.forLeft(completionItems);
         });
     }
@@ -240,7 +250,7 @@ public class HelidonTextDocumentService implements TextDocumentService {
         if (PROPS_FILE_PATTERN.stream().anyMatch(docUri::endsWith)) {
             //TODO process the file
 //            try {
-                //fill the cache
+            //fill the cache
 
 //                configurationPropertiesService.getConfigMetadataForFile(docUri);
 //            } catch (URISyntaxException | IOException e) {

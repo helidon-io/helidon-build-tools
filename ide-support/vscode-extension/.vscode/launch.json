@@ -13,6 +13,9 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
+      "env": {
+				"DEBUG_VSCODE_HELIDON":"true"
+			},
       "outFiles": [
         "${workspaceFolder}/target/dist/**/*.js"
       ],

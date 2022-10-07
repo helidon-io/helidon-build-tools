@@ -126,8 +126,8 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                     item.setKind(CompletionItemKind.Snippet);
                     item.setLabel(value.key());
                     item.setInsertText(value.key() + SEPARATOR + suffixForInsertText(value));
-                    item.setDocumentation(value.description());
-                    item.setDetail(prepareDetailsForKey(value));
+                    item.setDocumentation(prepareInfoForKey(value));
+                    item.setDetail(value.description());
                     item.setInsertTextFormat(InsertTextFormat.Snippet);
                     result.add(item);
                 }
@@ -138,11 +138,14 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     private String suffixForInsertText(ConfigMetadata value) {
         if (value.kind() != null) {
             if (value.kind() == ConfiguredOption.Kind.LIST) {
-                return "\n" + String.format("%-" + value.level() * 2 + "s", "") + "- ";
+                String indent = value.level() == 0 || value.level() == 1
+                        ? ""
+                        : String.format("%-" + ((value.level() - 1) * 2) + "s", "");
+                return "\n" + indent  + "- ";
             }
             if (value.kind() == ConfiguredOption.Kind.VALUE) {
                 if (value.content() == null || value.content().size() == 0) {
-                    return "";
+                    return " ";
                 }
             }
         }
@@ -155,26 +158,42 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private String currentKey(CompletionDetails completionDetails) {
         String currentLine = completionDetails.fileContent.get(completionDetails.position.getLine());
-        Matcher matcher = KEY_PATTERN.matcher(currentLine.substring(0, completionDetails.position.getCharacter()));
-        if (matcher.find()) {
-            return matcher.group("key");
+        try {
+            Matcher matcher = KEY_PATTERN.matcher(currentLine.substring(0, completionDetails.position.getCharacter()));
+            if (matcher.find()) {
+                return matcher.group("key");
+            }
+        } catch (Exception e) {
+            LOGGER.log(
+                    Level.WARNING,
+                    "Exception {0} when trying to get substring of string: {1}, at position {2} in row {3}",
+                    new Object[]{e.getClass(), currentLine, completionDetails.position.getCharacter(),
+                            completionDetails.position.getLine()}
+            );
+            throw e;
         }
         return null;
     }
 
     private void processMetadataByDefault(CompletionDetails details) {
-        Collection<String> children = childNodes(details.parentLineResultEntry, details.yamlFileResult).values();
+        Collection<String> siblings = details.parentLineResultEntry != null
+                ? childNodes(details.parentLineResultEntry, details.yamlFileResult).values()
+                : details.yamlFileResult.entrySet().stream()
+                                        .filter(entry->entry.getKey().indent()==0)
+                                        .map(Map.Entry::getValue)
+                                        .collect(Collectors.toSet());
         details.proposedMetadata = details.proposedMetadata
                 .entrySet()
                 .stream()
-                .filter((entry) -> !children.contains(entry.getKey()))
+                .filter((entry) -> !siblings.contains(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private void processListMetadata(CompletionDetails completionDetails) {
         int startListElementLine = startListElementLine(completionDetails);
         int endListElementLine = endListElementLine(completionDetails);
-        if (startListElementLine == -1 || endListElementLine == 0) {
+        if (startListElementLine == -1) {
+            // the list element was not found
             completionDetails.proposedMetadata = new LinkedHashMap<>();
         }
         Set<String> yamlResultsToExclusion = completionDetails.yamlFileResult
@@ -224,7 +243,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                 }
             }
         }
-        int endListElementLine = 0;
+        int endListElementLine = currentLine;
         for (int i = currentLine + 1; i < completionDetails.fileContent.size(); i++) {
             if (completionDetails.fileContent.get(i).matches(pattern)) {
                 endListElementLine = i;
@@ -235,7 +254,6 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
             if (nextElement.line() < endListElementLine || endListElementLine == 0) {
                 return nextElement.line();
             }
-            ;
         }
         return endListElementLine;
     }

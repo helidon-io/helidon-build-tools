@@ -42,11 +42,19 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    void testCompletionLabels() throws URISyntaxException, IOException {
+    void testCompletionLabels() throws URISyntaxException {
         List<CompletionItem> completion = completionItems(new Position(19, 4), "test-config.yaml");
         assertThat(completion.size(), is(6));
         assertThat(completion.stream().anyMatch(item -> item.getLabel().equals("virtual-enforced")), is(true));
         assertThat(completion.stream().anyMatch(item -> item.getLabel().equals("keep-alive-minutes")), is(true));
+
+        completion = completionItems(new Position(50, 0), "test-config.yaml");
+        assertThat(completion.size(), is(0));
+
+        completion = completionItems(new Position(17, 6), "test-config-list.yaml");
+        assertThat(completion.size(), is(13));
+        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(13));
+        assertThat(completion.stream().anyMatch(item -> item.getLabel().equals("name")), is(true));
 
         completion = completionItems(new Position(19, 2), "test-config.yaml");
         assertThat(completion.size(), is(9));
@@ -79,8 +87,9 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     @Test
     public void testInsertText() throws URISyntaxException {
         List<CompletionItem> completion = completionItems(new Position(25, 4), "test-config.yaml");
-        CompletionItem completionItem = completion.stream().filter(item -> item.getLabel().equals("host")).findFirst().orElse(null);
-        assertThat(completionItem.getInsertText(), is("host:"));
+        CompletionItem completionItem = completion.stream().filter(item -> item.getLabel().equals("host")).findFirst()
+                                                  .orElse(null);
+        assertThat(completionItem.getInsertText(), is("host: "));
 
         completion = completionItems(new Position(44, 6), "test-config.yaml");
         completionItem = completionItemByLabel("private-key", completion);
@@ -88,22 +97,22 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
 
         completion = completionItems(new Position(50, 4), "test-config.yaml");
         completionItem = completionItemByLabel("services", completion);
-        assertThat(completionItem.getInsertText(), is("services:\n    - "));
+        assertThat(completionItem.getInsertText(), is("services:\n  - "));
     }
 
     @Test
     public void testDefaultValues() throws URISyntaxException {
         List<CompletionItem> completion = completionItems(new Position(19, 2), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("default-authorization-provider", completion);
-        assertThat(completionItem.getDetail().contains("Default value"), is(false));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value"), is(false));
         completionItem = completionItemByLabel("provider-policy.class-name", completion);
-        assertThat(completionItem.getDetail().contains("Default value"), is(false));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value"), is(false));
         completionItem = completionItemByLabel("provider-policy.type", completion);
-        assertThat(completionItem.getDetail().contains("Default value: FIRST"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value: FIRST"), is(true));
 
         completion = completionItems(new Position(47, 2), "test-config.yaml");
         completionItem = completionItemByLabel("max-upgrade-content-length", completion);
-        assertThat(completionItem.getDetail().contains("Default value: 65536"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Default value: 65536"), is(true));
     }
 
     @Test
@@ -111,19 +120,19 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
         List<CompletionItem> completion = completionItems(new Position(44, 6), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("client-auth", completion);
         assertThat(completion.size(), is(6));//7-1
-        assertThat(completionItem.getDetail().contains("Allowed values: "), is(true));
-        assertThat(completionItem.getDetail().contains("REQUIRE (Authentication is required.)"), is(true));
-        assertThat(completionItem.getDetail().contains("OPTIONAL (Authentication is optional.)"), is(true));
-        assertThat(completionItem.getDetail().contains("NONE (Authentication is not required.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("Allowed values: "), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("REQUIRE (Authentication is required.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("OPTIONAL (Authentication is optional.)"), is(true));
+        assertThat(completionItem.getDocumentation().getLeft().contains("NONE (Authentication is not required.)"), is(true));
     }
 
     @Test
     public void testCompletionIncorrectConfig() throws URISyntaxException, IOException {
-        List<CompletionItem> completion = completionItems(new Position(19, 4), "test-incorrect-config.yaml");
-        assertThat(completion.size(), is(0));
+        List<CompletionItem> completion = completionItems(new Position(19, 0), "test-incorrect-config.yaml");
+        assertThat(completion.size(), is(2));
 
-        completion = completionItems(new Position(19, 0), "test-incorrect-config.yaml");
-        assertThat(completion.size(), is(3));
+        completion = completionItems(new Position(19, 4), "test-incorrect-config.yaml");
+        assertThat(completion.size(), is(0));
     }
 
     private List<CompletionItem> completionItems(Position position, String fileName) throws URISyntaxException {

@@ -38,8 +38,7 @@
     "workspaceContains:**src/main/resources/META-INF/application.properties",
     "workspaceContains:**/src/main/resources/application.yaml",
     "workspaceContains:**/src/main/resources/application.yml",
-    "onLanguage:microprofile-properties",
-    "onLanguage:helidon-properties"
+    "onLanguage:microprofile-properties"
   ],
   "main": "./target/dist/extension.js",
   "contributes": {
