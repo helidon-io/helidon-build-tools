@@ -18,25 +18,25 @@ package io.helidon.lsp.server.service.config.yaml;
 
 import java.util.regex.Pattern;
 
-public class Token {
+class Token {
 
     private final Type type;
     private final String value;
 
-    public Token(Type type, String value) {
+    Token(Type type, String value) {
         this.type = type;
         this.value = value;
     }
 
-    public Type type() {
+    Type type() {
         return type;
     }
 
-    public String value() {
+    String value() {
         return value;
     }
 
-    public enum Type {
+    enum Type {
 
         KEY {
             @Override

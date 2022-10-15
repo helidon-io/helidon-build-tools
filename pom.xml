@@ -129,7 +129,7 @@
         <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.gson>2.8.9</version.lib.gson>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.helidon>2.5.2</version.lib.helidon>
+        <version.lib.helidon>3.0.1</version.lib.helidon>
         <version.lib.invoker>3.0.1</version.lib.invoker>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
@@ -141,7 +141,7 @@
         <version.lib.junit>5.8.0-M1</version.lib.junit>
         <version.lib.junit-platform>1.8.0-M1</version.lib.junit-platform>
         <version.lib.junit4>4.13.1</version.lib.junit4>
-        <version.lib.lsp4j>0.12.0</version.lib.lsp4j>
+        <version.lib.lsp4j>0.16.0</version.lib.lsp4j>
         <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
@@ -173,6 +173,7 @@
         -->
 
         <!-- maven plugin versions -->
+        <version.plugin.assembly>3.3.0</version.plugin.assembly>
         <version.plugin.build-helper>3.2.0</version.plugin.build-helper>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
@@ -221,6 +222,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${version.plugin.assembly}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -853,11 +859,6 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-metadata</artifactId>
-                <version>${version.lib.helidon}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.providers</groupId>
-                <artifactId>helidon-security-providers-common</artifactId>
                 <version>${version.lib.helidon}</version>
             </dependency>
             <dependency>

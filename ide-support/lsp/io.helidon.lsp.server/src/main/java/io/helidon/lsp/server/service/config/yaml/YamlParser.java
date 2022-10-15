@@ -34,7 +34,7 @@ class YamlParser {
      * @param yaml content of the yaml file.
      * @return Map that represent full paths to found keys and recognized tokens in corresponded lines.
      */
-    public LinkedHashMap<LineResult, String> parse(List<String> yaml) {
+    LinkedHashMap<LineResult, String> parse(List<String> yaml) {
         LinkedHashMap<LineResult, String> result = new LinkedHashMap<>();
         currentHandler = InitialHandler.INSTANCE(this);
         for (int i = 0; i < yaml.size(); i++) {
@@ -47,7 +47,7 @@ class YamlParser {
         return result;
     }
 
-    public void currentHandler(Handler currentHandler) {
+    void currentHandler(Handler currentHandler) {
         this.currentHandler = currentHandler;
     }
 

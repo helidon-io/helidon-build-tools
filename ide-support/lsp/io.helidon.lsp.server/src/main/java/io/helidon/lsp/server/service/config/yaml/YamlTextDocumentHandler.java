@@ -33,10 +33,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
-import io.helidon.lsp.server.utils.FileUtils;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -56,7 +56,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private final YamlParser yamlParser = new YamlParser();
     private ConfigurationPropertiesService propertiesService;
-    private FileUtils fileUtils;
+    private ContentManager contentManager;
 
     /**
      * Create a new instance.
@@ -71,7 +71,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private void init() {
         propertiesService = ConfigurationPropertiesService.instance();
-        fileUtils = FileUtils.instance();
+        contentManager = ContentManager.instance();
     }
 
     public void propertiesService(ConfigurationPropertiesService propertiesService) {
@@ -141,7 +141,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                 String indent = value.level() == 0 || value.level() == 1
                         ? ""
                         : String.format("%-" + ((value.level() - 1) * 2) + "s", "");
-                return "\n" + indent  + "- ";
+                return "\n" + indent + "- ";
             }
             if (value.kind() == ConfiguredOption.Kind.VALUE) {
                 if (value.content() == null || value.content().size() == 0) {
@@ -157,6 +157,13 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     }
 
     private String currentKey(CompletionDetails completionDetails) {
+        if (completionDetails.fileContent.size() == 0) {
+            return null;
+        } else if (completionDetails.position.getLine() == completionDetails.fileContent.size()
+                && completionDetails.position.getCharacter() == 0) {
+            //last empty line in the file
+            return null;
+        }
         String currentLine = completionDetails.fileContent.get(completionDetails.position.getLine());
         try {
             Matcher matcher = KEY_PATTERN.matcher(currentLine.substring(0, completionDetails.position.getCharacter()));
@@ -179,7 +186,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         Collection<String> siblings = details.parentLineResultEntry != null
                 ? childNodes(details.parentLineResultEntry, details.yamlFileResult).values()
                 : details.yamlFileResult.entrySet().stream()
-                                        .filter(entry->entry.getKey().indent()==0)
+                                        .filter(entry -> entry.getKey().indent() == 0)
                                         .map(Map.Entry::getValue)
                                         .collect(Collectors.toSet());
         details.proposedMetadata = details.proposedMetadata
@@ -275,7 +282,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         String fileUri = completionParams.getTextDocument().getUri();
         Position position = completionParams.getPosition();
         result.position = position;
-        result.fileContent = fileUtils.getTextDocContentByURI(fileUri);
+        result.fileContent = contentManager.read(fileUri);
         LinkedHashMap<LineResult, String> yamlFileResult = yamlParser.parse(result.fileContent);
         result.yamlFileResult = yamlFileResult;
 

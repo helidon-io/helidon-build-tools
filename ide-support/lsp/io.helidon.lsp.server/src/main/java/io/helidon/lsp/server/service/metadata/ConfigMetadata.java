@@ -19,7 +19,9 @@ import java.util.Set;
 
 import io.helidon.config.metadata.ConfiguredOption;
 
-//TODO add javadocs for every class in this package
+/**
+ * Configuration metadata for Helidon application.
+ */
 public abstract class ConfigMetadata {
 
     private final String key;
@@ -29,7 +31,18 @@ public abstract class ConfigMetadata {
     private final int level;
     private final Set<ConfigMetadata> content;
 
-    public ConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level, Set<ConfigMetadata> content) {
+    /**
+     * Create a new instance.
+     *
+     * @param key         key.
+     * @param type        type.
+     * @param kind        kind of metadata.
+     * @param description short description.
+     * @param level       level of metadata in hierarchy.
+     * @param content     child metadata set.
+     */
+    public ConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level,
+                          Set<ConfigMetadata> content) {
         this.key = key;
         this.type = type;
         this.kind = kind;
@@ -38,26 +51,56 @@ public abstract class ConfigMetadata {
         this.content = content;
     }
 
+    /**
+     * Kind of metadata.
+     *
+     * @return ConfiguredOption.Kind object.
+     */
     public ConfiguredOption.Kind kind() {
         return kind;
     }
 
+    /**
+     * Child metadata set.
+     *
+     * @return Collection of Child metadata.
+     */
     public Set<ConfigMetadata> content() {
         return content;
     }
 
+    /**
+     * Level of this metadata in hierarchy.
+     *
+     * @return level.
+     */
     public int level() {
         return level;
     }
 
+    /**
+     * Key string.
+     *
+     * @return key.
+     */
     public String key() {
         return key;
     }
 
+    /**
+     * Short description.
+     *
+     * @return short description.
+     */
     public String description() {
         return description;
     }
 
+    /**
+     * Type of metadata.
+     *
+     * @return type of metadata.
+     */
     public String type() {
         return type;
     }

@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.TextDocumentHandlerFactory;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
@@ -72,12 +73,8 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Moniker;
 import org.eclipse.lsp4j.MonikerParams;
-import org.eclipse.lsp4j.PrepareRenameParams;
-import org.eclipse.lsp4j.PrepareRenameResult;
-import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
-import org.eclipse.lsp4j.ResolveTypeHierarchyItemParams;
 import org.eclipse.lsp4j.SelectionRange;
 import org.eclipse.lsp4j.SelectionRangeParams;
 import org.eclipse.lsp4j.SemanticTokens;
@@ -90,8 +87,6 @@ import org.eclipse.lsp4j.SignatureHelpParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.TypeDefinitionParams;
-import org.eclipse.lsp4j.TypeHierarchyItem;
-import org.eclipse.lsp4j.TypeHierarchyParams;
 import org.eclipse.lsp4j.WillSaveTextDocumentParams;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -104,11 +99,12 @@ public class HelidonTextDocumentService implements TextDocumentService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
     private static final List<String> PROPS_FILE_PATTERN = Arrays.asList(
-            "meta-config.yaml", "meta-config.conf", "meta-config.json", "meta-config.properties",
+            "microprofile-config.yaml", "microprofile-config.conf", "microprofile-config.json", "microprofile-config.properties",
             "application.yaml", "application.conf", "application.json", "application.properties"
     );
     private final LanguageServerContext languageServerContext;
     private final ConfigurationPropertiesService configurationPropertiesService;
+    private final ContentManager contentManager;
 
     /**
      * Create a new instance.
@@ -117,14 +113,14 @@ public class HelidonTextDocumentService implements TextDocumentService {
      */
     public HelidonTextDocumentService(LanguageServerContext languageServerContext) {
         this.languageServerContext = languageServerContext;
-        configurationPropertiesService =
-                (ConfigurationPropertiesService) languageServerContext.getBean(ConfigurationPropertiesService.class);
+        configurationPropertiesService = ConfigurationPropertiesService.instance();
+        contentManager = ContentManager.instance();
     }
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
         TextDocumentHandler textDocumentHandler = TextDocumentHandlerFactory
-                .getByFileExtension(position.getTextDocument().getUri(), languageServerContext);
+                .getByFileExtension(position.getTextDocument().getUri());
         return CompletableFuture.supplyAsync(() -> {
             long startTime = System.currentTimeMillis();
             List<CompletionItem> completionItems = textDocumentHandler.completion(position);
@@ -247,15 +243,14 @@ public class HelidonTextDocumentService implements TextDocumentService {
         String docUri = didOpenTextDocumentParams.getTextDocument().getUri();
         LOGGER.log(Level.FINEST, () -> "opening the file " + docUri);
 
+        contentManager.register(docUri);
         if (PROPS_FILE_PATTERN.stream().anyMatch(docUri::endsWith)) {
-            //TODO process the file
-//            try {
-            //fill the cache
-
-//                configurationPropertiesService.getConfigMetadataForFile(docUri);
-//            } catch (URISyntaxException | IOException e) {
-//                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
-//            }
+            try {
+                //fill the cache
+                configurationPropertiesService.metadataForFile(docUri);
+            } catch (URISyntaxException | IOException e) {
+                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+            }
         }
     }
 
@@ -265,6 +260,19 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 Level.FINEST,
                 () -> "change the file " + didChangeTextDocumentParams.getTextDocument().getUri()
         );
+        String docUri = didChangeTextDocumentParams.getTextDocument().getUri();
+
+        try {
+            if (didChangeTextDocumentParams.getContentChanges().size() > 0) {
+                contentManager.write(docUri, List.of(didChangeTextDocumentParams.getContentChanges().get(0).getText()));
+            }
+            if (docUri.endsWith("pom.xml")) {
+                configurationPropertiesService.cleanCache(docUri);
+                configurationPropertiesService.metadataForFile(docUri);
+            }
+        } catch (URISyntaxException | IOException e) {
+            LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+        }
     }
 
     @Override
@@ -309,21 +317,6 @@ public class HelidonTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<Either<Range, PrepareRenameResult>> prepareRename(PrepareRenameParams params) {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<TypeHierarchyItem> typeHierarchy(TypeHierarchyParams params) {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<TypeHierarchyItem> resolveTypeHierarchy(ResolveTypeHierarchyItemParams params) {
         return null;
     }
 

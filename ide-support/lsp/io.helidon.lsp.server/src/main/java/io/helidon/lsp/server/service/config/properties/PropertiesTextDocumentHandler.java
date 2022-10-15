@@ -31,11 +31,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
-import io.helidon.lsp.server.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -54,7 +54,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
     private static final String SEPARATOR = "=";
 
     private ConfigurationPropertiesService propertiesService;
-    private FileUtils fileUtils;
+    private ContentManager contentManager;
 
     private PropertiesTextDocumentHandler() {
         init();
@@ -65,7 +65,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
     }
 
     private void init() {
-        fileUtils = FileUtils.instance();
+        contentManager = ContentManager.instance();
         propertiesService = ConfigurationPropertiesService.instance();
     }
 
@@ -79,7 +79,7 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         String fileUri = completionParams.getTextDocument().getUri();
         try {
             Map<String, ConfigMetadata> configMetadata = propertiesService.metadataForFile(fileUri);
-            List<String> fileContent = fileUtils.getTextDocContentByURI(fileUri);
+            List<String> fileContent = contentManager.read(fileUri);
             Position position = completionParams.getPosition();
             String currentLine = fileContent.get(position.getLine());
             String baseForCompletion = currentLine.substring(0, position.getCharacter());

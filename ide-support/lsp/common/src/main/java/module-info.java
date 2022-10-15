@@ -19,5 +19,5 @@
  */
 module io.helidon.lsp.common {
     exports io.helidon.lsp.common;
-    opens io.helidon.lsp.common to gson;
+    opens io.helidon.lsp.common to com.google.gson;
 }

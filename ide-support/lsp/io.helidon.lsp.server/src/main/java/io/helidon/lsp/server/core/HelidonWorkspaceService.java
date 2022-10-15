@@ -16,13 +16,9 @@
 
 package io.helidon.lsp.server.core;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
@@ -35,22 +31,11 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 public class HelidonWorkspaceService implements WorkspaceService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
-    private final LanguageServerContext languageServerContext;
-    private ConfigurationPropertiesService configurationPropertiesService;
 
     /**
      * Create a new instance.
-     *
-     * @param languageServerContext LanguageServerContext object.
      */
-    public HelidonWorkspaceService(LanguageServerContext languageServerContext) {
-        this.languageServerContext = languageServerContext;
-        init();
-    }
-
-    private void init() {
-        configurationPropertiesService =
-                (ConfigurationPropertiesService) languageServerContext.getBean(ConfigurationPropertiesService.class);
+    public HelidonWorkspaceService() {
     }
 
     @Override
@@ -60,7 +45,7 @@ public class HelidonWorkspaceService implements WorkspaceService {
 
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams didChangeWatchedFilesParams) {
-        //happen when pom.xml or other watched files are saved
+        //happen when watched files are saved
         LOGGER.log(
                 Level.FINEST,
                 () -> "didChangeWatchedFiles(), save the files "
@@ -69,20 +54,5 @@ public class HelidonWorkspaceService implements WorkspaceService {
                         .map(FileEvent::getUri)
                         .collect(Collectors.joining(", ", "[", "]"))
         );
-        //reload the cache
-        didChangeWatchedFilesParams
-                .getChanges().stream()
-                .map(FileEvent::getUri)
-                .filter(uri -> uri.endsWith("pom.xml"))
-                .forEach(
-                        pom -> {
-                            //TODO RELOAD CACHE
-//                            try {
-//                                configurationPropertiesService.getConfigMetadataForFile(pom);
-//                            } catch (URISyntaxException | IOException e) {
-//                                LOGGER.log(Level.SEVERE, "exception while processing the file " + pom, e);
-//                            }
-                        }
-                );
     }
 }

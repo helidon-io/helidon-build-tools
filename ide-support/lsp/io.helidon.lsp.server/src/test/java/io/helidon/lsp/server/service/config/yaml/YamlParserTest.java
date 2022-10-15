@@ -16,7 +16,6 @@
 
 package io.helidon.lsp.server.service.config.yaml;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,8 +30,6 @@ import java.util.stream.Stream;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-//@Disabled
-//TODO change it for the new implementation or remove it
 class YamlParserTest {
 
     @Test

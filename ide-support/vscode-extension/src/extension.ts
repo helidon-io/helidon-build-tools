@@ -23,14 +23,12 @@ import { openStartPage } from "./startPage";
 import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
 import { STEPS } from "./steps_data";
-import {ChildProcess} from 'child_process';
-import {ChildProcessAPI} from './ChildProcessAPI';
-import {startSocketLangServer} from './languageServer';
-
-let langServerProcess: ChildProcess;
+import { deactivated, startLangServer } from './languageServer';
+import { setlogFile } from './logger';
 
 export function activate(context: vscode.ExtensionContext) {
 
+    setlogFile("plugin.log");
     let initialEnvPath = process.env.PATH;
     let initialEnvJavaHome = process.env.JAVA_HOME;
     let initialEnvM2Home = process.env.M2_HOME;
@@ -48,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('helidon')){
+        if (event.affectsConfiguration('helidon')) {
             process.env.PATH = initialEnvPath;
             process.env.JAVA_HOME = initialEnvJavaHome;
             process.env.M2_HOME = initialEnvM2Home;
@@ -74,11 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     updateWorkspaceDocuments(context);
 
-    startSocketLangServer(context).then(data => {
-        if (data) {
-            langServerProcess = data;
-        }
-    });
+    startLangServer(context);
 }
 
 export function deactivate() {
@@ -86,8 +80,5 @@ export function deactivate() {
     process.env.PATH = undefined;
     process.env.M2_HOME = undefined;
     process.env.MAVEN_HOME = undefined;
-
-    if (langServerProcess) {
-        ChildProcessAPI.killProcess(langServerProcess.pid);
-    }
+    deactivated(true);
 }

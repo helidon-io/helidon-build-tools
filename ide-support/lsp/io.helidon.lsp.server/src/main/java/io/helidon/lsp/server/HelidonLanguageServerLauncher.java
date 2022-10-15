@@ -55,13 +55,14 @@ public class HelidonLanguageServerLauncher {
     public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
         try {
             String tmpDir = System.getProperty("java.io.tmpdir");
-            Path logFolder = Paths.get(tmpDir,"vscode-helidon","logs","server");
-            Files.createDirectories(logFolder);
+            Path logFolder = Paths.get(tmpDir, "vscode-helidon", "server", "logs");
+            if (!logFolder.toFile().exists()) {
+                Files.createDirectories(logFolder);
+            }
             LogManager.getLogManager().readConfiguration(new FileInputStream("logging.properties"));
         } catch (SecurityException | IOException e1) {
             LOGGER.warning(e1.getMessage());
         }
-        // start the language server
         startServer(Integer.parseInt(args[0]));
     }
 
@@ -92,6 +93,9 @@ public class HelidonLanguageServerLauncher {
         Future<?> startListening = launcher.startListening();
         // Get the computed result from LS.
         startListening.get();
+
+        serverSocket.close();
+        languageServer.exit();
         LOGGER.info("Helidon language server stopped");
     }
 }

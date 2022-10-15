@@ -17,6 +17,7 @@
 package io.helidon.lsp.server.service.config;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,16 +38,13 @@ import io.helidon.lsp.server.service.metadata.ConfiguredType;
 import io.helidon.lsp.server.service.metadata.ContainerConfigMetadata;
 import io.helidon.lsp.server.service.metadata.MetadataProvider;
 import io.helidon.lsp.server.service.metadata.ValueConfigMetadata;
-import io.helidon.security.providers.common.EvictableCache;
 
 /**
  * Service to obtain Helidon configuration properties.
  */
-//TODO change or remove it
 public class ConfigurationPropertiesService {
 
     private static final ConfigurationPropertiesService INSTANCE = new ConfigurationPropertiesService();
-
     private static final Logger LOGGER = Logger.getLogger(ConfigurationPropertiesService.class.getName());
     private static final Set<String> TYPED_VALUES = Set.of(
             "java.lang.Integer",
@@ -60,7 +57,7 @@ public class ConfigurationPropertiesService {
             "java.time.ZoneId"
     );
 
-    private final EvictableCache<String, Map<String, ConfigMetadata>> cache;
+    private final Map<String, WeakReference<Map<String, ConfigMetadata>>> cache;
     private MetadataProvider metadataProvider;
     private MavenSupport mavenSupport;
 
@@ -68,7 +65,7 @@ public class ConfigurationPropertiesService {
      * Create a new instance.
      */
     private ConfigurationPropertiesService() {
-        cache = EvictableCache.<String, Map<String, ConfigMetadata>>builder().build();
+        cache = new HashMap<>();
         metadataProvider = MetadataProvider.instance();
         mavenSupport = MavenSupport.instance();
     }
@@ -96,12 +93,12 @@ public class ConfigurationPropertiesService {
      * @return Helidon configuration properties.
      * @throws IOException IOException.
      */
-    //TODO add tests if it is possible
     public Map<String, ConfigMetadata> metadataForPom(String pom) throws IOException {
-        if (cache.get(pom).orElse(null) != null) {
-            return cache.get(pom).orElse(Map.of());
+        if (cache.get(pom) != null) {
+            return cache.get(pom).get();
         }
 
+        long startTime = System.currentTimeMillis();
         List<String> dependencies = mavenSupport
                 .getDependencies(pom).stream()
                 .map(Dependency::path)
@@ -124,7 +121,12 @@ public class ConfigurationPropertiesService {
             }
         }
 
-        cache.computeValue(pom, () -> Optional.of(configProperties));
+        cache.put(pom, new WeakReference<>(configProperties));
+        LOGGER.log(
+                Level.FINEST,
+                "metadataForPom() for pom file {0} took {1} seconds",
+                new Object[]{pom, (double) (System.currentTimeMillis() - startTime) / 1000}
+        );
         return configProperties;
     }
 

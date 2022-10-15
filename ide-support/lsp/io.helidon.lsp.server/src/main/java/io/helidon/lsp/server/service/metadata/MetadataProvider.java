@@ -31,6 +31,9 @@ import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonValue;
 
+/**
+ * Provider for metadata.
+ */
 public class MetadataProvider {
 
     private static MetadataProvider INSTANCE = new MetadataProvider();
@@ -41,10 +44,20 @@ public class MetadataProvider {
     private MetadataProvider() {
     }
 
+    /**
+     * Instance of the class.
+     * @return instance of the class.
+     */
     public static MetadataProvider instance() {
         return INSTANCE;
     }
 
+    /**
+     * Read configuration metadata from the helidon jar file.
+     * @param jarFilePath path to the helidon jar file.
+     * @return list of configured types.
+     * @throws IOException IOException
+     */
     public List<ConfiguredType> readMetadata(String jarFilePath) throws IOException {
         JarFile jarFile = new JarFile(jarFilePath);
         JarEntry configEntry = jarFile.getJarEntry(HELIDON_PROPERTIES_FILE);
@@ -57,6 +70,11 @@ public class MetadataProvider {
         return List.of();
     }
 
+    /**
+     * Get configuration metadata from the json array.
+     * @param jsonArray json array.
+     * @return list of configured types.
+     */
     public List<ConfiguredType> processMetadataJson(JsonArray jsonArray) {
         List<ConfiguredType> result = new LinkedList<>();
         for (JsonValue jsonValue : jsonArray) {

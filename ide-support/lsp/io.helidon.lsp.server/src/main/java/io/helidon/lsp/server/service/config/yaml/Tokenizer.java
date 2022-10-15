@@ -16,7 +16,6 @@
 
 package io.helidon.lsp.server.service.config.yaml;
 
-import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 
 class Tokenizer {
@@ -24,16 +23,16 @@ class Tokenizer {
     private final String line;
     private int cursor;
 
-    public Tokenizer(String line) {
+    Tokenizer(String line) {
         this.line = line;
         this.cursor = 0;
     }
 
-    public boolean hasNext() {
+    boolean hasNext() {
         return cursor < line.length();
     }
 
-    public Token next() {
+    Token next() {
         if (!hasNext()) {
             return null;
         }

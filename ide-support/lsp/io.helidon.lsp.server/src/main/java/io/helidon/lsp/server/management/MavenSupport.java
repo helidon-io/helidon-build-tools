@@ -17,18 +17,14 @@
 package io.helidon.lsp.server.management;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -82,29 +78,6 @@ public class MavenSupport {
         }
     }
 
-    private static class MavenPrintStream extends PrintStream {
-
-        private final List<String> content = new ArrayList<>();
-
-        public MavenPrintStream() {
-            super(new ByteArrayOutputStream());
-        }
-
-        @Override
-        public void println(String string) {
-            content.add(string);
-        }
-
-        @Override
-        public void print(String string) {
-            content.add(string);
-        }
-
-        public List<String> content() {
-            return content;
-        }
-    }
-
     /**
      * Get information about all dependencies for the given pom file.
      *
@@ -138,7 +111,7 @@ public class MavenSupport {
                 }
                 LOGGER.log(
                         Level.FINEST,
-                        "getDependencies() for pom file '{0}' took {1} seconds",
+                        "getDependencies() for pom file {0} took {1} seconds",
                         new Object[]{pomPath, (double) (System.currentTimeMillis() - startTime) / 1000}
                 );
                 return result;
@@ -148,7 +121,7 @@ public class MavenSupport {
         }
         LOGGER.log(
                 Level.FINEST,
-                "getDependencies() for pom file '{0}' took {1} seconds",
+                "getDependencies() for pom file {0} took {1} seconds",
                 new Object[]{pomPath, (double) (System.currentTimeMillis() - startTime) / 1000}
         );
         return null;

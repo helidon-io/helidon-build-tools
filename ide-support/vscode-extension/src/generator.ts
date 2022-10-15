@@ -49,7 +49,7 @@ export async function showHelidonGenerator(extensionPath: string, steps: any) {
 
         const archetypeValues = prepareProperties(projectData);
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
-            --reset --url file:///${extensionPath}/cli-data \
+            --reset --url file:///${extensionPath}/target/cli-data \
             ${archetypeValues}`;
 
         const channel = VSCodeAPI.createOutputChannel('helidon');

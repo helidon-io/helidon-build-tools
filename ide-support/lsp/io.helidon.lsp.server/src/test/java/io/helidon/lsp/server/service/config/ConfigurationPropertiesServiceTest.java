@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +19,6 @@ import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 import io.helidon.lsp.server.service.metadata.ConfiguredType;
 import io.helidon.lsp.server.service.metadata.MetadataProvider;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -41,7 +39,6 @@ class ConfigurationPropertiesServiceTest {
     @Mock
     MavenSupport mavenSupport;
     @Spy
-//    @Mock
     MetadataProvider provider = MetadataProvider.instance();
 
     @Test

@@ -18,27 +18,27 @@ package io.helidon.lsp.server.service.config.yaml;
 
 import java.util.Queue;
 
-public class LineResult {
+class LineResult {
 
     private final int line;
     private final int indent;
     private final Queue<Token> tokens;
 
-    public LineResult(int line, int indent, Queue<Token> tokens) {
+    LineResult(int line, int indent, Queue<Token> tokens) {
         this.line = line;
         this.indent = indent;
         this.tokens = tokens;
     }
 
-    public int indent() {
+    int indent() {
         return indent;
     }
 
-    public Queue<Token> tokens() {
+    Queue<Token> tokens() {
         return tokens;
     }
 
-    public int line() {
+    int line() {
         return line;
     }
 

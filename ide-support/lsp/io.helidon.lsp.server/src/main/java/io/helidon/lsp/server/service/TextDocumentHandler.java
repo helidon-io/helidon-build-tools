@@ -40,6 +40,12 @@ public interface TextDocumentHandler {
      */
     List<CompletionItem> completion(CompletionParams position);
 
+    /**
+     * Prepare description for the configuration metadata.
+     *
+     * @param value configuration metadata.
+     * @return description for the configuration metadata.
+     */
     default String prepareInfoForKey(ConfigMetadata value) {
         StringBuilder details = new StringBuilder(value.type());
         if (value instanceof ValueConfigMetadata) {
@@ -60,6 +66,12 @@ public interface TextDocumentHandler {
         return details.toString();
     }
 
+    /**
+     * Prepare list of completion items for the configuration metadata.
+     *
+     * @param proposedMetadata configuration metadata.
+     * @return list of completion items.
+     */
     default List<CompletionItem> prepareCompletionForAllowedValues(ConfigMetadata proposedMetadata) {
         if (proposedMetadata == null) {
             return List.of();

@@ -16,9 +16,7 @@
 
 package io.helidon.lsp.server.core;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.lsp4j.WorkspaceFolder;
 
@@ -28,8 +26,6 @@ import org.eclipse.lsp4j.WorkspaceFolder;
 public class LanguageServerContext {
 
     private List<WorkspaceFolder> workspaceFolders;
-    //TODO remove it
-    private Map<Class, Object> beans = new HashMap<>();
 
     /**
      * Get workspace folders in IDE.
@@ -49,33 +45,4 @@ public class LanguageServerContext {
         this.workspaceFolders = workspaceFolders;
     }
 
-    /**
-     * Get Map object that contains class types and corresponding instances of these classes
-     * for the running instance of the Helidon Language Server.
-     *
-     * @return Map object that contains class types and corresponding instances of these classes.
-     */
-    public Map<Class, Object> getBeans() {
-        return beans;
-    }
-
-    /**
-     * Add instance of the class with corresponding class type to the current LanguageServerContext.
-     *
-     * @param clazz Class type for the added instance of this class.
-     * @param bean  Instance of the added object.
-     */
-    public void setBean(Class clazz, Object bean) {
-        beans.putIfAbsent(clazz, bean);
-    }
-
-    /**
-     * Return instance of the class by the class type for the current LanguageServerContext.
-     *
-     * @param clazz Class of the returned object.
-     * @return Instance of the class by the class type for the current LanguageServerContext.
-     */
-    public Object getBean(Class clazz) {
-        return beans.get(clazz);
-    }
 }

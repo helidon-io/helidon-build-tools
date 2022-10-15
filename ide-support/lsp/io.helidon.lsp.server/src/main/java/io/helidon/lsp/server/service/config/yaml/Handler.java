@@ -15,9 +15,19 @@
  */
 
 package io.helidon.lsp.server.service.config.yaml;
-//TODO add JavaDocs
+
+/**
+ * Process yaml file.
+ */
 public interface Handler {
-//Line position in a document (zero-based)
+
+    /**
+     * Process a line in yaml file.
+     *
+     * @param lineIndex index of line in the document (zero-based).
+     * @param line      content of the line.
+     * @return LineResult object.
+     */
     LineResult process(int lineIndex, String line);
 
 }

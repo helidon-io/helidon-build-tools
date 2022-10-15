@@ -30,6 +30,9 @@ import javax.json.JsonValue;
 
 import io.helidon.config.metadata.ConfiguredOption;
 
+/**
+ * Detailed information about configured type in Helidon application.
+ */
 public final class ConfiguredType {
 
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
@@ -60,6 +63,11 @@ public final class ConfiguredType {
         return result;
     }
 
+    /**
+     * Short description about configured type.
+     *
+     * @return short description.
+     */
     public String description() {
         return description;
     }
@@ -113,26 +121,56 @@ public final class ConfiguredType {
         return this;
     }
 
+    /**
+     * List of producers.
+     *
+     * @return list of producers.
+     */
     public List<ProducerMethod> producers() {
         return producerMethods;
     }
 
+    /**
+     * Set of configured properties.
+     *
+     * @return set of configured properties.
+     */
     public Set<ConfiguredProperty> properties() {
         return allProperties;
     }
 
+    /**
+     * Target class.
+     *
+     * @return target class.
+     */
     public String targetClass() {
         return targetClass;
     }
 
+    /**
+     * Is this configured type standalone.
+     *
+     * @return True if standalone, false otherwise.
+     */
     public boolean standalone() {
         return standalone;
     }
 
+    /**
+     * Prefix for this configured type.
+     *
+     * @return prefix for this configured type.
+     */
     public String prefix() {
         return prefix;
     }
 
+    /**
+     * List of providers.
+     *
+     * @return list of providers.
+     */
     public List<String> provides() {
         return provides;
     }
@@ -146,6 +184,11 @@ public final class ConfiguredType {
         inherited.add(classOrIface);
     }
 
+    /**
+     * List of inherited types.
+     *
+     * @return list of inherited types.
+     */
     public List<String> inherited() {
         return inherited;
     }
@@ -173,9 +216,9 @@ public final class ConfiguredType {
             String[] methodParams = parameters.split(",");
 
             return new ProducerMethod(false,
-                                      owningClass,
-                                      methodName,
-                                      methodParams);
+                    owningClass,
+                    methodName,
+                    methodParams);
         }
 
         @Override
@@ -187,6 +230,9 @@ public final class ConfiguredType {
         }
     }
 
+    /**
+     * Detailed information about configured property.
+     */
     public static final class ConfiguredProperty {
         private final String builderMethod;
         private final String key;
@@ -229,6 +275,12 @@ public final class ConfiguredType {
             this.merge = merge;
         }
 
+        /**
+         * Create ConfiguredProperty from json object.
+         *
+         * @param json json object.
+         * @return configuredProperty object.
+         */
         public static ConfiguredProperty create(JsonObject json) {
             return new ConfiguredProperty(
                     json.getString("method", null),
@@ -252,6 +304,11 @@ public final class ConfiguredType {
             return ConfiguredOption.Kind.valueOf(kind);
         }
 
+        /**
+         * List of allowed values for the property.
+         *
+         * @return list of allowed values for the property.
+         */
         public List<AllowedValue> allowedValues() {
             return allowedValues;
         }
@@ -270,46 +327,101 @@ public final class ConfiguredType {
             return result;
         }
 
+        /**
+         * Builder method.
+         *
+         * @return builder method.
+         */
         public String builderMethod() {
             return builderMethod;
         }
 
+        /**
+         * Output Key.
+         *
+         * @return output key.
+         */
         public String outputKey() {
             return outputKey;
         }
 
+        /**
+         * Key for the property.
+         *
+         * @return key for the property.
+         */
         public String key() {
             return key;
         }
 
+        /**
+         * Set key for the property.
+         *
+         * @param key key for the property.
+         */
         public void key(String key) {
             this.outputKey = key;
         }
 
+        /**
+         * Description for the property.
+         *
+         * @return description for the property.
+         */
         public String description() {
             return description;
         }
 
+        /**
+         * Default value.
+         *
+         * @return default value.
+         */
         public String defaultValue() {
             return defaultValue;
         }
 
+        /**
+         * Type of the property.
+         *
+         * @return type of the property.
+         */
         public String type() {
             return type;
         }
 
+        /**
+         * Is the property experimental.
+         *
+         * @return true if experimental, false otherwise.
+         */
         public boolean experimental() {
             return experimental;
         }
 
+        /**
+         * Is the property optional.
+         *
+         * @return true if optional, false otherwise.
+         */
         public boolean optional() {
             return optional;
         }
 
+        /**
+         * Kind of the property.
+         *
+         * @return kind of the property.
+         */
         public ConfiguredOption.Kind kind() {
             return kind;
         }
 
+        /**
+         * Is the property will be merged.
+         *
+         * @return true if it will be merged, false otherwise.
+         */
         public boolean merge() {
             return merge;
         }
@@ -336,11 +448,19 @@ public final class ConfiguredType {
             return key;
         }
 
+        /**
+         * Is this property a provider.
+         *
+         * @return true if it is a provider, false otherwise.
+         */
         public boolean provider() {
             return provider;
         }
     }
 
+    /**
+     * Allowed value for the configured type.
+     */
     public static final class AllowedValue {
         private final String value;
         private final String description;
@@ -350,10 +470,20 @@ public final class ConfiguredType {
             this.description = description;
         }
 
+        /**
+         * Allowed value.
+         *
+         * @return allowed value
+         */
         public String value() {
             return value;
         }
 
+        /**
+         * Short description.
+         *
+         * @return short description.
+         */
         public String description() {
             return description;
         }

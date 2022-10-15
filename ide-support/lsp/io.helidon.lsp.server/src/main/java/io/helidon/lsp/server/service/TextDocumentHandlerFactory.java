@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.lsp.server.core.LanguageServerContext;
 import io.helidon.lsp.server.service.config.properties.PropertiesTextDocumentHandler;
 import io.helidon.lsp.server.service.config.yaml.YamlTextDocumentHandler;
 
@@ -39,10 +38,9 @@ public class TextDocumentHandlerFactory {
      * Get TextDocumentHandler instance for the file.
      *
      * @param fileName              File name.
-     * @param languageServerContext languageServerContext.
      * @return TextDocumentHandler instance for the file.
      */
-    public static TextDocumentHandler   getByFileExtension(String fileName, LanguageServerContext languageServerContext) {
+    public static TextDocumentHandler   getByFileExtension(String fileName) {
         final String fileExtension = getFileExtension(fileName);
         if (fileExtension.equalsIgnoreCase("properties")) {
             if (!FILE_EXTENSION_TO_HANDLER_MAP.containsKey("properties")) {
