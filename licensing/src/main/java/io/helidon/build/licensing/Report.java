@@ -55,8 +55,10 @@ public class Report {
     static final String EPL2_ID = "EPL-2.0";
     static final String LGPL2_1_ID = "LGPL-2.1-only";
     static final String MPL2_ID = "MPL-2.0";
+    static final String GPL2_CPE_ID = "GPLv2-CPE";
+    static final String EPL2_PLUS_GPL2_CPE_ID = EPL2_ID + "-plus-" + GPL2_CPE_ID;
 
-    static final String[] LICENSES = {APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID};
+    static final String[] LICENSES = {APACHE_ID, EPL1_ID, EPL2_ID, MPL2_ID, LGPL2_1_ID, GPL2_CPE_ID, EPL2_PLUS_GPL2_CPE_ID };
 
     /**
      * Name of Input File Dir property.
