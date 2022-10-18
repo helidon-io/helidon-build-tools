@@ -32,11 +32,6 @@ import io.helidon.build.common.NetworkConnection;
 final class DownloadTask extends StagingTask {
 
     /**
-     * Reusable byte buffer.
-     */
-    private static final byte[] BUFFER = new byte[8 * 1024];
-
-    /**
      * Constant for the readTimeout property.
      */
     static final String READ_TIMEOUT_PROP = "stager.readTimeout";
@@ -87,8 +82,9 @@ final class DownloadTask extends StagingTask {
         try (BufferedInputStream bis = new BufferedInputStream(open(resolvedUrl, context))) {
             try (FileOutputStream fos = new FileOutputStream(targetFile.toFile())) {
                 int n;
-                while ((n = bis.read(BUFFER, 0, BUFFER.length)) >= 0) {
-                    fos.write(BUFFER, 0, n);
+                byte[] buffer = new byte[1024];
+                while ((n = bis.read(buffer, 0, buffer.length)) >= 0) {
+                    fos.write(buffer, 0, n);
                 }
             }
         }

@@ -62,6 +62,10 @@ class StagingElementFactory {
                           String text,
                           Scope scope) {
 
+        if (isWrapperElement(name)) {
+            return createAction(name, attrs, children, text);
+        }
+
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
             case UnpackArtifactTask.ELEMENT_NAME:
@@ -175,6 +179,9 @@ class StagingElementFactory {
 
         Supplier<ActionIterators> iterators = () -> firstChild(children, ActionIterators.class, () -> null);
         Supplier<Variables> variables = () -> firstChild(children, Variables.class, Variables::new);
+        if (isWrapperElement(name)) {
+            return new Container<>(filterChildren(children, StagingAction.class), attrs.get("join"), name);
+        }
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
                 return new StagingDirectory(attrs.get("target"), filterChildren(children, StagingAction.class));

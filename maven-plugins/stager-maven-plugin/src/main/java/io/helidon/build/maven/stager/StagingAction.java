@@ -18,9 +18,8 @@ package io.helidon.build.maven.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
@@ -45,7 +44,7 @@ interface StagingAction extends StagingElement {
      * @param dir     directory
      */
     default void execute(StagingContext context, Path dir) throws IOException {
-        execute(context, dir, new HashMap<>());
+        execute(context, dir, new ConcurrentHashMap<>());
     }
 
     /**
@@ -63,7 +62,7 @@ interface StagingAction extends StagingElement {
      * @param configuration plexus configuration
      * @return list of {@link StagingAction}
      */
-    static List<StagingAction> fromConfiguration(PlexusConfiguration configuration) {
+    static Container<StagingAction> fromConfiguration(PlexusConfiguration configuration) {
         return fromConfiguration(configuration, new StagingElementFactory());
     }
 
@@ -74,7 +73,7 @@ interface StagingAction extends StagingElement {
      * @param factory       staging element factory
      * @return list of {@link StagingAction}
      */
-    static List<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
+    static Container<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
         PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
         return new ConfigReader(factory).read(parent);
     }

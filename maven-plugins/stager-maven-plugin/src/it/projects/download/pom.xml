@@ -42,6 +42,9 @@
                             <goal>stage</goal>
                         </goals>
                         <configuration>
+                            <executor>
+                                <kind>workstealingpool</kind>
+                            </executor>
                             <directories>
                                 <directory target="${project.build.directory}/stage">
                                     <downloads>

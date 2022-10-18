@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Generate an archive with a set of tasks.
@@ -70,17 +72,45 @@ class ArchiveTask extends StagingTask {
         return excludes;
     }
 
+    /**
+     * Execute the task sequentially with iterations.
+     *
+     * @param context   staging context
+     * @param dir       stage directory
+     * @param variables variables for the current iteration
+     * @throws IOException if an IO error occurs
+     * @throws IOException if an IO error occurs
+     */
+    @Override
+    public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+        if (iterators() == null || iterators().isEmpty()) {
+            doExecute(context, dir, variables);
+            return;
+        }
+        for (ActionIterator iterator : iterators()) {
+            iterator.baseVariable(variables);
+            while (iterator.hasNext()) {
+                doExecute(context, dir, iterator.next());
+            }
+        }
+    }
+
     @Override
     protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         Path stageDir = context.createTempDirectory("archive-task");
-        for (StagingAction actions : actions) {
-            actions.execute(context, stageDir, variables);
+        for (StagingAction action : actions) {
+            action.execute(context, stageDir, variables);
         }
+        Container.submit(() -> archive(context, stageDir, dir, variables));
+    }
+
+    private CompletionStage<Void> archive(StagingContext context, Path source, Path targetDir, Map<String, String> variables) {
         String resolvedTarget = resolveVar(target(), variables);
         String resolvedIncludes = resolveVar(includes, variables);
         String resolvedExcludes = resolveVar(excludes, variables);
-        context.logInfo("Archiving %s to %s", stageDir, resolvedTarget);
-        context.archive(stageDir, dir.resolve(resolvedTarget), resolvedIncludes, resolvedExcludes);
+        context.logInfo("Archiving %s to %s", source, resolvedTarget);
+        context.archive(source, targetDir.resolve(resolvedTarget), resolvedIncludes, resolvedExcludes);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

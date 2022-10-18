@@ -20,7 +20,9 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -30,6 +32,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests {@link StagingTask}.
  */
 class StagingTaskTest {
+
+    @BeforeAll
+    public static void setUp() {
+        Container.executor(null);
+    }
 
     @Test
     public void testIterator() throws IOException {
@@ -66,6 +73,12 @@ class StagingTaskTest {
         TestTask(ActionIterators iterators, String target) {
             super(iterators, target);
             this.renderedTargets = new LinkedList<>();
+        }
+
+        @Override
+        public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+            super.execute(context, dir, variables);
+            Container.awaitTermination();
         }
 
         @Override

@@ -139,11 +139,15 @@ public class StagerMojo extends AbstractMojo {
     @Parameter(defaultValue = "-1", property = DownloadTask.MAX_RETRIES)
     private int maxRetries;
 
+    @Parameter()
+    private ExecutorComponent executor;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (directories == null) {
             return;
         }
+        Container.executor(executor);
         StagingContext context = new StagingContextImpl(
                 baseDirectory,
                 outputDirectory,
@@ -165,9 +169,10 @@ public class StagerMojo extends AbstractMojo {
 
         setProxyFromSettings();
         try {
-            for (StagingAction action : StagingAction.fromConfiguration(directories, factory)) {
-                action.execute(context, dir);
-            }
+            Container<StagingAction> rootAction = StagingAction.fromConfiguration(directories, factory);
+            // always join the root action
+            rootAction.join();
+            rootAction.execute(context, dir);
         } catch (IOException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }

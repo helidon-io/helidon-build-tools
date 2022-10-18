@@ -17,7 +17,9 @@ package io.helidon.build.maven.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Base class for all tasks.
@@ -65,13 +67,20 @@ abstract class StagingTask implements StagingAction {
     @Override
     public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         if (iterators == null || iterators.isEmpty()) {
-            doExecute(context, dir, variables);
+            Container.submit(() -> {
+                doExecute(context, dir, variables);
+                return CompletableFuture.completedFuture(null);
+            });
             return;
         }
         for (ActionIterator iterator : iterators) {
             iterator.baseVariable(variables);
             while (iterator.hasNext()) {
-                doExecute(context, dir, iterator.next());
+                Map<String, String> wrappedVariables = new HashMap<>(iterator.next());
+                Container.submit(() -> {
+                    doExecute(context, dir, wrappedVariables);
+                    return CompletableFuture.completedFuture(null);
+                });
             }
         }
     }
