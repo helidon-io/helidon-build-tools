@@ -16,20 +16,18 @@
 package io.helidon.build.maven.stager;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+
+import io.helidon.build.common.CurrentThreadExecutorService;
 
 /**
  * Executor's configuration component.
  */
-public class ExecutorComponent {
+public class ExecutorConfig {
 
     private String kind;
 
@@ -98,38 +96,6 @@ public class ExecutorComponent {
             return Arrays.stream(ExecutorKind.values())
                     .filter(value -> Objects.equals(value.toString(), kind.toUpperCase()))
                     .findFirst();
-        }
-    }
-
-    static class CurrentThreadExecutorService extends AbstractExecutorService {
-
-        @Override
-        public void execute(Runnable r) {
-            r.run();
-        }
-
-        @Override
-        public void shutdown() {
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            return new LinkedList<>();
-        }
-
-        @Override
-        public boolean isShutdown() {
-            return false;
-        }
-
-        @Override
-        public boolean isTerminated() {
-            return false;
-        }
-
-        @Override
-        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-            return true;
         }
     }
 }

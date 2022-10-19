@@ -20,9 +20,9 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -33,10 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class StagingTaskTest {
 
-    @BeforeAll
-    public static void setUp() {
-        Container.executor(null);
-    }
+    private final StagingContext context = new ContextTestImpl();
 
     @Test
     public void testIterator() throws IOException {
@@ -44,7 +41,7 @@ class StagingTaskTest {
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, "{foo}");
-        task.execute(null, null, Map.of());
+        task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
     }
 
@@ -56,7 +53,7 @@ class StagingTaskTest {
         variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, "{foo}-{bar}-{bob}");
-        task.execute(null, null, Map.of());
+        task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems(
                 "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
                 "foo1-bar2-bob1", "foo1-bar2-bob2", "foo1-bar2-bob3", "foo1-bar2-bob4",
@@ -76,12 +73,6 @@ class StagingTaskTest {
         }
 
         @Override
-        public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-            super.execute(context, dir, variables);
-            Container.awaitTermination();
-        }
-
-        @Override
         protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
             renderedTargets.add(resolveVar(target(), variables));
         }
@@ -94,6 +85,68 @@ class StagingTaskTest {
         @Override
         public String describe(Path dir, Map<String, String> variables) {
             return "test";
+        }
+    }
+
+    private static final class ContextTestImpl implements StagingContext {
+
+        @Override
+        public void unpack(Path archive, Path target, String excludes, String includes) {
+
+        }
+
+        @Override
+        public void archive(Path directory, Path target, String excludes, String includes) {
+
+        }
+
+        @Override
+        public Path resolve(String path) {
+            return null;
+        }
+
+        @Override
+        public Path resolve(ArtifactGAV gav) {
+            return null;
+        }
+
+        @Override
+        public Path createTempDirectory(String prefix) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void logInfo(String msg, Object... args) {
+
+        }
+
+        @Override
+        public void logWarning(String msg, Object... args) {
+
+        }
+
+        @Override
+        public void logError(String msg, Object... args) {
+
+        }
+
+        @Override
+        public void logDebug(String msg, Object... args) {
+
+        }
+
+        @Override
+        public void submit(Callable<CompletionStage<Void>> task) {
+            try {
+                task.call().toCompletableFuture().join();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void awaitTermination() {
+
         }
     }
 }

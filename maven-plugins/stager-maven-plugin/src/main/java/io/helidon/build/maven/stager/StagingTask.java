@@ -67,7 +67,7 @@ abstract class StagingTask implements StagingAction {
     @Override
     public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
         if (iterators == null || iterators.isEmpty()) {
-            Container.submit(() -> {
+            context.submit(() -> {
                 doExecute(context, dir, variables);
                 return CompletableFuture.completedFuture(null);
             });
@@ -77,7 +77,7 @@ abstract class StagingTask implements StagingAction {
             iterator.baseVariable(variables);
             while (iterator.hasNext()) {
                 Map<String, String> wrappedVariables = new HashMap<>(iterator.next());
-                Container.submit(() -> {
+                context.submit(() -> {
                     doExecute(context, dir, wrappedVariables);
                     return CompletableFuture.completedFuture(null);
                 });

@@ -62,7 +62,7 @@ interface StagingAction extends StagingElement {
      * @param configuration plexus configuration
      * @return list of {@link StagingAction}
      */
-    static Container<StagingAction> fromConfiguration(PlexusConfiguration configuration) {
+    static StagingActions<StagingAction> fromConfiguration(PlexusConfiguration configuration) {
         return fromConfiguration(configuration, new StagingElementFactory());
     }
 
@@ -73,7 +73,7 @@ interface StagingAction extends StagingElement {
      * @param factory       staging element factory
      * @return list of {@link StagingAction}
      */
-    static Container<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
+    static StagingActions<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
         PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
         return new ConfigReader(factory).read(parent);
     }

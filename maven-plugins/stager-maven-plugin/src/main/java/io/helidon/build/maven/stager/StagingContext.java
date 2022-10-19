@@ -17,6 +17,8 @@ package io.helidon.build.maven.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Staging context.
@@ -102,6 +104,18 @@ interface StagingContext {
      */
     @SuppressWarnings("unused")
     void logDebug(String msg, Object... args);
+
+    /**
+     * Submit task.
+     *
+     * @param task to be executed
+     */
+    void submit(Callable<CompletionStage<Void>> task);
+
+    /**
+     * Wait for submitted tasks completion.
+     */
+    void awaitTermination();
 
     /**
      * Lookup a property.

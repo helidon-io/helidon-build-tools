@@ -45,15 +45,15 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
      * @return actions
      */
     @SuppressWarnings("unchecked")
-    Container<StagingAction> read(PlexusConfigNode node) {
+    StagingActions<StagingAction> read(PlexusConfigNode node) {
         node.visit(this);
         StagingAction action = (StagingAction) mappings.get(node.parent())
                 .get(node.name())
                 .get(0);
-        if (action instanceof Container) {
-            return (Container<StagingAction>) action;
+        if (action instanceof StagingActions) {
+            return (StagingActions<StagingAction>) action;
         }
-        return new Container<>(List.of(action));
+        return new StagingActions<>(List.of(action));
     }
 
     @Override

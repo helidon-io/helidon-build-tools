@@ -19,11 +19,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+
+import io.helidon.build.common.CurrentThreadExecutorService;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -140,14 +148,13 @@ public class StagerMojo extends AbstractMojo {
     private int maxRetries;
 
     @Parameter()
-    private ExecutorComponent executor;
+    private ExecutorConfig executor;
 
     @Override
     public void execute() throws MojoExecutionException {
         if (directories == null) {
             return;
         }
-        Container.executor(executor);
         StagingContext context = new StagingContextImpl(
                 baseDirectory,
                 outputDirectory,
@@ -156,6 +163,7 @@ public class StagerMojo extends AbstractMojo {
                 repoSession,
                 remoteRepos,
                 archiverManager,
+                executor,
                 this::resolveProperty);
         Path dir = outputDirectory.toPath();
 
@@ -169,7 +177,7 @@ public class StagerMojo extends AbstractMojo {
 
         setProxyFromSettings();
         try {
-            Container<StagingAction> rootAction = StagingAction.fromConfiguration(directories, factory);
+            StagingActions<StagingAction> rootAction = StagingAction.fromConfiguration(directories, factory);
             // always join the root action
             rootAction.join();
             rootAction.execute(context, dir);
@@ -333,6 +341,8 @@ public class StagerMojo extends AbstractMojo {
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
         private final Function<String, String> propertyResolver;
+        private final Collection<Callable<CompletionStage<Void>>> tasksQueue;
+        private final ExecutorService executor;
 
         StagingContextImpl(File baseDir,
                            File outputDir,
@@ -341,6 +351,7 @@ public class StagerMojo extends AbstractMojo {
                            RepositorySystemSession repoSession,
                            List<RemoteRepository> remoteRepos,
                            ArchiverManager archiverManager,
+                           ExecutorConfig executorConfig,
                            Function<String, String> propertyResolver) {
 
             this.baseDir = baseDir;
@@ -351,6 +362,8 @@ public class StagerMojo extends AbstractMojo {
             this.remoteRepos = remoteRepos;
             this.propertyResolver = propertyResolver;
             this.archiverManager = Objects.requireNonNull(archiverManager, "archiverManager is null");
+            this.executor = Objects.isNull(executorConfig) ? new CurrentThreadExecutorService() : executorConfig.select();
+            this.tasksQueue = new LinkedList<>();
         }
 
         @Override
@@ -454,6 +467,27 @@ public class StagerMojo extends AbstractMojo {
         @Override
         public void logDebug(String msg, Object... args) {
             log.debug(String.format(msg, args));
+        }
+
+        @Override
+        public void submit(Callable<CompletionStage<Void>> task) {
+            tasksQueue.add(task);
+        }
+
+        @Override
+        public void awaitTermination() {
+            try {
+                executor.invokeAll(tasksQueue).forEach(future -> {
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                tasksQueue.clear();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

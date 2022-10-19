@@ -50,17 +50,17 @@ class ConfigReaderTest {
         ConfigReader configReader = new ConfigReader(new StagingElementFactory());
         StagingAction action = configReader.read(new PlexusConfigNode(plexusConfig, null));
         assertThat(action, is(not(nullValue())));
-        assertThat(action, is(instanceOf(Container.class)));
-        Container<StagingAction> container = (Container<StagingAction>) action;
+        assertThat(action, is(instanceOf(StagingActions.class)));
+        StagingActions<StagingAction> container = (StagingActions<StagingAction>) action;
         assertThat(container.actions().size(), is(1));
         StagingDirectory directory = (StagingDirectory) container.actions().get(0);
         assertThat(directory.target(), is("${project.build.directory}/site"));
-        List<StagingAction> directoryContainers = directory.actions();
-        assertThat(directoryContainers.size(), is(6));
+        List<StagingAction> directoryStagingActionss = directory.actions();
+        assertThat(directoryStagingActionss.size(), is(6));
 
-        directoryContainers.forEach(c -> assertThat(c, is(instanceOf(Container.class))));
+        directoryStagingActionss.forEach(c -> assertThat(c, is(instanceOf(StagingActions.class))));
 
-        List<UnpackArtifactTask> unpackArtifacts = ((Container<UnpackArtifactTask>) directoryContainers.get(0)).actions();
+        List<UnpackArtifactTask> unpackArtifacts = ((StagingActions<UnpackArtifactTask>) directoryStagingActionss.get(0)).actions();
         assertThat(unpackArtifacts.size(), is(2));
 
         UnpackArtifactTask unpack1 = unpackArtifacts.get(0);
@@ -90,7 +90,7 @@ class ConfigReaderTest {
         assertThat(unpack2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
         assertThat(unpack2.iterators().get(0).hasNext(), is(false));
 
-        List<SymlinkTask> symlinks = ((Container<SymlinkTask>) directoryContainers.get(1)).actions();
+        List<SymlinkTask> symlinks = ((StagingActions<SymlinkTask>) directoryStagingActionss.get(1)).actions();
         assertThat(symlinks.size(), is(4));
 
         SymlinkTask symlink1 = symlinks.get(0);
@@ -109,7 +109,7 @@ class ConfigReaderTest {
         assertThat(symlink4.source(), is("./${cli.latest.version}"));
         assertThat(symlink4.target(), is("cli/latest"));
 
-        List<DownloadTask> downloads = ((Container<DownloadTask>) directoryContainers.get(2)).actions();
+        List<DownloadTask> downloads = ((StagingActions<DownloadTask>) directoryStagingActionss.get(2)).actions();
         assertThat(downloads.size(), is(2));
 
         DownloadTask download1 = downloads.get(0);
@@ -140,15 +140,15 @@ class ConfigReaderTest {
         assertThat(download2It4.get("version"), is("${cli.latest.version}"));
         assertThat(download2.iterators().get(0).hasNext(), is(false));
 
-        List<ArchiveTask> archives = ((Container<ArchiveTask>) directoryContainers.get(3)).actions();
+        List<ArchiveTask> archives = ((StagingActions<ArchiveTask>) directoryStagingActionss.get(3)).actions();
         assertThat(archives.size(), is(1));
 
         ArchiveTask archive = archives.get(0);
         List<StagingAction> tasks = archive.tasks();
         assertThat(tasks.size(), is(2));
-        tasks.forEach(c -> assertThat(c, is(instanceOf(Container.class))));
+        tasks.forEach(c -> assertThat(c, is(instanceOf(StagingActions.class))));
 
-        List<CopyArtifactTask> copyArtifacts = ((Container<CopyArtifactTask>) tasks.get(0)).actions();
+        List<CopyArtifactTask> copyArtifacts = ((StagingActions<CopyArtifactTask>) tasks.get(0)).actions();
         assertThat(copyArtifacts.size(), is(3));
 
         CopyArtifactTask archiveCopyArtifact1 = copyArtifacts.get(0);
@@ -168,7 +168,7 @@ class ConfigReaderTest {
         assertThat(archiveCopyArtifact3.gav().artifactId(), is("helidon-bare-mp"));
         assertThat(archiveCopyArtifact3.gav().version(), is("${cli.data.latest.version}"));
 
-        List<TemplateTask> templates = ((Container<TemplateTask>) tasks.get(1)).actions();
+        List<TemplateTask> templates = ((StagingActions<TemplateTask>) tasks.get(1)).actions();
         assertThat(templates.size(), is(1));
 
         TemplateTask archiveTemplate1 = templates.get(0);
@@ -221,7 +221,7 @@ class ConfigReaderTest {
         }
         assertThat(index, is(3));
 
-        List<TemplateTask> templates1 = ((Container<TemplateTask>) directoryContainers.get(4)).actions();
+        List<TemplateTask> templates1 = ((StagingActions<TemplateTask>) directoryStagingActionss.get(4)).actions();
         assertThat(templates1.size(), is(3));
 
         TemplateTask template1 = templates1.get(0);
@@ -284,7 +284,7 @@ class ConfigReaderTest {
         assertThat(template3.templateVariables().get("og-description"), is(instanceOf(String.class)));
         assertThat(template3.templateVariables().get("og-description"), is("Javadocs"));
 
-        List<FileTask> files = ((Container<FileTask>) directoryContainers.get(5)).actions();
+        List<FileTask> files = ((StagingActions<FileTask>) directoryStagingActionss.get(5)).actions();
         assertThat(files.size(), is(2));
 
         FileTask file1 = files.get(0);

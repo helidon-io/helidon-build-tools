@@ -101,7 +101,7 @@ class ArchiveTask extends StagingTask {
         for (StagingAction action : actions) {
             action.execute(context, stageDir, variables);
         }
-        Container.submit(() -> archive(context, stageDir, dir, variables));
+        context.submit(() -> archive(context, stageDir, dir, variables));
     }
 
     private CompletionStage<Void> archive(StagingContext context, Path source, Path targetDir, Map<String, String> variables) {
