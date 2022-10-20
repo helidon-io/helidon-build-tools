@@ -16,10 +16,9 @@
 
 package io.helidon.build.maven.stager;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletionStage;
 
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
@@ -31,30 +30,30 @@ interface StagingAction extends StagingElement {
     /**
      * Execute the action.
      *
-     * @param context   staging context
-     * @param dir       directory
-     * @param variables substitution variables
+     * @param ctx  staging context
+     * @param dir  directory
+     * @param vars substitution variables
+     * @return completion stage that is completed when all tasks have been executed
      */
-    void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException;
-
-    /**
-     * Execute the action.
-     *
-     * @param context staging context
-     * @param dir     directory
-     */
-    default void execute(StagingContext context, Path dir) throws IOException {
-        execute(context, dir, new ConcurrentHashMap<>());
-    }
+    CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars);
 
     /**
      * Describe the task.
      *
-     * @param dir       stage directory
-     * @param variables variables for the current iteration
+     * @param dir  stage directory
+     * @param vars variables for the current iteration
      * @return String that describes the task
      */
-    String describe(Path dir, Map<String, String> variables);
+    String describe(Path dir, Map<String, String> vars);
+
+    /**
+     * Indicate if this task should be executed after the previous sibling.
+     *
+     * @return {@code true} if joined, {@code false} otherwise
+     */
+    default boolean join() {
+        return false;
+    }
 
     /**
      * Convert a {@link PlexusConfiguration} instance to a list of {@link StagingAction}.
@@ -62,7 +61,7 @@ interface StagingAction extends StagingElement {
      * @param configuration plexus configuration
      * @return list of {@link StagingAction}
      */
-    static StagingActions<StagingAction> fromConfiguration(PlexusConfiguration configuration) {
+    static StagingTasks fromConfiguration(PlexusConfiguration configuration) {
         return fromConfiguration(configuration, new StagingElementFactory());
     }
 
@@ -73,7 +72,7 @@ interface StagingAction extends StagingElement {
      * @param factory       staging element factory
      * @return list of {@link StagingAction}
      */
-    static StagingActions<StagingAction> fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
+    static StagingTasks fromConfiguration(PlexusConfiguration configuration, StagingElementFactory factory) {
         PlexusConfigNode parent = new PlexusConfigNode(configuration, null);
         return new ConfigReader(factory).read(parent);
     }

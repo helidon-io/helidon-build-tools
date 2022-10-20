@@ -19,23 +19,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
-
-import io.helidon.build.common.CurrentThreadExecutorService;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -132,26 +127,32 @@ public class StagerMojo extends AbstractMojo {
     /**
      * {@code readTimeout} configuration (in ms) for the download task.
      */
-    @Parameter(defaultValue = "-1", property = DownloadTask.READ_TIMEOUT_PROP)
+    @Parameter(defaultValue = "-1", property = StagingContext.READ_TIMEOUT_PROP)
     private int readTimeout;
 
     /**
      * {@code connectTimeout} configuration (in ms) for the download task.
      */
-    @Parameter(defaultValue = "-1", property = DownloadTask.CONNECT_TIMEOUT_PROP)
+    @Parameter(defaultValue = "-1", property = StagingContext.CONNECT_TIMEOUT_PROP)
     private int connectTimeout;
 
     /**
-     * {@code maxRetries} configuration for the download task.
+     * {@code taskTimeout} configuration (in ms) for the tasks that support timeouts.
      */
-    @Parameter(defaultValue = "-1", property = DownloadTask.MAX_RETRIES)
+    @Parameter(defaultValue = "-1", property = StagingContext.TASK_TIMEOUT_PROP)
+    private int taskTimeout;
+
+    /**
+     * {@code maxRetries} configuration for the tasks that support retries.
+     */
+    @Parameter(defaultValue = "-1", property = StagingContext.MAX_RETRIES)
     private int maxRetries;
 
-    @Parameter()
-    private ExecutorConfig executor;
+    @Parameter
+    private ExecutorConfig executor = new ExecutorConfig();
 
     @Override
-    public void execute() throws MojoExecutionException {
+    public void execute() {
         if (directories == null) {
             return;
         }
@@ -176,13 +177,19 @@ public class StagerMojo extends AbstractMojo {
         }
 
         setProxyFromSettings();
+        StagingTasks tasks = StagingAction.fromConfiguration(directories, factory);
         try {
-            StagingActions<StagingAction> rootAction = StagingAction.fromConfiguration(directories, factory);
-            // always join the root action
-            rootAction.join();
-            rootAction.execute(context, dir);
-        } catch (IOException ex) {
-            throw new MojoExecutionException(ex.getMessage(), ex);
+            tasks.execute(context, dir, Map.of())
+                 .toCompletableFuture()
+                 .get();
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        } catch (ExecutionException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            throw new RuntimeException(ex);
         }
     }
 
@@ -191,17 +198,17 @@ public class StagerMojo extends AbstractMojo {
             return null;
         }
         switch (name) {
-            case DownloadTask.READ_TIMEOUT_PROP:
+            case StagingContext.READ_TIMEOUT_PROP:
                 if (readTimeout >= 0) {
                     return String.valueOf(readTimeout);
                 }
                 break;
-            case DownloadTask.CONNECT_TIMEOUT_PROP:
+            case StagingContext.CONNECT_TIMEOUT_PROP:
                 if (connectTimeout >= 0) {
                     return String.valueOf(connectTimeout);
                 }
                 break;
-            case DownloadTask.MAX_RETRIES:
+            case StagingContext.MAX_RETRIES:
                 if (maxRetries >= 0) {
                     return String.valueOf(maxRetries);
                 }
@@ -265,9 +272,6 @@ public class StagerMojo extends AbstractMojo {
                                    String text) {
 
             StagingAction action = super.createAction(name, attrs, children, text);
-            if (action instanceof StagingTask) {
-                return new DryRunTask((StagingTask) action);
-            }
             return new DryRunAction(action);
         }
     }
@@ -284,9 +288,9 @@ public class StagerMojo extends AbstractMojo {
         }
 
         @Override
-        public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-            getLog().info(describe(dir, variables));
-            delegate.execute(context, dir, variables);
+        public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
+            getLog().info(describe(dir, vars));
+            return delegate.execute(ctx, dir, vars);
         }
 
         @Override
@@ -295,36 +299,8 @@ public class StagerMojo extends AbstractMojo {
         }
 
         @Override
-        public String describe(Path dir, Map<String, String> variables) {
-            return delegate.describe(dir, variables);
-        }
-    }
-
-    /**
-     * Staging task that prints information about the task being executed and makes the actual task execution a no-op.
-     */
-    private final class DryRunTask extends StagingTask {
-
-        private final StagingTask delegate;
-
-        DryRunTask(StagingTask delegate) {
-            super(delegate.iterators(), delegate.target());
-            this.delegate = delegate;
-        }
-
-        @Override
-        public String elementName() {
-            return delegate.elementName();
-        }
-
-        @Override
-        protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
-            getLog().info(describe(dir, variables));
-        }
-
-        @Override
-        public String describe(Path dir, Map<String, String> variables) {
-            return delegate.describe(dir, variables);
+        public String describe(Path dir, Map<String, String> vars) {
+            return delegate.describe(dir, vars);
         }
     }
 
@@ -341,8 +317,11 @@ public class StagerMojo extends AbstractMojo {
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
         private final Function<String, String> propertyResolver;
-        private final Collection<Callable<CompletionStage<Void>>> tasksQueue;
-        private final ExecutorService executor;
+        private final Executor executor;
+        private final int connectTimeout;
+        private final int readTimeout;
+        private final int taskTimeout;
+        private final int maxRetries;
 
         StagingContextImpl(File baseDir,
                            File outputDir,
@@ -362,8 +341,19 @@ public class StagerMojo extends AbstractMojo {
             this.remoteRepos = remoteRepos;
             this.propertyResolver = propertyResolver;
             this.archiverManager = Objects.requireNonNull(archiverManager, "archiverManager is null");
-            this.executor = Objects.isNull(executorConfig) ? new CurrentThreadExecutorService() : executorConfig.select();
-            this.tasksQueue = new LinkedList<>();
+            this.executor = executorConfig.select();
+            this.readTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.READ_TIMEOUT_PROP))
+                                       .map(Integer::parseInt)
+                                       .orElse(-1);
+            this.connectTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.CONNECT_TIMEOUT_PROP))
+                                          .map(Integer::parseInt)
+                                          .orElse(-1);
+            this.taskTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.TASK_TIMEOUT_PROP))
+                                       .map(Integer::parseInt)
+                                       .orElse(-1);
+            this.maxRetries = Optional.ofNullable(propertyResolver.apply(StagingContext.MAX_RETRIES))
+                                      .map(Integer::parseInt)
+                                      .orElse(-1);
         }
 
         @Override
@@ -470,24 +460,28 @@ public class StagerMojo extends AbstractMojo {
         }
 
         @Override
-        public void submit(Callable<CompletionStage<Void>> task) {
-            tasksQueue.add(task);
+        public Executor executor() {
+            return executor;
         }
 
         @Override
-        public void awaitTermination() {
-            try {
-                executor.invokeAll(tasksQueue).forEach(future -> {
-                    try {
-                        future.get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                tasksQueue.clear();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        public int readTimeout() {
+            return readTimeout;
+        }
+
+        @Override
+        public int connectTimeout() {
+            return connectTimeout;
+        }
+
+        @Override
+        public int taskTimeout() {
+            return taskTimeout;
+        }
+
+        @Override
+        public int maxRetries() {
+            return maxRetries;
         }
     }
 }

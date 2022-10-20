@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.build.maven.stager;
 
 import java.util.Map;
 
+import io.helidon.build.common.Strings;
+
 /**
  * Artifact GAV.
  */
@@ -29,18 +31,9 @@ final class ArtifactGAV {
     private final String classifier;
 
     ArtifactGAV(String groupId, String artifactId, String version, String type, String classifier) {
-        if (groupId == null || groupId.isEmpty()) {
-            throw new IllegalArgumentException("groupId is required");
-        }
-        this.groupId = groupId;
-        if (artifactId == null || artifactId.isEmpty()) {
-            throw new IllegalArgumentException("artifactId is required");
-        }
-        this.artifactId =  artifactId;
-        if (version == null || version.isEmpty()) {
-            throw new IllegalArgumentException("version is required");
-        }
-        this.version =  version;
+        this.groupId = Strings.requireValid(groupId, "groupId is required");
+        this.artifactId = Strings.requireValid(artifactId, "artifactId is required");
+        this.version = Strings.requireValid(version, "version is required");
         this.type = type == null ? "jar" : type;
         this.classifier = classifier;
     }

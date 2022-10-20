@@ -25,33 +25,18 @@ import java.util.concurrent.CompletionStage;
 /**
  * Generate an archive with a set of tasks.
  */
+@SuppressWarnings("unused")
 class ArchiveTask extends StagingTask {
 
     static final String ELEMENT_NAME = "archive";
 
-    private final List<StagingAction> actions;
     private final String includes;
     private final String excludes;
 
-    ArchiveTask(ActionIterators iterators, List<StagingAction> actions, String target, String includes, String excludes) {
-        super(iterators, target);
-        this.actions = actions == null ? List.of() : actions;
-        this.includes = includes;
-        this.excludes = excludes;
-    }
-
-    @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    /**
-     * Get the nested tasks.
-     *
-     * @return tasks, never {@code null}
-     */
-    List<StagingAction> tasks() {
-        return actions;
+    ArchiveTask(ActionIterators iterators, List<StagingAction> nested, Map<String, String> attrs) {
+        super(ELEMENT_NAME, nested, iterators, attrs);
+        this.includes = attrs.get("includes");
+        this.excludes = attrs.get("excludes");
     }
 
     /**
@@ -72,53 +57,36 @@ class ArchiveTask extends StagingTask {
         return excludes;
     }
 
-    /**
-     * Execute the task sequentially with iterations.
-     *
-     * @param context   staging context
-     * @param dir       stage directory
-     * @param variables variables for the current iteration
-     * @throws IOException if an IO error occurs
-     * @throws IOException if an IO error occurs
-     */
     @Override
-    public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        if (iterators() == null || iterators().isEmpty()) {
-            doExecute(context, dir, variables);
-            return;
-        }
-        for (ActionIterator iterator : iterators()) {
-            iterator.baseVariable(variables);
-            while (iterator.hasNext()) {
-                doExecute(context, dir, iterator.next());
-            }
+    public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
+        try {
+            Path stageDir = ctx.createTempDirectory("archive-task");
+            return super.execute(ctx, stageDir, vars)
+                        .thenRun(() -> archive(ctx, stageDir, dir, vars));
+        } catch (IOException ex) {
+            return CompletableFuture.failedFuture(ex);
         }
     }
 
     @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        Path stageDir = context.createTempDirectory("archive-task");
-        for (StagingAction action : actions) {
-            action.execute(context, stageDir, variables);
-        }
-        context.submit(() -> archive(context, stageDir, dir, variables));
+    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+        return CompletableFuture.completedFuture(null);
     }
 
-    private CompletionStage<Void> archive(StagingContext context, Path source, Path targetDir, Map<String, String> variables) {
+    private void archive(StagingContext context, Path source, Path targetDir, Map<String, String> variables) {
         String resolvedTarget = resolveVar(target(), variables);
         String resolvedIncludes = resolveVar(includes, variables);
         String resolvedExcludes = resolveVar(excludes, variables);
         context.logInfo("Archiving %s to %s", source, resolvedTarget);
         context.archive(source, targetDir.resolve(resolvedTarget), resolvedIncludes, resolvedExcludes);
-        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
+    public String describe(Path dir, Map<String, String> vars) {
         return ELEMENT_NAME + "{"
-                + "target=" + resolveVar(target(), variables)
-                + ", includes='" + resolveVar(includes, variables) + '\''
-                + ", excludes='" + resolveVar(excludes, variables) + '\''
+                + "target=" + resolveVar(target(), vars)
+                + ", includes='" + resolveVar(includes, vars) + '\''
+                + ", excludes='" + resolveVar(excludes, vars) + '\''
                 + '}';
     }
 }

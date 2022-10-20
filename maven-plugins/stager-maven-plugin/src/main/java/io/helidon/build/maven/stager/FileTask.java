@@ -30,10 +30,10 @@ final class FileTask extends StagingTask {
     private final String content;
     private final String source;
 
-    FileTask(ActionIterators iterators, String target, String content, String source) {
-        super(iterators, target);
+    FileTask(ActionIterators iterators, Map<String, String> attrs, String content) {
+        super(ELEMENT_NAME, null, iterators, attrs);
         this.content = content;
-        this.source = source;
+        this.source = attrs.get("source");
     }
 
     /**
@@ -55,23 +55,18 @@ final class FileTask extends StagingTask {
     }
 
     @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        String resolvedTarget = resolveVar(target(), variables);
-        String resolvedSource = resolveVar(source, variables);
-        String resolvedContent = resolveVar(content, variables);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedSource = resolveVar(source, vars);
+        String resolvedContent = resolveVar(content, vars);
         Path targetFile = dir.resolve(resolvedTarget);
         Files.createDirectories(targetFile.getParent());
         if (resolvedSource != null && !resolvedSource.isEmpty()) {
-            Path sourceFile = context.resolve(resolvedSource);
+            Path sourceFile = ctx.resolve(resolvedSource);
             if (!Files.exists(sourceFile)) {
                 throw new IllegalStateException(sourceFile + " does not exist");
             }
-            context.logInfo("Copying %s to %s", sourceFile, targetFile);
+            ctx.logInfo("Copying %s to %s", sourceFile, targetFile);
             Files.copy(sourceFile, targetFile);
         } else {
             Files.createFile(targetFile);
@@ -82,11 +77,11 @@ final class FileTask extends StagingTask {
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
+    public String describe(Path dir, Map<String, String> vars) {
         return ELEMENT_NAME + "{"
-                + "source=" + resolveVar(source, variables)
-                + ", target=" + resolveVar(target(), variables)
-                + ", content='" +  resolveVar(content, variables) + '\''
+                + "source=" + resolveVar(source, vars)
+                + ", target=" + resolveVar(target(), vars)
+                + ", content='" + resolveVar(content, vars) + '\''
                 + '}';
     }
 }

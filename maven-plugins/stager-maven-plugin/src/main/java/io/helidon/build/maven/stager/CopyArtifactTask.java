@@ -15,6 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
+import io.helidon.build.common.Maps;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,13 +28,14 @@ import java.util.Objects;
  */
 final class CopyArtifactTask extends StagingTask {
 
+    private static final String DEFAULT_TARGET = "{artifactId}-{version}.{type}";
     static final String ELEMENT_NAME = "copy-artifact";
 
     private final ArtifactGAV gav;
 
-    CopyArtifactTask(ActionIterators iterators, ArtifactGAV gav, String target) {
-        super(iterators, target == null ? "{artifactId}-{version}.{type}" : target);
-        this.gav = Objects.requireNonNull(gav);
+    CopyArtifactTask(ActionIterators iterators, Map<String, String> attrs) {
+        super(ELEMENT_NAME, null, iterators, Maps.computeIfAbsent(attrs, Map.of("target", t -> DEFAULT_TARGET)));
+        this.gav = new ArtifactGAV(attrs);
     }
 
     /**
@@ -45,19 +48,14 @@ final class CopyArtifactTask extends StagingTask {
     }
 
     @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        ArtifactGAV resolvedGav = resolveGAV(variables);
-        String resolveTarget = resolveVar(target(), variables);
-        context.logInfo("Resolving %s", resolvedGav);
-        Path artifact = context.resolve(resolvedGav);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        ArtifactGAV resolvedGav = resolveGAV(vars);
+        String resolveTarget = resolveVar(target(), vars);
+        ctx.logInfo("Resolving %s", resolvedGav);
+        Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
         Files.createDirectories(targetFile.getParent());
-        context.logInfo("Copying %s to %s", artifact, targetFile);
+        ctx.logInfo("Copying %s to %s", artifact, targetFile);
         Files.copy(artifact, targetFile);
     }
 
@@ -81,10 +79,10 @@ final class CopyArtifactTask extends StagingTask {
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
+    public String describe(Path dir, Map<String, String> vars) {
         return ELEMENT_NAME + "{"
-                + "gav=" + resolveGAV(variables)
-                + ", target=" + resolveVar(target(), variables)
+                + "gav=" + resolveGAV(vars)
+                + ", target=" + resolveVar(target(), vars)
                 + '}';
     }
 }

@@ -48,22 +48,19 @@ class ConfigReaderTest {
         Reader reader = new InputStreamReader(is);
         PlexusConfiguration plexusConfig = new XmlPlexusConfiguration(Xpp3DomBuilder.build(reader));
         ConfigReader configReader = new ConfigReader(new StagingElementFactory());
-        StagingAction action = configReader.read(new PlexusConfigNode(plexusConfig, null));
-        assertThat(action, is(not(nullValue())));
-        assertThat(action, is(instanceOf(StagingActions.class)));
-        StagingActions<StagingAction> container = (StagingActions<StagingAction>) action;
-        assertThat(container.actions().size(), is(1));
-        StagingDirectory directory = (StagingDirectory) container.actions().get(0);
-        assertThat(directory.target(), is("${project.build.directory}/site"));
-        List<StagingAction> directoryStagingActionss = directory.actions();
-        assertThat(directoryStagingActionss.size(), is(6));
+        StagingTasks root = configReader.read(new PlexusConfigNode(plexusConfig, null));
+        assertThat(root.tasks().size(), is(1));
+        StagingDirectory dir1 = (StagingDirectory) root.tasks().get(0);
+        assertThat(dir1.target(), is("${project.build.directory}/site"));
+        List<StagingAction> dir1Tasks = dir1.tasks();
+        assertThat(dir1Tasks.size(), is(6));
 
-        directoryStagingActionss.forEach(c -> assertThat(c, is(instanceOf(StagingActions.class))));
+        dir1Tasks.forEach(c -> assertThat(c, is(instanceOf(StagingTasks.class))));
 
-        List<UnpackArtifactTask> unpackArtifacts = ((StagingActions<UnpackArtifactTask>) directoryStagingActionss.get(0)).actions();
+        List<StagingAction> unpackArtifacts = ((StagingTasks) dir1Tasks.get(0)).tasks();
         assertThat(unpackArtifacts.size(), is(2));
 
-        UnpackArtifactTask unpack1 = unpackArtifacts.get(0);
+        UnpackArtifactTask unpack1 = (UnpackArtifactTask) unpackArtifacts.get(0);
         assertThat(unpack1.gav().groupId(), is("io.helidon"));
         assertThat(unpack1.gav().artifactId(), is("helidon-docs"));
         assertThat(unpack1.gav().version(), is("{version}"));
@@ -78,7 +75,7 @@ class ConfigReaderTest {
         assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.0"));
         assertThat(unpack1.iterators().get(0).hasNext(), is(false));
 
-        UnpackArtifactTask unpack2 = unpackArtifacts.get(1);
+        UnpackArtifactTask unpack2 = (UnpackArtifactTask) unpackArtifacts.get(1);
         assertThat(unpack2.gav().groupId(), is("io.helidon"));
         assertThat(unpack2.gav().artifactId(), is("helidon-project"));
         assertThat(unpack2.gav().version(), is("{version}"));
@@ -90,36 +87,36 @@ class ConfigReaderTest {
         assertThat(unpack2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
         assertThat(unpack2.iterators().get(0).hasNext(), is(false));
 
-        List<SymlinkTask> symlinks = ((StagingActions<SymlinkTask>) directoryStagingActionss.get(1)).actions();
+        List<StagingAction> symlinks = ((StagingTasks) dir1Tasks.get(1)).tasks();
         assertThat(symlinks.size(), is(4));
 
-        SymlinkTask symlink1 = symlinks.get(0);
+        SymlinkTask symlink1 = (SymlinkTask) symlinks.get(0);
         assertThat(symlink1.source(), is("./${docs.latest.version}"));
         assertThat(symlink1.target(), is("docs/latest"));
 
-        SymlinkTask symlink2 = symlinks.get(1);
+        SymlinkTask symlink2 = (SymlinkTask) symlinks.get(1);
         assertThat(symlink2.source(), is("./${docs.1.version}"));
         assertThat(symlink2.target(), is("docs/v1"));
 
-        SymlinkTask symlink3 = symlinks.get(2);
+        SymlinkTask symlink3 = (SymlinkTask) symlinks.get(2);
         assertThat(symlink3.source(), is("./${docs.2.version}"));
         assertThat(symlink3.target(), is("docs/v2"));
 
-        SymlinkTask symlink4 = symlinks.get(3);
+        SymlinkTask symlink4 = (SymlinkTask) symlinks.get(3);
         assertThat(symlink4.source(), is("./${cli.latest.version}"));
         assertThat(symlink4.target(), is("cli/latest"));
 
-        List<DownloadTask> downloads = ((StagingActions<DownloadTask>) directoryStagingActionss.get(2)).actions();
+        List<StagingAction> downloads = ((StagingTasks) dir1Tasks.get(2)).tasks();
         assertThat(downloads.size(), is(2));
 
-        DownloadTask download1 = downloads.get(0);
+        DownloadTask download1 = (DownloadTask) downloads.get(0);
         assertThat(download1.url(), is("https://helidon.io/cli-data/{version}/cli-data.zip"));
         assertThat(download1.target(), is("cli-data/{version}/cli-data.zip"));
         assertThat(download1.iterators().size(), is(1));
         assertThat(download1.iterators().get(0).next().get("version"), is("2.0.0-M1"));
         assertThat(download1.iterators().get(0).hasNext(), is(false));
 
-        DownloadTask download2 = downloads.get(1);
+        DownloadTask download2 = (DownloadTask) downloads.get(1);
         assertThat(download2.url(), is("${build-tools.download.url}/{version}/helidon-cli-{platform}-amd64"));
         assertThat(download2.target(), is("cli/{version}"));
         assertThat(download2.iterators().size(), is(1));
@@ -140,38 +137,38 @@ class ConfigReaderTest {
         assertThat(download2It4.get("version"), is("${cli.latest.version}"));
         assertThat(download2.iterators().get(0).hasNext(), is(false));
 
-        List<ArchiveTask> archives = ((StagingActions<ArchiveTask>) directoryStagingActionss.get(3)).actions();
+        List<StagingAction> archives = ((StagingTasks) dir1Tasks.get(3)).tasks();
         assertThat(archives.size(), is(1));
 
-        ArchiveTask archive = archives.get(0);
-        List<StagingAction> tasks = archive.tasks();
-        assertThat(tasks.size(), is(2));
-        tasks.forEach(c -> assertThat(c, is(instanceOf(StagingActions.class))));
+        ArchiveTask archive = (ArchiveTask) archives.get(0);
+        List<StagingAction> archiveTasks = archive.tasks();
+        assertThat(archiveTasks.size(), is(2));
+        archiveTasks.forEach(c -> assertThat(c, is(instanceOf(StagingTasks.class))));
 
-        List<CopyArtifactTask> copyArtifacts = ((StagingActions<CopyArtifactTask>) tasks.get(0)).actions();
+        List<StagingAction> copyArtifacts = ((StagingTasks) archiveTasks.get(0)).tasks();
         assertThat(copyArtifacts.size(), is(3));
 
-        CopyArtifactTask archiveCopyArtifact1 = copyArtifacts.get(0);
+        CopyArtifactTask archiveCopyArtifact1 = (CopyArtifactTask) copyArtifacts.get(0);
         assertThat(archiveCopyArtifact1.gav().groupId(), is("io.helidon.archetypes"));
         assertThat(archiveCopyArtifact1.gav().artifactId(), is("helidon-archetype-catalog"));
         assertThat(archiveCopyArtifact1.gav().version(), is("${cli.data.latest.version}"));
         assertThat(archiveCopyArtifact1.gav().type(), is("xml"));
         assertThat(archiveCopyArtifact1.target(), is("archetype-catalog.xml"));
 
-        CopyArtifactTask archiveCopyArtifact2 = copyArtifacts.get(1);
+        CopyArtifactTask archiveCopyArtifact2 = (CopyArtifactTask) copyArtifacts.get(1);
         assertThat(archiveCopyArtifact2.gav().groupId(), is("io.helidon.archetypes"));
         assertThat(archiveCopyArtifact2.gav().artifactId(), is("helidon-bare-se"));
         assertThat(archiveCopyArtifact2.gav().version(), is("${cli.data.latest.version}"));
 
-        CopyArtifactTask archiveCopyArtifact3 = copyArtifacts.get(2);
+        CopyArtifactTask archiveCopyArtifact3 = (CopyArtifactTask) copyArtifacts.get(2);
         assertThat(archiveCopyArtifact3.gav().groupId(), is("io.helidon.archetypes"));
         assertThat(archiveCopyArtifact3.gav().artifactId(), is("helidon-bare-mp"));
         assertThat(archiveCopyArtifact3.gav().version(), is("${cli.data.latest.version}"));
 
-        List<TemplateTask> templates = ((StagingActions<TemplateTask>) tasks.get(1)).actions();
+        List<StagingAction> templates = ((StagingTasks) archiveTasks.get(1)).tasks();
         assertThat(templates.size(), is(1));
 
-        TemplateTask archiveTemplate1 = templates.get(0);
+        TemplateTask archiveTemplate1 = (TemplateTask) templates.get(0);
         assertThat(archiveTemplate1.source(), is("src/cli-metadata.properties.mustache"));
         assertThat(archiveTemplate1.target(), is("metadata.properties"));
         assertThat(archiveTemplate1.templateVariables().size(), is(4));
@@ -221,10 +218,10 @@ class ConfigReaderTest {
         }
         assertThat(index, is(3));
 
-        List<TemplateTask> templates1 = ((StagingActions<TemplateTask>) directoryStagingActionss.get(4)).actions();
+        List<StagingAction> templates1 = ((StagingTasks) dir1Tasks.get(4)).tasks();
         assertThat(templates1.size(), is(3));
 
-        TemplateTask template1 = templates1.get(0);
+        TemplateTask template1 = (TemplateTask) templates1.get(0);
         assertThat(template1.source(), is("redirect.html.mustache"));
         assertThat(template1.target(), is("docs/index.html"));
         assertThat(template1.templateVariables().size(), is(5));
@@ -244,7 +241,7 @@ class ConfigReaderTest {
         assertThat(template1.templateVariables().get("og-description"), is(instanceOf(String.class)));
         assertThat(template1.templateVariables().get("og-description"), is("Documentation"));
 
-        TemplateTask template2 = templates1.get(1);
+        TemplateTask template2 = (TemplateTask) templates1.get(1);
         assertThat(template2.source(), is("redirect.html.mustache"));
         assertThat(template2.target(), is("guides/index.html"));
         assertThat(template2.templateVariables().size(), is(5));
@@ -264,7 +261,7 @@ class ConfigReaderTest {
         assertThat(template2.templateVariables().get("og-description"), is(instanceOf(String.class)));
         assertThat(template2.templateVariables().get("og-description"), is("Guides"));
 
-        TemplateTask template3 = templates1.get(2);
+        TemplateTask template3 = (TemplateTask) templates1.get(2);
         assertThat(template3.source(), is("redirect.html.mustache"));
         assertThat(template3.target(), is("javadocs/index.html"));
         assertThat(template3.templateVariables().size(), is(5));
@@ -284,15 +281,15 @@ class ConfigReaderTest {
         assertThat(template3.templateVariables().get("og-description"), is(instanceOf(String.class)));
         assertThat(template3.templateVariables().get("og-description"), is("Javadocs"));
 
-        List<FileTask> files = ((StagingActions<FileTask>) directoryStagingActionss.get(5)).actions();
+        List<StagingAction> files = ((StagingTasks) dir1Tasks.get(5)).tasks();
         assertThat(files.size(), is(2));
 
-        FileTask file1 = files.get(0);
+        FileTask file1 = (FileTask) files.get(0);
         assertThat(file1.source(), is(nullValue()));
         assertThat(file1.target(), is("CNAME"));
         assertThat(file1.content(), is("${cname}"));
 
-        FileTask file2 = files.get(1);
+        FileTask file2 = (FileTask) files.get(1);
         assertThat(file2.source(), is(nullValue()));
         assertThat(file2.target(), is("cli-data/latest"));
         assertThat(file2.content(), is("${cli.data.latest.version}"));

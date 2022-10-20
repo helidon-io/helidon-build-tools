@@ -15,14 +15,14 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
+import io.helidon.build.common.CurrentThreadExecutorService;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -36,23 +36,23 @@ class StagingTaskTest {
     private final StagingContext context = new ContextTestImpl();
 
     @Test
-    public void testIterator() throws IOException {
+    public void testIterator() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
-        TestTask task = new TestTask(taskIterators, "{foo}");
+        TestTask task = new TestTask(taskIterators, Map.of("target", "{foo}"));
         task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
     }
 
     @Test
-    public void testIteratorsWithManyVariables() throws IOException {
+    public void testIteratorsWithManyVariables() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2", "foo3")));
         variables.add(new Variable("bar", new VariableValue.ListValue("bar1", "bar2")));
         variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
-        TestTask task = new TestTask(taskIterators, "{foo}-{bar}-{bob}");
+        TestTask task = new TestTask(taskIterators, Map.of("target", "{foo}-{bar}-{bob}"));
         task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems(
                 "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
@@ -67,14 +67,14 @@ class StagingTaskTest {
 
         private final List<String> renderedTargets;
 
-        TestTask(ActionIterators iterators, String target) {
-            super(iterators, target);
+        TestTask(ActionIterators iterators, Map<String, String> attrs) {
+            super("test", null, iterators, attrs);
             this.renderedTargets = new LinkedList<>();
         }
 
         @Override
-        protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
-            renderedTargets.add(resolveVar(target(), variables));
+        protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+            renderedTargets.add(resolveVar(target(), vars));
         }
 
         @Override
@@ -83,21 +83,21 @@ class StagingTaskTest {
         }
 
         @Override
-        public String describe(Path dir, Map<String, String> variables) {
+        public String describe(Path dir, Map<String, String> vars) {
             return "test";
         }
     }
 
     private static final class ContextTestImpl implements StagingContext {
 
+        private final Executor executor = new CurrentThreadExecutorService();
+
         @Override
         public void unpack(Path archive, Path target, String excludes, String includes) {
-
         }
 
         @Override
         public void archive(Path directory, Path target, String excludes, String includes) {
-
         }
 
         @Override
@@ -111,42 +111,29 @@ class StagingTaskTest {
         }
 
         @Override
-        public Path createTempDirectory(String prefix) throws IOException {
+        public Path createTempDirectory(String prefix) {
             return null;
         }
 
         @Override
         public void logInfo(String msg, Object... args) {
-
         }
 
         @Override
         public void logWarning(String msg, Object... args) {
-
         }
 
         @Override
         public void logError(String msg, Object... args) {
-
         }
 
         @Override
         public void logDebug(String msg, Object... args) {
-
         }
 
         @Override
-        public void submit(Callable<CompletionStage<Void>> task) {
-            try {
-                task.call().toCompletableFuture().join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public void awaitTermination() {
-
+        public Executor executor() {
+            return executor;
         }
     }
 }

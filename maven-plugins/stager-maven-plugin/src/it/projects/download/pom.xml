@@ -27,10 +27,46 @@
 
     <properties>
         <cli.latest.version>2.0.0-RC1</cli.latest.version>
-        <build-tools.download.url>https://github.com/oracle/helidon-build-tools/releases/download</build-tools.download.url>
+        <build-tools.download.url>https://github.com/oracle/helidon-build-tools/releases/download
+        </build-tools.download.url>
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <executor>
+                            <kind>WORKSTEALINGPOOL</kind>
+                        </executor>
+                        <directories>
+                            <directory target="${project.build.directory}/stage">
+                                <downloads>
+                                    <download url="${build-tools.download.url}/{version}/helidon-cli-{platform}-amd64"
+                                              target="cli/{version}/{platform}/helidon">
+                                        <iterators>
+                                            <variables>
+                                                <variable name="platform">
+                                                    <value>darwin</value>
+                                                    <value>linux</value>
+                                                </variable>
+                                                <variable name="version">
+                                                    <value>${cli.latest.version}</value>
+                                                    <value>2.0.0-M4</value>
+                                                </variable>
+                                            </variables>
+                                        </iterators>
+                                    </download>
+                                </downloads>
+                            </directory>
+                        </directories>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -41,33 +77,6 @@
                         <goals>
                             <goal>stage</goal>
                         </goals>
-                        <configuration>
-                            <executor>
-                                <kind>workstealingpool</kind>
-                            </executor>
-                            <directories>
-                                <directory target="${project.build.directory}/stage">
-                                    <downloads>
-                                        <download
-                                                url="${build-tools.download.url}/{version}/helidon-cli-{platform}-amd64"
-                                                target="cli/{version}/{platform}/helidon">
-                                            <iterators>
-                                                <variables>
-                                                    <variable name="platform">
-                                                        <value>darwin</value>
-                                                        <value>linux</value>
-                                                    </variable>
-                                                    <variable name="version">
-                                                        <value>${cli.latest.version}</value>
-                                                        <value>2.0.0-M4</value>
-                                                    </variable>
-                                                </variables>
-                                            </iterators>
-                                        </download>
-                                    </downloads>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

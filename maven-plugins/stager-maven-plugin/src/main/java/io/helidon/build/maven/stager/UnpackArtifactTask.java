@@ -34,11 +34,11 @@ final class UnpackArtifactTask extends StagingTask {
     private final String includes;
     private final String excludes;
 
-    UnpackArtifactTask(ActionIterators iterators, ArtifactGAV gav, String target, String includes, String excludes) {
-        super(iterators, target);
-        this.gav = Objects.requireNonNull(gav);
-        this.includes = includes;
-        this.excludes = excludes;
+    UnpackArtifactTask(ActionIterators iterators, Map<String, String> attrs) {
+        super(ELEMENT_NAME, null, iterators, attrs);
+        this.gav = new ArtifactGAV(attrs);
+        this.includes = attrs.get("includes");
+        this.excludes = attrs.get("excludes");
     }
 
     /**
@@ -69,18 +69,13 @@ final class UnpackArtifactTask extends StagingTask {
     }
 
     @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        String resolvedTarget = resolveVar(target(), variables);
-        ArtifactGAV resolvedGav = resolveGAV(variables);
-        context.logInfo("Resolving %s", resolvedGav);
-        Path artifact = context.resolve(resolvedGav);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        String resolvedTarget = resolveVar(target(), vars);
+        ArtifactGAV resolvedGav = resolveGAV(vars);
+        ctx.logInfo("Resolving %s", resolvedGav);
+        Path artifact = ctx.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget);
-        context.logInfo("Unpacking %s to %s", artifact, targetDir);
+        ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
         if (Files.exists(targetDir)) {
             Files.walk(targetDir)
                     .sorted(Comparator.reverseOrder())
@@ -88,7 +83,7 @@ final class UnpackArtifactTask extends StagingTask {
                     .forEach(File::delete);
         }
         Files.createDirectories(targetDir);
-        context.unpack(artifact, targetDir, excludes, includes);
+        ctx.unpack(artifact, targetDir, excludes, includes);
     }
 
     private ArtifactGAV resolveGAV(Map<String, String> variables) {
@@ -111,10 +106,10 @@ final class UnpackArtifactTask extends StagingTask {
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
+    public String describe(Path dir, Map<String, String> vars) {
         return ELEMENT_NAME + "{"
-                + "gav=" + resolveGAV(variables)
-                + ", target=" + resolveVar(target(), variables)
+                + "gav=" + resolveGAV(vars)
+                + ", target=" + resolveVar(target(), vars)
                 + ", includes=" + includes
                 + ", excludes='" + excludes
                 + '}';

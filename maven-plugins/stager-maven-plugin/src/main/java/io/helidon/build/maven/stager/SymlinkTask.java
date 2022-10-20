@@ -20,6 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import io.helidon.build.common.Strings;
+
 /**
  * Create a symlink.
  */
@@ -29,12 +31,9 @@ final class SymlinkTask extends StagingTask {
 
     private final String source;
 
-    SymlinkTask(ActionIterators iterators, String source, String target) {
-        super(iterators, target);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("source is required");
-        }
-        this.source = source;
+    SymlinkTask(ActionIterators iterators, Map<String, String> attrs) {
+        super(ELEMENT_NAME, null, iterators, attrs);
+        this.source = Strings.requireValid(attrs.get("source"), "source is required");
     }
 
     /**
@@ -51,18 +50,18 @@ final class SymlinkTask extends StagingTask {
     }
 
     @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        Path link = dir.resolve(resolveVar(target(), variables));
-        Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, variables)));
-        context.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        Path link = dir.resolve(resolveVar(target(), vars));
+        Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
+        ctx.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
         Files.createDirectories(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
-        String link = resolveVar(target(), variables);
-        Path linkTarget = dir.resolve(link).getParent().relativize(dir.resolve(resolveVar(source, variables)));
+    public String describe(Path dir, Map<String, String> vars) {
+        String link = resolveVar(target(), vars);
+        Path linkTarget = dir.resolve(link).getParent().relativize(dir.resolve(resolveVar(source, vars)));
         return ELEMENT_NAME + "{"
                 + "target=" + linkTarget
                 + ", source=" + link

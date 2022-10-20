@@ -44,16 +44,15 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
      * @param node config node
      * @return actions
      */
-    @SuppressWarnings("unchecked")
-    StagingActions<StagingAction> read(PlexusConfigNode node) {
+    StagingTasks read(PlexusConfigNode node) {
         node.visit(this);
         StagingAction action = (StagingAction) mappings.get(node.parent())
                 .get(node.name())
                 .get(0);
-        if (action instanceof StagingActions) {
-            return (StagingActions<StagingAction>) action;
+        if (action instanceof StagingTasks) {
+            return (StagingTasks) action;
         }
-        return new StagingActions<>(List.of(action));
+        return new StagingTasks("actions", List.of(action), Map.of());
     }
 
     @Override
@@ -130,7 +129,7 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
         public String toString() {
             return "Scope{"
                     + "name='" + name + '\''
-                    + ", parent=" + parent != null ? parent.name : null
+                    + ", parent=" + (parent != null ? parent.name : null)
                     + ", variables=" + variables
                     + '}';
         }

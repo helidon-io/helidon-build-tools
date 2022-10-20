@@ -17,13 +17,33 @@ package io.helidon.build.maven.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 
 /**
  * Staging context.
  */
+@SuppressWarnings("unused")
 interface StagingContext {
+
+    /**
+     * Constant for the readTimeout property.
+     */
+    String READ_TIMEOUT_PROP = "stager.readTimeout";
+
+    /**
+     * Constant for the connectTimeout property.
+     */
+    String CONNECT_TIMEOUT_PROP = "stager.connectTimeout";
+
+    /**
+     * Constant for the taskTimeout property.
+     */
+    String TASK_TIMEOUT_PROP = "stager.taskTimeout";
+
+    /**
+     * Constant for the maxRetries property.
+     */
+    String MAX_RETRIES = "stager.maxRetries";
 
     /**
      * Unpack the given archive to a target location.
@@ -73,7 +93,7 @@ interface StagingContext {
     /**
      * Log an info message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
     void logInfo(String msg, Object... args);
@@ -81,44 +101,77 @@ interface StagingContext {
     /**
      * Log a warning message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
     void logWarning(String msg, Object... args);
 
     /**
      * Log an error message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
     void logError(String msg, Object... args);
+
+    default void logError(Throwable ex) {
+        logError(ex.getMessage());
+    }
 
     /**
      * Log a debug message.
      *
-     * @param msg message, can use format
+     * @param msg  message, can use format
      * @param args message arguments
      */
-    @SuppressWarnings("unused")
     void logDebug(String msg, Object... args);
 
     /**
-     * Submit task.
+     * Get the executor.
      *
-     * @param task to be executed
+     * @return Executor
      */
-    void submit(Callable<CompletionStage<Void>> task);
+    Executor executor();
 
     /**
-     * Wait for submitted tasks completion.
+     * Read timeout configuration.
+     *
+     * @return value greater than zero if set.
      */
-    void awaitTermination();
+    default int readTimeout() {
+        return -1;
+    }
+
+    /**
+     * Connect timeout configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int connectTimeout() {
+        return -1;
+    }
+
+    /**
+     * Task timeout configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int taskTimeout() {
+        return -1;
+    }
+
+    /**
+     * Max retries configuration.
+     *
+     * @return value greater than zero if set.
+     */
+    default int maxRetries() {
+        return -1;
+    }
 
     /**
      * Lookup a property.
+     *
      * @param name property name
      * @return property value or {@code null}
      */

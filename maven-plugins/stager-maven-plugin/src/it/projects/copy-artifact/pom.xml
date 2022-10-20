@@ -30,6 +30,34 @@
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <directories>
+                            <directory target="${project.build.directory}/stage">
+                                <copy-artifacts>
+                                    <copy-artifact groupId="io.helidon.archetypes"
+                                                   artifactId="helidon-archetype-catalog"
+                                                   version="${cli.data.latest.version}"
+                                                   type="xml"
+                                                   target="archetype-catalog.xml"/>
+                                    <copy-artifact groupId="io.helidon.archetypes"
+                                                   artifactId="helidon-bare-se"
+                                                   version="${cli.data.latest.version}" />
+                                    <copy-artifact groupId="io.helidon.archetypes"
+                                                   artifactId="helidon-bare-mp"
+                                                   version="${cli.data.latest.version}" />
+                                </copy-artifacts>
+                            </directory>
+                        </directories>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -40,25 +68,6 @@
                         <goals>
                             <goal>stage</goal>
                         </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}/stage">
-                                    <copy-artifacts>
-                                        <copy-artifact groupId="io.helidon.archetypes"
-                                                       artifactId="helidon-archetype-catalog"
-                                                       version="${cli.data.latest.version}"
-                                                       type="xml"
-                                                       target="archetype-catalog.xml"/>
-                                        <copy-artifact groupId="io.helidon.archetypes"
-                                                       artifactId="helidon-bare-se"
-                                                       version="${cli.data.latest.version}" />
-                                        <copy-artifact groupId="io.helidon.archetypes"
-                                                       artifactId="helidon-bare-mp"
-                                                       version="${cli.data.latest.version}" />
-                                    </copy-artifacts>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

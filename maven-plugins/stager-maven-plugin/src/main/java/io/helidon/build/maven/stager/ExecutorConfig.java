@@ -18,33 +18,69 @@ package io.helidon.build.maven.stager;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
 
 /**
- * Executor's configuration component.
+ * Executor service configuration.
  */
+@SuppressWarnings("unused")
 public class ExecutorConfig {
 
-    private String kind;
-
+    private ExecutorKind kind = ExecutorKind.DEFAULT;
     private Map<String, String> parameters;
 
-    public String getKind() {
+    /**
+     * Create a new executor config.
+     *
+     * @param kind       kind
+     * @param parameters parameters
+     */
+    ExecutorConfig(ExecutorKind kind, Map<String, String> parameters) {
+        this.kind = kind;
+        this.parameters = parameters;
+    }
+
+    /**
+     * Create a new executor config.
+     */
+    public ExecutorConfig() {
+    }
+
+    /**
+     * Get the executor kind.
+     *
+     * @return kind
+     */
+    public ExecutorKind getKind() {
         return kind;
     }
 
-    public void setKind(String kind) {
+    /**
+     * Set the executor kind.
+     *
+     * @param kind kind
+     */
+    public void setKind(ExecutorKind kind) {
         this.kind = kind;
     }
 
+    /**
+     * Get the executor parameters.
+     *
+     * @return parameters map
+     */
     public Map<String, String> getParameters() {
         return parameters;
     }
 
+    /**
+     * Set the executor parameters.
+     *
+     * @param parameters parameters map
+     */
     public void setParameters(Map<String, String> parameters) {
         this.parameters = parameters;
     }
@@ -55,8 +91,7 @@ public class ExecutorConfig {
      * @return ExecutorService
      */
     public ExecutorService select() {
-        ExecutorKind executor = ExecutorKind.parse(kind).orElse(ExecutorKind.DEFAULT);
-        switch (executor) {
+        switch (kind) {
             case DEFAULT:
                 return new CurrentThreadExecutorService();
             case CACHED:
@@ -86,16 +121,52 @@ public class ExecutorConfig {
         return parameters.get(key) != null ? Integer.parseInt(parameters.get(key)) : defaultValue;
     }
 
+    /**
+     * Executor kind.
+     */
     enum ExecutorKind {
-        DEFAULT, CACHED, SINGLE, FIXED, SCHEDULED, SINGLESCHEDULED, VIRTUAL, WORKSTEALINGPOOL;
+        /**
+         * Uses the current thread (no parallelism).
+         */
+        DEFAULT,
 
-        public static Optional<ExecutorKind> parse(String kind) {
-            if (Objects.isNull(kind)) {
-                return Optional.of(DEFAULT);
-            }
-            return Arrays.stream(ExecutorKind.values())
-                    .filter(value -> Objects.equals(value.toString(), kind.toUpperCase()))
-                    .findFirst();
-        }
+        /**
+         * Uses {@link Executors#newCachedThreadPool}.
+         */
+        CACHED,
+
+        /**
+         * Uses {@link Executors#newSingleThreadExecutor}.
+         */
+        SINGLE,
+
+        /**
+         * Uses {@link Executors#newFixedThreadPool(int)}.
+         * Number of threads is configured via parameter {@code nThreads}. Default value is {@code 5}.
+         */
+        FIXED,
+
+        /**
+         * Uses {@link Executors#newScheduledThreadPool(int)}.
+         * The number of threads to keep in the pool is configured via parameter {@code corePoolSize}. Default value is {@code 5}.
+         */
+        SCHEDULED,
+
+        /**
+         * Uses {@link Executors#newSingleThreadScheduledExecutor}.
+         */
+        SINGLESCHEDULED,
+
+        /**
+         * Not implemented yet.
+         */
+        VIRTUAL,
+
+        /**
+         * Uses {@link Executors#newWorkStealingPool(int)}.
+         * The targeted parallelism level can be configured via {@code parallelism}. Default is {@code -1} which means
+         * max parallelism (using {@link Executors#newWorkStealingPool}).
+         */
+        WORKSTEALINGPOOL
     }
 }

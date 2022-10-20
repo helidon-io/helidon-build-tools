@@ -58,7 +58,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         maxIterations = n;
         iteration = 1;
         indexes = new int[iteratorVariables.size()];
-        entries = iteratorVariables.entrySet().toArray(new Map.Entry[0]);
+        entries = iteratorVariables.entrySet().toArray(Map.Entry[]::new);
     }
 
     /**
@@ -67,7 +67,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
      * @param variables base variables
      */
     @SuppressWarnings("UnusedReturnValue")
-    ActionIterator baseVariable(Map<String, String> variables) {
+    ActionIterator baseVariables(Map<String, String> variables) {
         baseVariables.putAll(variables);
         return this;
     }
@@ -82,6 +82,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         if (iteration++ > maxIterations) {
             throw new NoSuchElementException();
         }
+        Map<String, String> next = new HashMap<>(baseVariables);
         int p = 1;
         for (int idx = 0; idx < entries.length; idx++) {
             int size = entries[idx].getValue().size();
@@ -89,14 +90,12 @@ final class ActionIterator implements Iterator<Map<String, String>> {
                 indexes[idx] = 0;
             }
             p *= size;
-            String val;
+            String val = entries[idx].getValue().get(indexes[idx]);
             if (iteration % (maxIterations / p) == 0) {
-                val = entries[idx].getValue().get(indexes[idx]++);
-            } else {
-                val = entries[idx].getValue().get(indexes[idx]);
+                indexes[idx]++;
             }
-            baseVariables.put(entries[idx].getKey(), val);
+            next.put(entries[idx].getKey(), val);
         }
-        return baseVariables;
+        return next;
     }
 }

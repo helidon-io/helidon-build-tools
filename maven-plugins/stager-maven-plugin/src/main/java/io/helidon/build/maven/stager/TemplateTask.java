@@ -24,6 +24,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.Strings;
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.util.DecoratedCollection;
 
@@ -39,12 +41,9 @@ final class TemplateTask extends StagingTask {
     private final String source;
     private final Map<String, Object> templateVariables;
 
-    TemplateTask(ActionIterators iterators, String source, String target, List<Variable> variables) {
-        super(iterators, target);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("source is required");
-        }
-        this.source = source;
+    TemplateTask(ActionIterators iterators, Map<String, String> attrs, List<Variable> variables) {
+        super(ELEMENT_NAME, null, iterators, attrs);
+        this.source = Strings.requireValid(attrs.get("source"), "source is required");
         this.templateVariables = variables.stream().collect(toMap(Variable::name, TemplateTask::mapValue));
     }
 
@@ -57,11 +56,6 @@ final class TemplateTask extends StagingTask {
         return source;
     }
 
-    @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
     /**
      * Get the variables.
      *
@@ -72,10 +66,10 @@ final class TemplateTask extends StagingTask {
     }
 
     @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        String resolvedTarget = resolveVar(target(), variables);
-        String resolvedSource = resolveVar(source, variables);
-        Path sourceFile = context.resolve(resolvedSource);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedSource = resolveVar(source, vars);
+        Path sourceFile = ctx.resolve(resolvedSource);
         if (!Files.exists(sourceFile)) {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
@@ -91,10 +85,10 @@ final class TemplateTask extends StagingTask {
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
+    public String describe(Path dir, Map<String, String> vars) {
         return ELEMENT_NAME + "{"
-                + "source=" + resolveVar(source, variables)
-                + ", target=" + resolveVar(target(), variables)
+                + "source=" + resolveVar(source, vars)
+                + ", target=" + resolveVar(target(), vars)
                 + ", vars" + templateVariables
                 + '}';
     }
