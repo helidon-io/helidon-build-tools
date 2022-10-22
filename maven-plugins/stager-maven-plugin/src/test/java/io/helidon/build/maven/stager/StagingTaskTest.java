@@ -15,44 +15,52 @@
  */
 package io.helidon.build.maven.stager;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link StagingTask}.
  */
 class StagingTaskTest {
 
-    private final StagingContext context = new ContextTestImpl();
-
     @Test
-    public void testIterator() {
+    void testIterator() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, Map.of("target", "{foo}"));
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
         task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
     }
 
     @Test
-    public void testIteratorsWithManyVariables() {
+    void testIteratorsWithManyVariables() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2", "foo3")));
         variables.add(new Variable("bar", new VariableValue.ListValue("bar1", "bar2")));
         variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
         ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
         TestTask task = new TestTask(taskIterators, Map.of("target", "{foo}-{bar}-{bob}"));
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
         task.execute(context, null, Map.of());
         assertThat(task.renderedTargets, hasItems(
                 "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
@@ -63,72 +71,80 @@ class StagingTaskTest {
                 "foo3-bar2-bob1", "foo3-bar2-bob2", "foo3-bar2-bob3", "foo3-bar2-bob4"));
     }
 
-    private static final class TestTask extends StagingTask {
+    @Test
+    void testHandleRetry() throws InterruptedException {
+        StagingTask task = new StagingTask("test", null, null, Map.of("target", "/dev/null")) {
+
+            @Override
+            protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return handleRetry(() -> doExecBody(ctx, dir, vars), ctx, 1, 3);
+            }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                throw new UnsupportedOperationException("boo");
+            }
+        };
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail();
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        }
+    }
+
+    @Test
+    void testHandleTimeout() throws InterruptedException {
+        StagingTask task = new StagingTask("test", null, null, Map.of("target", "/dev/null")) {
+
+            @Override
+            protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return handleTimeout(() -> doExecBody(ctx, dir, vars), ctx, 500, 0);
+            }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+                throw new IOException("foo");
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+            }
+        };
+        StagingContext context = new TestContextImpl(Executors.newSingleThreadExecutor());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail("task should timeout");
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(TimeoutException.class)));
+        }
+    }
+
+    // TODO test a pseudo downloads task with multiple nested task that fail
+
+    static final class TestTask extends StagingTask {
 
         private final List<String> renderedTargets;
 
         TestTask(ActionIterators iterators, Map<String, String> attrs) {
             super("test", null, iterators, attrs);
-            this.renderedTargets = new LinkedList<>();
+            renderedTargets = new LinkedList<>();
         }
 
         @Override
         protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
             renderedTargets.add(resolveVar(target(), vars));
         }
-
-        @Override
-        public String elementName() {
-            return "test";
-        }
-
-        @Override
-        public String describe(Path dir, Map<String, String> vars) {
-            return "test";
-        }
     }
 
-    private static final class ContextTestImpl implements StagingContext {
+    static class TestContextImpl implements StagingContext {
 
-        private final Executor executor = new CurrentThreadExecutorService();
+        final Executor executor;
 
-        @Override
-        public void unpack(Path archive, Path target, String excludes, String includes) {
-        }
-
-        @Override
-        public void archive(Path directory, Path target, String excludes, String includes) {
-        }
-
-        @Override
-        public Path resolve(String path) {
-            return null;
-        }
-
-        @Override
-        public Path resolve(ArtifactGAV gav) {
-            return null;
-        }
-
-        @Override
-        public Path createTempDirectory(String prefix) {
-            return null;
-        }
-
-        @Override
-        public void logInfo(String msg, Object... args) {
-        }
-
-        @Override
-        public void logWarning(String msg, Object... args) {
-        }
-
-        @Override
-        public void logError(String msg, Object... args) {
-        }
-
-        @Override
-        public void logDebug(String msg, Object... args) {
+        TestContextImpl(Executor executor) {
+            this.executor = executor;
         }
 
         @Override

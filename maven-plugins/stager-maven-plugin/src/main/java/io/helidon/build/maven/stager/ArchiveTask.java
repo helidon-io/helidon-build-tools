@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Generate an archive with a set of tasks.
@@ -58,35 +58,28 @@ class ArchiveTask extends StagingTask {
     }
 
     @Override
-    public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
-        try {
-            Path stageDir = ctx.createTempDirectory("archive-task");
-            return super.execute(ctx, stageDir, vars)
-                        .thenRun(() -> archive(ctx, stageDir, dir, vars));
-        } catch (IOException ex) {
-            return CompletableFuture.failedFuture(ex);
-        }
-    }
-
-    @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return CompletableFuture.completedFuture(null);
     }
 
-    private void archive(StagingContext context, Path source, Path targetDir, Map<String, String> variables) {
-        String resolvedTarget = resolveVar(target(), variables);
-        String resolvedIncludes = resolveVar(includes, variables);
-        String resolvedExcludes = resolveVar(excludes, variables);
-        context.logInfo("Archiving %s to %s", source, resolvedTarget);
-        context.archive(source, targetDir.resolve(resolvedTarget), resolvedIncludes, resolvedExcludes);
+    @Override
+    protected CompletableFuture<Void> execTask(StagingContext ctx, Path dir, Map<String, String> vars) {
+        String resolvedTarget = resolveVar(target(), vars);
+        Path targetFile = dir.resolve(resolvedTarget).normalize();
+        Path stageDir;
+        try {
+            stageDir = ctx.createTempDirectory("archive-task");
+        } catch (IOException ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
+        ctx.logInfo("Creating archive %s", resolvedTarget);
+        return super.execTask(ctx, stageDir, vars)
+                    .thenRun(() -> archive(ctx, stageDir, targetFile, vars));
     }
 
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "target=" + resolveVar(target(), vars)
-                + ", includes='" + resolveVar(includes, vars) + '\''
-                + ", excludes='" + resolveVar(excludes, vars) + '\''
-                + '}';
+    private void archive(StagingContext ctx, Path source, Path targetFile, Map<String, String> variables) {
+        String resolvedIncludes = resolveVar(includes, variables);
+        String resolvedExcludes = resolveVar(excludes, variables);
+        ctx.archive(source, targetFile, resolvedIncludes, resolvedExcludes);
     }
 }

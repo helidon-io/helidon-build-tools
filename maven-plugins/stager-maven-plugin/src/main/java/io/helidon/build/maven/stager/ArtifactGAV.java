@@ -15,9 +15,12 @@
  */
 package io.helidon.build.maven.stager;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+
+import static io.helidon.build.maven.stager.StagingTask.resolveVar;
 
 /**
  * Artifact GAV.
@@ -29,17 +32,56 @@ final class ArtifactGAV {
     private final String version;
     private final String type;
     private final String classifier;
+    private final Map<String, String> variables;
 
-    ArtifactGAV(String groupId, String artifactId, String version, String type, String classifier) {
+    ArtifactGAV(String groupId,
+                String artifactId,
+                String version,
+                String type,
+                String classifier,
+                Map<String, String> vars) {
+
         this.groupId = Strings.requireValid(groupId, "groupId is required");
         this.artifactId = Strings.requireValid(artifactId, "artifactId is required");
         this.version = Strings.requireValid(version, "version is required");
         this.type = type == null ? "jar" : type;
         this.classifier = classifier;
+        this.variables = addVariables(new HashMap<>(vars));
     }
 
-    ArtifactGAV(Map<String, String> map) {
-        this(map.get("groupId"), map.get("artifactId"), map.get("version"), map.get("type"), map.get("classifier"));
+    ArtifactGAV(String groupId, String artifactId, String version, String type, String classifier) {
+        this(groupId, artifactId, version, type, classifier, Map.of());
+    }
+
+    ArtifactGAV(Map<String, String> vars) {
+        this(
+                vars.get("groupId"),
+                vars.get("artifactId"),
+                vars.get("version"),
+                vars.get("type"),
+                vars.get("classifier"),
+                vars);
+    }
+
+    private ArtifactGAV(ArtifactGAV gav, Map<String, String> vars) {
+        this(
+                resolveVar(gav.groupId, vars),
+                resolveVar(gav.artifactId, vars),
+                resolveVar(gav.version, vars),
+                resolveVar(gav.type, vars),
+                resolveVar(gav.classifier, vars),
+                vars);
+    }
+
+    private Map<String, String> addVariables(Map<String, String> vars) {
+        vars.put("groupId", groupId);
+        vars.put("artifactId", artifactId);
+        vars.put("version", version);
+        vars.put("type", type);
+        if (Strings.isValid(classifier)) {
+            vars.put("classifier", classifier);
+        }
+        return vars;
     }
 
     /**
@@ -85,6 +127,25 @@ final class ArtifactGAV {
      */
     String classifier() {
         return classifier;
+    }
+
+    /**
+     * Get the resolved variables.
+     *
+     * @return variables
+     */
+    Map<String, String> variables() {
+        return variables;
+    }
+
+    /**
+     * Resolve this instance against the given variables.
+     *
+     * @param vars variables
+     * @return resolved GAV
+     */
+    ArtifactGAV resolve(Map<String, String> vars) {
+        return new ArtifactGAV(this, vars);
     }
 
     @Override

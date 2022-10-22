@@ -73,7 +73,7 @@ final class TemplateTask extends StagingTask {
         if (!Files.exists(sourceFile)) {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
-        Path targetFile = dir.resolve(resolvedTarget);
+        Path targetFile = dir.resolve(resolvedTarget).normalize();
         Files.createDirectories(targetFile.getParent());
         try (Reader reader = Files.newBufferedReader(sourceFile);
              Writer writer = Files.newBufferedWriter(targetFile,
@@ -82,15 +82,6 @@ final class TemplateTask extends StagingTask {
                                         .execute(writer, templateVariables)
                                         .flush();
         }
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "source=" + resolveVar(source, vars)
-                + ", target=" + resolveVar(target(), vars)
-                + ", vars" + templateVariables
-                + '}';
     }
 
     private static Object mapValue(Variable variable) {

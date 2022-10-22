@@ -44,7 +44,7 @@ interface StagingAction extends StagingElement {
      * @param vars variables for the current iteration
      * @return String that describes the task
      */
-    String describe(Path dir, Map<String, String> vars);
+    String toString(Path dir, Map<String, String> vars);
 
     /**
      * Indicate if this task should be executed after the previous sibling.
@@ -61,6 +61,7 @@ interface StagingAction extends StagingElement {
      * @param configuration plexus configuration
      * @return list of {@link StagingAction}
      */
+    @SuppressWarnings("unused")
     static StagingTasks fromConfiguration(PlexusConfiguration configuration) {
         return fromConfiguration(configuration, new StagingElementFactory());
     }

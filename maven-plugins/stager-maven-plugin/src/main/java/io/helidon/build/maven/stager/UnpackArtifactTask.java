@@ -15,13 +15,12 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.io.File;
+import io.helidon.build.common.FileUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Unpack an artifact to a given target location.
@@ -70,48 +69,14 @@ final class UnpackArtifactTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String resolvedTarget = resolveVar(target(), vars);
-        ArtifactGAV resolvedGav = resolveGAV(vars);
-        ctx.logInfo("Resolving %s", resolvedGav);
+        ArtifactGAV resolvedGav = gav.resolve(vars);
+        Map<String, String> resolvedVars = resolvedGav.variables();
+        String resolvedTarget = resolveVar(target(), resolvedVars);
         Path artifact = ctx.resolve(resolvedGav);
-        Path targetDir = dir.resolve(resolvedTarget);
+        Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
-        if (Files.exists(targetDir)) {
-            Files.walk(targetDir)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        }
+        FileUtils.deleteDirectory(targetDir);
         Files.createDirectories(targetDir);
         ctx.unpack(artifact, targetDir, excludes, includes);
-    }
-
-    private ArtifactGAV resolveGAV(Map<String, String> variables) {
-        //noinspection DuplicatedCode
-        ArtifactGAV resolvedGav = new ArtifactGAV(
-                resolveVar(gav.groupId(), variables),
-                resolveVar(gav.artifactId(), variables),
-                resolveVar(gav.version(), variables),
-                resolveVar(gav.type(), variables),
-                resolveVar(gav.classifier(), variables));
-        variables.put("groupId", resolvedGav.groupId());
-        variables.put("artifactId", resolvedGav.artifactId());
-        variables.put("version", resolvedGav.version());
-        variables.put("type", resolvedGav.type());
-        String resolvedClassifier = resolvedGav.classifier();
-        if (resolvedClassifier != null && !resolvedClassifier.isEmpty()) {
-            variables.put("classifier", resolvedClassifier);
-        }
-        return resolvedGav;
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "gav=" + resolveGAV(vars)
-                + ", target=" + resolveVar(target(), vars)
-                + ", includes=" + includes
-                + ", excludes='" + excludes
-                + '}';
     }
 }

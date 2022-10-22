@@ -15,6 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
+import io.helidon.build.common.Strings;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,10 +53,7 @@ interface VariableValue extends StagingElement {
         private final String text;
 
         SimpleValue(String text) {
-            if (text == null || text.isEmpty()) {
-                throw new IllegalArgumentException("text is required");
-            }
-            this.text = text;
+            this.text = Strings.requireValid(text, "text is required");
         }
 
         @Override

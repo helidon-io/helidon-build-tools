@@ -28,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.Strings;
 
+import static io.helidon.build.common.FileUtils.measuredSize;
+
 /**
  * Download a file to a given target location.
  */
@@ -58,28 +60,47 @@ final class DownloadTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String resolvedTarget = resolveVar(target(), vars);
-        URL resolvedUrl = new URL(resolveVar(url, vars));
-        ctx.logInfo("Downloading %s to %s", resolvedUrl, resolvedTarget);
-        Path targetFile = dir.resolve(resolvedTarget);
-        Files.createDirectories(targetFile.getParent());
-        try (BufferedInputStream bis = new BufferedInputStream(open(resolvedUrl, ctx))) {
-            try (OutputStream fos = Files.newOutputStream(targetFile)) {
-                int n;
-                byte[] buffer = new byte[1024];
-                while ((n = bis.read(buffer, 0, buffer.length)) >= 0) {
-                    fos.write(buffer, 0, n);
-                }
-            }
+        try {
+            throw new IOException("boo");
+//            download(ctx, dir, vars);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+            throw ex;
         }
     }
 
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "url=" + resolveVar(url, vars)
-                + ", target=" + resolveVar(target(), vars)
-                + '}';
+    private void download(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        String path = resolveVar(target(), vars);
+        Path file = dir.resolve(path).normalize();
+        Files.createDirectories(file.getParent());
+        URL url = new URL(resolveVar(this.url, vars));
+        try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx))) {
+            try (OutputStream fos = Files.newOutputStream(file)) {
+                int n;
+                long startTime = System.currentTimeMillis();
+                long progressTime = startTime;
+                long currentTime = startTime;
+                long totalSize = 0;
+                long totalTime = 1;
+                byte[] buffer = new byte[1024];
+                while ((n = bis.read(buffer, 0, buffer.length)) >= 0) {
+                    fos.write(buffer, 0, n);
+                    totalSize += n;
+                    currentTime = System.currentTimeMillis();
+                    if (currentTime - progressTime >= 1000) {
+                        totalTime = (currentTime - startTime) / 1000;
+                        progressTime = currentTime;
+                        ctx.logInfo("Downloading %s to %s (%s at %s/s)",
+                                url, path, measuredSize(totalSize), measuredSize(totalSize / totalTime));
+                    }
+                }
+                if (currentTime - progressTime >= 1000) {
+                    totalTime = (currentTime - startTime) / 1000;
+                }
+                ctx.logInfo("Downloaded %s to %s (%s at %s/s)",
+                        url, path, measuredSize(totalSize), measuredSize(totalSize / totalTime));
+            }
+        }
     }
 
     private InputStream open(URL url, StagingContext context) throws IOException {

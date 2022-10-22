@@ -57,14 +57,4 @@ final class SymlinkTask extends StagingTask {
         Files.createDirectories(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
     }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        String link = resolveVar(target(), vars);
-        Path linkTarget = dir.resolve(link).getParent().relativize(dir.resolve(resolveVar(source, vars)));
-        return ELEMENT_NAME + "{"
-                + "target=" + linkTarget
-                + ", source=" + link
-                + '}';
-    }
 }

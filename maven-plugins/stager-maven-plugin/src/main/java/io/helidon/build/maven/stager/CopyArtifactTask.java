@@ -50,39 +50,21 @@ final class CopyArtifactTask extends StagingTask {
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         ArtifactGAV resolvedGav = resolveGAV(vars);
-        String resolveTarget = resolveVar(target(), vars);
-        ctx.logInfo("Resolving %s", resolvedGav);
+        Map<String, String> resolvedVars = resolvedGav.variables();
+        String resolveTarget = resolveVar(target(), resolvedVars);
+        ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
         Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
         Files.createDirectories(targetFile.getParent());
-        ctx.logInfo("Copying %s to %s", artifact, targetFile);
         Files.copy(artifact, targetFile);
     }
 
     private ArtifactGAV resolveGAV(Map<String, String> variables) {
-        //noinspection DuplicatedCode
-        ArtifactGAV resolvedGav = new ArtifactGAV(
+        return new ArtifactGAV(
                 resolveVar(gav.groupId(), variables),
                 resolveVar(gav.artifactId(), variables),
                 resolveVar(gav.version(), variables),
                 resolveVar(gav.type(), variables),
                 resolveVar(gav.classifier(), variables));
-        variables.put("groupId", resolvedGav.groupId());
-        variables.put("artifactId", resolvedGav.artifactId());
-        variables.put("version", resolvedGav.version());
-        variables.put("type", resolvedGav.type());
-        String resolvedClassifier = resolvedGav.classifier();
-        if (resolvedClassifier != null && !resolvedClassifier.isEmpty()) {
-            variables.put("classifier", resolvedClassifier);
-        }
-        return resolvedGav;
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "gav=" + resolveGAV(vars)
-                + ", target=" + resolveVar(target(), vars)
-                + '}';
     }
 }

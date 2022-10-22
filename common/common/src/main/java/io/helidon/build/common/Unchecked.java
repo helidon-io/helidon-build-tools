@@ -123,6 +123,8 @@ public interface Unchecked {
         return () -> {
             try {
                 return supplier.get();
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new UncheckedException(ex);
             }
@@ -140,6 +142,8 @@ public interface Unchecked {
         return () -> {
             try {
                 runnable.run();
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new UncheckedException(ex);
             }
@@ -158,6 +162,8 @@ public interface Unchecked {
         return t -> {
             try {
                 consumer.accept(t);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new UncheckedException(ex);
             }
@@ -177,6 +183,8 @@ public interface Unchecked {
         return (t, u) -> {
             try {
                 consumer.accept(t, u);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new UncheckedException(ex);
             }
@@ -196,6 +204,8 @@ public interface Unchecked {
         return t -> {
             try {
                 return function.apply(t);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
                 throw new UncheckedException(ex);
             }

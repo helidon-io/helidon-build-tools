@@ -59,7 +59,7 @@ final class FileTask extends StagingTask {
         String resolvedTarget = resolveVar(target(), vars);
         String resolvedSource = resolveVar(source, vars);
         String resolvedContent = resolveVar(content, vars);
-        Path targetFile = dir.resolve(resolvedTarget);
+        Path targetFile = dir.resolve(resolvedTarget).normalize();
         Files.createDirectories(targetFile.getParent());
         if (resolvedSource != null && !resolvedSource.isEmpty()) {
             Path sourceFile = ctx.resolve(resolvedSource);
@@ -74,14 +74,5 @@ final class FileTask extends StagingTask {
                 Files.writeString(targetFile, resolvedContent);
             }
         }
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "source=" + resolveVar(source, vars)
-                + ", target=" + resolveVar(target(), vars)
-                + ", content='" + resolveVar(content, vars) + '\''
-                + '}';
     }
 }

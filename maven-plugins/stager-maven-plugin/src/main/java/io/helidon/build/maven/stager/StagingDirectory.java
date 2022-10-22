@@ -37,6 +37,7 @@ class StagingDirectory extends StagingTask {
     @Override
     public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
         Path targetDir = dir.resolve(target());
+        ctx.logInfo("Staging %s", targetDir);
         try {
             Files.createDirectories(targetDir);
         } catch (IOException ex) {
@@ -48,12 +49,5 @@ class StagingDirectory extends StagingTask {
     @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return ELEMENT_NAME + "{"
-                + "target='" + dir.resolve(target()) + '\''
-                + '}';
     }
 }

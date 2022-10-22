@@ -15,6 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
+import io.helidon.build.common.Maps;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -31,11 +33,11 @@ final class ActionIterator implements Iterator<Map<String, String>> {
     private final int[] indexes;
     private final int maxIterations;
     private int iteration;
-    private final HashMap<String, String> baseVariables;
+    private final Map<String, String> variables;
 
     @SuppressWarnings("unchecked")
     ActionIterator(Variables variables) {
-        baseVariables = new HashMap<>();
+        this.variables = new HashMap<>();
         Map<String, List<String>> iteratorVariables = new HashMap<>();
         for (Variable variable : variables) {
             List<String> values = new LinkedList<>();
@@ -61,15 +63,21 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         entries = iteratorVariables.entrySet().toArray(Map.Entry[]::new);
     }
 
+    ActionIterator(ActionIterator it, Map<String, String> variables) {
+        entries = it.entries;
+        indexes = it.indexes;
+        maxIterations = it.maxIterations;
+        iteration = it.iteration;
+        this.variables = Maps.putAll(it.variables, variables);
+    }
+
     /**
-     * Set the base variables.
+     * Make a copy of this iterator that includes the given variables.
      *
-     * @param variables base variables
+     * @param variables variables
      */
-    @SuppressWarnings("UnusedReturnValue")
-    ActionIterator baseVariables(Map<String, String> variables) {
-        baseVariables.putAll(variables);
-        return this;
+    ActionIterator forVariables(Map<String, String> variables) {
+        return new ActionIterator(this, variables);
     }
 
     @Override
@@ -82,7 +90,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         if (iteration++ > maxIterations) {
             throw new NoSuchElementException();
         }
-        Map<String, String> next = new HashMap<>(baseVariables);
+        Map<String, String> next = new HashMap<>(variables);
         int p = 1;
         for (int idx = 0; idx < entries.length; idx++) {
             int size = entries[idx].getValue().size();

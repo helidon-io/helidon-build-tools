@@ -15,24 +15,27 @@
  */
 package io.helidon.build.maven.stager;
 
-import io.helidon.build.common.Maps;
-
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Container of {@link StagingTask}.
+ * Custom staging element factory that wraps the staging tasks to override the execution to do a no-op.
  */
-public class StagingTasks extends StagingTask {
+final class DryRunStagingElementFactory extends StagingElementFactory {
 
-    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
-        super(elementName, nested, null, Maps.computeIfAbsent(attrs, Map.of("target", t -> "/dev/null")));
+    private final StagerMojo stagerMojo;
+
+    DryRunStagingElementFactory(StagerMojo stagerMojo) {
+        this.stagerMojo = stagerMojo;
     }
 
     @Override
-    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return CompletableFuture.completedFuture(null);
+    StagingAction createAction(String name,
+                               Map<String, String> attrs,
+                               Map<String, List<StagingElement>> children,
+                               String text) {
+
+        StagingAction action = super.createAction(name, attrs, children, text);
+        return new DryRunAction(stagerMojo, action);
     }
 }

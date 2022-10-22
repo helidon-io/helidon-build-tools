@@ -22,10 +22,11 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -47,6 +48,7 @@ abstract class StagingTask implements StagingAction {
     private final String elementName;
     private final List<StagingAction> nested;
     private final ActionIterators iterators;
+    private final Map<String, String> attrs;
     private final String target;
     private final boolean join;
 
@@ -54,6 +56,7 @@ abstract class StagingTask implements StagingAction {
         this.elementName = Strings.requireValid(elementName, "elementName is required");
         this.nested = nested == null ? List.of() : nested;
         this.iterators = iterators;
+        this.attrs = Objects.requireNonNull(attrs, "attrs is null");
         this.target = Strings.requireValid(attrs.get("target"), "target is required");
         this.join = Boolean.parseBoolean(attrs.get("join"));
     }
@@ -100,9 +103,11 @@ abstract class StagingTask implements StagingAction {
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> vars) {
-        return elementName() + "{"
-                + "join=" + join
+    public String toString(Path dir, Map<String, String> vars) {
+        return elementName + "{"
+                + "attrs=" + attrs
+                + ", dir=" + dir
+                + ", vars=" + vars
                 + "}";
     }
 
@@ -110,8 +115,9 @@ abstract class StagingTask implements StagingAction {
     public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
         if (iterators == null || iterators.isEmpty()) {
             return execTask(ctx, dir, vars);
+        } else {
+            return execIterators(ctx, dir, vars);
         }
-        return execIterators(ctx, dir, vars);
     }
 
     /**
@@ -123,7 +129,8 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execIterators(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return allOf(Lists.map(iterators, it -> execIterations(ctx, dir, it, vars)));
+        Span span = new Span(ctx, dir, vars);
+        return allOf(Lists.map(iterators, it -> execIterations(ctx, dir, it, vars))).thenRun(span::end);
     }
 
     /**
@@ -134,8 +141,14 @@ abstract class StagingTask implements StagingAction {
      * @param vars substitution variables
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
-    protected CompletableFuture<Void> execIterations(StagingContext ctx, Path dir, ActionIterator it, Map<String, String> vars) {
-        return allOf(Lists.map(Lists.of(it.baseVariables(vars)), m -> execTask(ctx, dir, m)));
+    protected CompletableFuture<Void> execIterations(StagingContext ctx,
+                                                     Path dir,
+                                                     ActionIterator it,
+                                                     Map<String, String> vars) {
+
+        Span span = new Span(ctx, dir, vars);
+        return allOf(Lists.map(Lists.of(it.forVariables(vars)), m -> execTask(ctx, dir, m)))
+                .thenRun(span::end);
     }
 
     /**
@@ -147,7 +160,10 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execTask(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return execNestedTasks(ctx, dir, vars).thenCompose(v -> execBody(ctx, dir, vars));
+        Span span = new Span(ctx, dir, vars);
+        return execNestedTasks(ctx, dir, vars)
+                .thenCompose(v -> execBody(ctx, dir, vars))
+                .thenRun(span::end);
     }
 
     /**
@@ -159,6 +175,7 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execNestedTasks(StagingContext ctx, Path dir, Map<String, String> vars) {
+        Span span = new Span(ctx, dir, vars);
         Deque<CompletableFuture<Void>> futures = new ArrayDeque<>();
         futures.push(completedFuture(null));
         for (StagingAction task : nested) {
@@ -169,7 +186,7 @@ abstract class StagingTask implements StagingAction {
                 futures.push(task.execute(ctx, dir, vars).toCompletableFuture());
             }
         }
-        return allOf(futures);
+        return allOf(futures).thenRun(span::end);
     }
 
     /**
@@ -181,12 +198,16 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execBodyWithTimeout(StagingContext ctx, Path dir, Map<String, String> vars) {
+        Span span = new Span(ctx, dir, vars);
         int taskTimeout = ctx.taskTimeout();
         int maxRetries = ctx.maxRetries();
+        CompletableFuture<Void> future;
         if (taskTimeout > 0 && maxRetries > 0) {
-            return withTimeout(() -> doExecBody(ctx, dir, vars), ctx::logError, taskTimeout, 0, maxRetries);
+            future = handleTimeout(() -> doExecBody(ctx, dir, vars), ctx, taskTimeout, maxRetries);
+        } else {
+            future = doExecBody(ctx, dir, vars);
         }
-        return doExecBody(ctx, dir, vars);
+        return future.thenRun(span::end);
     }
 
     /**
@@ -199,7 +220,8 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return doExecBody(ctx, dir, vars);
+        Span span = new Span(ctx, dir, vars);
+        return doExecBody(ctx, dir, vars).thenRun(span::end);
     }
 
     /**
@@ -234,40 +256,107 @@ abstract class StagingTask implements StagingAction {
      * @return resolve string
      */
     protected static String resolveVar(String source, Map<String, String> vars) {
-        if (source == null || source.isEmpty()) {
-            return source;
-        }
-        for (Map.Entry<String, String> variable : vars.entrySet()) {
-            //noinspection RegExpRedundantEscape
-            source = source.replaceAll("\\{" + variable.getKey() + "\\}", variable.getValue());
+        if (Strings.isValid(source)) {
+            for (Map.Entry<String, String> variable : vars.entrySet()) {
+                source = source.replaceAll("\\{" + variable.getKey() + "}", variable.getValue());
+            }
         }
         return source;
     }
 
-    private CompletableFuture<Void> withTimeout(Supplier<CompletableFuture<Void>> supplier,
-                                                Consumer<Throwable> consumer,
-                                                long timeout,
-                                                int retry,
-                                                int maxRetry) {
+    /**
+     * Handle errors and retry until successful.
+     *
+     * @param supplier    task
+     * @param ctx         staging context
+     * @param attempt     attempt
+     * @param maxAttempts max attempt
+     * @return completion stage
+     */
+    protected static CompletableFuture<Void> handleRetry(Supplier<CompletableFuture<Void>> supplier,
+                                                         StagingContext ctx,
+                                                         int attempt,
+                                                         int maxAttempts) {
 
         CompletableFuture<Void> future = supplier.get();
-        return future.orTimeout(timeout, TimeUnit.MILLISECONDS)
-                     .thenApply(v -> (Throwable) null)
-                     .exceptionally(Function.identity())
+        return future.thenApply(v -> {
+                        return (Throwable) null;
+                     })
+                     .exceptionally(ex -> {
+                         return ex;
+                     })
                      .thenCompose(ex -> {
                          if (ex == null) {
                              return completedStage(null);
                          }
                          Throwable cause = Unchecked.unwrap(ex);
-                         consumer.accept(cause);
-                         if (retry < maxRetry) {
-                             return withTimeout(supplier, consumer, timeout, retry + 1, maxRetry);
+                         ctx.logError(cause);
+                         if (attempt <= maxAttempts) {
+                             ctx.logInfo(String.format("retry %d of %d", attempt, maxAttempts));
+                             return handleRetry(supplier, ctx, attempt + 1, maxAttempts);
                          }
                          return failedStage(cause);
                      });
     }
 
+    /**
+     * Decorate the future supplier to handle timeouts and retry until successful.
+     *
+     * @param supplier    task
+     * @param ctx         staging context
+     * @param maxAttempts max attempt
+     * @return completion stage
+     */
+    protected static CompletableFuture<Void> handleTimeout(Supplier<CompletableFuture<Void>> supplier,
+                                                           StagingContext ctx,
+                                                           long timeout,
+                                                           int maxAttempts) {
+
+        return handleRetry(() -> supplier.get().orTimeout(timeout, TimeUnit.MILLISECONDS), ctx, 1, maxAttempts);
+    }
+
     private static CompletableFuture<Void> allOf(Collection<CompletableFuture<Void>> futures) {
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+    }
+
+    private static final AtomicInteger NEXT_SPAN_ID = new AtomicInteger(0);
+
+    private class Span {
+
+        private final long id;
+        private final String method;
+        private final StagingContext ctx;
+        private final Path dir;
+        private final Map<String, String> vars;
+        private long startTime = 0;
+
+        public Span(StagingContext ctx, Path dir, Map<String, String> vars) {
+            this.id = NEXT_SPAN_ID.incrementAndGet();
+            this.method = StackWalker.getInstance()
+                                     .walk(frames -> frames.skip(1)
+                                                           .findFirst()
+                                                           .map(StackWalker.StackFrame::getMethodName))
+                                     .orElse("unknown");
+            this.ctx = ctx;
+            this.dir = dir;
+            this.vars = vars;
+            start();
+        }
+
+        private void start() {
+            if (ctx.isDebugEnabled()) {
+                startTime = System.currentTimeMillis();
+                ctx.logDebug("[trace] [id=%d,t=%d] [start] %s.%s(attrs=%s,dir=%s,vars=%s)",
+                        id, startTime, elementName, method, attrs, dir, vars);
+            }
+        }
+
+        void end() {
+            if (ctx.isDebugEnabled()) {
+                long endTime = System.currentTimeMillis();
+                ctx.logDebug("[trace] [id=%d,t=%d] [end] %s.%s(attrs=%s,dir=%s,vars=%s) [total-time=%d]",
+                        id, startTime, elementName, method, attrs, dir, vars, endTime - startTime);
+            }
+        }
     }
 }

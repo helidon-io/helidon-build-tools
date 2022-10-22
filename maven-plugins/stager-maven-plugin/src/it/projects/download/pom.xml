@@ -42,6 +42,10 @@
                         <executor>
                             <kind>WORKSTEALINGPOOL</kind>
                         </executor>
+                        <readTimeout>60000</readTimeout>
+                        <connectTimeout>60000</connectTimeout>
+                        <taskTimeout>60000</taskTimeout>
+                        <maxRetries>5</maxRetries>
                         <directories>
                             <directory target="${project.build.directory}/stage">
                                 <downloads>

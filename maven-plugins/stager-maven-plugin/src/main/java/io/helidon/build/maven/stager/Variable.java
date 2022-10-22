@@ -15,6 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
+import io.helidon.build.common.Strings;
+
 /**
  * Variable model.
  */
@@ -26,10 +28,7 @@ class Variable implements StagingElement {
     private final VariableValue value;
 
     Variable(String name, VariableValue value) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("name is required");
-        }
-        this.name = name;
+        this.name = Strings.requireValid(name, "name is required");
         if (value == null) {
             throw new IllegalArgumentException("value is required");
         }
