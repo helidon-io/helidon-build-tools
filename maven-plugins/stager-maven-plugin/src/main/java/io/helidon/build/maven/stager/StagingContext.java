@@ -76,7 +76,8 @@ interface StagingContext {
      * @param msg message, can use format
      * @param args message arguments
      */
-    void logInfo(String msg, Object... args);
+    default void logInfo(String msg, Object... args) {
+    }
 
     /**
      * Log a warning message.
@@ -85,7 +86,8 @@ interface StagingContext {
      * @param args message arguments
      */
     @SuppressWarnings("unused")
-    void logWarning(String msg, Object... args);
+    default void logWarning(String msg, Object... args) {
+    }
 
     /**
      * Log an error message.
@@ -94,7 +96,8 @@ interface StagingContext {
      * @param args message arguments
      */
     @SuppressWarnings("unused")
-    void logError(String msg, Object... args);
+    default void logError(String msg, Object... args) {
+    }
 
     /**
      * Log a debug message.
@@ -103,19 +106,27 @@ interface StagingContext {
      * @param args message arguments
      */
     @SuppressWarnings("unused")
-    void logDebug(String msg, Object... args);
+    default void logDebug(String msg, Object... args) {
+    }
 
     /**
      * Submit task.
      *
      * @param task to be executed
      */
-    void submit(Callable<CompletionStage<Void>> task);
+    default void submit(Callable<CompletionStage<Void>> task) {
+        try {
+            task.call().toCompletableFuture().join();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Wait for submitted tasks completion.
      */
-    void awaitTermination();
+    default void awaitTermination() {
+    }
 
     /**
      * Lookup a property.

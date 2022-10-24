@@ -477,14 +477,16 @@ public class StagerMojo extends AbstractMojo {
 
         @Override
         public void awaitTermination() {
-            tasksQueue.forEach(future -> {
-                try {
-                    future.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            tasksQueue.clear();
+            synchronized (tasksQueue) {
+                tasksQueue.forEach(future -> {
+                    try {
+                        future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                tasksQueue.clear();
+            }
         }
     }
 }

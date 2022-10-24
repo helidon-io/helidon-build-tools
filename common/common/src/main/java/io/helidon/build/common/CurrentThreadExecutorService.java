@@ -15,11 +15,13 @@
  */
 package io.helidon.build.common;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * An {@link java.util.concurrent.ExecutorService} that execute task in the current thread.
+ */
 public class CurrentThreadExecutorService extends AbstractExecutorService {
 
     @Override
@@ -33,7 +35,7 @@ public class CurrentThreadExecutorService extends AbstractExecutorService {
 
     @Override
     public List<Runnable> shutdownNow() {
-        return new LinkedList<>();
+        return List.of();
     }
 
     @Override

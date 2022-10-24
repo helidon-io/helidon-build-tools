@@ -33,18 +33,38 @@ public class ExecutorConfig {
 
     private Map<String, String> parameters;
 
+    /**
+     * Get configured kind of executor.
+     *
+     * @return kind
+     */
     public String getKind() {
         return kind;
     }
 
+    /**
+     * Set kind of executor.
+     *
+     * @param kind of executor
+     */
     public void setKind(String kind) {
         this.kind = kind;
     }
 
+    /**
+     * Get executor parameters.
+     *
+     * @return parameters
+     */
     public Map<String, String> getParameters() {
         return parameters;
     }
 
+    /**
+     * Set executor parameters.
+     *
+     * @param parameters to configure executor
+     */
     public void setParameters(Map<String, String> parameters) {
         this.parameters = parameters;
     }

@@ -91,51 +91,6 @@ class StagingTaskTest {
     private static final class ContextTestImpl implements StagingContext {
 
         @Override
-        public void unpack(Path archive, Path target, String excludes, String includes) {
-
-        }
-
-        @Override
-        public void archive(Path directory, Path target, String excludes, String includes) {
-
-        }
-
-        @Override
-        public Path resolve(String path) {
-            return null;
-        }
-
-        @Override
-        public Path resolve(ArtifactGAV gav) {
-            return null;
-        }
-
-        @Override
-        public Path createTempDirectory(String prefix) throws IOException {
-            return null;
-        }
-
-        @Override
-        public void logInfo(String msg, Object... args) {
-
-        }
-
-        @Override
-        public void logWarning(String msg, Object... args) {
-
-        }
-
-        @Override
-        public void logError(String msg, Object... args) {
-
-        }
-
-        @Override
-        public void logDebug(String msg, Object... args) {
-
-        }
-
-        @Override
         public void submit(Callable<CompletionStage<Void>> task) {
             try {
                 task.call().toCompletableFuture().join();
@@ -145,8 +100,28 @@ class StagingTaskTest {
         }
 
         @Override
-        public void awaitTermination() {
+        public void unpack(Path archive, Path target, String excludes, String includes) {
+            throw new UnsupportedOperationException();
+        }
 
+        @Override
+        public void archive(Path directory, Path target, String excludes, String includes) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path resolve(String path) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path resolve(ArtifactGAV gav) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path createTempDirectory(String prefix) throws IOException {
+            throw new UnsupportedOperationException();
         }
     }
 }
