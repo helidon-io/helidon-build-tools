@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
@@ -341,7 +342,7 @@ public class StagerMojo extends AbstractMojo {
         private final List<RemoteRepository> remoteRepos;
         private final ArchiverManager archiverManager;
         private final Function<String, String> propertyResolver;
-        private final Collection<Callable<CompletionStage<Void>>> tasksQueue;
+        private final Collection<Future<CompletionStage<Void>>> tasksQueue;
         private final ExecutorService executor;
 
         StagingContextImpl(File baseDir,
@@ -471,23 +472,19 @@ public class StagerMojo extends AbstractMojo {
 
         @Override
         public void submit(Callable<CompletionStage<Void>> task) {
-            tasksQueue.add(task);
+            tasksQueue.add(executor.submit(task));
         }
 
         @Override
         public void awaitTermination() {
-            try {
-                executor.invokeAll(tasksQueue).forEach(future -> {
-                    try {
-                        future.get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                tasksQueue.clear();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            tasksQueue.forEach(future -> {
+                try {
+                    future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            tasksQueue.clear();
         }
     }
 }

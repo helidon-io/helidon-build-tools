@@ -101,6 +101,7 @@ class ArchiveTask extends StagingTask {
         for (StagingAction action : actions) {
             action.execute(context, stageDir, variables);
         }
+        context.awaitTermination();
         context.submit(() -> archive(context, stageDir, dir, variables));
     }
 
