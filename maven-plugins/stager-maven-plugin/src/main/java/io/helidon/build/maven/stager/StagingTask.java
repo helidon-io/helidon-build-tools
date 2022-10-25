@@ -22,8 +22,8 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,13 +37,13 @@ import io.helidon.build.common.Unchecked;
 import static io.helidon.build.common.Unchecked.unchecked;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.completedStage;
-import static java.util.concurrent.CompletableFuture.failedStage;
+import static java.util.concurrent.CompletableFuture.failedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 
 /**
  * Base class for all tasks.
  */
-abstract class StagingTask implements StagingAction {
+class StagingTask implements StagingAction {
 
     private final String elementName;
     private final List<StagingAction> nested;
@@ -52,13 +52,17 @@ abstract class StagingTask implements StagingAction {
     private final String target;
     private final boolean join;
 
+    StagingTask() {
+        this(null, null, null, null);
+    }
+
     StagingTask(String elementName, List<StagingAction> nested, ActionIterators iterators, Map<String, String> attrs) {
-        this.elementName = Strings.requireValid(elementName, "elementName is required");
+        this.elementName = elementName != null ? elementName : "unknown";
         this.nested = nested == null ? List.of() : nested;
         this.iterators = iterators;
-        this.attrs = Objects.requireNonNull(attrs, "attrs is null");
-        this.target = Strings.requireValid(attrs.get("target"), "target is required");
-        this.join = Boolean.parseBoolean(attrs.get("join"));
+        this.attrs = attrs != null ? attrs : Map.of();
+        this.target = this.attrs.get("target");
+        this.join = Boolean.parseBoolean(this.attrs.get("join"));
     }
 
     /**
@@ -130,7 +134,7 @@ abstract class StagingTask implements StagingAction {
      */
     protected CompletableFuture<Void> execIterators(StagingContext ctx, Path dir, Map<String, String> vars) {
         Span span = new Span(ctx, dir, vars);
-        return allOf(Lists.map(iterators, it -> execIterations(ctx, dir, it, vars))).thenRun(span::end);
+        return allOf(iterators, it -> execIterations(ctx, dir, it, vars)).thenRun(span::end);
     }
 
     /**
@@ -147,8 +151,9 @@ abstract class StagingTask implements StagingAction {
                                                      Map<String, String> vars) {
 
         Span span = new Span(ctx, dir, vars);
-        return allOf(Lists.map(Lists.of(it.forVariables(vars)), m -> execTask(ctx, dir, m)))
-                .thenRun(span::end);
+        List<Map<String, String>> itVars = Lists.of(it.forVariables(vars));
+        CompletableFuture<Void> future = allOf(itVars, m -> it.join(), m -> execTask(ctx, dir, m));
+        return future.thenRun(span::end);
     }
 
     /**
@@ -176,17 +181,8 @@ abstract class StagingTask implements StagingAction {
      */
     protected CompletableFuture<Void> execNestedTasks(StagingContext ctx, Path dir, Map<String, String> vars) {
         Span span = new Span(ctx, dir, vars);
-        Deque<CompletableFuture<Void>> futures = new ArrayDeque<>();
-        futures.push(completedFuture(null));
-        for (StagingAction task : nested) {
-            CompletableFuture<Void> future = futures.pop();
-            if (task.join()) {
-                futures.push(future.thenCompose(v -> task.execute(ctx, dir, vars)));
-            } else {
-                futures.push(task.execute(ctx, dir, vars).toCompletableFuture());
-            }
-        }
-        return allOf(futures).thenRun(span::end);
+        CompletableFuture<Void> future = allOf(nested, task -> task.execute(ctx, dir, vars).toCompletableFuture());
+        return future.thenRun(span::end);
     }
 
     /**
@@ -233,7 +229,11 @@ abstract class StagingTask implements StagingAction {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> doExecBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return runAsync(unchecked(() -> doExecute(ctx, dir, vars)), ctx.executor());
+        CompletableFuture<Void> future = runAsync(unchecked(() -> doExecute(ctx, dir, vars)), ctx.executor());
+        return exceptionallyCompose(future, ex -> {
+            ctx.logError(ex);
+            return failedFuture(ex);
+        });
     }
 
     /**
@@ -279,24 +279,14 @@ abstract class StagingTask implements StagingAction {
                                                          int maxAttempts) {
 
         CompletableFuture<Void> future = supplier.get();
-        return future.thenApply(v -> {
-                        return (Throwable) null;
-                     })
-                     .exceptionally(ex -> {
-                         return ex;
-                     })
-                     .thenCompose(ex -> {
-                         if (ex == null) {
-                             return completedStage(null);
-                         }
-                         Throwable cause = Unchecked.unwrap(ex);
-                         ctx.logError(cause);
-                         if (attempt <= maxAttempts) {
-                             ctx.logInfo(String.format("retry %d of %d", attempt, maxAttempts));
-                             return handleRetry(supplier, ctx, attempt + 1, maxAttempts);
-                         }
-                         return failedStage(cause);
-                     });
+        return exceptionallyCompose(future, ex -> {
+            ctx.logError(ex);
+            if (attempt <= maxAttempts) {
+                ctx.logInfo(String.format("retry %d of %d", attempt, maxAttempts));
+                return handleRetry(supplier, ctx, attempt + 1, maxAttempts);
+            }
+            return failedFuture(ex);
+        });
     }
 
     /**
@@ -315,8 +305,50 @@ abstract class StagingTask implements StagingAction {
         return handleRetry(() -> supplier.get().orTimeout(timeout, TimeUnit.MILLISECONDS), ctx, 1, maxAttempts);
     }
 
+    private static <T> CompletableFuture<Void> allOf(List<T> items,
+                                                     Function<T, Boolean> isJoinable,
+                                                     Function<T, CompletableFuture<Void>> function) {
+
+        Deque<CompletableFuture<Void>> futures = new ArrayDeque<>();
+        futures.push(completedFuture(null));
+        for (T item : items) {
+            if (isJoinable.apply(item)) {
+                CompletableFuture<Void> future = futures.pop();
+                futures.push(future.thenCompose(v -> function.apply(item)));
+            } else {
+                futures.push(function.apply(item));
+            }
+        }
+        return allOf(futures);
+    }
+
+    private static <T extends Joinable> CompletableFuture<Void> allOf(List<T> items,
+                                                                      Function<T, CompletableFuture<Void>> function) {
+
+        return allOf(items, Joinable::join, function);
+    }
+
     private static CompletableFuture<Void> allOf(Collection<CompletableFuture<Void>> futures) {
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+    }
+
+    private static CompletableFuture<Void> exceptionallyCompose(CompletableFuture<Void> future,
+                                                                Function<Throwable, CompletableFuture<Void>> function) {
+
+        return future.thenApply(v -> (Throwable) null)
+                     .exceptionally(ex -> ex)
+                     .thenCompose(ex -> {
+                         if (ex == null) {
+                             return completedStage(null);
+                         }
+                         Throwable cause;
+                         if (ex instanceof CompletionException) {
+                             cause = Unchecked.unwrap(ex.getCause());
+                         } else {
+                             cause = Unchecked.unwrap(ex);
+                         }
+                         return function.apply(cause);
+                     });
     }
 
     private static final AtomicInteger NEXT_SPAN_ID = new AtomicInteger(0);
@@ -330,7 +362,7 @@ abstract class StagingTask implements StagingAction {
         private final Map<String, String> vars;
         private long startTime = 0;
 
-        public Span(StagingContext ctx, Path dir, Map<String, String> vars) {
+        Span(StagingContext ctx, Path dir, Map<String, String> vars) {
             this.id = NEXT_SPAN_ID.incrementAndGet();
             this.method = StackWalker.getInstance()
                                      .walk(frames -> frames.skip(1)

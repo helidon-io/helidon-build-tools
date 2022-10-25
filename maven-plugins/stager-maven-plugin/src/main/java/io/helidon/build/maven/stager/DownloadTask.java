@@ -60,13 +60,7 @@ final class DownloadTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        try {
-            throw new IOException("boo");
-//            download(ctx, dir, vars);
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            throw ex;
-        }
+        download(ctx, dir, vars);
     }
 
     private void download(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {

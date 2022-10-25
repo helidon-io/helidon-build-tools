@@ -15,13 +15,13 @@
  */
 package io.helidon.build.maven.stager;
 
-import io.helidon.build.common.Strings;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import io.helidon.build.common.Strings;
 
 /**
  * Internal model for variable value.

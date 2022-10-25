@@ -193,6 +193,11 @@ final class StagingContextImpl implements StagingContext {
     }
 
     @Override
+    public void logError(Throwable ex) {
+        log.error(ex);
+    }
+
+    @Override
     public void logDebug(String msg, Object... args) {
         log.debug(String.format(msg, args));
     }

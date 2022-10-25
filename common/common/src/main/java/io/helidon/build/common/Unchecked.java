@@ -213,6 +213,19 @@ public interface Unchecked {
     }
 
     /**
+     * Wrap an exception wrapped with {@link UncheckedException} if checked.
+     *
+     * @param ex exception to wrap
+     * @return exception
+     */
+    static RuntimeException wrap(Throwable ex) {
+        if (ex instanceof RuntimeException) {
+            return (RuntimeException) ex;
+        }
+        return new UncheckedException(ex);
+    }
+
+    /**
      * Unwrap a checked exception wrapped with {@link UncheckedException}.
      *
      * @param ex exception to unwrap
@@ -235,7 +248,7 @@ public interface Unchecked {
          *
          * @param cause cause
          */
-        public UncheckedException(Exception cause) {
+        public UncheckedException(Throwable cause) {
             super(cause);
         }
     }

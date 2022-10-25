@@ -15,8 +15,6 @@
  */
 package io.helidon.build.maven.stager;
 
-import io.helidon.build.common.Maps;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -24,20 +22,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import io.helidon.build.common.Maps;
+
 /**
  * Action iterator.
  */
-final class ActionIterator implements Iterator<Map<String, String>> {
+final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
 
     private final Map.Entry<String, List<String>>[] entries;
     private final int[] indexes;
     private final int maxIterations;
     private int iteration;
     private final Map<String, String> variables;
+    private final boolean join;
 
     @SuppressWarnings("unchecked")
     ActionIterator(Variables variables) {
         this.variables = new HashMap<>();
+        this.join = variables.join();
         Map<String, List<String>> iteratorVariables = new HashMap<>();
         for (Variable variable : variables) {
             List<String> values = new LinkedList<>();
@@ -68,6 +70,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         indexes = it.indexes;
         maxIterations = it.maxIterations;
         iteration = it.iteration;
+        join = it.join;
         this.variables = Maps.putAll(it.variables, variables);
     }
 
@@ -78,6 +81,11 @@ final class ActionIterator implements Iterator<Map<String, String>> {
      */
     ActionIterator forVariables(Map<String, String> variables) {
         return new ActionIterator(this, variables);
+    }
+
+    @Override
+    public boolean join() {
+        return join;
     }
 
     @Override

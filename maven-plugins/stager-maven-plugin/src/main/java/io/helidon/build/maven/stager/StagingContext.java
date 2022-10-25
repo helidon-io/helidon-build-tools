@@ -132,7 +132,7 @@ interface StagingContext {
     }
 
     default void logError(Throwable ex) {
-        logError(ex.getMessage());
+        logError(ex.toString());
     }
 
     default boolean isDebugEnabled() {

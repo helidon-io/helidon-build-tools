@@ -15,8 +15,6 @@
  */
 package io.helidon.build.maven.stager;
 
-import io.helidon.build.common.FileUtils;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,7 +73,6 @@ final class UnpackArtifactTask extends StagingTask {
         Path artifact = ctx.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
-        FileUtils.deleteDirectory(targetDir);
         Files.createDirectories(targetDir);
         ctx.unpack(artifact, targetDir, excludes, includes);
     }

@@ -15,22 +15,17 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Container of {@link StagingTask}.
+ * A trait to mark items that should not be executed in parallel.
  */
-public class StagingTasks extends StagingTask {
+interface Joinable {
 
-    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
-        super(elementName, nested, null, attrs);
-    }
-
-    @Override
-    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return CompletableFuture.completedFuture(null);
+    /**
+     * Indicate if this item should be executed sequentially, after its previous sibling.
+     *
+     * @return {@code true} if joined, {@code false} otherwise
+     */
+    default boolean join() {
+        return false;
     }
 }

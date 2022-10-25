@@ -22,7 +22,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+
+import io.helidon.build.common.Unchecked;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -167,16 +168,10 @@ public class StagerMojo extends AbstractMojo {
             tasks.execute(context, dir, Map.of())
                  .toCompletableFuture()
                  .get();
-            executorService.shutdown();
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         } catch (ExecutionException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            throw new RuntimeException(ex);
+            throw Unchecked.wrap(ex.getCause());
         }
     }
 
@@ -193,6 +188,11 @@ public class StagerMojo extends AbstractMojo {
             case StagingContext.CONNECT_TIMEOUT_PROP:
                 if (connectTimeout >= 0) {
                     return String.valueOf(connectTimeout);
+                }
+                break;
+            case StagingContext.TASK_TIMEOUT_PROP:
+                if (taskTimeout >= 0) {
+                    return String.valueOf(taskTimeout);
                 }
                 break;
             case StagingContext.MAX_RETRIES:

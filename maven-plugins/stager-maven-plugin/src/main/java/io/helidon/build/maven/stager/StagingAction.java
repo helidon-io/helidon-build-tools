@@ -25,7 +25,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 /**
  * Staging action.
  */
-interface StagingAction extends StagingElement {
+interface StagingAction extends StagingElement, Joinable {
 
     /**
      * Execute the action.
@@ -45,15 +45,6 @@ interface StagingAction extends StagingElement {
      * @return String that describes the task
      */
     String toString(Path dir, Map<String, String> vars);
-
-    /**
-     * Indicate if this task should be executed after the previous sibling.
-     *
-     * @return {@code true} if joined, {@code false} otherwise
-     */
-    default boolean join() {
-        return false;
-    }
 
     /**
      * Convert a {@link PlexusConfiguration} instance to a list of {@link StagingAction}.

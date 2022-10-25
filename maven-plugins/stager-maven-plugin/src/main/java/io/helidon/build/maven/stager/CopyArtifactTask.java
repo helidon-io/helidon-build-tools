@@ -15,13 +15,12 @@
  */
 package io.helidon.build.maven.stager;
 
-import io.helidon.build.common.Maps;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
+
+import io.helidon.build.common.Maps;
 
 /**
  * Copy an artifact to a given target location.
