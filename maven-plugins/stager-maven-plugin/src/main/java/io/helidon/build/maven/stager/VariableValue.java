@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Strings;
+
 /**
  * Internal model for variable value.
  *
@@ -51,10 +53,7 @@ interface VariableValue extends StagingElement {
         private final String text;
 
         SimpleValue(String text) {
-            if (text == null || text.isEmpty()) {
-                throw new IllegalArgumentException("text is required");
-            }
-            this.text = text;
+            this.text = Strings.requireValid(text, "text is required");
         }
 
         @Override

@@ -119,12 +119,14 @@ public interface Unchecked {
      * @param <E>      checked exception type
      * @return Supplier
      */
-    static <T, E extends Exception> Supplier unchecked(CheckedSupplier<T, E> supplier) {
+    static <T, E extends Exception> Supplier<T> unchecked(CheckedSupplier<T, E> supplier) {
         return () -> {
             try {
                 return supplier.get();
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedException(ex);
             }
         };
     }
@@ -140,8 +142,10 @@ public interface Unchecked {
         return () -> {
             try {
                 runnable.run();
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedException(ex);
             }
         };
     }
@@ -158,8 +162,10 @@ public interface Unchecked {
         return t -> {
             try {
                 consumer.accept(t);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedException(ex);
             }
         };
     }
@@ -177,8 +183,10 @@ public interface Unchecked {
         return (t, u) -> {
             try {
                 consumer.accept(t, u);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedException(ex);
             }
         };
     }
@@ -196,9 +204,52 @@ public interface Unchecked {
         return t -> {
             try {
                 return function.apply(t);
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedException(ex);
             }
         };
+    }
+
+    /**
+     * Wrap an exception wrapped with {@link UncheckedException} if checked.
+     *
+     * @param ex exception to wrap
+     * @return exception
+     */
+    static RuntimeException wrap(Throwable ex) {
+        if (ex instanceof RuntimeException) {
+            return (RuntimeException) ex;
+        }
+        return new UncheckedException(ex);
+    }
+
+    /**
+     * Unwrap a checked exception wrapped with {@link UncheckedException}.
+     *
+     * @param ex exception to unwrap
+     * @return exception
+     */
+    static Throwable unwrap(Throwable ex) {
+        if (ex instanceof UncheckedException) {
+            return ex.getCause();
+        }
+        return ex;
+    }
+
+    /**
+     * Unchecked exception.
+     */
+    class UncheckedException extends RuntimeException {
+
+        /**
+         * Create a new unchecked exception.
+         *
+         * @param cause cause
+         */
+        public UncheckedException(Throwable cause) {
+            super(cause);
+        }
     }
 }

@@ -73,9 +73,9 @@ class StagingElementFactory {
             case FileTask.ELEMENT_NAME:
                 return createAction(name, attrs, children, text);
             case ActionIterators.ELEMENT_NAME:
-                return actionIterators(children);
+                return actionIterators(children, attrs);
             case Variables.ELEMENT_NAME:
-                return variables(children);
+                return variables(children, attrs);
             case Variable.ELEMENT_NAME:
                 if (attrs.containsKey("ref")) {
                     return scope.resolve(attrs.get("ref"));
@@ -102,36 +102,29 @@ class StagingElementFactory {
     }
 
     /**
-     * Get the name of the wrapped element for the given wrapper element name.
-     *
-     * @param name wrapper element name
-     * @return wrapped element name
-     */
-    String wrappedElementName(String name) {
-        return WRAPPER_ELEMENTS.get(name);
-    }
-
-    /**
      * Create a new action iterators using the variables found in the given children.
      *
      * @param children child elements to process, should not be {@code null}
+     * @param attrs    attributes
      * @return ActionIterators, never {@code null}
      */
-    ActionIterators actionIterators(Map<String, List<StagingElement>> children) {
-        return new ActionIterators(filterChildren(children, Variables.ELEMENT_NAME, Variables.class)
+    ActionIterators actionIterators(Map<String, List<StagingElement>> children, Map<String, String> attrs) {
+        List<ActionIterator> iterators = filterChildren(children, Variables.ELEMENT_NAME, Variables.class)
                 .stream()
                 .map(ActionIterator::new)
-                .collect(toList()));
+                .collect(toList());
+        return new ActionIterators(iterators, attrs);
     }
 
     /**
      * Create a new variables instance from the variable found in the given children.
      *
      * @param children child elements to process, should not be {@code null}
+     * @param attrs    attributes
      * @return Variables, never {@code null}
      */
-    Variables variables(Map<String, List<StagingElement>> children) {
-        return new Variables(filterChildren(children, Variable.ELEMENT_NAME, Variable.class));
+    Variables variables(Map<String, List<StagingElement>> children, Map<String, String> attrs) {
+        return new Variables(filterChildren(children, Variable.ELEMENT_NAME, Variable.class), attrs);
     }
 
     /**
@@ -180,32 +173,24 @@ class StagingElementFactory {
         Supplier<Variables> variables = () -> firstChild(children, Variables.class, Variables::new);
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
-                return new StagingDirectory(attrs.get("target"), filterChildren(children, StagingAction.class));
+                return new StagingDirectory(filterChildren(children, StagingAction.class), attrs);
             case UnpackArtifactTask.ELEMENT_NAME:
-                return new UnpackArtifactTask(iterators.get(),
-                        new ArtifactGAV(attrs),
-                        attrs.get("target"),
-                        attrs.get("includes"),
-                        attrs.get("excludes"));
+                return new UnpackArtifactTask(iterators.get(), attrs);
             case CopyArtifactTask.ELEMENT_NAME:
-                return new CopyArtifactTask(iterators.get(), new ArtifactGAV(attrs), attrs.get("target"));
+                return new CopyArtifactTask(iterators.get(), attrs);
             case SymlinkTask.ELEMENT_NAME:
-                return new SymlinkTask(iterators.get(), attrs.get("source"), attrs.get("target"));
+                return new SymlinkTask(iterators.get(), attrs);
             case DownloadTask.ELEMENT_NAME:
-                return new DownloadTask(iterators.get(), attrs.get("url"), attrs.get("target"));
+                return new DownloadTask(iterators.get(), attrs);
             case ArchiveTask.ELEMENT_NAME:
-                return new ArchiveTask(iterators.get(),
-                        filterChildren(children, StagingAction.class),
-                        attrs.get("target"),
-                        attrs.get("includes"),
-                        attrs.get("excludes"));
+                return new ArchiveTask(iterators.get(), filterChildren(children, StagingAction.class), attrs);
             case TemplateTask.ELEMENT_NAME:
-                return new TemplateTask(iterators.get(), attrs.get("source"), attrs.get("target"), variables.get());
+                return new TemplateTask(iterators.get(), attrs, variables.get());
             case FileTask.ELEMENT_NAME:
-                return new FileTask(iterators.get(), attrs.get("target"), text, attrs.get("source"));
+                return new FileTask(iterators.get(), attrs, text);
             default:
                 if (isWrapperElement(name)) {
-                    return new StagingActions<>(filterChildren(children, StagingAction.class), attrs.get("join"), name);
+                    return new StagingTasks(name, filterChildren(children, StagingAction.class), attrs);
                 }
                 throw new IllegalStateException("Unknown action: " + name);
         }

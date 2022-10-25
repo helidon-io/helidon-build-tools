@@ -15,46 +15,70 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
+import io.helidon.build.common.CurrentThreadExecutorService;
+import io.helidon.build.common.Unchecked;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link StagingTask}.
  */
 class StagingTaskTest {
 
-    private final StagingContext context = new ContextTestImpl();
-
     @Test
-    public void testIterator() throws IOException {
+    void testIterator() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2")));
-        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
-        TestTask task = new TestTask(taskIterators, "{foo}");
+        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)), null);
+        List<String> renderedTargets = new LinkedList<>();
+        StagingTask task = new StagingTask(null, null, taskIterators, Map.of("target", "{foo}")) {
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                renderedTargets.add(resolveVar(target(), vars));
+            }
+        };
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
         task.execute(context, null, Map.of());
-        assertThat(task.renderedTargets, hasItems("foo1", "foo2"));
+        assertThat(renderedTargets, hasItems("foo1", "foo2"));
     }
 
     @Test
-    public void testIteratorsWithManyVariables() throws IOException {
+    void testIteratorsWithManyVariables() {
         Variables variables = new Variables();
         variables.add(new Variable("foo", new VariableValue.ListValue("foo1", "foo2", "foo3")));
         variables.add(new Variable("bar", new VariableValue.ListValue("bar1", "bar2")));
         variables.add(new Variable("bob", new VariableValue.ListValue("bob1", "bob2", "bob3", "bob4")));
-        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)));
-        TestTask task = new TestTask(taskIterators, "{foo}-{bar}-{bob}");
+        ActionIterators taskIterators = new ActionIterators(List.of(new ActionIterator(variables)), null);
+        List<String> renderedTargets = new LinkedList<>();
+        StagingTask task = new StagingTask(null, null, taskIterators, Map.of("target", "{foo}-{bar}-{bob}")) {
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                renderedTargets.add(resolveVar(target(), vars));
+            }
+        };
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
         task.execute(context, null, Map.of());
-        assertThat(task.renderedTargets, hasItems(
+        assertThat(renderedTargets, hasItems(
                 "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
                 "foo1-bar2-bob1", "foo1-bar2-bob2", "foo1-bar2-bob3", "foo1-bar2-bob4",
                 "foo2-bar1-bob1", "foo2-bar1-bob2", "foo2-bar1-bob3", "foo2-bar1-bob4",
@@ -63,65 +87,186 @@ class StagingTaskTest {
                 "foo3-bar2-bob1", "foo3-bar2-bob2", "foo3-bar2-bob3", "foo3-bar2-bob4"));
     }
 
-    private static final class TestTask extends StagingTask {
+    @Test
+    void testHandleRetry() throws InterruptedException {
+        StagingTask task = new StagingTask() {
 
-        private final List<String> renderedTargets;
+            @Override
+            protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return handleRetry(() -> doExecBody(ctx, dir, vars), ctx, 1, 3);
+            }
 
-        TestTask(ActionIterators iterators, String target) {
-            super(iterators, target);
-            this.renderedTargets = new LinkedList<>();
-        }
-
-        @Override
-        protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) {
-            renderedTargets.add(resolveVar(target(), variables));
-        }
-
-        @Override
-        public String elementName() {
-            return "test";
-        }
-
-        @Override
-        public String describe(Path dir, Map<String, String> variables) {
-            return "test";
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                throw new UnsupportedOperationException("boo");
+            }
+        };
+        StagingContext context = new TestContextImpl(new CurrentThreadExecutorService());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail();
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(UnsupportedOperationException.class)));
         }
     }
 
-    private static final class ContextTestImpl implements StagingContext {
+    @Test
+    void testHandleTimeout() throws InterruptedException {
+        StagingTask task = new StagingTask() {
 
-        @Override
-        public void submit(Callable<CompletionStage<Void>> task) {
-            try {
-                task.call().toCompletableFuture().join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            @Override
+            protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return handleTimeout(() -> doExecBody(ctx, dir, vars), ctx, 500, 0);
             }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                sleep(60);
+            }
+        };
+        StagingContext context = new TestContextImpl(Executors.newSingleThreadExecutor());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail("task should timeout");
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(TimeoutException.class)));
+        }
+    }
+
+    @Test
+    void testNoFailFast() throws InterruptedException {
+        AtomicInteger count = new AtomicInteger();
+        Function<Throwable, Void> exceptionally = ex -> {
+            count.incrementAndGet();
+            throw Unchecked.wrap(ex);
+        };
+        StagingTask subTask1 = new StagingTask() {
+
+            @Override
+            public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return super.execute(ctx, dir, vars).exceptionally(exceptionally);
+            }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                sleep(5); // sleep to ensure the 2nd sub-task fails first
+                throw new IllegalStateException();
+            }
+        };
+        StagingTask subTask2 = new StagingTask() {
+
+            @Override
+            public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return super.execute(ctx, dir, vars).exceptionally(exceptionally);
+            }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                throw new IllegalStateException();
+            }
+        };
+
+        StagingTask task = new StagingTask(null, List.of(subTask1, subTask2), null, null);
+        StagingContext context = new TestContextImpl(Executors.newCachedThreadPool());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail("task should fail");
+        } catch (ExecutionException e) {
+            assertThat(count.get(), is(2));
+            assertThat(e.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
+    }
+
+    @Test
+    void testFailedSiblingNoJoin() throws InterruptedException {
+        StagingTask task = new StagingTask(null, List.of(
+                new StagingTask() {
+
+                    @Override
+                    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                        throw new IllegalStateException();
+                    }
+                }, new StagingTask()),
+                null, null);
+        StagingContext context = new TestContextImpl(Executors.newCachedThreadPool());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail("task should fail");
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
+    }
+
+    @Test
+    void testFailedJoin() throws InterruptedException {
+        List<Integer> list = Collections.synchronizedList(new LinkedList<>());
+        StagingTask task = new StagingTask(null, List.of(
+                new StagingTask() {
+
+                    @Override
+                    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                        list.add(1);
+                        throw new IllegalStateException();
+                    }
+                }, new StagingTask(null, null, null, Map.of("join", "true")) {
+                    @Override
+                    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                        list.add(2);
+                    }
+                }),
+                null, null);
+        StagingContext context = new TestContextImpl(Executors.newCachedThreadPool());
+        try {
+            task.execute(context, null, Map.of()).toCompletableFuture().get();
+            Assertions.fail("task should fail");
+        } catch (ExecutionException e) {
+            assertThat(list, is(List.of(1)));
+            assertThat(e.getCause(), is(instanceOf(IllegalStateException.class)));
+        }
+    }
+
+    @Test
+    void testJoin() throws InterruptedException, ExecutionException {
+        List<Integer> list = Collections.synchronizedList(new LinkedList<>());
+        StagingTask task = new StagingTask(null, List.of(
+                new StagingTask() {
+
+                    @Override
+                    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                        sleep(5);
+                        list.add(1);
+                    }
+                }, new StagingTask(null, null, null, Map.of("join", "true")) {
+                    @Override
+                    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                        list.add(2);
+                    }
+                }),
+                null, null);
+        StagingContext context = new TestContextImpl(Executors.newCachedThreadPool());
+        task.execute(context, null, Map.of()).toCompletableFuture().get();
+        assertThat(list, is(List.of(1, 2)));
+    }
+
+    static void sleep(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static class TestContextImpl implements StagingContext {
+
+        final Executor executor;
+
+        TestContextImpl(Executor executor) {
+            this.executor = executor;
         }
 
         @Override
-        public void unpack(Path archive, Path target, String excludes, String includes) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void archive(Path directory, Path target, String excludes, String includes) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Path resolve(String path) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Path resolve(ArtifactGAV gav) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Path createTempDirectory(String prefix) throws IOException {
-            throw new UnsupportedOperationException();
+        public Executor executor() {
+            return executor;
         }
     }
 }

@@ -22,20 +22,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import io.helidon.build.common.Maps;
+
 /**
  * Action iterator.
  */
-final class ActionIterator implements Iterator<Map<String, String>> {
+final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
 
     private final Map.Entry<String, List<String>>[] entries;
     private final int[] indexes;
     private final int maxIterations;
     private int iteration;
-    private final HashMap<String, String> baseVariables;
+    private final Map<String, String> variables;
+    private final boolean join;
 
     @SuppressWarnings("unchecked")
     ActionIterator(Variables variables) {
-        baseVariables = new HashMap<>();
+        this.variables = new HashMap<>();
+        this.join = variables.join();
         Map<String, List<String>> iteratorVariables = new HashMap<>();
         for (Variable variable : variables) {
             List<String> values = new LinkedList<>();
@@ -58,18 +62,30 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         maxIterations = n;
         iteration = 1;
         indexes = new int[iteratorVariables.size()];
-        entries = iteratorVariables.entrySet().toArray(new Map.Entry[0]);
+        entries = iteratorVariables.entrySet().toArray(Map.Entry[]::new);
+    }
+
+    ActionIterator(ActionIterator it, Map<String, String> variables) {
+        entries = it.entries;
+        indexes = it.indexes;
+        maxIterations = it.maxIterations;
+        iteration = it.iteration;
+        join = it.join;
+        this.variables = Maps.putAll(it.variables, variables);
     }
 
     /**
-     * Set the base variables.
+     * Make a copy of this iterator that includes the given variables.
      *
-     * @param variables base variables
+     * @param variables variables
      */
-    @SuppressWarnings("UnusedReturnValue")
-    ActionIterator baseVariable(Map<String, String> variables) {
-        baseVariables.putAll(variables);
-        return this;
+    ActionIterator forVariables(Map<String, String> variables) {
+        return new ActionIterator(this, variables);
+    }
+
+    @Override
+    public boolean join() {
+        return join;
     }
 
     @Override
@@ -82,6 +98,7 @@ final class ActionIterator implements Iterator<Map<String, String>> {
         if (iteration++ > maxIterations) {
             throw new NoSuchElementException();
         }
+        Map<String, String> next = new HashMap<>(variables);
         int p = 1;
         for (int idx = 0; idx < entries.length; idx++) {
             int size = entries[idx].getValue().size();
@@ -89,14 +106,12 @@ final class ActionIterator implements Iterator<Map<String, String>> {
                 indexes[idx] = 0;
             }
             p *= size;
-            String val;
+            String val = entries[idx].getValue().get(indexes[idx]);
             if (iteration % (maxIterations / p) == 0) {
-                val = entries[idx].getValue().get(indexes[idx]++);
-            } else {
-                val = entries[idx].getValue().get(indexes[idx]);
+                indexes[idx]++;
             }
-            baseVariables.put(entries[idx].getKey(), val);
+            next.put(entries[idx].getKey(), val);
         }
-        return baseVariables;
+        return next;
     }
 }
