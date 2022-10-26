@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.common.markdown;
 
 /**
- * Unresolved input exception.
+ * Base interface for a parser/renderer extension.
  */
-public final class UnresolvedInputException extends InputException {
-
-    /**
-     * Constructor.
-     *
-     * @param inputPath The unresolved input path.
-     */
-    public UnresolvedInputException(String inputPath) {
-        super("Unresolved input: " + inputPath, inputPath);
-    }
+public interface Extension {
 }

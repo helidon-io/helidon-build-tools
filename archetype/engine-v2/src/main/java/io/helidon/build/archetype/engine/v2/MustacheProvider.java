@@ -16,17 +16,22 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-/**
- * Unresolved input exception.
- */
-public final class UnresolvedInputException extends InputException {
+import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
+import io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider;
 
-    /**
-     * Constructor.
-     *
-     * @param inputPath The unresolved input path.
-     */
-    public UnresolvedInputException(String inputPath) {
-        super("Unresolved input: " + inputPath, inputPath);
+/**
+ * Template support provider for {@link MustacheSupport}.
+ */
+public class MustacheProvider implements TemplateSupportProvider {
+
+    @Override
+    public String name() {
+        return "mustache";
+    }
+
+    @Override
+    public TemplateSupport create(MergedModel model, Context context) {
+        return new MustacheSupport(model, context);
     }
 }
