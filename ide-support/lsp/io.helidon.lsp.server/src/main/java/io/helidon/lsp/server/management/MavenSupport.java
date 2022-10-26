@@ -31,10 +31,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * Support operations with maven.
