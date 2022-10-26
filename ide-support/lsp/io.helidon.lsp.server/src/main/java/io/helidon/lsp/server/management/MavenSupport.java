@@ -48,8 +48,7 @@ public class MavenSupport {
     private static final Gson GSON = new Gson();
     private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support" +
             ".lsp:helidon-lsp-maven-plugin:list-dependencies";
-    private static final MavenSupport instance = new MavenSupport();
-    ;
+    private static final MavenSupport INSTANCE = new MavenSupport();
 
     private boolean isMavenInstalled = false;
 
@@ -63,7 +62,7 @@ public class MavenSupport {
      * @return Instance of the MavenSupport class.
      */
     public static MavenSupport instance() {
-        return instance;
+        return INSTANCE;
     }
 
     private void initialize() {
