@@ -255,10 +255,10 @@ public class Report {
                 default:
             }
         } catch (IOException e) {
-            String s = "Error writing file " + outputFile.getPath();
+            String s = "Error writing file " + outputFile.getPath() + ": " + e.toString();
             throw new IOException(s, e);
         } catch (JAXBException e) {
-            String s = "JAXB error creating file " + outputFile.getPath();
+            String s = "JAXB error creating file " + outputFile.getPath() + ": " + e.toString();
             throw new JAXBException(s, e);
         }
     }
