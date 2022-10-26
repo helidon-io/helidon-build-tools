@@ -34,6 +34,11 @@ public class FileUtils {
     private FileUtils() {
     }
 
+    /**
+     * Get the instance of the class.
+     *
+     * @return the instance of the class.
+     */
     public static FileUtils instance() {
         return INSTANCE;
     }

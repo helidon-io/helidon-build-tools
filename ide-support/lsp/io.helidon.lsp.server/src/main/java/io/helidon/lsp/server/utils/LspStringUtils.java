@@ -45,6 +45,12 @@ public class LspStringUtils {
         return count;
     }
 
+    /**
+     * Get an indent for the line.
+     *
+     * @param line line
+     * @return an indent for the line
+     */
     public static int indentSize(String line) {
         int result = 0;
         for (char symbol : line.toCharArray()) {

@@ -70,6 +70,11 @@ public class ConfigurationPropertiesService {
         mavenSupport = MavenSupport.instance();
     }
 
+    /**
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
+     */
     public static ConfigurationPropertiesService instance() {
         return INSTANCE;
     }
@@ -78,10 +83,20 @@ public class ConfigurationPropertiesService {
         this.metadataProvider = metadataProvider;
     }
 
+    /**
+     * Set mavenSupport.
+     *
+     * @param mavenSupport mavenSupport.
+     */
     public void mavenSupport(MavenSupport mavenSupport) {
         this.mavenSupport = mavenSupport;
     }
 
+    /**
+     * Clear cache for the pom.xml.
+     *
+     * @param pomFile pom.xml.
+     */
     public void cleanCache(String pomFile) {
         cache.remove(pomFile);
     }

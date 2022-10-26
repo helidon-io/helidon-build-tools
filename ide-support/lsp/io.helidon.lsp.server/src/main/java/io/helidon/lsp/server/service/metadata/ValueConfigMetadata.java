@@ -20,11 +20,26 @@ import java.util.Set;
 
 import io.helidon.config.metadata.ConfiguredOption;
 
+/**
+ * Information about values.
+ */
 public class ValueConfigMetadata extends ConfigMetadata {
 
     private final String defaultValue;
     private final List<ConfiguredType.AllowedValue> allowedValues;
 
+    /**
+     * Create a new instance.
+     *
+     * @param key           key
+     * @param defaultValue  defaultValue
+     * @param type          type
+     * @param description   description
+     * @param level         level
+     * @param content       content
+     * @param kind          kind
+     * @param allowedValues allowedValues
+     */
     public ValueConfigMetadata(String key, String defaultValue, String type, String description, int level,
                                Set<ConfigMetadata> content, ConfiguredOption.Kind kind,
                                List<ConfiguredType.AllowedValue> allowedValues) {
@@ -33,10 +48,20 @@ public class ValueConfigMetadata extends ConfigMetadata {
         this.allowedValues = allowedValues;
     }
 
+    /**
+     * Get default value.
+     *
+     * @return default value.
+     */
     public String defaultValue() {
         return defaultValue;
     }
 
+    /**
+     * Get allowed values.
+     *
+     * @return allowed values.
+     */
     public List<ConfiguredType.AllowedValue> allowedValues() {
         return allowedValues;
     }

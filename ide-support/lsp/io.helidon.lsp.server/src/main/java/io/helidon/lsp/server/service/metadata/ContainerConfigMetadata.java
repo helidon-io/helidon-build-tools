@@ -24,7 +24,18 @@ import io.helidon.config.metadata.ConfiguredOption;
  */
 public class ContainerConfigMetadata extends ConfigMetadata {
 
-    public ContainerConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level, Set<ConfigMetadata> content) {
+    /**
+     * Create a new instance.
+     *
+     * @param key         key
+     * @param type        type
+     * @param kind        kind
+     * @param description description
+     * @param level       level
+     * @param content     content
+     */
+    public ContainerConfigMetadata(String key, String type, ConfiguredOption.Kind kind, String description, int level,
+                                   Set<ConfigMetadata> content) {
         super(key, type, kind, description, level, content);
     }
 }

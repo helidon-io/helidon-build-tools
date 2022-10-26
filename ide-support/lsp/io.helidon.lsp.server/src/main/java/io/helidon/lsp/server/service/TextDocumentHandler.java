@@ -22,6 +22,7 @@ import java.util.List;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 import io.helidon.lsp.server.service.metadata.ConfiguredType;
 import io.helidon.lsp.server.service.metadata.ValueConfigMetadata;
+
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionParams;

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -36,7 +37,7 @@ import javax.json.JsonValue;
  */
 public class MetadataProvider {
 
-    private static MetadataProvider INSTANCE = new MetadataProvider();
+    private static MetadataProvider instance = new MetadataProvider();
 
     private static final Logger LOGGER = Logger.getLogger(MetadataProvider.class.getName());
     private static final String HELIDON_PROPERTIES_FILE = "META-INF/helidon/config-metadata.json";
@@ -46,14 +47,16 @@ public class MetadataProvider {
 
     /**
      * Instance of the class.
+     *
      * @return instance of the class.
      */
     public static MetadataProvider instance() {
-        return INSTANCE;
+        return instance;
     }
 
     /**
      * Read configuration metadata from the helidon jar file.
+     *
      * @param jarFilePath path to the helidon jar file.
      * @return list of configured types.
      * @throws IOException IOException
@@ -72,6 +75,7 @@ public class MetadataProvider {
 
     /**
      * Get configuration metadata from the json array.
+     *
      * @param jsonArray json array.
      * @return list of configured types.
      */

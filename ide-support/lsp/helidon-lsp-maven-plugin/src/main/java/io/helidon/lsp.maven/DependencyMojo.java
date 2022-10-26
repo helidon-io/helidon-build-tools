@@ -16,8 +16,19 @@
 
 package io.helidon.lsp.maven;
 
-import com.google.gson.Gson;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import io.helidon.lsp.common.Dependency;
+
+import com.google.gson.Gson;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.CumulativeScopeArtifactFilter;
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -31,23 +42,12 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Get information about dependencies of the project.
@@ -92,7 +92,7 @@ public class DependencyMojo extends AbstractMojo {
      * ProjectBuilder component, used to create project if pomPath parameter is specified.
      */
     @Component
-    protected ProjectBuilder projectBuilder;
+    private ProjectBuilder projectBuilder;
 
     /**
      * LifecycleDependencyResolver component, used to obtain all dependencies artifacts (including transitive) for the project.

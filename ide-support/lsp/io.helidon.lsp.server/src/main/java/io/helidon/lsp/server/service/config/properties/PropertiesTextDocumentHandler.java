@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
-
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -60,6 +60,11 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         init();
     }
 
+    /**
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
+     */
     public static PropertiesTextDocumentHandler instance() {
         return INSTANCE;
     }
@@ -69,6 +74,11 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         propertiesService = ConfigurationPropertiesService.instance();
     }
 
+    /**
+     * Set propertiesService.
+     *
+     * @param propertiesService propertiesService.
+     */
     public void propertiesService(ConfigurationPropertiesService propertiesService) {
         this.propertiesService = propertiesService;
     }
