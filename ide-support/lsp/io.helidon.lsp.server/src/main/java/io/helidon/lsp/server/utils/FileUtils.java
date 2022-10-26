@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class FileUtils {
 
-    private static FileUtils INSTANCE = new FileUtils();
+    private static FileUtils instance = new FileUtils();
 
     private FileUtils() {
     }
@@ -40,7 +40,7 @@ public class FileUtils {
      * @return the instance of the class.
      */
     public static FileUtils instance() {
-        return INSTANCE;
+        return instance;
     }
 
     /**

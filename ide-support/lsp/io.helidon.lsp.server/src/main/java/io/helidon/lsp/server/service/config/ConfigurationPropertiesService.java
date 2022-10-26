@@ -79,6 +79,11 @@ public class ConfigurationPropertiesService {
         return INSTANCE;
     }
 
+    /**
+     * Set metadataProvider.
+     *
+     * @param metadataProvider metadataProvider.
+     */
     public void metadataProvider(MetadataProvider metadataProvider) {
         this.metadataProvider = metadataProvider;
     }
@@ -197,13 +202,13 @@ public class ConfigurationPropertiesService {
         }
     }
 
-    private void processProperty
-            (ConfiguredType.ConfiguredProperty property,
-             Set<ConfiguredType.ConfiguredProperty> properties,
-             Map<String, ConfiguredType> typesMap,
-             int level,
-             Map<String, ConfigMetadata> result
-            ) {
+    private void processProperty(
+            ConfiguredType.ConfiguredProperty property,
+            Set<ConfiguredType.ConfiguredProperty> properties,
+            Map<String, ConfiguredType> typesMap,
+            int level,
+            Map<String, ConfigMetadata> result
+    ) {
         if (property.kind() == ConfiguredOption.Kind.LIST) {
             processListProperty(property, properties, typesMap, level, result);
             return;
