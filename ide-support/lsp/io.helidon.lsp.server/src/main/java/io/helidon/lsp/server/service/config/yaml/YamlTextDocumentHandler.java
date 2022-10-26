@@ -65,6 +65,11 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         init();
     }
 
+    /**
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
+     */
     public static YamlTextDocumentHandler instance() {
         return INSTANCE;
     }
@@ -74,6 +79,11 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         contentManager = ContentManager.instance();
     }
 
+    /**
+     * Set propertiesService.
+     *
+     * @param propertiesService propertiesService.
+     */
     public void propertiesService(ConfigurationPropertiesService propertiesService) {
         this.propertiesService = propertiesService;
     }
@@ -387,11 +397,11 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private static class CompletionDetails {
 
-        Map<String, ConfigMetadata> proposedMetadata;
-        Position position;
-        List<String> fileContent;
-        LinkedHashMap<LineResult, String> yamlFileResult;
-        Map.Entry<LineResult, String> parentLineResultEntry;
-        ConfigMetadata parentConfig;
+        private Map<String, ConfigMetadata> proposedMetadata;
+        private Position position;
+        private List<String> fileContent;
+        private LinkedHashMap<LineResult, String> yamlFileResult;
+        private Map.Entry<LineResult, String> parentLineResultEntry;
+        private ConfigMetadata parentConfig;
     }
 }

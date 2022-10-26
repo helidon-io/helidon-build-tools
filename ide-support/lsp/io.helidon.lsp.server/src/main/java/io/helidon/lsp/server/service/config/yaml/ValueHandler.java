@@ -25,7 +25,7 @@ class ValueHandler implements Handler {
         parser = yamlParser;
     }
 
-    static ValueHandler INSTANCE(YamlParser yamlParser) {
+    static ValueHandler instance(YamlParser yamlParser) {
         if (instance != null && parser != null && parser.equals(yamlParser)) {
             return instance;
         }

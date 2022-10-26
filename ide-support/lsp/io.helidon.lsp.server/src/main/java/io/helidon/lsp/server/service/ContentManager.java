@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,25 +57,44 @@ public class ContentManager {
         }
     }
 
+    /**
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
+     */
     public static ContentManager instance() {
         return INSTANCE;
     }
 
+    /**
+     * Read content of the file.
+     *
+     * @param fileName file name.
+     * @return content of the file.
+     * @throws IOException
+     * @throws URISyntaxException
+     */
     public List<String> read(String fileName) throws IOException, URISyntaxException {
         lock.lock();  // block until condition holds
-        LOGGER.finest("read() started with thread " + Thread.currentThread().getName() );
+        LOGGER.finest("read() started with thread " + Thread.currentThread().getName());
         try {
             String tempFile = tempFile(fileName);
             return fileUtils.getTextDocContentByURI(tempFile);
         } finally {
-            LOGGER.finest("read() finished with thread " + Thread.currentThread().getName() );
+            LOGGER.finest("read() finished with thread " + Thread.currentThread().getName());
             lock.unlock();
         }
     }
 
+    /**
+     * Register file in the instance of this class.
+     *
+     * @param fileName file name.
+     * @return true if file was registered.
+     */
     public boolean register(String fileName) {
         lock.lock();  // block until condition holds
-        LOGGER.finest("register() started with thread " + Thread.currentThread().getName() );
+        LOGGER.finest("register() started with thread " + Thread.currentThread().getName());
         try {
             if (fileName == null) {
                 return false;
@@ -84,7 +102,7 @@ public class ContentManager {
             String tempFile = tempFile(fileName);
             return !tempFile.equals(fileName);
         } finally {
-            LOGGER.finest("register() finished with thread " + Thread.currentThread().getName() );
+            LOGGER.finest("register() finished with thread " + Thread.currentThread().getName());
             lock.unlock();
         }
     }
@@ -110,9 +128,18 @@ public class ContentManager {
         }
     }
 
+    /**
+     * Write content of the file or its new changes to the instance of this class.
+     *
+     * @param fileName file name.
+     * @param content  content of the file.
+     * @param options  OpenOption for the file.
+     * @throws IOException
+     * @throws URISyntaxException
+     */
     public void write(String fileName, List<String> content, OpenOption... options) throws IOException, URISyntaxException {
         lock.lock();  // block until condition holds
-        LOGGER.finest("write() started with thread " + Thread.currentThread().getName() );
+        LOGGER.finest("write() started with thread " + Thread.currentThread().getName());
         try {
             String tempFile = tempFile(fileName);
             if (fileName.equals(tempFile)) {
@@ -122,18 +149,8 @@ public class ContentManager {
             //rewrite the content of the file
             Files.write(Path.of(new URI(tempFile)), content, options);
         } finally {
-            LOGGER.finest("write() finished with thread " + Thread.currentThread().getName() );
+            LOGGER.finest("write() finished with thread " + Thread.currentThread().getName());
             lock.unlock();
         }
     }
-
-//    public void saveChanges(String fileName) throws IOException, URISyntaxException {
-//        String tempFile = tempFile(fileName);
-//        if (fileName.equals(tempFile)) {
-//            //temp file was nor created
-//            return;
-//        }
-//        List<String> content = fileUtils.getTextDocContentByURI(fileName);
-//        Files.write(Path.of(new URI(tempFile)), content);
-//    }
 }

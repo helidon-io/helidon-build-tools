@@ -15,6 +15,6 @@
  */
 
 /**
- * Common classes for ide-support/
+ * Common classes for ide-support.
  */
 package io.helidon.lsp.common;

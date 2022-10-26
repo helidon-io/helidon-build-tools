@@ -30,7 +30,7 @@ class InitialHandler implements Handler {
         parser = yamlParser;
     }
 
-    static InitialHandler INSTANCE(YamlParser yamlParser) {
+    static InitialHandler instance(YamlParser yamlParser) {
         if (instance != null && parser != null && parser.equals(yamlParser)) {
             return instance;
         }

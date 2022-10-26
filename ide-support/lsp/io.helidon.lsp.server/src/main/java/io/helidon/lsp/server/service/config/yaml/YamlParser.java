@@ -36,7 +36,7 @@ class YamlParser {
      */
     LinkedHashMap<LineResult, String> parse(List<String> yaml) {
         LinkedHashMap<LineResult, String> result = new LinkedHashMap<>();
-        currentHandler = InitialHandler.INSTANCE(this);
+        currentHandler = InitialHandler.instance(this);
         for (int i = 0; i < yaml.size(); i++) {
             String line = yaml.get(i);
             LineResult lineResult = currentHandler.process(i, line);
@@ -56,7 +56,7 @@ class YamlParser {
         Map<Integer, String> parents = new LinkedHashMap<>();
         previousResults.keySet()
                        .forEach(prev -> parents.put(prev.indent(), Objects.requireNonNull(prev.tokens().peek()).value()));
-        parents.entrySet().removeIf(e -> e.getKey() >= lineResult.indent());//entry.getValue().indent()
+        parents.entrySet().removeIf(e -> e.getKey() >= lineResult.indent());
         parents.values().forEach(parent -> path.append(parent).append("."));
         return path.append(Objects.requireNonNull(lineResult.tokens().peek()).value()).toString();
     }

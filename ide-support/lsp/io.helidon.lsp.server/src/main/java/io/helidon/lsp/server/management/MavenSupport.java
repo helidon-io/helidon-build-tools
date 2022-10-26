@@ -46,8 +46,8 @@ public class MavenSupport {
     private static final String POM_FILE_NAME = "pom.xml";
     private static final int DEFAULT_TIMEOUT = 3000;
     private static final Gson GSON = new Gson();
-    private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support" +
-            ".lsp:helidon-lsp-maven-plugin:list-dependencies";
+    private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support"
+            + ".lsp:helidon-lsp-maven-plugin:list-dependencies";
     private static final MavenSupport INSTANCE = new MavenSupport();
 
     private boolean isMavenInstalled = false;
