@@ -33,6 +33,27 @@
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <directories>
+                            <directory target="${project.build.directory}/stage">
+                                <symlinks>
+                                    <symlink source="docs/${docs.latest.version}" target="docs/latest"/>
+                                    <symlink source="docs/${docs.1.version}" target="docs/v1"/>
+                                    <symlink source="docs/${docs.2.version}" target="docs/v2"/>
+                                    <symlink source="cli/${cli.latest.version}" target="cli/latest"/>
+                                </symlinks>
+                            </directory>
+                        </directories>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -43,18 +64,6 @@
                         <goals>
                             <goal>stage</goal>
                         </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}/stage">
-                                    <symlinks>
-                                        <symlink source="docs/${docs.latest.version}" target="docs/latest"/>
-                                        <symlink source="docs/${docs.1.version}" target="docs/v1"/>
-                                        <symlink source="docs/${docs.2.version}" target="docs/v2"/>
-                                        <symlink source="cli/${cli.latest.version}" target="cli/latest"/>
-                                    </symlinks>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

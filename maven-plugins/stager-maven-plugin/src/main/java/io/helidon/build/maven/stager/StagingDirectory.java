@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,61 +20,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Generate a directory using a set of actions.
  */
-class StagingDirectory implements StagingAction {
+class StagingDirectory extends StagingTask {
 
     static final String ELEMENT_NAME = "directory";
 
-    private final List<StagingAction> actions;
-    private final String target;
-
-    StagingDirectory(String target, List<StagingAction> actions) {
-        if (target == null || target.isEmpty()) {
-            throw new IllegalArgumentException("target is required");
-        }
-        this.target = target;
-        this.actions = actions == null ? List.of() : actions;
+    StagingDirectory(List<StagingAction> nested, Map<String, String> attrs) {
+        super(ELEMENT_NAME, nested, null, attrs);
     }
 
     @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    /**
-     * Get the target.
-     *
-     * @return target, never {@code null}
-     */
-    String target() {
-        return target;
-    }
-
-    /**
-     * Nested actions.
-     *
-     * @return actions, never {@code null}
-     */
-    List<StagingAction> actions() {
-        return actions;
-    }
-
-    @Override
-    public void execute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
+    public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
         Path targetDir = dir.resolve(target());
-        Files.createDirectories(targetDir);
-        for (StagingAction action : actions()) {
-            action.execute(context, targetDir, variables);
+        ctx.logInfo("Staging %s", targetDir);
+        try {
+            Files.createDirectories(targetDir);
+        } catch (IOException ex) {
+            return CompletableFuture.failedFuture(ex);
         }
+        return super.execute(ctx, targetDir, vars);
     }
 
     @Override
-    public String describe(Path dir, Map<String, String> variables) {
-        return ELEMENT_NAME + "{"
-                + "target='" + dir.resolve(target()) + '\''
-                + '}';
+    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+        return CompletableFuture.completedFuture(null);
     }
 }
