@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.common.Strings;
 import io.helidon.build.common.SubstitutionVariables;
 
 import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
@@ -234,7 +235,7 @@ public class UserConfig {
      */
     public String groupId(String groupIdArg, SubstitutionVariables substitutions) {
         if (groupIdArg != null) {
-            return groupIdArg;
+            return Strings.replace(groupIdArg, Map.of("\\s+", "."));
         } else {
             return defaultGroupId(substitutions);
         }
@@ -251,9 +252,9 @@ public class UserConfig {
      */
     public String artifactId(String artifactIdArg, String nameArg, SubstitutionVariables substitutions) {
         if (nameArg != null) {
-            return nameArg;
+            return Strings.replace(nameArg, Map.of("\\s+", "-"));
         } else if (artifactIdArg != null) {
-            return artifactIdArg;
+            return Strings.replace(artifactIdArg, Map.of("\\s+", "."));
         } else {
             return defaultArtifactId(substitutions);
         }
@@ -269,7 +270,7 @@ public class UserConfig {
      */
     public String packageName(String packageArg, SubstitutionVariables substitutions) {
         if (packageArg != null) {
-            return packageArg;
+            return Strings.replace(packageArg, Map.of("\\s+", "."));
         } else {
             return defaultPackageName(substitutions);
         }
@@ -292,7 +293,8 @@ public class UserConfig {
      * @return The default group id.
      */
     public String defaultGroupId(SubstitutionVariables substitutions) {
-        return substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
+        String groupId = substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
+        return Strings.replace(groupId, Map.of("\\s+", "."));
     }
 
     /**
@@ -302,7 +304,8 @@ public class UserConfig {
      * @return The default artifact id.
      */
     public String defaultArtifactId(SubstitutionVariables substitutions) {
-        return substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
+        String artifactId = substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
+        return Strings.replace(artifactId, Map.of("\\s+", "."));
     }
 
     /**
@@ -312,7 +315,8 @@ public class UserConfig {
      * @return The default package name.
      */
     public String defaultPackageName(SubstitutionVariables substitutions) {
-        String result = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
+        String packageName = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
+        String result = Strings.replace(packageName, Map.of("\\s+", "."));
         if (result.contains("${")) {
             // result is not fully resolved, skip validation
             return result;

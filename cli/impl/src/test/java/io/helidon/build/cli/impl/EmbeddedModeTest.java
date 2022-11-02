@@ -123,7 +123,7 @@ class EmbeddedModeTest {
         long lineCount = loggedLines().stream()
                 .distinct()
                 .filter(l -> l.contains("%s"))
-                .filter(l -> l.contains("format") || l.contains("formatEnv") )
+                .filter(l -> l.contains("format") || l.contains("formatEnv"))
                 .count();
         assertThat(lineCount, is(2L));
         System.clearProperty("format");

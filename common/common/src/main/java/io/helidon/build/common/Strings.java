@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * String utility methods.
@@ -132,6 +133,23 @@ public class Strings {
             return "";
         }
         return str.substring(index - 1);
+    }
+
+    /**
+     * Sanitize given string with replacement keys and values.
+     *
+     * @param str           string
+     * @param replacements  map containing old and new characters
+     * @return sanitized string
+     */
+    public static String replace(String str, Map<String, String> replacements) {
+        if (replacements == null || replacements.isEmpty() || str == null) {
+            return str;
+        }
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            str = str.replaceAll(entry.getKey(), entry.getValue());
+        }
+        return str;
     }
 
     private Strings() {

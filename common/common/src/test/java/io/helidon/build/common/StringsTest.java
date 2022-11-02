@@ -17,8 +17,11 @@ package io.helidon.build.common;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Tests {@link Strings}.
@@ -32,5 +35,15 @@ public class StringsTest {
         assertThat(Strings.stripLeading("/./////", '/'), is("./////"));
         assertThat(Strings.stripLeading("/////./", '/'), is("./"));
         assertThat(Strings.stripLeading("foo", '/'), is("foo"));
+    }
+
+    @Test
+    void testSanitize() {
+        assertThat(Strings.replace(null, null), is(nullValue()));
+        assertThat(Strings.replace("my name", null), is("my name"));
+        assertThat(Strings.replace("my name", Map.of("\\s+", ".")), is("my.name"));
+        assertThat(Strings.replace(" my name ", Map.of("\\s+", ".")), is(".my.name."));
+        assertThat(Strings.replace("my name", Map.of("\\s+", ".", "my", "your")), is("your.name"));
+        assertThat(Strings.replace("my name", Map.of("my", "your", "name", "Name")), is("your Name"));
     }
 }
