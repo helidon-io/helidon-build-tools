@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.build.util.LogFormatter;
 import io.helidon.build.util.MavenVersion;
 import io.helidon.build.util.PrintStreams;
 import io.helidon.build.util.ProjectConfig;
+import io.helidon.build.util.Strings;
 import io.helidon.build.util.TimeUtils;
 
 import static io.helidon.build.cli.impl.VersionCommand.addProjectProperty;
@@ -89,9 +90,7 @@ public final class InfoCommand extends BaseCommand {
             System.getProperties().keySet().stream().sorted().forEach(key -> {
                 String name = key.toString();
                 String value = System.getProperty(name);
-                value = value.replace("\n", "\\n");
-                value = value.replace("\r", "\\r");
-                value = value.replace("\b", "\\b");
+                value = Strings.replace(value, Map.of("\n", "\\n", "\r", "\\r", "\b", "\\b"));
                 systemProps.put(key.toString(), value);
             });
         }

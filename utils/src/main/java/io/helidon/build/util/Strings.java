@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * String utility methods.
@@ -70,6 +71,23 @@ public class Strings {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    /**
+     * Sanitize given string with replacement keys and values.
+     *
+     * @param str           string
+     * @param replacements  map containing old and new characters
+     * @return sanitized string
+     */
+    public static String replace(String str, Map<String, String> replacements) {
+        if (replacements == null || replacements.isEmpty() || str == null) {
+            return str;
+        }
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            str = str.replaceAll(entry.getKey(), entry.getValue());
+        }
+        return str;
     }
 
     private Strings() {

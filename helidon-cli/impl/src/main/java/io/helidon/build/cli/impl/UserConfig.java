@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Properties;
 
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.util.FileUtils;
+import io.helidon.build.util.Strings;
 import io.helidon.build.util.SubstitutionVariables;
 
 import static io.helidon.build.util.ProjectConfig.DOT_HELIDON;
@@ -225,7 +226,7 @@ public class UserConfig {
      */
     public String groupId(String groupIdArg, SubstitutionVariables substitutions) {
         if (groupIdArg != null) {
-            return groupIdArg;
+            return Strings.replace(groupIdArg, Map.of("\\s+", "."));
         } else {
             return defaultGroupId(substitutions);
         }
@@ -242,9 +243,9 @@ public class UserConfig {
      */
     public String artifactId(String artifactIdArg, String nameArg, SubstitutionVariables substitutions) {
         if (nameArg != null) {
-            return nameArg;
+            return Strings.replace(nameArg, Map.of("\\s+", "-"));
         } else if (artifactIdArg != null) {
-            return artifactIdArg;
+            return Strings.replace(artifactIdArg, Map.of("\\s+", "."));
         } else {
             return defaultArtifactId(substitutions);
         }
@@ -254,13 +255,13 @@ public class UserConfig {
      * Returns the package name to use given the command line arguments, using {@code --package} if provided
      * and {@link #defaultPackageName(SubstitutionVariables)} if not.
      *
-     * @param packageArg The {@code --package} argument or {@code null} if not provided.
+     * @param packageArg    The {@code --package} argument or {@code null} if not provided.
      * @param substitutions The substitution variables.
      * @return The artifactId.
      */
     public String packageName(String packageArg, SubstitutionVariables substitutions) {
         if (packageArg != null) {
-            return packageArg;
+            return Strings.replace(packageArg, Map.of("\\s+", "."));
         } else {
             return defaultPackageName(substitutions);
         }
@@ -283,7 +284,8 @@ public class UserConfig {
      * @return The default group id.
      */
     public String defaultGroupId(SubstitutionVariables substitutions) {
-        return substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
+        String groupId = substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
+        return Strings.replace(groupId, Map.of("\\s+", "."));
     }
 
     /**
@@ -293,7 +295,8 @@ public class UserConfig {
      * @return The default artifact id.
      */
     public String defaultArtifactId(SubstitutionVariables substitutions) {
-        return substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
+        String artifactId = substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
+        return Strings.replace(artifactId, Map.of("\\s+", "."));
     }
 
     /**
