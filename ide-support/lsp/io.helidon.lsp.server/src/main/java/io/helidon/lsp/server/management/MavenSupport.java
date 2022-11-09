@@ -187,7 +187,7 @@ public class MavenSupport {
 
         private final List<String> content = new ArrayList<>();
 
-        public MavenPrintStream() {
+        MavenPrintStream() {
             super(new ByteArrayOutputStream());
         }
 
@@ -201,7 +201,7 @@ public class MavenSupport {
             content.add(string);
         }
 
-        public List<String> content() {
+        List<String> content() {
             return content;
         }
     }
