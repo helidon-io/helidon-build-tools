@@ -17,14 +17,18 @@
 package io.helidon.lsp.server.management;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +48,7 @@ public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
     private static final String POM_FILE_NAME = "pom.xml";
-    private static final int DEFAULT_TIMEOUT = 3000;
+    private static final int DEFAULT_TIMEOUT = 10000;
     private static final Gson GSON = new Gson();
     private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support"
             + ".lsp:helidon-lsp-maven-plugin:list-dependencies";
@@ -91,12 +95,16 @@ public class MavenSupport {
         }
         long startTime = System.currentTimeMillis();
         try (ServerSocket serverSocket = new ServerSocket(0)) {
+            PrintStream output = new MavenPrintStream();
             MavenCommand.builder()
                         .addArgument(DEPENDENCIES_MVN_COMMAND)
                         .addArgument("-Dport=" + serverSocket.getLocalPort())
                         .directory(new File(pomPath).getParentFile())
                         .verbose(false)
-                        .build().execute();
+                        .stdOut(output)
+                        .stdErr(output)
+                        .build()
+                        .execute();
 
             return CompletableFuture.supplyAsync(() -> {
                 Set<Dependency> result = null;
@@ -175,4 +183,26 @@ public class MavenSupport {
                      .map(File::getAbsolutePath).orElse(null);
     }
 
+    private static class MavenPrintStream extends PrintStream {
+
+        private final List<String> content = new ArrayList<>();
+
+        public MavenPrintStream() {
+            super(new ByteArrayOutputStream());
+        }
+
+        @Override
+        public void println(String string) {
+            content.add(string);
+        }
+
+        @Override
+        public void print(String string) {
+            content.add(string);
+        }
+
+        public List<String> content() {
+            return content;
+        }
+    }
 }

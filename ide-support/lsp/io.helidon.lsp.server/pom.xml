@@ -35,6 +35,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.build-tools.archetype</groupId>
+            <artifactId>helidon-archetype-engine-v2-json</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.ide-support.lsp</groupId>
             <artifactId>helidon-ide-support-lsp-common</artifactId>
             <version>${project.version}</version>
@@ -177,6 +182,31 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-archetypes</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.helidon.archetypes</groupId>
+                                    <artifactId>helidon</artifactId>
+                                    <version>${version.lib.helidon}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/archetype/</outputDirectory>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

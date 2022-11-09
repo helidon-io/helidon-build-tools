@@ -26,6 +26,11 @@ import { logger } from "./logger";
 
 let helidonLangServerProcess: ChildProcess;
 let deactivatedExtension = false;
+const clientName = 'Helidon Language Client';
+const serverOutputChannel = VSCodeAPI.createOutputChannel("Helidon LS LOGS");
+const clientOutputChannel = VSCodeAPI.createOutputChannel(clientName);
+const outputFormatter = new OutputFormatter(serverOutputChannel);
+let client : LanguageClient;
 
 export function deactivated(value: boolean){
     deactivatedExtension = value;
@@ -46,6 +51,9 @@ async function startSocketLangServer(
     if (helidonLangServerProcess){
         logger.info("Helidon language server will be restarted. The previous instance of the server will be stopped. Pid - " + helidonLangServerProcess.pid);
         ChildProcessAPI.killProcess(helidonLangServerProcess.pid);
+        if (client){
+            client.stop();
+        }
     }
 
     //start Language Server
@@ -73,7 +81,7 @@ async function startSocketLangServer(
     //connect to the Language Server
     //wait for server start
     await new Promise(resolve => {
-        setTimeout(resolve, 3000)
+        setTimeout(resolve, 5000)
     });
     let net = require("net");
     let serverOptions = () => {
@@ -88,6 +96,8 @@ async function startSocketLangServer(
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
+        outputChannel: clientOutputChannel,
+        outputChannelName: clientName,
         documentSelector: [
             {
                 scheme: 'file',
@@ -108,7 +118,7 @@ async function startSocketLangServer(
     };
 
     // Create the language client and start the client.
-    let client = new LanguageClient('helidonLS', 'Helidon Language Server', serverOptions, clientOptions);
+    client = new LanguageClient('HelidonLanguageClient', clientName, serverOptions, clientOptions);
     configureLangClient(client, context, maxCountRestart);
     logger.info("Helidon Language Server started. Pid - " + langServerProcess.pid);
     // Disposables to remove on deactivation.
@@ -134,6 +144,7 @@ function configureLangClient(
             if (deactivatedExtension && helidonLangServerProcess){
                 logger.info("Helidon Language Server will be stopped because plugin is deactivated. Pid - " + helidonLangServerProcess.pid);
                 ChildProcessAPI.killProcess(helidonLangServerProcess.pid);
+                client.stop();
                 return;
             }
             maxCountRestart = maxCountRestart - 1;
@@ -149,8 +160,6 @@ function configureLangClient(
 }
 
 function configureLangServer(langServerProcess: ChildProcess) {
-    const outputChannel = VSCodeAPI.createOutputChannel("Helidon LS LOGS");
-    const outputFormatter = new OutputFormatter(outputChannel);
     langServerProcess.on('close', (code) => {
         if (code !== 0) {
             logger.info(`Helidon LangServer process exited with code ${code}`);

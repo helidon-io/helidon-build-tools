@@ -36,7 +36,7 @@ class MavenSupportTest {
     @Test
     public void getDependenciesTest() throws URISyntaxException, IOException {
         String pomForFile = getPomForCurrentClass();
-        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.instance().getDependencies(pomForFile, 3000);
+        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.instance().getDependencies(pomForFile, 10000);
         assertTrue(dependencies.size() > 0);
     }
 

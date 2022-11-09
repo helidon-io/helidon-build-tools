@@ -43,8 +43,8 @@
     </dependencies>
 
     <modules>
-        <module>io.helidon.lsp.server</module>
         <module>helidon-lsp-maven-plugin</module>
+        <module>io.helidon.lsp.server</module>
         <module>common</module>
     </modules>
 
