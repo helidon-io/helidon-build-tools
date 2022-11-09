@@ -33,4 +33,11 @@ public class StringsTest {
         assertThat(Strings.replaceAll("my name", "\\s+", ".", "my", "your"), is("your.name"));
         assertThat(Strings.replaceAll("my name", "my", "your", "your", "my"), is("my name"));
     }
+
+    @Test
+    void testReplaceAllWhiteSpaces() {
+        assertThat(Strings.replaceAllWhiteSpaces(null, ""), is(nullValue()));
+        assertThat(Strings.replaceAllWhiteSpaces(" ", ""), is(""));
+        assertThat(Strings.replaceAllWhiteSpaces(" a  b ", ""), is("ab"));
+    }
 }

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -83,6 +82,9 @@ public class Strings {
      */
     public static String replaceAllWhiteSpaces(String str, String replacement) {
         Objects.requireNonNull(replacement, "Replacement must not be null");
+        if (str == null) {
+            return null;
+        }
         return str.replaceAll("\\s+", replacement);
     }
 
