@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.Objects;
 
 /**
  * String utility methods.
@@ -136,18 +136,36 @@ public class Strings {
     }
 
     /**
+     * Replace all white spaces by replacement string.
+     *
+     * @param str           string
+     * @param replacement   new characters
+     * @return sanitized string
+     */
+    public static String replaceAllWhiteSpaces(String str, String replacement) {
+        Objects.requireNonNull(replacement, "Replacement must not be null");
+        if (str == null) {
+            return null;
+        }
+        return str.replaceAll("\\s+", replacement);
+    }
+
+    /**
      * Sanitize given string with replacement keys and values.
      *
      * @param str           string
      * @param replacements  map containing old and new characters
      * @return sanitized string
      */
-    public static String replace(String str, Map<String, String> replacements) {
-        if (replacements == null || replacements.isEmpty() || str == null) {
+    public static String replaceAll(String str, String... replacements) {
+        if (str == null || replacements == null) {
             return str;
         }
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            str = str.replaceAll(entry.getKey(), entry.getValue());
+        if (replacements.length % 2 != 0) {
+            throw new IllegalArgumentException("replacements should be even");
+        }
+        for (int i = 0; i < replacements.length; i += 2) {
+            str = str.replaceAll(replacements[i], replacements[i + 1]);
         }
         return str;
     }

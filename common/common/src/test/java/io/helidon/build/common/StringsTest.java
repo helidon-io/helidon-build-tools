@@ -17,8 +17,6 @@ package io.helidon.build.common;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -38,12 +36,19 @@ public class StringsTest {
     }
 
     @Test
-    void testSanitize() {
-        assertThat(Strings.replace(null, null), is(nullValue()));
-        assertThat(Strings.replace("my name", null), is("my name"));
-        assertThat(Strings.replace("my name", Map.of("\\s+", ".")), is("my.name"));
-        assertThat(Strings.replace(" my name ", Map.of("\\s+", ".")), is(".my.name."));
-        assertThat(Strings.replace("my name", Map.of("\\s+", ".", "my", "your")), is("your.name"));
-        assertThat(Strings.replace("my name", Map.of("my", "your", "name", "Name")), is("your Name"));
+    void testReplaceAll() {
+        assertThat(Strings.replaceAll(null), is(nullValue()));
+        assertThat(Strings.replaceAll("my name"), is("my name"));
+        assertThat(Strings.replaceAll("my name", "\\s+", "."), is("my.name"));
+        assertThat(Strings.replaceAll(" my name ", "\\s+", "."), is(".my.name."));
+        assertThat(Strings.replaceAll("my name", "\\s+", ".", "my", "your"), is("your.name"));
+        assertThat(Strings.replaceAll("my name", "my", "your", "your", "my"), is("my name"));
+    }
+
+    @Test
+    void testReplaceAllWhiteSpaces() {
+        assertThat(Strings.replaceAllWhiteSpaces(null, ""), is(nullValue()));
+        assertThat(Strings.replaceAllWhiteSpaces(" ", ""), is(""));
+        assertThat(Strings.replaceAllWhiteSpaces(" a  b ", ""), is("ab"));
     }
 }

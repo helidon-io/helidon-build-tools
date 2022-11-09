@@ -118,9 +118,9 @@ public final class InitOptions {
         this.flavorOption = flavor;
         this.flavor = flavor == null ? Flavor.valueOf(DEFAULT_FLAVOR) : flavor;
         this.projectNameOption = projectName;
-        this.groupIdOption = Strings.replace(groupId, Map.of("\\s+", ""));
-        this.artifactIdOption = Strings.replace(artifactId, Map.of("\\s+", ""));
-        this.packageNameOption = Strings.replace(packageName, Map.of("\\s+", ""));
+        this.groupIdOption = Strings.replaceAllWhiteSpaces(groupId, "");
+        this.artifactIdOption = Strings.replaceAllWhiteSpaces(artifactId, "");
+        this.packageNameOption = Strings.replaceAllWhiteSpaces(packageName, "");
         this.batch = batch;
 
         // The following will be updated by applyConfig:
@@ -312,13 +312,13 @@ public final class InitOptions {
             String value = properties.get(key);
             switch (key) {
                 case GROUP_ID_PROPERTY:
-                    groupId = Strings.replace(value, Map.of("\\s+", "."));
+                    groupId = Strings.replaceAllWhiteSpaces(value, ".");
                     break;
                 case ARTIFACT_ID_PROPERTY:
-                    artifactId = Strings.replace(value, Map.of("\\s+", "-"));
+                    artifactId = Strings.replaceAllWhiteSpaces(value, "-");
                     break;
                 case PACKAGE_NAME_PROPERTY:
-                    packageName = Strings.replace(value, Map.of("\\s+", "."));
+                    packageName = Strings.replaceAllWhiteSpaces(value, ".");
                     break;
                 default:
             }

@@ -104,7 +104,7 @@ public final class InfoCommand extends BaseCommand {
             System.getProperties().keySet().stream().sorted().forEach(key -> {
                 String name = key.toString();
                 String value = System.getProperty(name);
-                value = Strings.replace(value, Map.of("\n", "\\n", "\r", "\\r", "\b", "\\b"));
+                value = Strings.replaceAll(value, "\n", "\\n", "\r", "\\r", "\b", "\\b");
                 systemProps.put(key.toString(), value);
             });
         }
