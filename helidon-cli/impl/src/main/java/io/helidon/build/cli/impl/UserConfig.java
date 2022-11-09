@@ -226,7 +226,7 @@ public class UserConfig {
      */
     public String groupId(String groupIdArg, SubstitutionVariables substitutions) {
         if (groupIdArg != null) {
-            return Strings.replace(groupIdArg, Map.of("\\s+", "."));
+            return Strings.replaceAllWhiteSpaces(groupIdArg, ".");
         } else {
             return defaultGroupId(substitutions);
         }
@@ -243,9 +243,9 @@ public class UserConfig {
      */
     public String artifactId(String artifactIdArg, String nameArg, SubstitutionVariables substitutions) {
         if (nameArg != null) {
-            return Strings.replace(nameArg, Map.of("\\s+", "-"));
+            return Strings.replaceAllWhiteSpaces(nameArg, "-");
         } else if (artifactIdArg != null) {
-            return Strings.replace(artifactIdArg, Map.of("\\s+", "."));
+            return Strings.replaceAllWhiteSpaces(artifactIdArg, ".");
         } else {
             return defaultArtifactId(substitutions);
         }
@@ -261,7 +261,7 @@ public class UserConfig {
      */
     public String packageName(String packageArg, SubstitutionVariables substitutions) {
         if (packageArg != null) {
-            return Strings.replace(packageArg, Map.of("\\s+", "."));
+            return Strings.replaceAllWhiteSpaces(packageArg, ".");
         } else {
             return defaultPackageName(substitutions);
         }
@@ -285,7 +285,7 @@ public class UserConfig {
      */
     public String defaultGroupId(SubstitutionVariables substitutions) {
         String groupId = substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
-        return Strings.replace(groupId, Map.of("\\s+", "."));
+        return Strings.replaceAllWhiteSpaces(groupId, ".");
     }
 
     /**
@@ -296,7 +296,7 @@ public class UserConfig {
      */
     public String defaultArtifactId(SubstitutionVariables substitutions) {
         String artifactId = substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
-        return Strings.replace(artifactId, Map.of("\\s+", "."));
+        return Strings.replaceAllWhiteSpaces(artifactId, ".");
     }
 
     /**
