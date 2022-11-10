@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * String utility methods.
@@ -70,6 +71,41 @@ public class Strings {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    /**
+     * Replace all white spaces by replacement string.
+     *
+     * @param str           string
+     * @param replacement   new characters
+     * @return sanitized string
+     */
+    public static String replaceWhitespaces(String str, String replacement) {
+        Objects.requireNonNull(replacement, "Replacement must not be null");
+        if (str == null) {
+            return null;
+        }
+        return str.replaceAll("\\s+", replacement);
+    }
+
+    /**
+     * Sanitize given string with replacement keys and values.
+     *
+     * @param str           string
+     * @param replacements  map containing old and new characters
+     * @return sanitized string
+     */
+    public static String replaceAll(String str, String... replacements) {
+        if (str == null || replacements == null) {
+            return str;
+        }
+        if (replacements.length % 2 != 0) {
+            throw new IllegalArgumentException("replacements should be even");
+        }
+        for (int i = 0; i < replacements.length; i += 2) {
+            str = str.replaceAll(replacements[i], replacements[i + 1]);
+        }
+        return str;
     }
 
     private Strings() {
