@@ -46,9 +46,9 @@ public class StringsTest {
     }
 
     @Test
-    void testReplaceAllWhiteSpaces() {
-        assertThat(Strings.replaceAllWhiteSpaces(null, ""), is(nullValue()));
-        assertThat(Strings.replaceAllWhiteSpaces(" ", ""), is(""));
-        assertThat(Strings.replaceAllWhiteSpaces(" a  b ", ""), is("ab"));
+    void testReplaceWhitespaces() {
+        assertThat(Strings.replaceWhitespaces(null, ""), is(nullValue()));
+        assertThat(Strings.replaceWhitespaces(" ", ""), is(""));
+        assertThat(Strings.replaceWhitespaces(" a  b ", ""), is("ab"));
     }
 }

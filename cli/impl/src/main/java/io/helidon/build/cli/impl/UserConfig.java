@@ -27,13 +27,13 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.CommandContext;
-import io.helidon.build.common.Strings;
 import io.helidon.build.common.SubstitutionVariables;
 
 import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
 import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
 import static io.helidon.build.common.FileUtils.deleteDirectoryContent;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.Strings.replaceWhitespaces;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -235,7 +235,7 @@ public class UserConfig {
      */
     public String groupId(String groupIdArg, SubstitutionVariables substitutions) {
         if (groupIdArg != null) {
-            return Strings.replaceAllWhiteSpaces(groupIdArg, ".");
+            return replaceWhitespaces(groupIdArg, ".");
         } else {
             return defaultGroupId(substitutions);
         }
@@ -252,9 +252,9 @@ public class UserConfig {
      */
     public String artifactId(String artifactIdArg, String nameArg, SubstitutionVariables substitutions) {
         if (nameArg != null) {
-            return Strings.replaceAllWhiteSpaces(nameArg, "-");
+            return replaceWhitespaces(nameArg, "-");
         } else if (artifactIdArg != null) {
-            return Strings.replaceAllWhiteSpaces(artifactIdArg, ".");
+            return replaceWhitespaces(artifactIdArg, ".");
         } else {
             return defaultArtifactId(substitutions);
         }
@@ -270,7 +270,7 @@ public class UserConfig {
      */
     public String packageName(String packageArg, SubstitutionVariables substitutions) {
         if (packageArg != null) {
-            return Strings.replaceAllWhiteSpaces(packageArg, ".");
+            return replaceWhitespaces(packageArg, ".");
         } else {
             return defaultPackageName(substitutions);
         }
@@ -294,7 +294,7 @@ public class UserConfig {
      */
     public String defaultGroupId(SubstitutionVariables substitutions) {
         String groupId = substitutions.resolve(property(DEFAULT_GROUP_ID_KEY, DEFAULT_GROUP_ID_DEFAULT_VALUE));
-        return Strings.replaceAllWhiteSpaces(groupId, ".");
+        return replaceWhitespaces(groupId, ".");
     }
 
     /**
@@ -305,7 +305,7 @@ public class UserConfig {
      */
     public String defaultArtifactId(SubstitutionVariables substitutions) {
         String artifactId = substitutions.resolve(property(DEFAULT_ARTIFACT_ID_KEY, DEFAULT_ARTIFACT_DEFAULT_VALUE));
-        return Strings.replaceAllWhiteSpaces(artifactId, ".");
+        return replaceWhitespaces(artifactId, ".");
     }
 
     /**
@@ -316,7 +316,7 @@ public class UserConfig {
      */
     public String defaultPackageName(SubstitutionVariables substitutions) {
         String packageName = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
-        String result = Strings.replaceAllWhiteSpaces(packageName, ".");
+        String result = replaceWhitespaces(packageName, ".");
         if (result.contains("${")) {
             // result is not fully resolved, skip validation
             return result;

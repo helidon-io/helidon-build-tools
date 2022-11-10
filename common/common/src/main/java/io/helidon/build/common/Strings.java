@@ -142,7 +142,7 @@ public class Strings {
      * @param replacement   new characters
      * @return sanitized string
      */
-    public static String replaceAllWhiteSpaces(String str, String replacement) {
+    public static String replaceWhitespaces(String str, String replacement) {
         Objects.requireNonNull(replacement, "Replacement must not be null");
         if (str == null) {
             return null;

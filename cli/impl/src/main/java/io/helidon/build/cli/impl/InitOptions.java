@@ -24,7 +24,6 @@ import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.harness.Option;
 import io.helidon.build.cli.harness.Option.KeyValue;
 import io.helidon.build.cli.impl.ArchetypeInvoker.EngineVersion;
-import io.helidon.build.common.Strings;
 import io.helidon.build.common.SubstitutionVariables;
 import io.helidon.build.common.SubstitutionVariables.NotFoundAction;
 
@@ -118,9 +117,9 @@ public final class InitOptions {
         this.flavorOption = flavor;
         this.flavor = flavor == null ? Flavor.valueOf(DEFAULT_FLAVOR) : flavor;
         this.projectNameOption = projectName;
-        this.groupIdOption = Strings.replaceAllWhiteSpaces(groupId, "");
-        this.artifactIdOption = Strings.replaceAllWhiteSpaces(artifactId, "");
-        this.packageNameOption = Strings.replaceAllWhiteSpaces(packageName, "");
+        this.groupIdOption = groupId;
+        this.artifactIdOption = artifactId;
+        this.packageNameOption = packageName;
         this.batch = batch;
 
         // The following will be updated by applyConfig:
@@ -312,13 +311,13 @@ public final class InitOptions {
             String value = properties.get(key);
             switch (key) {
                 case GROUP_ID_PROPERTY:
-                    groupId = Strings.replaceAllWhiteSpaces(value, ".");
+                    groupId = value;
                     break;
                 case ARTIFACT_ID_PROPERTY:
-                    artifactId = Strings.replaceAllWhiteSpaces(value, "-");
+                    artifactId = value;
                     break;
                 case PACKAGE_NAME_PROPERTY:
-                    packageName = Strings.replaceAllWhiteSpaces(value, ".");
+                    packageName = value;
                     break;
                 default:
             }
