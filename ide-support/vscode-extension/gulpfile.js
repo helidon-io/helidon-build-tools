@@ -22,5 +22,6 @@ gulp.task('build', (done) => {
     gulp.src('../lsp/io.helidon.lsp.server/target/io.helidon.lsp.server.jar').pipe(gulp.dest('./target/server'));
     gulp.src('../lsp/io.helidon.lsp.server/target/logging.properties').pipe(gulp.dest('./target/server'));
     gulp.src('../lsp/io.helidon.lsp.server/target/cli-data/**/*').pipe(gulp.dest('./target/cli-data'));
+    gulp.src('../lsp/io.helidon.lsp.server/target/archetype/**/*').pipe(gulp.dest('./target/server/archetype'));
     done();
 });

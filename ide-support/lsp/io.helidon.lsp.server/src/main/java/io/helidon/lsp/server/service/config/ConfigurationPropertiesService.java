@@ -115,7 +115,10 @@ public class ConfigurationPropertiesService {
      */
     public Map<String, ConfigMetadata> metadataForPom(String pom) throws IOException {
         if (cache.get(pom) != null) {
-            return cache.get(pom).get();
+            Map<String, ConfigMetadata> result = cache.get(pom).get();
+            if (result != null) {
+                return result;
+            }
         }
 
         long startTime = System.currentTimeMillis();

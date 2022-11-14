@@ -14,36 +14,38 @@
  * limitations under the License.
  */
 
+import { Context } from "./Context";
+
 export interface GeneratorData {
     steps: any[],
     elements: any[],
     currentElementIndex: number,
-
+    context: Context;
 }
 
 export class GeneratorDataAPI {
 
-    public static convertProjectDataElements(generatorData: GeneratorData) : Map<string, string> {
+    public static convertProjectDataElements(generatorData: GeneratorData): Map<string, string> {
         const result: Map<string, string> = new Map();
         for (let element of generatorData.elements) {
             let value: string | null = null;
-            if (element.type === 'enum-element') {
+            if (element.kind === 'enum') {
                 if (element.selectedValues.length > 0) {
                     value = element.selectedValues[0];
                 }
-            } else if (element.type === 'boolean-element') {
+            } else if (element.kind === 'boolean') {
                 if (element.selectedValues.length > 0) {
                     value = element.selectedValues[0];
                 } else {
                     value = 'false';
                 }
-            } else if (element.type === 'list-element') {
+            } else if (element.kind === 'list') {
                 value = element.selectedValues.join(",")
-            } else if (element.type === 'text-element') {
+            } else if (element.kind === 'text') {
                 value = element.value;
             }
             if (value != null) {
-                result.set(element.name, value);
+                result.set(element._scope.id, value);
             }
         }
         return result;
@@ -59,6 +61,7 @@ export abstract class BaseCommand {
     }
 
     public undo(): GeneratorData {
+        this.initialData.context.scope.clear();
         return this.initialData;
     }
 
@@ -71,11 +74,12 @@ export class TextCommand extends BaseCommand {
         super(initialData);
     }
 
-        execute(): GeneratorData {
+    execute(): GeneratorData {
         return {
             steps: this.initialData.steps,
             elements: this.initialData.elements,
-            currentElementIndex: this.initialData.currentElementIndex + 1
+            currentElementIndex: this.initialData.currentElementIndex + 1,
+            context: this.initialData.context
         };
     }
 
@@ -86,15 +90,26 @@ export class OptionCommand extends BaseCommand {
     steps: any[];
     elements: any[];
     newElements: any[] = [];
+    context: Context = new Context();
 
     constructor(initialData: GeneratorData) {
-        super(initialData);
+        super({
+            steps: initialData.steps,
+            elements: initialData.elements,
+            currentElementIndex: initialData.currentElementIndex,
+            context: Context.clone(initialData.context)
+        });
         this.steps = [...this.initialData.steps];
         this.elements = [...this.initialData.elements];
+        this.context = Context.clone(initialData.context);
     }
 
-    public selectedOptionsChildren (newElements: any[]) : void {
+    public selectedOptionsChildren(newElements: any[]): void {
         this.newElements = newElements;
+    }
+
+    public setContext(newContext: Context) {
+        this.context = newContext;
     }
 
     execute(): GeneratorData {
@@ -102,38 +117,15 @@ export class OptionCommand extends BaseCommand {
         return {
             steps: this.steps,
             elements: this.elements,
-            currentElementIndex: this.initialData.currentElementIndex + 1
+            currentElementIndex: this.initialData.currentElementIndex + 1,
+            context: this.context
         };
     }
 
     private updateElements(currentElementIndex: number, newElements: any[]): void {
-        let newInputs: any[] = [];
-        for (let element of newElements) {
-            if (element.type === 'step-element') {
-                this.addStep(element, newInputs);
-            } else {
-                newInputs.push(element);
-            }
-        }
-        if (newInputs.length > 0) {
-            this.elements.splice(currentElementIndex+1, 0, ...newInputs);
+        if (newElements.length > 0) {
+            this.elements.splice(currentElementIndex + 1, 0, ...newElements);
         }
     }
-
-    private addStep(step: any, inputList: any[]): void {
-        if (step.children == null) {
-            return;
-        }
-        let newInputs: any[] = [];
-        for (let element of step.children) {
-            if (element.type === 'step-element') {
-                this.addStep(element, newInputs);
-            } else {
-                newInputs.push(element);
-            }
-        }
-        inputList.push(...newInputs);
-    }
-
 }
 

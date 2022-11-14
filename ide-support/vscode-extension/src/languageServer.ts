@@ -25,7 +25,12 @@ import * as vscode from 'vscode';
 import { logger } from "./logger";
 
 let helidonLangServerProcess: ChildProcess;
+let helidonLangServerClient: LanguageClient;
 let deactivatedExtension = false;
+
+export function getHelidonLangServerClient() : LanguageClient {
+    return helidonLangServerClient;
+}
 
 export function deactivated(value: boolean){
     deactivatedExtension = value;
@@ -109,6 +114,7 @@ async function startSocketLangServer(
 
     // Create the language client and start the client.
     let client = new LanguageClient('helidonLS', 'Helidon Language Server', serverOptions, clientOptions);
+    helidonLangServerClient = client;
     configureLangClient(client, context, maxCountRestart);
     logger.info("Helidon Language Server started. Pid - " + langServerProcess.pid);
     // Disposables to remove on deactivation.

@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { QuickPickItemExt } from "./common";
+import { GeneratorData } from "./GeneratorCommand";
+import { Expression } from "./Expression";
+
+export class Interpreter {
+
+    private archetype: any;
+    private newElements: any[] = [];
+    private generatorData: GeneratorData;
+
+    constructor(archetype: any, generatorData: GeneratorData) {
+        this.archetype = archetype;
+        this.generatorData = generatorData;
+    }
+
+    public process(element: any): any[] {
+        this.newElements = [];
+        this.visit(element);
+        return this.newElements;
+    }
+
+    private visit(element: any,) {
+        switch (element.kind) {
+            case 'step':
+                this.processStep(element);
+                break;
+            case 'inputs':
+                this.processInputs(element);
+                break;
+            case 'list':
+                this.processList(element);
+                break;
+            case 'enum':
+                this.processList(element);
+                break;
+            case 'boolean' :
+                this.processList(element);
+                break;
+            case 'text':
+                this.processText(element);
+                break;
+            case 'call':
+                this.processMethod(element);
+                break;
+            case 'presets':
+                this.processPreset(element);
+                break;
+            case 'variables':
+                this.processVariables(element);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private processInputs(element: any) {
+        if (element.children) {
+            for (let child of element.children) {
+                child._scope = this.generatorData.context.newScope(child);
+                //todo change it
+                let contextValue = this.generatorData.context.values.get(child.id);
+                if (contextValue == null) {
+                    this.visit(child);
+                } else {
+                    console.log(child.path);
+                }
+            }
+        }
+    }
+
+    private processStep(element: any) {
+        if (element.children) {
+            for (let child of element.children) {
+                this.visit(child);
+            }
+        }
+    }
+
+    private processList(element: any) {
+        let options: QuickPickItemExt [] = [];
+        let defaultValue: string[] = this.getDefaultValue(element);
+        //todo maybe id need to change to path
+        this.generatorData.context.values.set(element.id, defaultValue);
+        let selectedOptions: QuickPickItemExt [] = [];
+        if (element.kind === 'boolean') {
+            options.push(
+                {label: 'yes', children: element.children, value: 'true'},
+                {label: 'no', value: 'false'});
+        } else {
+            options.push(...element.children.filter((child: any) => child.kind === 'option').map((o: any) => {
+                return {
+                    label: o.name,
+                    children: o.children,
+                    value: o.value,
+                    description: o.description
+                }
+            }));
+        }
+        if (defaultValue.length > 0) {
+            selectedOptions.push(
+                ...options.filter(option => defaultValue.includes(option.value!))
+            );
+        }
+        let optional = element.optional ? element.optional : false;
+        let result = {
+            title: element.name,
+            placeholder: (element.name ?? "") + ` (optional - ${optional}). Press 'Enter' to confirm.`,
+            items: options,
+            selectedItems: selectedOptions,
+            kind: element.kind,
+            id: element.id,
+            //todo change it
+            path: element.id,
+            _scope: element._scope
+        };
+        this.newElements.push(result);
+    }
+
+    private getDefaultValue(element: any) : string []{
+        if (element.selectedValues) {
+            return element.selectedValues;
+        }
+        if (element.default != null) {
+            if (element.kind === 'list') {
+                return element.default
+                    .map((e: string) => this.evaluateProps(e, (v:any) => this.generatorData.context.lookup(v)));
+            } else {
+                if (typeof(element.default) === 'string' ) {
+                    return [this.evaluateProps(element.default, (v:any) => this.generatorData.context.lookup(v))];
+                }
+                return [element.default];
+            }
+        }
+        return [];
+    }
+
+    private processText(element: any) {
+        const optional = element.optional ? element.optional : false;
+        //TODO resolve default value if it contains ${}
+        const defValPlaceholder = element.default ? ` default value: ${element.default};` : "";
+        let result = {
+            title: element.name,
+            placeholder: (element.name ?? "") + defValPlaceholder + ` (optional - ${optional}). Press 'Enter' to confirm.`,
+            value: element.default ? element.default : "",
+            prompt: element.name,
+            messageValidation: (value: string) => undefined,
+            kind: element.kind,
+            id: element.id,
+            //todo change it
+            path: element.id,
+            _scope: element._scope
+        };
+        this.newElements.push(result);
+    }
+
+    private processMethod(element: any) {
+        const methods = this.archetype.methods[element.method];
+        for (const method of methods) {
+            this.visit(method);
+        }
+    }
+
+    private processPreset(element: any) {
+        if (element.children) {
+            for (let child of element.children) {
+                this.generatorData.context.values.set(child.path, child.value);
+            }
+        }
+    }
+
+    public setGeneratorData(generatorData: GeneratorData) {
+        this.generatorData = generatorData;
+    }
+
+    private processVariables(element: any) {
+        if (element.children) {
+            for (let child of element.children) {
+                const expressionResult = Expression.create(this.archetype.expressions[child.if])
+                    .eval((val: string) => this.generatorData.context.lookup(val));
+                if (expressionResult === true) {
+                    this.generatorData.context.variables.set(child.path, child.value);
+                }
+            }
+        }
+    }
+
+    /**
+     * Evaluate properties within a string.
+     * @param input {string}
+     * @param resolver {Function}
+     * @return {string|*}
+     */
+    private evaluateProps (input: string, resolver: any) : string {
+        let start = input.indexOf('${');
+        let end = input.indexOf('}', start);
+        let index = 0;
+        let resolved = null;
+        while (start >= 0 && end > 0) {
+            if (resolved === null) {
+                resolved = input.substring(index, start);
+            } else {
+                resolved += input.substring(index, start);
+            }
+            let propName = input.substring(start + 2, end);
+
+            // search for transformation (name/regexp/replace)
+            let matchStart = 0;
+            do {
+                matchStart = propName.indexOf('/', matchStart + 1);
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) === '\\')
+            let matchEnd = matchStart;
+            do {
+                matchEnd = propName.indexOf('/', matchEnd + 1);
+                // eslint-disable-next-line
+            } while (matchStart > 0 && propName.charAt(matchStart - 1) === '\\')
+
+            let regexp = null;
+            let replace = null;
+            if (matchStart > 0 && matchEnd > matchStart) {
+                regexp = propName.substring(matchStart + 1, matchEnd);
+                replace = propName.substring(matchEnd + 1);
+                propName = propName.substring(0, matchStart);
+            }
+
+            let propValue = resolver(propName);
+            if (propValue == null) {
+                propValue = '';
+            } else if (regexp !== null && replace !== null) {
+                propValue = propValue.replaceAll(regexp, replace);
+            }
+
+            resolved += propValue;
+            index = end + 1;
+            start = input.indexOf('${', index);
+            end = input.indexOf('}', index);
+        }
+        if (resolved !== null) {
+            return resolved + input.substring(index);
+        }
+        return input;
+    }
+}

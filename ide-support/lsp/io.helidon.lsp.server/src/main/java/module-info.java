@@ -31,5 +31,6 @@ module io.helidon.lsp.server {
     requires java.json;
     requires org.apache.commons.lang3;
     requires com.google.gson;
+    requires helidon.archetype.engine.v2.json;
     opens io.helidon.lsp.server.service.config;
 }
