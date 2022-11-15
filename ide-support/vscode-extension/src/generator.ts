@@ -191,8 +191,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         return generatorData.elements.filter((value: any) => value._skip === false).length;
     }
 
-    //todo refactor
-    function prepareQuickPickData(element: any, currentStep: number, totalSteps: number): QuickPickData {
+    function prepareQuickPickData(element: any): QuickPickData {
         let result: QuickPickData;
         result = element;
         result.currentStep = getCurrentStep();
@@ -240,10 +239,26 @@ export async function showHelidonGenerator(extensionPath: string) {
         return inputBox;
     }
 
-    //todo refactor
-    function processAccept(element: any) {
+    function processSelected(element:any, selectedValues: any[], childrenOfSelected: any[]): OptionCommand {
+        //will be used to evaluate expressions
+        let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
+        generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
+
         let processedChildren: any[] = [];
+        for (let child of childrenOfSelected) {
+            const elements = interpreter.process(child);
+            processedChildren.push(...elements);
+        }
+
         let optionCommand = new OptionCommand(generatorData);
+        optionCommand.selectedOptionsChildren(processedChildren);
+        optionCommand.setContext(generatorData.context);
+        generatorData = optionCommand.execute();
+        interpreter.setGeneratorData(generatorData);
+        return optionCommand;
+    }
+
+    function processAccept(element: any) {
         let selectedValues = element.selectedItems.map((item: QuickPickItemExt) => item.value);
         let children: any[] = [];
         for (let item of element.selectedItems) {
@@ -252,24 +267,11 @@ export async function showHelidonGenerator(extensionPath: string) {
                 children.push(...option.children);
             }
         }
-
-        //will be used to evaluate expressions
-        let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
-        generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
-
-        for (let child of children) {
-            const elements = interpreter.process(child);
-            processedChildren.push(...elements);
-        }
-
-        optionCommand.selectedOptionsChildren(processedChildren);
-        optionCommand.setContext(generatorData.context);
-        generatorData = optionCommand.execute();
-        interpreter.setGeneratorData(generatorData);
+        processSelected(element, selectedValues, children);
     }
 
     function getQuickPickInput(element: any, resolve: any, reject: any): QuickPick<any> {
-        const data = prepareQuickPickData(element, generatorData.currentElementIndex + 1, generatorData.elements.length);
+        const data = prepareQuickPickData(element);
         const quickPick = VSCodeAPI.createQuickPick(data);
         quickPick.canSelectMany = true;
         quickPick.buttons = [QuickInputButtons.Back];
@@ -278,7 +280,6 @@ export async function showHelidonGenerator(extensionPath: string) {
         let lastSelectedItems = quickPick.selectedItems;
 
         quickPick.show();
-        let optionCommand = new OptionCommand(generatorData);
 
         quickPick.onDidAccept(async () => {
             let selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
@@ -294,21 +295,8 @@ export async function showHelidonGenerator(extensionPath: string) {
                         children.push(...option.children);
                     }
                 }
-                let processedChildren: any[] = [];
 
-                //will be used to evaluate expressions
-                let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
-                generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
-
-                for (let child of children) {
-                    const elements = interpreter.process(child);
-                    processedChildren.push(...elements);
-                }
-
-                optionCommand.selectedOptionsChildren(processedChildren);
-                optionCommand.setContext(generatorData.context);
-                generatorData = optionCommand.execute();
-                interpreter.setGeneratorData(generatorData);
+                let optionCommand = processSelected(element, selectedValues, children);
                 commandHistory.push(optionCommand);
 
                 resolve(quickPick.selectedItems);
