@@ -28,6 +28,9 @@ export class GeneratorDataAPI {
     public static convertProjectDataElements(generatorData: GeneratorData): Map<string, string> {
         const result: Map<string, string> = new Map();
         for (let element of generatorData.elements) {
+            if (element._skip === true) {
+                continue;
+            }
             let value: string | null = null;
             if (element.kind === 'enum') {
                 if (element.selectedValues.length > 0) {

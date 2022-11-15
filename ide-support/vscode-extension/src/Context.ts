@@ -18,7 +18,7 @@ export class Context {
 
     scope: ContextScope;
     scopes: Map<string, ContextScope>
-    values: Map<string, any>;
+    values: Map<string, ContextValue>;
     variables: Map<string, any>;
 
     constructor() {
@@ -33,7 +33,7 @@ export class Context {
         result.values = new Map(context.values);
         result.variables = new Map(context.variables);
         result.scope = {
-            global:context.scope.global,
+            global: context.scope.global,
             children: new Map(context.scope.children),
             parent: context.scope.parent,
             id: context.scope.id,
@@ -43,7 +43,33 @@ export class Context {
         return result;
     }
 
-    public lookup (query: string): any {
+    /**
+     * Get a value.
+     * @param id {string}
+     * @return {*|null}
+     */
+    public getValue(id: string) {
+        const entry = this.values.get(id)
+        if (entry !== undefined) {
+            return entry;
+        }
+        return null;
+    }
+
+    /**
+     * Set a value.
+     * @param id {string}
+     * @param value {*}
+     * @param kind {ContextValueKind}
+     * @return {*}
+     */
+    public setValue(id: string, value: any, kind: ContextValueKind) {
+        const valueObject = new ContextValue(value, kind);
+        this.values.set(id, valueObject);
+        return valueObject;
+    }
+
+    public lookup(query: string): any {
         const id = this.query(query);
         let value = this.variables.get(id);
         if (value != null) {
@@ -51,7 +77,7 @@ export class Context {
         }
         value = this.values.get(id)
         if (value != null) {
-            return value;
+            return value.value;
         }
         return null;
     }
@@ -61,7 +87,7 @@ export class Context {
      * @param query {string}
      * @return {string}
      */
-    private query (query: string) : string {
+    private query(query: string): string {
         let scope = this.scope.global ? '' : this.scope.id;
         if (scope === null) {
             scope = '';
@@ -101,7 +127,7 @@ export class Context {
      * @param node {*}
      * @return {ContextScope}
      */
-    public newScope (node: any) : ContextScope {
+    public newScope(node: any): ContextScope {
         const scope = new ContextScope(this.scope, node);
         this.scopes.set(scope.id!, scope);
         return scope;
@@ -111,14 +137,14 @@ export class Context {
      * Push a scope.
      * @param scope {ContextScope}
      */
-    public pushScope (scope: ContextScope) {
+    public pushScope(scope: ContextScope) {
         this.scope = scope;
     }
 
     /**
      * Pop the current scope.
      */
-    public popScope () {
+    public popScope() {
         if (this.scope.parent === null) {
             throw new Error('No such element');
         }
@@ -141,7 +167,7 @@ class ContextScope {
      * @param parent {ContextScope|null}
      * @param node {*|null}
      */
-    constructor (parent: ContextScope | null, node: any) {
+    constructor(parent: ContextScope | null, node: any) {
         this.global = node != null ? node.global : true
         this.children = new Map()
         if (parent !== null) {
@@ -168,7 +194,36 @@ class ContextScope {
      * @param id {string}
      * @return {string}
      */
-    static path (parent: ContextScope, id: string) {
+    static path(parent: ContextScope, id: string) {
         return parent.global ? id : parent.id + '.' + id
     }
+}
+
+/**
+ * Context value.
+ */
+class ContextValue {
+
+    value: any;
+    kind: ContextValueKind;
+
+    /**
+     * Create a new context value.
+     * @param value {*}
+     * @param kind {ContextValueKind}
+     */
+    constructor(value: any, kind: ContextValueKind) {
+        this.value = value
+        this.kind = kind
+    }
+}
+
+/**
+ * Context value kind.
+ */
+export enum ContextValueKind {
+
+    PRESET = "preset",
+    DEFAULT = "default",
+    USER = "user"
 }

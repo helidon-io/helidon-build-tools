@@ -17,6 +17,7 @@
 import { QuickPickItemExt } from "./common";
 import { GeneratorData } from "./GeneratorCommand";
 import { Expression } from "./Expression";
+import { ContextValueKind } from "./Context";
 
 export class Interpreter {
 
@@ -49,7 +50,7 @@ export class Interpreter {
             case 'enum':
                 this.processList(element);
                 break;
-            case 'boolean' :
+            case 'boolean':
                 this.processList(element);
                 break;
             case 'text':
@@ -73,12 +74,9 @@ export class Interpreter {
         if (element.children) {
             for (let child of element.children) {
                 child._scope = this.generatorData.context.newScope(child);
-                //todo change it
-                let contextValue = this.generatorData.context.values.get(child.id);
-                if (contextValue == null) {
+                let contextValue = this.generatorData.context.getValue(child._scope.id);
+                if (contextValue == null || child.kind !== 'boolean' || contextValue.value === true) {
                     this.visit(child);
-                } else {
-                    console.log(child.path);
                 }
             }
         }
@@ -93,11 +91,13 @@ export class Interpreter {
     }
 
     private processList(element: any) {
-        let options: QuickPickItemExt [] = [];
-        let defaultValue: string[] = this.getDefaultValue(element);
-        //todo maybe id need to change to path
-        this.generatorData.context.values.set(element.id, defaultValue);
-        let selectedOptions: QuickPickItemExt [] = [];
+        let options: QuickPickItemExt[] = [];
+        let defaultValue: any[] = this.getDefaultValue(element);
+        let contextValue = this.generatorData.context.getValue(element._scope.id);
+        if (contextValue == null) {
+            this.generatorData.context.setValue(element._scope.id, defaultValue, ContextValueKind.DEFAULT);
+        }
+        let selectedOptions: QuickPickItemExt[] = [];
         if (element.kind === 'boolean') {
             options.push(
                 {label: 'yes', children: element.children, value: 'true'},
@@ -112,9 +112,23 @@ export class Interpreter {
                 }
             }));
         }
-        if (defaultValue.length > 0) {
+        if (contextValue != null) {
             selectedOptions.push(
-                ...options.filter(option => defaultValue.includes(option.value!))
+                ...options.filter(option => {
+                    if (Array.isArray(contextValue?.value)) {
+                        return contextValue?.value.includes(option.value);
+                    } else {
+                        if (element.kind === 'boolean'){
+                            return (option.value?.toLowerCase() === 'true') == contextValue?.value;
+                        }
+                        return option.value === contextValue?.value;
+                    }
+                })
+            );
+        } else if (defaultValue.length > 0) {
+            selectedOptions.push(
+                ...options.filter(option => 
+                    defaultValue.includes(element.kind === 'boolean' ? (option.value?.toLowerCase() === 'true') : option.value!))
             );
         }
         let optional = element.optional ? element.optional : false;
@@ -125,24 +139,34 @@ export class Interpreter {
             selectedItems: selectedOptions,
             kind: element.kind,
             id: element.id,
-            //todo change it
-            path: element.id,
-            _scope: element._scope
+            path: element._scope.id,
+            _scope: element._scope,
+            _skip: false
         };
+
+        let defaultContextValueKind = ContextValueKind.DEFAULT;
+        if (contextValue == null || contextValue.kind === defaultContextValueKind) {
+            if (options && options.length <=1) {
+                result._skip = true;
+            }
+
+        } else {
+            result._skip = true;
+        }
         this.newElements.push(result);
     }
 
-    private getDefaultValue(element: any) : string []{
+    private getDefaultValue(element: any): any[] {
         if (element.selectedValues) {
             return element.selectedValues;
         }
         if (element.default != null) {
             if (element.kind === 'list') {
                 return element.default
-                    .map((e: string) => this.evaluateProps(e, (v:any) => this.generatorData.context.lookup(v)));
+                    .map((e: string) => this.evaluateProps(e, (v: any) => this.generatorData.context.lookup(v)));
             } else {
-                if (typeof(element.default) === 'string' ) {
-                    return [this.evaluateProps(element.default, (v:any) => this.generatorData.context.lookup(v))];
+                if (typeof (element.default) === 'string') {
+                    return [this.evaluateProps(element.default, (v: any) => this.generatorData.context.lookup(v))];
                 }
                 return [element.default];
             }
@@ -152,7 +176,9 @@ export class Interpreter {
 
     private processText(element: any) {
         const optional = element.optional ? element.optional : false;
-        //TODO resolve default value if it contains ${}
+        if (element.default != null) {
+            element.default = this.evaluateProps(element.default, (v: any) => this.generatorData.context.lookup(v));
+        }
         const defValPlaceholder = element.default ? ` default value: ${element.default};` : "";
         let result = {
             title: element.name,
@@ -162,9 +188,9 @@ export class Interpreter {
             messageValidation: (value: string) => undefined,
             kind: element.kind,
             id: element.id,
-            //todo change it
-            path: element.id,
-            _scope: element._scope
+            path: element._scope.id,
+            _scope: element._scope,
+            _skip: false
         };
         this.newElements.push(result);
     }
@@ -179,7 +205,7 @@ export class Interpreter {
     private processPreset(element: any) {
         if (element.children) {
             for (let child of element.children) {
-                this.generatorData.context.values.set(child.path, child.value);
+                this.generatorData.context.setValue(child.path, child.value, ContextValueKind.PRESET);
             }
         }
     }
@@ -206,7 +232,7 @@ export class Interpreter {
      * @param resolver {Function}
      * @return {string|*}
      */
-    private evaluateProps (input: string, resolver: any) : string {
+    private evaluateProps(input: string, resolver: any): string {
         let start = input.indexOf('${');
         let end = input.indexOf('}', start);
         let index = 0;

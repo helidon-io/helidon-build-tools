@@ -25,7 +25,7 @@ import { validateQuickPick, validateText } from "./validationApi";
 import { getHelidonLangServerClient } from './languageServer';
 import { logger } from './logger';
 import { Interpreter } from "./Interpreter";
-import { Context } from "./Context";
+import { Context, ContextValueKind } from "./Context";
 
 export async function showHelidonGenerator(extensionPath: string) {
 
@@ -181,18 +181,29 @@ export async function showHelidonGenerator(extensionPath: string) {
         }
     }
 
+    function getCurrentStep(): number {
+        return generatorData.elements
+            .filter((element, index) => element._skip === false && index <= generatorData.currentElementIndex)
+            .length;
+    }
+
+    function getTotalSteps(): number {
+        return generatorData.elements.filter((value: any) => value._skip === false).length;
+    }
+
+    //todo refactor
     function prepareQuickPickData(element: any, currentStep: number, totalSteps: number): QuickPickData {
         let result: QuickPickData;
         result = element;
-        result.currentStep = currentStep;
-        result.totalSteps = totalSteps;
+        result.currentStep = getCurrentStep();
+        result.totalSteps = getTotalSteps();
         return result;
     }
 
     function getTextInput(element: any, resolve: any, reject: any): InputBox {
         const data = element;
-        data.totalSteps = generatorData.elements.length;
-        data.currentStep = generatorData.currentElementIndex + 1;
+        data.totalSteps = getTotalSteps();
+        data.currentStep = getCurrentStep();
         const inputBox = VSCodeAPI.createInputBox(data);
         inputBox.buttons = [QuickInputButtons.Back]
 
@@ -229,6 +240,34 @@ export async function showHelidonGenerator(extensionPath: string) {
         return inputBox;
     }
 
+    //todo refactor
+    function processAccept(element: any) {
+        let processedChildren: any[] = [];
+        let optionCommand = new OptionCommand(generatorData);
+        let selectedValues = element.selectedItems.map((item: QuickPickItemExt) => item.value);
+        let children: any[] = [];
+        for (let item of element.selectedItems) {
+            let option = item;
+            if (option.children) {
+                children.push(...option.children);
+            }
+        }
+
+        //will be used to evaluate expressions
+        let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
+        generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
+
+        for (let child of children) {
+            const elements = interpreter.process(child);
+            processedChildren.push(...elements);
+        }
+
+        optionCommand.selectedOptionsChildren(processedChildren);
+        optionCommand.setContext(generatorData.context);
+        generatorData = optionCommand.execute();
+        interpreter.setGeneratorData(generatorData);
+    }
+
     function getQuickPickInput(element: any, resolve: any, reject: any): QuickPick<any> {
         const data = prepareQuickPickData(element, generatorData.currentElementIndex + 1, generatorData.elements.length);
         const quickPick = VSCodeAPI.createQuickPick(data);
@@ -259,8 +298,8 @@ export async function showHelidonGenerator(extensionPath: string) {
 
                 //will be used to evaluate expressions
                 let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
-                generatorData.context.values.set(element.path, contextValue);
-                
+                generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
+
                 for (let child of children) {
                     const elements = interpreter.process(child);
                     processedChildren.push(...elements);
@@ -271,7 +310,7 @@ export async function showHelidonGenerator(extensionPath: string) {
                 generatorData = optionCommand.execute();
                 interpreter.setGeneratorData(generatorData);
                 commandHistory.push(optionCommand);
-                
+
                 resolve(quickPick.selectedItems);
             }
         });
@@ -305,6 +344,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         return quickPick;
     }
 
+
     function getInput(element: any): Promise<QuickInput> | undefined {
         let result: Promise<QuickInput> | undefined;
         if (element.kind === 'enum') {
@@ -332,6 +372,10 @@ export async function showHelidonGenerator(extensionPath: string) {
         while (generatorData.currentElementIndex < generatorData.elements.length) {
             let element = generatorData.elements[generatorData.currentElementIndex];
             generatorData.context.pushScope(element._scope);
+            if (element._skip === true) {
+                processAccept(element);
+                continue;
+            }
             currentInput = getInput(element);
             if (currentInput != null) {
                 await currentInput;
