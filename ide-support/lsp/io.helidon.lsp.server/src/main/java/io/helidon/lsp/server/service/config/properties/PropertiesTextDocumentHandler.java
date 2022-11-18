@@ -91,7 +91,11 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
             Map<String, ConfigMetadata> configMetadata = propertiesService.metadataForFile(fileUri);
             List<String> fileContent = contentManager.read(fileUri);
             Position position = completionParams.getPosition();
-            String currentLine = fileContent.get(position.getLine());
+            String currentLine = "";
+            if (position.getLine() < fileContent.size()) {
+                //it is not the last and empty string in the file
+                currentLine = fileContent.get(position.getLine());
+            }
             String baseForCompletion = currentLine.substring(0, position.getCharacter());
             String currentKey = currentKey(baseForCompletion);
             String filter = currentKey != null ? currentKey : baseForCompletion;

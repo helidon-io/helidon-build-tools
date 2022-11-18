@@ -18,6 +18,7 @@
  * Archetype Engine V2 JSON Support.
  */
 module helidon.archetype.engine.v2.json {
+    exports io.helidon.build.archetype.v2.json;
     requires java.json;
     requires io.helidon.build.common;
     requires io.helidon.build.archetype.engine.v2;
