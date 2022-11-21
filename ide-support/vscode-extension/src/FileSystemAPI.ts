@@ -17,8 +17,13 @@
 export class FileSystemAPI {
 
     static fs = require('fs');
+    static path = require('path');
 
     constructor() {
+    }
+
+    public static resolvePath(paths: string[]){
+        return this.path.resolve(...paths);
     }
 
     public static isPathExistsSync(path: string): boolean {
