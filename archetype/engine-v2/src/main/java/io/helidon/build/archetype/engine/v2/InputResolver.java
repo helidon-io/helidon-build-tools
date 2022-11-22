@@ -18,8 +18,11 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,9 +49,11 @@ import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
  */
 public abstract class InputResolver implements Input.Visitor<Context> {
 
+    private final Map<String, List<Input.Validation>> validations = new HashMap<>();
     private final Deque<DeclaredInput> parents = new ArrayDeque<>();
     private final Deque<Step> currentSteps = new ArrayDeque<>();
     private final Set<Step> visitedSteps = new HashSet<>();
+    private String validationId;
 
     /**
      * Get the stack of steps.
@@ -96,7 +101,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
             return null;
         }
-        input.validate(value, scope.path(true));
+        input.validate(value, scope.path(true), validations);
         return input.visitValue(value);
     }
 
@@ -176,4 +181,24 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         }
         return VisitResult.CONTINUE;
     }
+
+    @Override
+    public VisitResult visitValidations(Input.Validations validations, Context arg) {
+        validationId = validations.id();
+        this.validations.put(validationId, new LinkedList<>());
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult postVisitValidations(Input.Validations validations, Context arg) {
+        validationId = null;
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitValidation(Input.Validation validation, Context arg) {
+        validations.get(validationId).add(validation);
+        return VisitResult.CONTINUE;
+    }
+
 }

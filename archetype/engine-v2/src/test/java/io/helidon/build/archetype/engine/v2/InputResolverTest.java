@@ -35,6 +35,8 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.inputEnum;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputOption;
 import static io.helidon.build.archetype.engine.v2.TestHelper.inputText;
+import static io.helidon.build.archetype.engine.v2.TestHelper.inputValidation;
+import static io.helidon.build.archetype.engine.v2.TestHelper.inputValidations;
 import static io.helidon.build.archetype.engine.v2.TestHelper.model;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelValue;
@@ -244,6 +246,43 @@ public class InputResolverTest {
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         assertThat(ex.getCause().getMessage(), endsWith("Parent input is not global"));
+    }
+
+    @Test
+    void testSingleValidation() {
+        Block block = step("step",
+                inputValidations("lower-case", "rule for lower case",
+                        inputValidation("java", "[a-z]")),
+                inputText("text", "", "lower-case"))
+                .build();
+
+        Context context = Context.create();
+        context.scope().putValue("text", Value.create("CAPITAL LETTERS"), ValueKind.EXTERNAL);
+
+        InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
+        assertThat(ex.getCause(), is(instanceOf(ValidationInputException.class)));
+        assertThat(ex.getCause().getMessage(), is("Invalid input: text='CAPITAL LETTERS' with regex: [a-z]"));
+    }
+
+    @Test
+    void testMultiValidation() {
+        Block.Builder validation = inputValidation("java", "[a-z]");
+        Block.Builder validation1 = inputValidation("java", "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$");
+        Block.Builder validation2 = inputValidation("java", ".");
+
+        Block block = step("step",
+                inputValidations("lower-case", "lower case rule", validation),
+                inputValidations("package", "package rule", validation, validation1, validation2),
+                inputValidations("dummy", "dummy", validation2),
+                inputText("text", "", "package"))
+                .build();
+
+        Context context = Context.create();
+        context.scope().putValue("text", Value.create("my.package.name"), ValueKind.EXTERNAL);
+
+        InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
+        assertThat(ex.getCause(), is(instanceOf(ValidationInputException.class)));
+        assertThat(ex.getCause().getMessage(), is("Invalid input: text='my.package.name' with regex: [a-z]"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {

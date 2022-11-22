@@ -926,6 +926,56 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="validations-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Configuration of validation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="validation" type="a:validation-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The id of the validation. The id must be unique across all the descriptors
+                    of an archetype.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="description" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The validation description.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="validation-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Regular expression to apply during pattern validation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="format" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            The validation format.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
     <xs:complexType name="input-types">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -942,6 +992,7 @@
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
+            <xs:element name="validations" type="a:validations-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

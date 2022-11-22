@@ -412,6 +412,16 @@ public class Block extends Node {
         TRANSFORMATION,
 
         /**
+         * Validations.
+         */
+        VALIDATIONS,
+
+        /**
+         * Validation.
+         */
+        VALIDATION,
+
+        /**
          * REPLACE.
          */
         REPLACE,

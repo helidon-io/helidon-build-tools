@@ -272,12 +272,32 @@ public class TestHelper {
     /**
      * Create an input text block builder.
      *
-     * @param id         input id
+     * @param id           input id
      * @param defaultValue default value
+     * @param children     nested children
      * @return block builder
      */
     public static Block.Builder inputText(String id, String defaultValue, Block.Builder... children) {
-        return inputBuilder(id, Block.Kind.TEXT, defaultValue, children);
+        return inputText(id, defaultValue, "", children);
+    }
+
+    /**
+     * Create an input text block builder.
+     *
+     * @param id            input id
+     * @param defaultValue  default value
+     * @param validations   validations
+     * @param children      nested children
+     * @return block builder
+     */
+    public static Block.Builder inputText(String id, String defaultValue, String validations, Block.Builder... children) {
+        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.TEXT)
+                .attributes(inputAttributes(id, defaultValue, id))
+                .attribute("validations", DynamicValue.create(validations));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
     }
 
     /**
@@ -307,13 +327,43 @@ public class TestHelper {
     /**
      * Create an input list block builder.
      *
-     * @param id           input id`
+     * @param id           input id
      * @param defaultValue default value
      * @param children     nested children
      * @return block builder
      */
     public static Block.Builder inputList(String id, List<String> defaultValue, Block.Builder... children) {
         return inputBuilder(id, Block.Kind.LIST, String.join(",", defaultValue), children);
+    }
+
+    /**
+     * Create an input validations block builder.
+     *
+     * @param id            input id
+     * @param description   description
+     * @param children      nested children
+     * @return block builder
+     */
+    public static Block.Builder inputValidations(String id, String description, Block.Builder... children) {
+        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.VALIDATIONS)
+                .attributes(validationsAttributes(id, description));
+        for (Block.Builder child : children) {
+            builder.addChild(child);
+        }
+        return builder;
+    }
+
+    /**
+     * Create an input validation block builder.
+     *
+     * @param format    format
+     * @param value     input value
+     * @return block builder
+     */
+    public static Block.Builder inputValidation(String format, String value) {
+        return Input.builder(BUILDER_INFO, Block.Kind.VALIDATION)
+                .attributes(Map.of("format", DynamicValue.create(format)))
+                .value(value);
     }
 
     private static Block.Builder inputBuilder(String id, Block.Kind kind, String defaultValue, Block.Builder... children) {
@@ -335,6 +385,13 @@ public class TestHelper {
             builder.addChild(child);
         }
         return builder;
+    }
+
+    private static Map<String, Value> validationsAttributes(String id, String description) {
+        Map<String, Value> attributes = new HashMap<>();
+        attributes.put("id", DynamicValue.create(id));
+        attributes.put("description", DynamicValue.create(description));
+        return attributes;
     }
 
     private static Map<String, Value> inputAttributes(String id, String value) {
