@@ -22,6 +22,12 @@ require_env() {
         return 1
     fi
 }
+if [ -n "${HELIDON_PIPELINES}" ] ; then
+  MAVEN_ARGS="${MAVEN_ARGS} -B"
+  export MAVEN_ARGS
+  # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
+  git config diff.renameLimit 32768
+fi
 if [ -n "${JENKINS_HOME}" ] ; then
     export JAVA_HOME="/tools/jdk-17"
     # nexus-staging requires the following --add-opens
