@@ -46,6 +46,7 @@ jobs:
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
   build:
+    timeout-minutes: 60
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
