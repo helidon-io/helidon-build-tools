@@ -23,7 +23,7 @@ require_env() {
     fi
 }
 if [ -n "${HELIDON_PIPELINES}" ] ; then
-  MAVEN_ARGS="${MAVEN_ARGS} -B"
+  MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS} -Djdk.toolchain.version=${JAVA_VERSION} "
   export MAVEN_ARGS
   # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
   git config diff.renameLimit 32768
