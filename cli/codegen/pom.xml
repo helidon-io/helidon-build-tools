@@ -29,6 +29,7 @@
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

@@ -26,6 +26,10 @@
     <artifactId>helidon-linker</artifactId>
     <name>Helidon Linker</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>

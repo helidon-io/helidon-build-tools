@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<FindBugsFilter
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <Match>
+        <!-- This API reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.common.FileUtils"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- This random generator (java.util.Random) is predictable -->
+        <Class name="io.helidon.build.common.FileUtils"/>
+        <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+
+    <Match>
+        <!-- This web server request could be used by an attacker to expose internal services and filesystem. -->
+        <Class name="io.helidon.build.common.NetworkConnection"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.common.FileUtils"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Synchronization performed on java.util.concurrent.atomic.AtomicReference -->
+        <Class name="io.helidon.build.common.Instance"/>
+        <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.common.JavaProcessBuilder"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- May expose internal representation by storing an externally mutable object -->
+        <Class name="io.helidon.build.common.Permutations$ListIterator"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <!-- cannot throw NoSuchElementException -->
+        <Class name="io.helidon.build.common.Permutations$ListIterator"/>
+        <Bug pattern="IT_NO_SUCH_ELEMENT"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.common.PrintStreams"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- may expose internal representation by storing an externally mutable object -->
+        <Class name="io.helidon.build.common.PrintStreams$PrintStreamAdapter"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Return value of RichTextStyle.apply(RichText) ignored, but method has no side effect -->
+        <Class name="io.helidon.build.common.RichTextRenderer"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <Match>
+        <!-- Return value of RichTextStyle.apply(RichText) ignored, but method has no side effect -->
+        <Class name="io.helidon.build.common.RichTextStyle$StyleList"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <Match>
+        <!-- may fail to close stream -->
+        <Class name="io.helidon.build.common.SourcePath"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+
+    <Match>
+        <!-- Redundant null check -->
+        <Class name="io.helidon.build.common.SourcePath"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- io.helidon.build.common.SourcePath$SourceFileComparator implements Comparator but not Serializable -->
+        <Class name="io.helidon.build.common.SourcePath$SourceFileComparator"/>
+        <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference due to return value of called method -->
+        <Class name="io.helidon.build.common.VirtualFileSystem$VPath"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible information exposure through an error message -->
+        <Class name="io.helidon.build.common.logging.DefaultFormatter"/>
+        <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
+    </Match>
+
+</FindBugsFilter>

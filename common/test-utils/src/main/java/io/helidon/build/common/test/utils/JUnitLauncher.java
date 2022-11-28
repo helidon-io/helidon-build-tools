@@ -205,7 +205,7 @@ public class JUnitLauncher {
          * @return this builder
          */
         Builder ignoreFailures(boolean ignoreFailures) {
-            this.suiteId = suiteId;
+            this.ignoreFailures = ignoreFailures;
             return this;
         }
 
