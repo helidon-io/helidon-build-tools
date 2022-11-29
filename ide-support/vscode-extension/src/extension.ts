@@ -23,6 +23,7 @@ import { openStartPage } from "./startPage";
 import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
 import { STEPS } from "./steps_data";
+import { processLaunchConfig } from "./launchConfiguration";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -32,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
     let initialEnvMavenHome = process.env.MAVEN_HOME;
 
     vscode.workspace.onDidChangeWorkspaceFolders((event: WorkspaceFoldersChangeEvent) => {
+        processLaunchConfig(context);
         if (event.added.length > 0) {
             commands.executeCommand('setContext', 'helidonProjectsExist', true);
             return;
@@ -68,6 +70,8 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     updateWorkspaceDocuments(context);
+
+    processLaunchConfig(context);
 }
 
 export function deactivate() {
