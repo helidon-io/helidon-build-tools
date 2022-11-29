@@ -780,6 +780,7 @@
                 <xs:element name="call" type="a:call-type"/>
                 <xs:element name="inputs" type="a:input-types"/>
                 <xs:element name="step" type="a:step-type"/>
+                <xs:element name="validations" type="a:validations-type"/>
             </xs:choice>
         </xs:sequence>
     </xs:group>
@@ -818,6 +819,14 @@
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
                     Default text input value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validations" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    List of validation id.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -927,6 +936,12 @@
     </xs:complexType>
 
     <xs:complexType name="validations-type">
+        <xs:sequence>
+            <xs:element name="validation" type="a:validation-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="validation-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
@@ -934,7 +949,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="validation" type="a:validation-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="regex" type="a:regex-type" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="id" type="xs:string">
             <xs:annotation>
@@ -955,7 +970,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="validation-type">
+    <xs:complexType name="regex-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
@@ -963,16 +978,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="format" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            The validation format.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
+            <xs:extension base="xs:string"/>
         </xs:simpleContent>
     </xs:complexType>
 
@@ -992,7 +998,6 @@
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
-            <xs:element name="validations" type="a:validations-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

@@ -32,6 +32,7 @@ import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.context.Context;
@@ -47,9 +48,9 @@ import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
  *
  * @see Controller
  */
-public abstract class InputResolver implements Input.Visitor<Context> {
+public abstract class InputResolver implements Input.Visitor<Context>, Validation.Visitor<Context> {
 
-    private final Map<String, List<Input.Validation>> validations = new HashMap<>();
+    private final Map<String, List<Validation.Regex>> validations = new HashMap<>();
     private final Deque<DeclaredInput> parents = new ArrayDeque<>();
     private final Deque<Step> currentSteps = new ArrayDeque<>();
     private final Set<Step> visitedSteps = new HashSet<>();
@@ -183,21 +184,21 @@ public abstract class InputResolver implements Input.Visitor<Context> {
     }
 
     @Override
-    public VisitResult visitValidations(Input.Validations validations, Context arg) {
-        validationId = validations.id();
+    public VisitResult visitValidation(Validation validation, Context arg) {
+        validationId = validation.id();
         this.validations.put(validationId, new LinkedList<>());
         return VisitResult.CONTINUE;
     }
 
     @Override
-    public VisitResult postVisitValidations(Input.Validations validations, Context arg) {
+    public VisitResult postVisitValidation(Validation validation, Context arg) {
         validationId = null;
         return VisitResult.CONTINUE;
     }
 
     @Override
-    public VisitResult visitValidation(Input.Validation validation, Context arg) {
-        validations.get(validationId).add(validation);
+    public VisitResult visitRegex(Validation.Regex regex, Context arg) {
+        validations.get(validationId).add(regex);
         return VisitResult.CONTINUE;
     }
 

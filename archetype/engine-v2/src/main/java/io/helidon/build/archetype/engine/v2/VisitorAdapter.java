@@ -22,6 +22,7 @@ import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Output;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 
 /**
  * Visitor adapter.
@@ -34,15 +35,21 @@ public class VisitorAdapter<A> implements Node.Visitor<A>, Block.Visitor<A> {
     private final Input.Visitor<A> inputVisitor;
     private final Output.Visitor<A> outputVisitor;
     private final Model.Visitor<A> modelVisitor;
+    private final Validation.Visitor<A> validationVisitor;
 
     /**
      * Create a new adapter for the given input visitor.
      *
-     * @param inputVisitor  input visitor
-     * @param outputVisitor output visitor
-     * @param modelVisitor  model visitor
+     * @param validationVisitor  validation visitor
+     * @param inputVisitor       input visitor
+     * @param outputVisitor      output visitor
+     * @param modelVisitor       model visitor
      */
-    protected VisitorAdapter(Input.Visitor<A> inputVisitor, Output.Visitor<A> outputVisitor, Model.Visitor<A> modelVisitor) {
+    protected VisitorAdapter(Input.Visitor<A> inputVisitor,
+                             Output.Visitor<A> outputVisitor,
+                             Model.Visitor<A> modelVisitor,
+                             Validation.Visitor<A> validationVisitor) {
+        this.validationVisitor = validationVisitor;
         this.inputVisitor = inputVisitor;
         this.outputVisitor = outputVisitor;
         this.modelVisitor = modelVisitor;
@@ -102,6 +109,38 @@ public class VisitorAdapter<A> implements Node.Visitor<A>, Block.Visitor<A> {
     public VisitResult postVisitModel(Model model, A arg) {
         if (modelVisitor != null) {
             return model.acceptAfter(modelVisitor, arg);
+        }
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitValidation(Validation validation, A arg) {
+        if (validationVisitor != null) {
+            return validation.accept(validationVisitor, arg);
+        }
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult postVisitValidation(Validation validation, A arg) {
+        if (validationVisitor != null) {
+            return validation.acceptAfter(validationVisitor, arg);
+        }
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitRegex(Validation.Regex regex, A arg) {
+        if (validationVisitor != null) {
+            return regex.accept(validationVisitor, arg);
+        }
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult postVisitRegex(Validation.Regex regex, A arg) {
+        if (validationVisitor != null) {
+            return regex.acceptAfter(validationVisitor, arg);
         }
         return VisitResult.CONTINUE;
     }

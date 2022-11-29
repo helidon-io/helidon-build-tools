@@ -19,16 +19,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v2.InputException;
 import io.helidon.build.archetype.engine.v2.InvalidInputException;
-import io.helidon.build.archetype.engine.v2.ValidationInputException;
+import io.helidon.build.archetype.engine.v2.ValidationException;
 import io.helidon.build.common.Lists;
 
+import static io.helidon.build.archetype.engine.v2.ast.Validation.Regex;
 import static java.util.Collections.emptyList;
 
 /**
@@ -91,51 +90,6 @@ public abstract class Input extends Block {
      * @param <A> argument type
      */
     public interface Visitor<A> {
-
-
-        /**
-         * Visit a validations block.
-         *
-         * @param validations validations
-         * @param arg         visitor argument
-         * @return  result
-         */
-        default VisitResult visitValidations(Validations validations, A arg) {
-            return visitAny(validations, arg);
-        }
-
-        /**
-         * Visit a validations block after traversing the nested nodes.
-         *
-         * @param validations validations
-         * @param arg         visitor argument
-         * @return  result
-         */
-        default VisitResult postVisitValidations(Validations validations, A arg) {
-            return visitAny(validations, arg);
-        }
-
-        /**
-         * Visit a validation block.
-         *
-         * @param validation validation
-         * @param arg        visitor argument
-         * @return  result
-         */
-        default VisitResult visitValidation(Validation validation, A arg) {
-            return visitAny(validation, arg);
-        }
-
-        /**
-         * Visit a validation block after traversing the nested nodes.
-         *
-         * @param validation validation
-         * @param arg        visitor argument
-         * @return  result
-         */
-        default VisitResult postVisitValidation(Validation validation, A arg) {
-            return visitAny(validation, arg);
-        }
 
         /**
          * Visit a boolean input.
@@ -363,7 +317,7 @@ public abstract class Input extends Block {
         @SuppressWarnings("unused")
         public void validate(Value value,
                              String path,
-                             Map<String, java.util.List<Validation>> validations) throws InputException {
+                             Map<String, java.util.List<Regex>> validations) throws InputException {
         }
 
         /**
@@ -452,11 +406,11 @@ public abstract class Input extends Block {
     public static final class Text extends DeclaredInput {
 
         private final String defaultValue;
-        private final java.util.List<String> validationIds;
+        private final java.util.List<String> validations;
 
         private Text(Input.Builder builder) {
             super(builder);
-            this.validationIds = builder.attribute("validations", false).asList();
+            this.validations = builder.attribute("validations", false).asList();
             this.defaultValue = builder.attribute("default", false).asString();
         }
 
@@ -483,44 +437,39 @@ public abstract class Input extends Block {
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
-                    + ", validations=['" + Lists.join(validationIds, a -> a, ",") + "]'"
+                    + ", validations=['" + Lists.join(validations, a -> a, ",") + "]'"
                     + '}';
+        }
+
+        /**
+         * Get validations.
+         *
+         * @return validation ids
+         */
+        public java.util.List<String> validations() {
+            return validations;
         }
 
         @Override
         public void validate(Value value,
                              String path,
-                             Map<String, java.util.List<Validation>> validations) throws InvalidInputException {
+                             Map<String, java.util.List<Regex>> validations) throws InvalidInputException {
             if (validations == null || validations.isEmpty()) {
                 return;
             }
-            validationIds.stream()
+            validations().stream()
                     .flatMap(id -> validationOps(id, validations).stream())
                     .forEach(op -> {
-                        String regex = op.regex();
                         String textValue = value.asString();
-                        if (op.isJavascriptFormat()) {
-                            regex = toJavaRegex(regex);
-                        }
-                        if (Pattern.compile(regex).matcher(textValue).matches()) {
+                        if (op.pattern().matcher(textValue).matches()) {
                             return;
                         }
-                        throw new ValidationInputException(textValue, path, regex);
+                        throw new ValidationException(textValue, path, op.pattern().pattern());
                     });
         }
 
-        private String toJavaRegex(String regex) {
-            if (regex.startsWith("/")) {
-                regex = regex.substring(1);
-            }
-            if (regex.endsWith("/")) {
-                regex = regex.substring(0, regex.length() - 1);
-            }
-            return Matcher.quoteReplacement(regex);
-        }
-
-        private java.util.List<Validation> validationOps(String id, Map<String, java.util.List<Validation>> validations) {
-            java.util.List<Validation> ops = validations.get(id);
+        private java.util.List<Regex> validationOps(String id, Map<String, java.util.List<Regex>> validations) {
+            java.util.List<Regex> ops = validations.get(id);
             if (ops != null) {
                 return ops;
             }
@@ -753,7 +702,7 @@ public abstract class Input extends Block {
         @Override
         public void validate(Value value,
                              String path,
-                             Map<String, java.util.List<Validation>> validations) throws InvalidInputException {
+                             Map<String, java.util.List<Regex>> validations) throws InvalidInputException {
             String option = value.asString();
             if (optionIndex(option, options(n -> true)) == -1) {
                 throw new InvalidInputException(option, path);
@@ -791,101 +740,6 @@ public abstract class Input extends Block {
     }
 
     /**
-     * List of Validation.
-     */
-    public static final class Validations extends Input {
-
-        private final String id;
-        private final String description;
-
-        private Validations(Input.Builder builder) {
-            super(builder);
-            this.id = builder.attribute("id", true).asString();
-            this.description = builder.attribute("description", false).asString();
-        }
-
-        @Override
-        public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
-            return visitor.visitValidations(this, arg);
-        }
-
-        @Override
-        public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
-            return visitor.postVisitValidations(this, arg);
-        }
-
-        /**
-         * Get the id.
-         *
-         * @return id
-         */
-        public String id() {
-            return id;
-        }
-
-        /**
-         * Get description.
-         *
-         * @return description
-         */
-        public String description() {
-            return description;
-        }
-    }
-
-    /**
-     * Validation.
-     */
-    public static final class Validation extends Input {
-
-        private final String regex;
-        private final String format;
-
-        private Validation(Input.Builder builder) {
-            super(builder);
-            this.regex = builder.value();
-            this.format = builder.attribute("format", false).asString();
-        }
-
-        @Override
-        public <A> VisitResult accept(Input.Visitor<A> visitor, A arg) {
-            return visitor.visitValidation(this, arg);
-        }
-
-        @Override
-        public <A> VisitResult acceptAfter(Input.Visitor<A> visitor, A arg) {
-            return visitor.postVisitValidation(this, arg);
-        }
-
-        /**
-         * Get the regex.
-         *
-         * @return regex
-         */
-        public String regex() {
-            return regex;
-        }
-
-        /**
-         * Get the format.
-         *
-         * @return format
-         */
-        public String format() {
-            return format;
-        }
-
-        /**
-         * Return true if format is Java.
-         *
-         * @return boolean
-         */
-        public boolean isJavascriptFormat() {
-            return format.equalsIgnoreCase("javascript");
-        }
-    }
-
-    /**
      * Create a new input block builder.
      *
      * @param info      builder info
@@ -919,10 +773,6 @@ public abstract class Input extends Block {
                     return new Input.List(this);
                 case OPTION:
                     return new Input.Option(this);
-                case VALIDATIONS:
-                    return new Input.Validations(this);
-                case VALIDATION:
-                    return new Input.Validation(this);
                 default:
                     throw new IllegalArgumentException("Unknown input block kind: " + kind);
             }

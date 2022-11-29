@@ -33,6 +33,7 @@ import io.helidon.build.archetype.engine.v2.ast.Node.BuilderInfo;
 import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.common.Instance;
 import io.helidon.build.common.Strings;
@@ -91,8 +92,18 @@ public class TestHelper {
      * @param visitor visitor
      * @param script  script
      */
+    public static void walk(Validation.Visitor<Void> visitor, Script script) {
+        Walker.walk(new VisitorAdapter<>(null, null, null, visitor), script, null);
+    }
+
+    /**
+     * Walk the given script.
+     *
+     * @param visitor visitor
+     * @param script  script
+     */
     public static void walk(Input.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(visitor, null, null), script, null);
+        Walker.walk(new VisitorAdapter<>(visitor, null, null, null), script, null);
     }
 
     /**
@@ -102,7 +113,7 @@ public class TestHelper {
      * @param script  script
      */
     public static void walk(Output.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(null, visitor, null), script, null);
+        Walker.walk(new VisitorAdapter<>(null, visitor, null, null), script, null);
     }
 
     /**
@@ -112,7 +123,7 @@ public class TestHelper {
      * @param script  script
      */
     public static void walk(Model.Visitor<Void> visitor, Script script) {
-        Walker.walk(new VisitorAdapter<>(null, null, visitor), script, null);
+        Walker.walk(new VisitorAdapter<>(null, null, visitor, null), script, null);
     }
 
     /**
@@ -344,9 +355,9 @@ public class TestHelper {
      * @param children      nested children
      * @return block builder
      */
-    public static Block.Builder inputValidations(String id, String description, Block.Builder... children) {
-        Block.Builder builder = Input.builder(BUILDER_INFO, Block.Kind.VALIDATIONS)
-                .attributes(validationsAttributes(id, description));
+    public static Block.Builder validation(String id, String description, Block.Builder... children) {
+        Block.Builder builder = Validation.builder(BUILDER_INFO, Block.Kind.VALIDATION)
+                .attributes(validationAttributes(id, description));
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
@@ -356,13 +367,11 @@ public class TestHelper {
     /**
      * Create an input validation block builder.
      *
-     * @param format    format
      * @param value     input value
      * @return block builder
      */
-    public static Block.Builder inputValidation(String format, String value) {
-        return Input.builder(BUILDER_INFO, Block.Kind.VALIDATION)
-                .attributes(Map.of("format", DynamicValue.create(format)))
+    public static Block.Builder regex(String value) {
+        return Validation.builder(BUILDER_INFO, Block.Kind.REGEX)
                 .value(value);
     }
 
@@ -387,7 +396,7 @@ public class TestHelper {
         return builder;
     }
 
-    private static Map<String, Value> validationsAttributes(String id, String description) {
+    private static Map<String, Value> validationAttributes(String id, String description) {
         Map<String, Value> attributes = new HashMap<>();
         attributes.put("id", DynamicValue.create(id));
         attributes.put("description", DynamicValue.create(description));

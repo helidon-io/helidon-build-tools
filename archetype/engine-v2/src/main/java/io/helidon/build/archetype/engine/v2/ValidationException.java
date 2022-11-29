@@ -19,7 +19,7 @@ package io.helidon.build.archetype.engine.v2;
 /**
  * Validation input exception.
  */
-public class ValidationInputException extends InputException {
+public class ValidationException extends InputException {
 
     /**
      * Constructor.
@@ -28,7 +28,7 @@ public class ValidationInputException extends InputException {
      * @param inputPath The unresolved input path
      * @param regex     The validation regular expression
      */
-    public ValidationInputException(String value, String inputPath, String regex) {
+    public ValidationException(String value, String inputPath, String regex) {
         super(String.format("Invalid input: %s='%s' with regex: %s", inputPath, value, regex), inputPath);
     }
 }
