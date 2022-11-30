@@ -951,7 +951,7 @@
         <xs:sequence>
             <xs:element name="regex" type="a:regex-type" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="id" type="xs:string">
+        <xs:attribute name="id" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
