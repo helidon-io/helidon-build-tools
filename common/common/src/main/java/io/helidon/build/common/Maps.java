@@ -380,4 +380,18 @@ public class Maps {
     public static <K, V> Map<K, V> merge(List<Map<K, V>> maps) {
         return Maps.fromEntries(Lists.flatMap(maps, Map::entrySet));
     }
+
+    /**
+     * Compute non-existing keys in a map.
+     *
+     * @param map      map to update
+     * @param mappings map of key to mapping functions
+     * @param <K>      key type
+     * @param <V>      value type
+     * @return map
+     */
+    public static <K, V> Map<K, V> computeIfAbsent(Map<K, V> map, Map<K, Function<K, V>> mappings) {
+        mappings.forEach(map::computeIfAbsent);
+        return map;
+    }
 }

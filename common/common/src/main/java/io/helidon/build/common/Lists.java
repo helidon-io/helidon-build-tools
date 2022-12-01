@@ -18,6 +18,7 @@ package io.helidon.build.common;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -173,6 +174,21 @@ public class Lists {
     public static <T> List<T> of(T... elements) {
         List<T> list = new ArrayList<>();
         Collections.addAll(list, elements);
+        return list;
+    }
+
+    /**
+     * Create a new {@link ArrayList} with the given iterator.
+     *
+     * @param iterator input iterator
+     * @param <T>      element type
+     * @return new list
+     */
+    public static <T> List<T> of(Iterator<T> iterator) {
+        List<T> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
         return list;
     }
 

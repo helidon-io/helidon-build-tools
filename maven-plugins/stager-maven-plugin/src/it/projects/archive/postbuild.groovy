@@ -19,13 +19,13 @@ import java.nio.file.Files
 
 static void assertExists(file) {
     if (!Files.exists(file)) {
-        throw new AssertionError((String) "${file.toString()} does not exist")
+        throw new AssertionError((Object) "${file.toString()} does not exist")
     }
 }
 
 static void assertEqual(expected, actual) {
     if (actual != expected) {
-        throw new AssertionError((String) "Expected '${expected}' but got '${actual}'")
+        throw new AssertionError((Object) "Expected '${expected}' but got '${actual}'")
     }
 }
 

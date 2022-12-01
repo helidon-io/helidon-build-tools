@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Tests {@link Strings}.
@@ -32,5 +33,22 @@ public class StringsTest {
         assertThat(Strings.stripLeading("/./////", '/'), is("./////"));
         assertThat(Strings.stripLeading("/////./", '/'), is("./"));
         assertThat(Strings.stripLeading("foo", '/'), is("foo"));
+    }
+
+    @Test
+    void testReplaceAll() {
+        assertThat(Strings.replaceAll(null), is(nullValue()));
+        assertThat(Strings.replaceAll("my name"), is("my name"));
+        assertThat(Strings.replaceAll("my name", "\\s+", "."), is("my.name"));
+        assertThat(Strings.replaceAll(" my name ", "\\s+", "."), is(".my.name."));
+        assertThat(Strings.replaceAll("my name", "\\s+", ".", "my", "your"), is("your.name"));
+        assertThat(Strings.replaceAll("my name", "my", "your", "your", "my"), is("my name"));
+    }
+
+    @Test
+    void testReplaceWhitespaces() {
+        assertThat(Strings.replaceWhitespaces(null, ""), is(nullValue()));
+        assertThat(Strings.replaceWhitespaces(" ", ""), is(""));
+        assertThat(Strings.replaceWhitespaces(" a  b ", ""), is("ab"));
     }
 }

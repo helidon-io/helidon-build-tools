@@ -27,11 +27,44 @@
 
     <properties>
         <cli.data.latest.version>2.0.0-RC1</cli.data.latest.version>
-        <cli.maven.plugin.version>2.0.0-RC1</cli.maven.plugin.version>
         <cli.latest.version>2.0.0-RC1</cli.latest.version>
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <directories>
+                            <directory target="${project.build.directory}/stage">
+                                <archives>
+                                    <archive target="cli-data/${cli.data.latest.version}/cli-data.zip">
+                                        <templates>
+                                            <template source="versions.json.hbs" target="versions.json">
+                                                <variables>
+                                                    <variable name="versions">
+                                                        <value>3.0.0-SNAPSHOT</value>
+                                                        <value>2.5.0</value>
+                                                        <value>2.4.2</value>
+                                                        <value>2.4.0</value>
+                                                        <value>2.0.1</value>
+                                                        <value>2.0.0</value>
+                                                    </variable>
+                                                    <variable name="latest" value="3.0.0-SNAPSHOT"/>
+                                                </variables>
+                                            </template>
+                                        </templates>
+                                    </archive>
+                                </archives>
+                            </directory>
+                        </directories>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -42,31 +75,6 @@
                         <goals>
                             <goal>stage</goal>
                         </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}/stage">
-                                    <archives>
-                                        <archive target="cli-data/${cli.data.latest.version}/cli-data.zip">
-                                            <templates>
-                                                <template source="versions.json.hbs" target="versions.json">
-                                                    <variables>
-                                                        <variable name="versions">
-                                                            <value>3.0.0-SNAPSHOT</value>
-                                                            <value>2.5.0</value>
-                                                            <value>2.4.2</value>
-                                                            <value>2.4.0</value>
-                                                            <value>2.0.1</value>
-                                                            <value>2.0.0</value>
-                                                        </variable>
-                                                        <variable name="latest" value="3.0.0-SNAPSHOT"/>
-                                                    </variables>
-                                                </template>
-                                            </templates>
-                                        </archive>
-                                    </archives>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

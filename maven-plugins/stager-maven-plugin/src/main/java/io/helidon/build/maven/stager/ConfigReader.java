@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Config reader.
@@ -45,15 +44,15 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
      * @param node config node
      * @return actions
      */
-    List<StagingAction> read(PlexusConfigNode node) {
+    StagingTasks read(PlexusConfigNode node) {
         node.visit(this);
-        return mappings.get(node)
-                       .values()
-                       .stream()
-                       .flatMap(List::stream)
-                       .filter(StagingAction.class::isInstance)
-                       .map(StagingAction.class::cast)
-                       .collect(Collectors.toList());
+        StagingAction action = (StagingAction) mappings.get(node.parent())
+                .get(node.name())
+                .get(0);
+        if (action instanceof StagingTasks) {
+            return (StagingTasks) action;
+        }
+        return new StagingTasks("actions", List.of(action), Map.of());
     }
 
     @Override
@@ -67,29 +66,24 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
         String nodeName = node.name();
         mappings.computeIfAbsent(node, n -> new LinkedHashMap<>());
         mappings.computeIfAbsent(nodeParent, n -> new LinkedHashMap<>());
-        if (factory.isWrapperElement(nodeName)) {
-            String wrappedName = factory.wrappedElementName(nodeName);
-            mappings.get(nodeParent).put(wrappedName, mappings.get(node).get(wrappedName));
-        } else {
-            Scope scope = scopes.peek();
-            if (scope == null || scope.parent == null) {
-                throw new IllegalStateException("Scope is not available");
-            }
-            StagingElement element = factory.create(
-                    nodeName,
-                    node.attributes(),
-                    mappings.get(node),
-                    node.value(),
-                    scope);
-            if (element instanceof Variables) {
-                for (Variable variable : ((Variables) element)) {
-                    scope.parent.variables.put(variable.name(), variable);
-                }
-            }
-            mappings.get(nodeParent)
-                    .computeIfAbsent(nodeName, n -> new LinkedList<>())
-                    .add(element);
+        Scope scope = scopes.peek();
+        if (scope == null) {
+            throw new IllegalStateException("Scope is not available");
         }
+        StagingElement element = factory.create(
+                nodeName,
+                node.attributes(),
+                mappings.get(node),
+                node.value(),
+                scope);
+        if (element instanceof Variables) {
+            for (Variable variable : ((Variables) element)) {
+                scope.parent.variables.put(variable.name(), variable);
+            }
+        }
+        mappings.get(nodeParent)
+                .computeIfAbsent(nodeName, n -> new LinkedList<>())
+                .add(element);
         scopes.pop();
     }
 
@@ -135,7 +129,7 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
         public String toString() {
             return "Scope{"
                     + "name='" + name + '\''
-                    + ", parent=" + parent != null ? parent.name : null
+                    + ", parent=" + (parent != null ? parent.name : null)
                     + ", variables=" + variables
                     + '}';
         }

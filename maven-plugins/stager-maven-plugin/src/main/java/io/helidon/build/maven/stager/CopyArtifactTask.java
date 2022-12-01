@@ -19,20 +19,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
+
+import io.helidon.build.common.Maps;
 
 /**
  * Copy an artifact to a given target location.
  */
 final class CopyArtifactTask extends StagingTask {
 
+    private static final String DEFAULT_TARGET = "{artifactId}-{version}.{type}";
     static final String ELEMENT_NAME = "copy-artifact";
 
     private final ArtifactGAV gav;
 
-    CopyArtifactTask(ActionIterators iterators, ArtifactGAV gav, String target) {
-        super(iterators, target == null ? "{artifactId}-{version}.{type}" : target);
-        this.gav = Objects.requireNonNull(gav);
+    CopyArtifactTask(ActionIterators iterators, Map<String, String> attrs) {
+        super(ELEMENT_NAME, null, iterators, Maps.computeIfAbsent(attrs, Map.of("target", t -> DEFAULT_TARGET)));
+        this.gav = new ArtifactGAV(attrs);
     }
 
     /**
@@ -45,46 +47,23 @@ final class CopyArtifactTask extends StagingTask {
     }
 
     @Override
-    public String elementName() {
-        return ELEMENT_NAME;
-    }
-
-    @Override
-    protected void doExecute(StagingContext context, Path dir, Map<String, String> variables) throws IOException {
-        ArtifactGAV resolvedGav = resolveGAV(variables);
-        String resolveTarget = resolveVar(target(), variables);
-        context.logInfo("Resolving %s", resolvedGav);
-        Path artifact = context.resolve(resolvedGav);
+    protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
+        ArtifactGAV resolvedGav = resolveGAV(vars);
+        Map<String, String> resolvedVars = resolvedGav.variables();
+        String resolveTarget = resolveVar(target(), resolvedVars);
+        ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
+        Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
         Files.createDirectories(targetFile.getParent());
-        context.logInfo("Copying %s to %s", artifact, targetFile);
         Files.copy(artifact, targetFile);
     }
 
     private ArtifactGAV resolveGAV(Map<String, String> variables) {
-        //noinspection DuplicatedCode
-        ArtifactGAV resolvedGav = new ArtifactGAV(
+        return new ArtifactGAV(
                 resolveVar(gav.groupId(), variables),
                 resolveVar(gav.artifactId(), variables),
                 resolveVar(gav.version(), variables),
                 resolveVar(gav.type(), variables),
                 resolveVar(gav.classifier(), variables));
-        variables.put("groupId", resolvedGav.groupId());
-        variables.put("artifactId", resolvedGav.artifactId());
-        variables.put("version", resolvedGav.version());
-        variables.put("type", resolvedGav.type());
-        String resolvedClassifier = resolvedGav.classifier();
-        if (resolvedClassifier != null && !resolvedClassifier.isEmpty()) {
-            variables.put("classifier", resolvedClassifier);
-        }
-        return resolvedGav;
-    }
-
-    @Override
-    public String describe(Path dir, Map<String, String> variables) {
-        return ELEMENT_NAME + "{"
-                + "gav=" + resolveGAV(variables)
-                + ", target=" + resolveVar(target(), variables)
-                + '}';
     }
 }

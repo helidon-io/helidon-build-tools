@@ -31,6 +31,56 @@
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <directories>
+                            <directory target="${project.build.directory}/stage">
+                                <unpack-artifacts>
+                                    <unpack-artifact
+                                            groupId="io.helidon"
+                                            artifactId="helidon-docs"
+                                            version="{version}"
+                                            excludes="META-INF/**"
+                                            target="docs/{version}">
+                                        <iterators>
+                                            <variables>
+                                                <variable name="version">
+                                                    <value>${docs.1.version}</value>
+                                                    <value>1.4.3</value>
+                                                    <value>1.4.2</value>
+                                                    <value>1.4.1</value>
+                                                    <value>1.4.0</value>
+                                                </variable>
+                                            </variables>
+                                        </iterators>
+                                    </unpack-artifact>
+                                    <unpack-artifact
+                                            groupId="io.helidon"
+                                            artifactId="helidon-project"
+                                            version="{version}"
+                                            classifier="site"
+                                            excludes="META-INF/**"
+                                            target="docs/{version}">
+                                        <iterators>
+                                            <variables>
+                                                <variable name="version">
+                                                    <value>${docs.2.version}</value>
+                                                </variable>
+                                            </variables>
+                                        </iterators>
+                                    </unpack-artifact>
+                                </unpack-artifacts>
+                            </directory>
+                        </directories>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
@@ -41,47 +91,6 @@
                         <goals>
                             <goal>stage</goal>
                         </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}/stage">
-                                    <unpack-artifacts>
-                                        <unpack-artifact
-                                                groupId="io.helidon"
-                                                artifactId="helidon-docs"
-                                                version="{version}"
-                                                excludes="META-INF/**"
-                                                target="docs/{version}">
-                                            <iterators>
-                                                <variables>
-                                                    <variable name="version">
-                                                        <value>${docs.1.version}</value>
-                                                        <value>1.4.3</value>
-                                                        <value>1.4.2</value>
-                                                        <value>1.4.1</value>
-                                                        <value>1.4.0</value>
-                                                    </variable>
-                                                </variables>
-                                            </iterators>
-                                        </unpack-artifact>
-                                        <unpack-artifact
-                                                groupId="io.helidon"
-                                                artifactId="helidon-project"
-                                                version="{version}"
-                                                classifier="site"
-                                                excludes="META-INF/**"
-                                                target="docs/{version}">
-                                            <iterators>
-                                                <variables>
-                                                    <variable name="version">
-                                                        <value>${docs.2.version}</value>
-                                                    </variable>
-                                                </variables>
-                                            </iterators>
-                                        </unpack-artifact>
-                                    </unpack-artifacts>
-                                </directory>
-                            </directories>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

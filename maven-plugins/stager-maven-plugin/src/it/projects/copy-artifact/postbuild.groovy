@@ -18,7 +18,7 @@ import java.nio.file.Files
 
 static void assertExists(file) {
     if (!Files.exists(file)) {
-        throw new AssertionError((String) "${file.toString()} does not exist")
+        throw new AssertionError((Object) "${file.toString()} does not exist")
     }
 }
 

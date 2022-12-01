@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -893,5 +894,33 @@ public final class FileUtils {
             filename += suffix;
         }
         return dir.resolve(filename);
+    }
+
+    private static final long KB = 1024;
+    private static final long MB = KB * 1024;
+    private static final long GB = MB * 1024;
+    private static final long TB = GB * 1024;
+    private static final DecimalFormat DF = new DecimalFormat("0.00");
+
+    /**
+     * Get a size in bytes in units (E.g. 1024 bytes is "1 KB").
+     *
+     * @param size size in bytes
+     * @return size in units
+     */
+    public static String measuredSize(long size) {
+        if (size < KB) {
+            return size + " B";
+        }
+        if (size < MB) {
+            return (size / KB) + " KB";
+        }
+        if (size < GB) {
+            return DF.format(size / (double) MB) + " MB";
+        }
+        if (size < TB) {
+            return DF.format(size / (double) GB) + " GB";
+        }
+        return DF.format(size / (double) TB) + " GB";
     }
 }

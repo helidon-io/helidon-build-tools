@@ -24,6 +24,7 @@ import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
 import { deactivated, startLangServer } from './languageServer';
 import { setlogFile } from './logger';
+import { processLaunchConfig } from "./launchConfiguration";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -36,6 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
     startLangServer(context);
 
     vscode.workspace.onDidChangeWorkspaceFolders((event: WorkspaceFoldersChangeEvent) => {
+        processLaunchConfig(context);
         if (event.added.length > 0) {
             commands.executeCommand('setContext', 'helidonProjectsExist', true);
             return;
@@ -73,6 +75,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     //TODO remove or refactor
     updateWorkspaceDocuments(context);
+
+    processLaunchConfig(context);
 }
 
 export function deactivate() {

@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.maven.stager;
 
-import java.nio.file.Files
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-static void assertExists(file) {
-    if (!Files.exists(file)) {
-        throw new AssertionError((Object) "${file.toString()} does not exist")
+/**
+ * Container of {@link StagingTask}.
+ */
+public class StagingTasks extends StagingTask {
+
+    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
+        super(elementName, nested, null, attrs);
+    }
+
+    @Override
+    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+        return CompletableFuture.completedFuture(null);
     }
 }
-
-def stageDir = basedir.toPath().resolve("target/stage")
-assertExists(stageDir)
-
-assertExists(stageDir.resolve("cli/2.0.0-RC1/darwin/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-M4/linux/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-M4/darwin/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-RC1/linux/helidon"))

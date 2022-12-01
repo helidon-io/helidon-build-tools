@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.build.maven.stager;
 
-import java.nio.file.Files
+/**
+ * A trait to mark items that should not be executed in parallel.
+ */
+interface Joinable {
 
-static void assertExists(file) {
-    if (!Files.exists(file)) {
-        throw new AssertionError((Object) "${file.toString()} does not exist")
+    /**
+     * Indicate if this item should be executed sequentially, after its previous sibling.
+     *
+     * @return {@code true} if joined, {@code false} otherwise
+     */
+    default boolean join() {
+        return false;
     }
 }
-
-def stageDir = basedir.toPath().resolve("target/stage")
-assertExists(stageDir)
-
-assertExists(stageDir.resolve("cli/2.0.0-RC1/darwin/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-M4/linux/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-M4/darwin/helidon"))
-assertExists(stageDir.resolve("cli/2.0.0-RC1/linux/helidon"))
