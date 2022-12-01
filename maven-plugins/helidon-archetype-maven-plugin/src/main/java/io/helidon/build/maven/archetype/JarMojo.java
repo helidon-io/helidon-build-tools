@@ -35,12 +35,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v2.ScriptLoader;
-import io.helidon.build.archetype.engine.v2.VisitorAdapter;
-import io.helidon.build.archetype.engine.v2.Walker;
-import io.helidon.build.archetype.engine.v2.ast.Node;
-import io.helidon.build.archetype.engine.v2.ast.Validation;
-import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.util.ArchetypeValidator;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.VirtualFileSystem;
@@ -66,7 +60,6 @@ import org.codehaus.plexus.archiver.jar.ManifestException;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomWriter;
-import org.mozilla.javascript.Scriptable;
 
 import static io.helidon.build.common.FileUtils.pathOf;
 import static io.helidon.build.common.FileUtils.toBase64;
@@ -258,7 +251,7 @@ public class JarMojo extends AbstractMojo {
         System.setProperty(MAVEN_URL_REPO_PROPERTY, session.getLocalRepository().getBasedir());
         Path script = VirtualFileSystem.create(outputDir).getPath("/").resolve("main.xml");
         List<String> errors = ArchetypeValidator.validate(script);
-        List<String> regexErrors = RegexValidator.validate(script);
+        List<String> regexErrors = Validator.regexValidation(script);
         errors.addAll(regexErrors);
         if (!errors.isEmpty()) {
             errors.forEach(getLog()::error);
@@ -354,50 +347,5 @@ public class JarMojo extends AbstractMojo {
         }
         coords += ":" + d.getVersion();
         return coords;
-    }
-
-    private static class RegexValidator extends VisitorAdapter<Context> {
-
-        private static final String ERROR_FORMAT =
-                "Regular expression '%s' at validation '%s' is not JavaScript compatible";
-        private static final List<String> ERRORS = new LinkedList<>();
-        private String validationId;
-
-        private RegexValidator() {
-            super(null, null, null, null);
-        }
-
-        private static List<String> validate(Path script) {
-            RegexValidator validator = new RegexValidator();
-            Context context = Context.builder()
-                    .cwd(script.getParent())
-                    .build();
-            Walker.walk(validator, ScriptLoader.load(script), context, context::cwd);
-            return ERRORS;
-        }
-
-        @Override
-        public Node.VisitResult visitValidation(Validation validation, Context arg) {
-            validationId = validation.id();
-            return visitAny(validation, arg);
-        }
-
-        @Override
-        public Node.VisitResult postVisitValidation(Validation validation, Context arg) {
-            validationId = "Unknown";
-            return postVisitAny(validation, arg);
-        }
-
-        @Override
-        public Node.VisitResult visitRegex(Validation.Regex regex, Context arg) {
-            String pattern = regex.pattern().pattern();
-            try (org.mozilla.javascript.Context context = org.mozilla.javascript.Context.enter()) {
-                Scriptable scope = context.initStandardObjects();
-                context.evaluateString(scope, pattern, "regex", 1, null);
-            } catch (Exception e) {
-                ERRORS.add(String.format(ERROR_FORMAT, pattern, validationId));
-            }
-            return Node.VisitResult.CONTINUE;
-        }
     }
 }

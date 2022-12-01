@@ -1,0 +1,1 @@
+with patterns: [*.xml] match: none, fail: false

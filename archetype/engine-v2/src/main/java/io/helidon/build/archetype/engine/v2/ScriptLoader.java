@@ -50,8 +50,6 @@ import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.xml.SimpleXMLParser;
 import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
 
-import static io.helidon.build.archetype.engine.v2.ast.Block.Kind.REGEX;
-import static io.helidon.build.archetype.engine.v2.ast.Block.Kind.VALIDATION;
 import static io.helidon.build.common.xml.SimpleXMLParser.processXmlEscapes;
 
 /**
@@ -332,7 +330,7 @@ public class ScriptLoader {
 
         void processValidation() {
             Block.Kind kind = blockKind();
-            if (kind == VALIDATION) {
+            if (kind == Block.Kind.VALIDATION) {
                 addChild(State.REGEX, Validation.builder(info, blockKind()));
                 return;
             }
@@ -342,7 +340,7 @@ public class ScriptLoader {
 
         void processRegex() {
             Block.Kind kind = blockKind();
-            if (kind == REGEX) {
+            if (kind == Block.Kind.REGEX) {
                 addChild(State.VALIDATION, Validation.builder(info, blockKind()));
                 return;
             }

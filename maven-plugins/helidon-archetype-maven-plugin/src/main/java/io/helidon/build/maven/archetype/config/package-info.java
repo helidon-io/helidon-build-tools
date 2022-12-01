@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
-
 /**
- * Validation input exception.
+ * Helidon archetype Maven plugin Configuration.
  */
-public final class ValidationException extends InputException {
-
-    /**
-     * Constructor.
-     *
-     * @param value     Input value
-     * @param inputPath The unresolved input path
-     * @param regex     The validation regular expression
-     */
-    public ValidationException(String value, String inputPath, String regex) {
-        super(String.format("Invalid input: %s='%s' with regex: %s", inputPath, value, regex), inputPath);
-    }
-}
+package io.helidon.build.maven.archetype.config;
