@@ -27,6 +27,10 @@
     <artifactId>helidon-build-common-markdown</artifactId>
     <name>Helidon Build Tools Common Markdown</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
