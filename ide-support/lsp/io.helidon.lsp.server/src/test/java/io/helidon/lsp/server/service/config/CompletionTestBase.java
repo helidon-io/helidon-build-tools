@@ -101,7 +101,8 @@ public abstract class CompletionTestBase {
     }
 
     protected Set<Dependency> getDependencies() {
-        File metadataDirectory = new File("src/test/resources/metadata");
+        ClassLoader classLoader = getClass().getClassLoader();
+        File metadataDirectory = new File(classLoader.getResource("metadata").getFile());
         File[] files = metadataDirectory.listFiles();
         Set<Dependency> dependencies = new HashSet<>();
 

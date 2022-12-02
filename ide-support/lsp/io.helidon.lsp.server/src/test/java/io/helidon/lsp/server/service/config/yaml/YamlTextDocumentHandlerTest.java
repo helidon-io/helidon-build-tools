@@ -52,8 +52,8 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
         assertThat(completion.size(), is(0));
 
         completion = completionItems(new Position(17, 6), "test-config-list.yaml");
-        assertThat(completion.size(), is(13));
-        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(13));
+        assertThat(completion.size(), is(15));
+        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(15));
         assertThat(completion.stream().anyMatch(item -> item.getLabel().equals("name")), is(true));
 
         completion = completionItems(new Position(19, 2), "test-config.yaml");
@@ -62,16 +62,16 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
         assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(9));
 
         completion = completionItems(new Position(25, 4), "test-config.yaml");
-        assertThat(completion.size(), is(9));//13-4
-        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(9));
+        assertThat(completion.size(), is(11));//15-4
+        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(11));
 
         completion = completionItems(new Position(25, 2), "test-config.yaml");
-        assertThat(completion.size(), is(13));//15-2
-        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(13));
+        assertThat(completion.size(), is(15));//17-2
+        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(15));
 
         completion = completionItems(new Position(40, 4), "test-config.yaml");
-        assertThat(completion.size(), is(10));//13-3
-        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(10));
+        assertThat(completion.size(), is(12));//15-3
+        assertThat(completion.stream().map(CompletionItem::getLabel).collect(Collectors.toSet()).size(), is(12));
     }
 
     @Test

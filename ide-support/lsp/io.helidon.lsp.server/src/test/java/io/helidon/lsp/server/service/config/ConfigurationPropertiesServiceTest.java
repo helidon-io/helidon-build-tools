@@ -35,6 +35,7 @@ import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 import io.helidon.lsp.server.service.metadata.ConfiguredType;
 import io.helidon.lsp.server.service.metadata.MetadataProvider;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -74,11 +75,12 @@ class ConfigurationPropertiesServiceTest {
 
         Map<String, ConfigMetadata> stringConfigMetadataMap = service.metadataForPom("pom.xml");
 
-        assertThat(stringConfigMetadataMap.size(), is(433));
+        assertThat(stringConfigMetadataMap.size(), is(438));
     }
 
         private Set<Dependency> getDependencies() {
-            File metadataDirectory = new File("src/test/resources/metadata");
+            ClassLoader classLoader = getClass().getClassLoader();
+            File metadataDirectory = new File(classLoader.getResource("metadata").getFile());
             File[] files = metadataDirectory.listFiles();
             Set<Dependency> dependencies = new HashSet<>();
 

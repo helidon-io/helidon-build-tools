@@ -179,7 +179,7 @@
         <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
-        <version.plugin.dependency>3.0.0</version.plugin.dependency>
+        <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>

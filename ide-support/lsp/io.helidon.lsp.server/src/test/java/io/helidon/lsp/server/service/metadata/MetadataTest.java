@@ -36,7 +36,8 @@ public class MetadataTest {
     public void testProcessMetadataJson() throws IOException {
         MetadataProvider provider = MetadataProvider.instance();
         JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
-        File file = new File("src/test/resources/metadata/io.helidon.common.configurable.json");
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("metadata/helidon-common-configurable.config-metadata.json").getFile());
         JsonReader reader = readerFactory.createReader(new FileReader(file, StandardCharsets.UTF_8));
 
         List<ConfiguredType> configuredTypes = provider.processMetadataJson(reader.readArray());
