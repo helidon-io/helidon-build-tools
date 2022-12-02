@@ -546,7 +546,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             InvocationResult result = invoker.execute(request);
             getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
-            Validator.genFileValidation(basedir, validations);
+            Validator.validateProject(basedir, validations);
             if (result.getExitCode() != 0) {
                 throw new MojoExecutionException("Execution failure: exit code = " + result.getExitCode(),
                         result.getExecutionException());

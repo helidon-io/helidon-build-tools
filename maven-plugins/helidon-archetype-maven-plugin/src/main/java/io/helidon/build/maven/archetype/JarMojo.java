@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v2.util.ArchetypeValidator;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
@@ -250,9 +249,7 @@ public class JarMojo extends AbstractMojo {
     private void validateEntryPoint(Path outputDir) throws MojoExecutionException {
         System.setProperty(MAVEN_URL_REPO_PROPERTY, session.getLocalRepository().getBasedir());
         Path script = VirtualFileSystem.create(outputDir).getPath("/").resolve("main.xml");
-        List<String> errors = ArchetypeValidator.validate(script);
-        List<String> regexErrors = Validator.regexValidation(script);
-        errors.addAll(regexErrors);
+        List<String> errors = Validator.validateArchetype(script);
         if (!errors.isEmpty()) {
             errors.forEach(getLog()::error);
             throw new MojoExecutionException("Validation failed");

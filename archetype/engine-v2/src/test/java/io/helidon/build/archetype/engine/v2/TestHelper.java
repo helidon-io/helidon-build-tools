@@ -348,9 +348,9 @@ public class TestHelper {
     }
 
     /**
-     * Create an input validations block builder.
+     * Create a validation block builder.
      *
-     * @param id            input id
+     * @param id            id
      * @param description   description
      * @param children      nested children
      * @return block builder
@@ -365,9 +365,9 @@ public class TestHelper {
     }
 
     /**
-     * Create an input validation block builder.
+     * Create a regex block builder.
      *
-     * @param value     input value
+     * @param value     regular expression
      * @return block builder
      */
     public static Block.Builder regex(String value) {

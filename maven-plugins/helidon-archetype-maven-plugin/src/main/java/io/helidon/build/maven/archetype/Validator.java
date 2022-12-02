@@ -27,6 +27,7 @@ import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.util.ArchetypeValidator;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.mozilla.javascript.Scriptable;
@@ -45,8 +46,11 @@ class Validator {
      * @param script archetype script
      * @return list of errors
      */
-    static List<String> regexValidation(Path script) {
-        return RegexValidator.validate(script);
+    static List<String> validateArchetype(Path script) {
+        List<String> errors = ArchetypeValidator.validate(script);
+        List<String> regexErrors = RegexValidator.validate(script);
+        errors.addAll(regexErrors);
+        return errors;
     }
 
     /**
@@ -56,7 +60,7 @@ class Validator {
      * @param validations   validations
      * @throws MojoExecutionException if validation mismatch
      */
-    static void genFileValidation(File directory,
+    static void validateProject(File directory,
                                   List<io.helidon.build.maven.archetype.config.Validation> validations)
             throws MojoExecutionException {
         if (Objects.isNull(validations)) {
@@ -67,24 +71,24 @@ class Validator {
         }
     }
 
-    private static class RegexValidator extends VisitorAdapter<Context> {
+    static class RegexValidator extends VisitorAdapter<Context> {
 
         private static final String ERROR_FORMAT =
                 "Regular expression '%s' at validation '%s' is not JavaScript compatible";
-        private static final List<String> ERRORS = new LinkedList<>();
+        private final List<String> errors = new LinkedList<>();
         private String validationId;
 
-        private RegexValidator() {
+        RegexValidator() {
             super(null, null, null, null);
         }
 
-        private static List<String> validate(Path script) {
+        static List<String> validate(Path script) {
             RegexValidator validator = new RegexValidator();
             Context context = Context.builder()
                     .cwd(script.getParent())
                     .build();
             Walker.walk(validator, ScriptLoader.load(script), context, context::cwd);
-            return ERRORS;
+            return validator.errors();
         }
 
         @Override
@@ -106,9 +110,18 @@ class Validator {
                 Scriptable scope = context.initStandardObjects();
                 context.evaluateString(scope, pattern, "regex", 1, null);
             } catch (Exception e) {
-                ERRORS.add(String.format(ERROR_FORMAT, pattern, validationId));
+                errors.add(String.format(ERROR_FORMAT, pattern, validationId));
             }
             return Node.VisitResult.CONTINUE;
+        }
+
+        /**
+         * Get list of errors.
+         *
+         * @return errors
+         */
+        List<String> errors() {
+            return errors;
         }
     }
 }
