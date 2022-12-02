@@ -54,7 +54,6 @@ public abstract class InputResolver implements Input.Visitor<Context>, Validatio
     private final Deque<DeclaredInput> parents = new ArrayDeque<>();
     private final Deque<Step> currentSteps = new ArrayDeque<>();
     private final Set<Step> visitedSteps = new HashSet<>();
-    private String validationId;
     private LinkedList<Validation.Regex> regexs;
 
     /**
@@ -186,15 +185,8 @@ public abstract class InputResolver implements Input.Visitor<Context>, Validatio
 
     @Override
     public VisitResult visitValidation(Validation validation, Context arg) {
-        validationId = validation.id();
         this.regexs = new LinkedList<>();
         this.validations.put(validation.id(), this.regexs);
-        return VisitResult.CONTINUE;
-    }
-
-    @Override
-    public VisitResult postVisitValidation(Validation validation, Context arg) {
-        validationId = null;
         return VisitResult.CONTINUE;
     }
 
