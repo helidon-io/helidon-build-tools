@@ -1,0 +1,4 @@
+[ERROR] Regular expression 'foo' at validation 'dummyregex' is not JavaScript compatible
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------

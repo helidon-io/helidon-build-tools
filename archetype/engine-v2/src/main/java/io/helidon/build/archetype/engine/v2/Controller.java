@@ -43,7 +43,7 @@ public final class Controller extends VisitorAdapter<Context> {
                        Output.Visitor<Context> outputVisitor,
                        Model.Visitor<Context> modelVisitor) {
 
-        super(inputResolver, outputVisitor, modelVisitor);
+        super(inputResolver, outputVisitor, modelVisitor, inputResolver);
         this.steps = inputResolver.steps();
     }
 

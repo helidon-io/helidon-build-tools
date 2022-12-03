@@ -39,7 +39,9 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.model;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelList;
 import static io.helidon.build.archetype.engine.v2.TestHelper.modelValue;
 import static io.helidon.build.archetype.engine.v2.TestHelper.output;
+import static io.helidon.build.archetype.engine.v2.TestHelper.regex;
 import static io.helidon.build.archetype.engine.v2.TestHelper.step;
+import static io.helidon.build.archetype.engine.v2.TestHelper.validation;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
@@ -244,6 +246,43 @@ public class InputResolverTest {
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));
         assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         assertThat(ex.getCause().getMessage(), endsWith("Parent input is not global"));
+    }
+
+    @Test
+    void testSingleValidation() {
+        Block block = step("step",
+                validation("lower-case", "rule for lower case",
+                        regex("^[a-z]+$")),
+                inputText("text", "", "lower-case"))
+                .build();
+
+        Context context = Context.create();
+        context.scope().putValue("text", Value.create("FOO"), ValueKind.EXTERNAL);
+
+        InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
+        assertThat(ex.getCause(), is(instanceOf(ValidationException.class)));
+        assertThat(ex.getCause().getMessage(), is("Invalid input: text='FOO' with regex: ^[a-z]+$"));
+    }
+
+    @Test
+    void testMultiValidation() {
+        Block.Builder validation = regex("^[a-z]+$");
+        Block.Builder validation1 = regex("^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$");
+        Block.Builder validation2 = regex(".");
+
+        Block block = step("step",
+                validation("lower-case", "lower case rule", validation),
+                validation("package", "package rule", validation, validation1, validation2),
+                validation("dummy", "dummy", validation2),
+                inputText("text", "", "package"))
+                .build();
+
+        Context context = Context.create();
+        context.scope().putValue("text", Value.create("my.package.name"), ValueKind.EXTERNAL);
+
+        InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
+        assertThat(ex.getCause(), is(instanceOf(ValidationException.class)));
+        assertThat(ex.getCause().getMessage(), is("Invalid input: text='my.package.name' with regex: ^[a-z]+$"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {
