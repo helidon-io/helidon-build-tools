@@ -31,6 +31,8 @@ const serverOutputChannel = VSCodeAPI.createOutputChannel("Helidon LS LOGS");
 const clientOutputChannel = VSCodeAPI.createOutputChannel(clientName);
 const outputFormatter = new OutputFormatter(serverOutputChannel);
 let client : LanguageClient;
+const net = require("net");
+const getPort = require('get-port');
 
 export function getHelidonLangServerClient() : LanguageClient {
     return client;
@@ -61,12 +63,12 @@ async function startSocketLangServer(
     }
 
     //start Language Server
-    let excecutable: string = 'java';
+    let executable: string = 'java';
     let jarFileDir = path.join(__dirname, '..', 'server');
     const opts = {
         cwd: jarFileDir
     };
-    const getPort = require('get-port');
+
     let connectionInfo = {
         port: await getPort(),
         host: "localhost"
@@ -79,18 +81,22 @@ async function startSocketLangServer(
     args.push('-jar', 'io.helidon.lsp.server.jar');
     args.push(connectionInfo.port);
 
-    langServerProcess = ChildProcessAPI.spawnProcess(excecutable, args, opts);
+    langServerProcess = ChildProcessAPI.spawnProcess(executable, args, opts);
     configureLangServer(langServerProcess);
 
     //connect to the Language Server
-    //wait for server start
-    await new Promise(resolve => {
-        setTimeout(resolve, 5000)
-    });
-    let net = require("net");
+    let serverSocket: any;
+
+    try {
+        //wait for the server start
+        serverSocket = await getServerSocket(connectionInfo);
+    } catch (error) {
+        return;
+    }
+
     let serverOptions = () => {
         // Connect to language server via socket
-        let socket = net.connect(connectionInfo);
+        let socket = serverSocket;
         let result: StreamInfo = {
             writer: socket,
             reader: socket
@@ -180,4 +186,38 @@ function configureLangServer(langServerProcess: ChildProcess) {
         logger.error(data.toString());
         outputFormatter.formatInputString(data);
     });
+}
+
+function getServerSocket(connectionInfo: any): Promise<any> {
+    let maxReconnectAttempt = 10;
+    const errorMessage = "Connection to Helidon Language Server failed";
+
+    return new Promise((resolve, reject)=>{
+        let socket = connect(connectionInfo)
+        socket.on('error', onError);
+        socket.on('connect', onConnect);
+
+        function onError(error: any) {
+            logger.debug("Attempting to reconnect to Helidon Language Server")
+            if (maxReconnectAttempt > 1) {
+                setTimeout(() => {
+                    socket = connect(connectionInfo);
+                    maxReconnectAttempt --;
+                    socket.on('error', onError);
+                    socket.on('connect', onConnect);
+                }, 1000);
+            } else {
+                logger.error(errorMessage);
+                reject(new Error(errorMessage));
+            }
+        }
+
+        function onConnect(data: any) {
+            resolve(socket);
+        }
+    });
+
+    function connect(connectionInfo: any) {
+        return net.connect(connectionInfo);
+    }
 }
