@@ -1,0 +1,104 @@
+[
+  {
+    "module": "io.helidon.common.pki",
+    "types": [
+      {
+        "annotatedType": "io.helidon.common.pki.KeyConfig.Builder",
+        "type": "io.helidon.common.pki.KeyConfig",
+        "producers": [
+          "io.helidon.common.pki.KeyConfig.Builder#build()",
+          "io.helidon.common.pki.KeyConfig#create(io.helidon.config.Config)"
+        ],
+        "options": [
+          {
+            "description": "Update this builder with information from a pem builder.",
+            "key": "pem",
+            "method": "io.helidon.common.pki.KeyConfig.Builder#updateWith(io.helidon.common.pki.KeyConfig.PemBuilder)",
+            "type": "io.helidon.common.pki.KeyConfig.PemBuilder"
+          },
+          {
+            "description": "Update this builder with information from a keystore builder.",
+            "key": "keystore",
+            "method": "io.helidon.common.pki.KeyConfig.Builder#updateWith(io.helidon.common.pki.KeyConfig.KeystoreBuilder)",
+            "type": "io.helidon.common.pki.KeyConfig.KeystoreBuilder"
+          }
+        ]
+      },
+      {
+        "annotatedType": "io.helidon.common.pki.KeyConfig.KeystoreBuilder",
+        "type": "io.helidon.common.pki.KeyConfig.KeystoreBuilder",
+        "options": [
+          {
+            "defaultValue": "false",
+            "description": "If you want to build a trust store, call this method to add all\n certificates present in the keystore to certificate list.\n\n @return updated builder instance",
+            "key": "trust-store",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#trustStore()",
+            "type": "java.lang.Boolean"
+          },
+          {
+            "description": "Alias of X.509 certificate of public key.\n Used to load both the certificate and public key.",
+            "key": "cert.alias",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#certAlias(java.lang.String)"
+          },
+          {
+            "description": "Alias of an X.509 chain.",
+            "key": "cert-chain.alias",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#certChainAlias(java.lang.String)"
+          },
+          {
+            "description": "Keystore resource definition.",
+            "key": "resource",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#keystore(io.helidon.common.configurable.Resource)",
+            "type": "io.helidon.common.configurable.Resource",
+            "required": true
+          },
+          {
+            "description": "Pass-phrase of the keystore (supported with JKS and PKCS12 keystores).",
+            "key": "passphrase",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#keystorePassphrase(java.lang.String)"
+          },
+          {
+            "defaultValue": "1",
+            "description": "Alias of the private key in the keystore.",
+            "key": "key.alias",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#keyAlias(java.lang.String)"
+          },
+          {
+            "description": "Pass-phrase of the key in the keystore (used for private keys).\n This is (by default) the same as keystore passphrase - only configure\n if it differs from keystore passphrase.",
+            "key": "key.passphrase",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#keyPassphrase(java.lang.String)"
+          },
+          {
+            "defaultValue": "PKCS12",
+            "description": "Set type of keystore.\n Defaults to \"PKCS12\", expected are other keystore types supported by java then can store keys under aliases.",
+            "key": "type",
+            "method": "io.helidon.common.pki.KeyConfig.KeystoreBuilder#keystoreType(java.lang.String)"
+          }
+        ]
+      },
+      {
+        "annotatedType": "io.helidon.common.pki.KeyConfig.PemBuilder",
+        "type": "io.helidon.common.pki.KeyConfig.PemBuilder",
+        "options": [
+          {
+            "description": "Load certificate chain from PEM resource.",
+            "key": "cert-chain.resource",
+            "method": "io.helidon.common.pki.KeyConfig.PemBuilder#certChain(io.helidon.common.configurable.Resource)",
+            "type": "io.helidon.common.configurable.Resource"
+          },
+          {
+            "description": "Read a private key from PEM format from a resource definition.",
+            "key": "key.resource",
+            "method": "io.helidon.common.pki.KeyConfig.PemBuilder#key(io.helidon.common.configurable.Resource)",
+            "type": "io.helidon.common.configurable.Resource"
+          },
+          {
+            "description": "Passphrase for private key. If the key is encrypted (and in PEM PKCS#8 format), this passphrase will be used to\n decrypt it.",
+            "key": "key.passphrase",
+            "method": "io.helidon.common.pki.KeyConfig.PemBuilder#keyPassphrase(java.lang.String)"
+          }
+        ]
+      }
+    ]
+  }
+]

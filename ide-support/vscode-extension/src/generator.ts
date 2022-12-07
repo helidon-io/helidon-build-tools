@@ -22,22 +22,27 @@ import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { BaseCommand, GeneratorData, GeneratorDataAPI, OptionCommand, TextCommand } from "./GeneratorCommand";
 import { validateQuickPick, validateText } from "./validationApi";
-import { getHelidonLangServerClient } from './languageServer';
+
 import { logger } from './logger';
 import { Interpreter } from "./Interpreter";
-import { Context, ContextValueKind } from "./Context";
+import { Context, ContextScope, ContextValueKind } from "./Context";
+
+const PROJECT_READY: string = 'Your new project is ready.';
+const NEW_WINDOW: string = 'Open in new window';
+const CURRENT_WINDOW: string = 'Open in current window';
+const ADD_TO_WORKSPACE: string = 'Add to current workspace';
+
+const SELECT_FOLDER = 'Select folder';
+const OVERWRITE_EXISTING = 'Overwrite';
+const NEW_DIR = 'Choose new directory';
+const EXISTING_FOLDER = ' already exists in selected directory.';
+
+const ARCHETYPE_CACHE: Map<string, any> = new Map();
+const VERSIONS_URL: string = 'https://helidon.io/api/versions';
+const ARCHETYPES_URL_PREFIX = 'https://helidon.io/api/starter/';
+const axios = require('axios');
 
 export async function showHelidonGenerator(extensionPath: string) {
-
-    const PROJECT_READY: string = 'Your new project is ready.';
-    const NEW_WINDOW: string = 'Open in new window';
-    const CURRENT_WINDOW: string = 'Open in current window';
-    const ADD_TO_WORKSPACE: string = 'Add to current workspace';
-
-    const SELECT_FOLDER = 'Select folder';
-    const OVERWRITE_EXISTING = 'Overwrite';
-    const NEW_DIR = 'Choose new directory';
-    const EXISTING_FOLDER = ' already exists in selected directory.';
 
     let interpreter: Interpreter;
     let generatorData: GeneratorData;
@@ -55,7 +60,6 @@ export async function showHelidonGenerator(extensionPath: string) {
 
         const archetypeValues = prepareProperties(projectData);
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
-            --reset --url file:///${extensionPath}/target/cli-data \
             ${archetypeValues}`;
 
         const channel = VSCodeAPI.createOutputChannel('helidon');
@@ -71,7 +75,7 @@ export async function showHelidonGenerator(extensionPath: string) {
                 VSCodeAPI.showInformationMessage('Project generated...');
                 openPreparedProject(projectDir);
             } else {
-                console.log(error.toString());
+                logger.error(error);
                 VSCodeAPI.showInformationMessage('Project generation failed...');
             }
             if (stderr) {
@@ -147,37 +151,79 @@ export async function showHelidonGenerator(extensionPath: string) {
         return Uri.file(projectDir);
     }
 
-    async function prepareArchetype() {
-        try {
-            let client = getHelidonLangServerClient();
-            await client.sendRequest("workspace/executeCommand", {command: "helidon.archetype.v2.json"})
-                .then(data => {
-                    if (typeof data === "string") {
-                        archetype = JSON.parse(data);
-                    }
+    interface HelidonVersions {
+        versions: string[];
+        latest: string;
+    }
 
-                });
+    async function initArchetypes() {
+        const helidonVersion : string = generatorData.elements[0].selectedValues[0];
+        archetype = ARCHETYPE_CACHE.get(helidonVersion);
+        if (!archetype) {
+            let helidonArchetypeResponse: any = await axios.get(ARCHETYPES_URL_PREFIX+helidonVersion);
+            archetype = helidonArchetypeResponse.data;
+            ARCHETYPE_CACHE.set(helidonVersion, archetype);
+        } 
+
+        if (!archetype && !archetype.children) {
+            const errorMessage = "Unable to get Helidon archetype."
+            logger.error(errorMessage);
+            VSCodeAPI.showErrorMessage(errorMessage);
+            throw new Error(errorMessage);
+        }
+
+        let temp = generatorData.elements[0];
+        generatorData.elements = [];
+        generatorData.elements.push(temp);
+        generatorData.context = new Context();
+        interpreter = new Interpreter(archetype, generatorData);
+        
+        for (let child of archetype.children) {
+            const elements = interpreter.process(child);
+            generatorData.elements.push(...elements);
+        }
+    }
+
+    async function init() {
+        try {
+            let helidonVersionsResponse: any = await axios.get(VERSIONS_URL);
+            let helidonVersions: HelidonVersions = helidonVersionsResponse.data;
+
+            let options: QuickPickItemExt[] = [];
+            let defaultValue: any[] = [helidonVersions.latest];
+
+            options.push(...helidonVersions.versions.map((o: string) => {
+                return {
+                    label: o,
+                    value: o
+                }
+            }));
+
+            let selectedOptions: QuickPickItemExt[] = [];
+            selectedOptions.push(...options.filter(option => defaultValue.includes(option.value)));
+
+            let result = {
+                title: "Helidon version",
+                placeholder: "Helidon version (optional -false). Press 'Enter' to confirm.",
+                items: options,
+                selectedItems: selectedOptions,
+                kind: "enum",
+                id: "helidon.version",
+                path: "helidon.version",
+                _scope: new ContextScope(null, null),
+                _skip: false,
+                additionalInstructions: initArchetypes
+            };
+            result._scope = generatorData.context.newScope(result);
+
+            generatorData.elements.push(result);
+            await getInput(generatorData.elements[generatorData.currentElementIndex]);
         } catch (e) {
             if (typeof e === "string") {
                 logger.error(e);
             } else if (e instanceof Error) {
                 logger.error(e.message);
             }
-        }
-    }
-
-    async function init() {
-        await prepareArchetype();
-
-        if (!archetype && !archetype.children) {
-            return;
-        }
-        interpreter = new Interpreter(archetype, generatorData);
-
-
-        for (let child of archetype.children) {
-            const elements = interpreter.process(child);
-            generatorData.elements.push(...elements);
         }
     }
 
@@ -239,7 +285,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         return inputBox;
     }
 
-    function processSelected(element:any, selectedValues: any[], childrenOfSelected: any[]): OptionCommand {
+    function processSelected(element: any, selectedValues: any[], childrenOfSelected: any[]): OptionCommand {
         //will be used to evaluate expressions
         let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
         generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
@@ -294,6 +340,10 @@ export async function showHelidonGenerator(extensionPath: string) {
                     if (option.children) {
                         children.push(...option.children);
                     }
+                }
+
+                if (element.additionalInstructions) {
+                    await element.additionalInstructions();
                 }
 
                 let optionCommand = processSelected(element, selectedValues, children);

@@ -155,7 +155,7 @@ export class Context {
 /**
  * Context scope.
  */
-class ContextScope {
+export class ContextScope {
 
     global: boolean;
     children: Map<any, ContextScope>;

@@ -1,0 +1,37 @@
+[
+  {
+    "module": "io.helidon.security.util",
+    "types": [
+      {
+        "annotatedType": "io.helidon.security.util.TokenHandler.Builder",
+        "type": "io.helidon.security.util.TokenHandler",
+        "producers": [
+          "io.helidon.security.util.TokenHandler.Builder#build()",
+          "io.helidon.security.util.TokenHandler#create(io.helidon.config.Config)"
+        ],
+        "options": [
+          {
+            "description": "Set the token pattern (Regular expression) to extract the token.",
+            "key": "regexp",
+            "method": "io.helidon.security.util.TokenHandler.Builder#tokenPattern(java.util.regex.Pattern)"
+          },
+          {
+            "description": "Set the prefix of header value to extract the token.",
+            "key": "prefix",
+            "method": "io.helidon.security.util.TokenHandler.Builder#tokenPrefix(java.lang.String)"
+          },
+          {
+            "description": "Set the name of header to look into to extract the token.",
+            "key": "header",
+            "method": "io.helidon.security.util.TokenHandler.Builder#tokenHeader(java.lang.String)"
+          },
+          {
+            "description": "Token format for creating outbound tokens.",
+            "key": "format",
+            "method": "io.helidon.security.util.TokenHandler.Builder#tokenFormat(java.lang.String)"
+          }
+        ]
+      }
+    ]
+  }
+]

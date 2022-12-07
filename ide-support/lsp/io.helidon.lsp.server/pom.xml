@@ -136,37 +136,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-stager-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>stage</goal>
-                        </goals>
-                        <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}">
-                                    <archives>
-                                        <archive target="cli-data/${version.lib.helidon}/cli-data.zip">
-                                            <copy-artifacts>
-                                                <copy-artifact groupId="io.helidon.archetypes"
-                                                               artifactId="helidon"
-                                                               version="${version.lib.helidon}"
-                                                               type="jar"/>
-                                            </copy-artifacts>
-                                        </archive>
-                                    </archives>
-                                    <files>
-                                        <file target="cli-data/latest">${version.lib.helidon}</file>
-                                    </files>
-                                </directory>
-                            </directories>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
@@ -195,25 +164,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>copy-archetypes</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.helidon.archetypes</groupId>
-                                    <artifactId>helidon</artifactId>
-                                    <version>${version.lib.helidon}</version>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.directory}/archetype/</outputDirectory>
-                            <overWriteReleases>true</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>unpack-tests-resources</id>
                         <phase>process-test-resources</phase>

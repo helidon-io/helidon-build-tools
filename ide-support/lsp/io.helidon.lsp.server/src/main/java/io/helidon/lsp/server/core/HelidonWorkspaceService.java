@@ -17,23 +17,14 @@
 package io.helidon.lsp.server.core;
 
 import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.json.JsonObject;
-
-import io.helidon.build.archetype.v2.json.ScriptSerializer;
-import io.helidon.build.common.VirtualFileSystem;
-
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
-import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileEvent;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
@@ -48,28 +39,6 @@ public class HelidonWorkspaceService implements WorkspaceService {
      * Create a new instance.
      */
     public HelidonWorkspaceService() {
-    }
-
-    @Override
-    public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
-        String command = params.getCommand();
-        try {
-            Supplier<Object> result = () -> "";
-            if (command != null && command.equals("helidon.archetype.v2.json")) {
-                JsonObject jsonObject = prepareArchetypeJson();
-                result = () -> jsonObject != null ? jsonObject.toString() : "";
-            }
-            return CompletableFuture.supplyAsync(result);
-        } catch (URISyntaxException e) {
-            LOGGER.log(Level.SEVERE, "Exception when trying to execute " + command, e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private JsonObject prepareArchetypeJson() throws URISyntaxException {
-        Path archetypeDir = archetypeDir();
-        FileSystem fs = VirtualFileSystem.create(archetypeDir);
-        return ScriptSerializer.serialize(fs);
     }
 
     private Path archetypeDir() throws URISyntaxException {

@@ -1,0 +1,37 @@
+[
+  {
+    "module": "io.helidon.security.providers.abac",
+    "types": [
+      {
+        "annotatedType": "io.helidon.security.providers.abac.AbacProvider.Builder",
+        "description": "Attribute Based Access Control provider",
+        "prefix": "abac",
+        "type": "io.helidon.security.providers.abac.AbacProvider",
+        "producers": [
+          "io.helidon.security.providers.abac.AbacProvider.Builder#build()",
+          "io.helidon.security.providers.abac.AbacProvider#create(io.helidon.config.Config)"
+        ],
+        "provides": [
+          "io.helidon.security.spi.SecurityProvider",
+          "io.helidon.security.spi.AuthorizationProvider"
+        ],
+        "options": [
+          {
+            "defaultValue": "true",
+            "description": "Whether to fail if any attribute is left unvalidated.",
+            "key": "fail-on-unvalidated",
+            "method": "io.helidon.security.providers.abac.AbacProvider.Builder#failOnUnvalidated(boolean)",
+            "type": "java.lang.Boolean"
+          },
+          {
+            "defaultValue": "true",
+            "description": "Whether to fail if NONE of the attributes is validated.",
+            "key": "fail-if-none-validated",
+            "method": "io.helidon.security.providers.abac.AbacProvider.Builder#failIfNoneValidated(boolean)",
+            "type": "java.lang.Boolean"
+          }
+        ]
+      }
+    ]
+  }
+]

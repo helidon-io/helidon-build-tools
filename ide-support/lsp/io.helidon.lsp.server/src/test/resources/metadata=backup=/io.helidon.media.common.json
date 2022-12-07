@@ -1,0 +1,47 @@
+[
+  {
+    "module": "io.helidon.media.common",
+    "types": [
+      {
+        "annotatedType": "io.helidon.media.common.MediaContext.Builder",
+        "type": "io.helidon.media.common.MediaContext",
+        "producers": [
+          "io.helidon.media.common.MediaContext.Builder#build()",
+          "io.helidon.media.common.MediaContext#create(io.helidon.config.Config)"
+        ],
+        "options": [
+          {
+            "defaultValue": "false",
+            "description": "Whether Java Service Loader should be used to load MediaSupportProvider.",
+            "key": "discover-services",
+            "method": "io.helidon.media.common.MediaContext.Builder#discoverServices(boolean)",
+            "type": "java.lang.Boolean"
+          },
+          {
+            "defaultValue": "true",
+            "description": "Whether default readers and writers should be registered.",
+            "key": "register-defaults",
+            "method": "io.helidon.media.common.MediaContext.Builder#registerDefaults(boolean)",
+            "type": "java.lang.Boolean"
+          },
+          {
+            "defaultValue": "false",
+            "description": "Whether services loaded by Java Service Loader should be filtered.\n All of the services which should pass the filter, have to be present under `services` section of configuration.",
+            "key": "filter-services",
+            "method": "io.helidon.media.common.MediaContext.Builder#filterServices(boolean)",
+            "type": "java.lang.Boolean"
+          },
+          {
+            "description": "Configures this Builder from the supplied Config.\n <table class=\"config\">\n <caption>Optional configuration parameters</caption>\n <tr>\n     <th>key</th>\n     <th>description</th>\n </tr>\n <tr>\n     <td>register-defaults</td>\n     <td>Whether to register default reader and writers</td>\n </tr>\n <tr>\n     <td>discover-services</td>\n     <td>Whether to discover services via service loader</td>\n </tr>\n <tr>\n     <td>filter-services</td>\n     <td>Whether to filter discovered services by service names in services section</td>\n </tr>\n <tr>\n     <td>services</td>\n     <td>Configuration section for each service. Each entry has to have \"name\" parameter.\n     It is also used for filtering of loaded services.</td>\n </tr>\n </table>",
+            "key": "services",
+            "kind": "LIST",
+            "method": "io.helidon.media.common.MediaContext.Builder#config(io.helidon.config.Config)",
+            "type": "io.helidon.media.common.spi.MediaSupportProvider",
+            "provider": true,
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+]
