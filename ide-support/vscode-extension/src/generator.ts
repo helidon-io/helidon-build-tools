@@ -245,6 +245,15 @@ export async function showHelidonGenerator(extensionPath: string) {
         return result;
     }
 
+    function processUndoAction(){
+        if (commandHistory.length !== 0) {
+            do {
+                generatorData = commandHistory.pop()!.undo();
+            } while (generatorData.elements[generatorData.currentElementIndex]._skip === true);
+            interpreter.setGeneratorData(generatorData);
+        }
+    }
+
     function getTextInput(element: any, resolve: any, reject: any): InputBox {
         const data = element;
         data.totalSteps = getTotalSteps();
@@ -272,10 +281,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         inputBox.onDidTriggerButton(item => {
             if (item === QuickInputButtons.Back) {
                 resolve(inputBox);
-                if (commandHistory.length !== 0) {
-                    generatorData = commandHistory.pop()!.undo();
-                    interpreter.setGeneratorData(generatorData);
-                }
+                processUndoAction();
             }
         });
         inputBox.onDidHide(() => {
@@ -290,13 +296,14 @@ export async function showHelidonGenerator(extensionPath: string) {
         let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
         generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
 
+        let optionCommand = new OptionCommand(generatorData);
+        
         let processedChildren: any[] = [];
         for (let child of childrenOfSelected) {
             const elements = interpreter.process(child);
             processedChildren.push(...elements);
         }
 
-        let optionCommand = new OptionCommand(generatorData);
         optionCommand.selectedOptionsChildren(processedChildren);
         optionCommand.setContext(generatorData.context);
         generatorData = optionCommand.execute();
@@ -313,7 +320,9 @@ export async function showHelidonGenerator(extensionPath: string) {
                 children.push(...option.children);
             }
         }
-        processSelected(element, selectedValues, children);
+
+        let optionCommand = processSelected(element, selectedValues, children);
+        commandHistory.push(optionCommand);
     }
 
     function getQuickPickInput(element: any, resolve: any, reject: any): QuickPick<any> {
@@ -370,10 +379,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         quickPick.onDidTriggerButton(item => {
             if (item === QuickInputButtons.Back) {
                 resolve(quickPick);
-                if (commandHistory.length !== 0) {
-                    generatorData = commandHistory.pop()!.undo();
-                    interpreter.setGeneratorData(generatorData);
-                }
+                processUndoAction();
             }
         });
         quickPick.onDidHide(() => {
