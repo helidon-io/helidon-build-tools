@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.ServerSocket;
@@ -29,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -50,9 +52,12 @@ public class MavenSupport {
     private static final String POM_FILE_NAME = "pom.xml";
     private static final int DEFAULT_TIMEOUT = 10000;
     private static final Gson GSON = new Gson();
-    private static final String DEPENDENCIES_MVN_COMMAND = "io.helidon.ide-support"
-            + ".lsp:helidon-lsp-maven-plugin:list-dependencies";
+    private static final String LSP_MAVEN_PLUGIN = "io.helidon.ide-support.lsp:helidon-lsp-maven-plugin";
+    private static final String DEPENDENCIES_GOAL = "list-dependencies";
     private static final MavenSupport INSTANCE = new MavenSupport();
+
+    private static String mavenVersion;
+    private static String lspMvnDependenciesCommand;
 
     private boolean isMavenInstalled = false;
 
@@ -80,6 +85,9 @@ public class MavenSupport {
         if (mavenPath != null) {
             isMavenInstalled = true;
         }
+        mavenVersion = getMavenVersion();
+        lspMvnDependenciesCommand =
+                LSP_MAVEN_PLUGIN + (mavenVersion.isEmpty() ? "" : ":" + mavenVersion) + ":" + DEPENDENCIES_GOAL;
     }
 
     /**
@@ -97,7 +105,7 @@ public class MavenSupport {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             PrintStream output = new MavenPrintStream();
             MavenCommand.builder()
-                        .addArgument(DEPENDENCIES_MVN_COMMAND)
+                        .addArgument(lspMvnDependenciesCommand)
                         .addArgument("-Dport=" + serverSocket.getLocalPort())
                         .directory(new File(pomPath).getParentFile())
                         .verbose(false)
@@ -115,7 +123,7 @@ public class MavenSupport {
                     result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
                     }.getType());
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
+                    LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
                 }
                 LOGGER.log(
                         Level.FINEST,
@@ -125,7 +133,7 @@ public class MavenSupport {
                 return result;
             }).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + DEPENDENCIES_MVN_COMMAND, e);
+            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
         }
         LOGGER.log(
                 Level.FINEST,
@@ -133,6 +141,22 @@ public class MavenSupport {
                 new Object[]{pomPath, (double) (System.currentTimeMillis() - startTime) / 1000}
         );
         return null;
+    }
+
+    private static String getMavenVersion() {
+        final Properties properties = new Properties();
+        final String corePomProperties = "META-INF/maven/io.helidon.ide-support.lsp/io.helidon.lsp.server/pom.properties";
+
+        try (InputStream in = MavenSupport.class.getClassLoader().getResourceAsStream(corePomProperties)) {
+            if (in != null) {
+                properties.load(in);
+            }
+        } catch (IOException ioe) {
+            return "";
+        }
+
+        String version = properties.getProperty("version");
+        return version == null ? "" : version.trim();
     }
 
     /**
