@@ -78,7 +78,7 @@ async function startSocketLangServer(
     if (debugMode()) {
         args.push('-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10001');
     }
-    args.push('-jar', 'io.helidon.lsp.server.jar');
+    args.push('-jar', 'helidon-lsp-server.jar');
     args.push(connectionInfo.port);
 
     langServerProcess = ChildProcessAPI.spawnProcess(executable, args, opts);

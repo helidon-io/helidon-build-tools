@@ -19,7 +19,7 @@ const gulp = require('gulp');
 gulp.task('build', (done) => {
     gulp.src('../../cli/impl/target/libs/**/*').pipe(gulp.dest('./target/cli/libs'));
     gulp.src('../../cli/impl/target/helidon.jar').pipe(gulp.dest('./target/cli'));
-    gulp.src('../lsp/io.helidon.lsp.server/target/io.helidon.lsp.server.jar').pipe(gulp.dest('./target/server'));
-    gulp.src('../lsp/io.helidon.lsp.server/target/logging.properties').pipe(gulp.dest('./target/server'));
+    gulp.src('../lsp/lsp-server/target/helidon-lsp-server.jar').pipe(gulp.dest('./target/server'));
+    gulp.src('../lsp/lsp-server/target/logging.properties').pipe(gulp.dest('./target/server'));
     done();
 });

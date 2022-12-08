@@ -26,7 +26,7 @@
     </parent>
 
     <groupId>io.helidon.ide-support.lsp</groupId>
-    <artifactId>helidon-ide-support-lsp-project</artifactId>
+    <artifactId>helidon-lsp-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon LSP Project</name>
     <description>Helidon IDE Support Language Server Protocol Project</description>
@@ -44,7 +44,7 @@
 
     <modules>
         <module>helidon-lsp-maven-plugin</module>
-        <module>io.helidon.lsp.server</module>
+        <module>lsp-server</module>
         <module>common</module>
     </modules>
 
