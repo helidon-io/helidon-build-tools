@@ -112,6 +112,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <spotbugs.skip>false</spotbugs.skip>
+        <spotbugs.threshold>Medium</spotbugs.threshold>
+
         <!--
         !Version statement! - begin
 
@@ -161,6 +164,7 @@
         <version.lib.plexus-component>2.0.0</version.lib.plexus-component>
         <version.lib.plexus-java>1.1.1</version.lib.plexus-java>
         <version.lib.plexus-utils>3.3.0</version.lib.plexus-utils>
+        <version.lib.rhino>1.7.14</version.lib.rhino>
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.snakeyaml>1.31</version.lib.snakeyaml>
@@ -185,6 +189,7 @@
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
+        <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.frontend>1.11.3</version.plugin.frontend>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
@@ -199,7 +204,7 @@
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -392,13 +397,19 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
-                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <omitVisitors>FindReturnRef</omitVisitors>
                         <skip>${spotbugs.skip}</skip>
-                        <!--suppress UnresolvedMavenProperty -->
                         <threshold>${spotbugs.threshold}</threshold>
                         <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
+                        <plugins>
+                            <plugin>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>${version.plugin.findsecbugs}</version>
+                            </plugin>
+                        </plugins>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -845,6 +856,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>${version.lib.site-plugin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mozilla</groupId>
+                <artifactId>rhino</artifactId>
+                <version>${version.lib.rhino}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.spotbugs</groupId>

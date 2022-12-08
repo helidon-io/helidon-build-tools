@@ -19,6 +19,7 @@ package io.helidon.build.archetype.engine.v2;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
@@ -31,6 +32,7 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.test.utils.TestFiles;
@@ -50,6 +52,52 @@ import static org.hamcrest.Matchers.nullValue;
  * Tests {@link ScriptLoader}.
  */
 class ScriptLoaderTest {
+
+    @Test
+    void testValidations() {
+        Script script = load("loader/validations.xml");
+        int[] index = new int[]{0};
+        walk(new Validation.Visitor<>() {
+            @Override
+            public VisitResult visitValidation(Validation validation, Void arg) {
+                switch (++index[0]) {
+                    case 1:
+                        assertThat(validation.id(), is("validation1"));
+                        assertThat(validation.description(), is("description1"));
+                        break;
+                    case 3:
+                        assertThat(validation.id(), is("validation2"));
+                        assertThat(validation.description(), is("description2"));
+                        break;
+                    default:
+                        Assertions.fail("Unexpected index: " + index[0]);
+                }
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitRegex(Validation.Regex regex, Void arg) {
+                Pattern pattern = regex.pattern();
+                switch (++index[0]) {
+                    case 2:
+                        assertThat(pattern.pattern(), is("regex1"));
+                        break;
+                    case 4:
+                        assertThat(pattern.pattern(), is("regex2"));
+                        break;
+                    case 5:
+                        assertThat(pattern.pattern(), is("regex3"));
+                        break;
+                    case 6:
+                        assertThat(pattern.pattern(), is("regex4"));
+                        break;
+                    default:
+                        Assertions.fail("Unexpected index: " + index[0]);
+                }
+                return VisitResult.CONTINUE;
+            }
+        }, script);
+    }
 
     @Test
     void testInputs() {
@@ -246,7 +294,7 @@ class ScriptLoaderTest {
     void testPresets() {
         Script script = load("loader/presets.xml");
         int[] index = new int[]{0};
-        walk(new VisitorAdapter<>(null, null, null) {
+        walk(new VisitorAdapter<>(null, null, null, null) {
 
             @Override
             public VisitResult visitPreset(Preset preset, Void arg) {
@@ -283,7 +331,7 @@ class ScriptLoaderTest {
     void testVariables() {
         Script script = load("loader/variables.xml");
         int[] index = new int[]{0};
-        walk(new VisitorAdapter<>(null, null, null) {
+        walk(new VisitorAdapter<>(null, null, null, null) {
 
             @Override
             public VisitResult visitVariable(Variable variable, Void arg) {
@@ -604,7 +652,7 @@ class ScriptLoaderTest {
                 return VisitResult.CONTINUE;
             }
         };
-        walk(new VisitorAdapter<>(null, outputVisitor, modelVisitor) {
+        walk(new VisitorAdapter<>(null, outputVisitor, modelVisitor, null) {
             @Override
             public VisitResult visitPreset(Preset preset, Void arg) {
                 assertThat(++index[0], is(1));

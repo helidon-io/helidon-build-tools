@@ -17,12 +17,17 @@ package io.helidon.build.archetype.engine.v2.ast;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import io.helidon.build.archetype.engine.v2.InputException;
 import io.helidon.build.archetype.engine.v2.InvalidInputException;
+import io.helidon.build.archetype.engine.v2.ValidationException;
+import io.helidon.build.common.Lists;
 
+import static io.helidon.build.archetype.engine.v2.ast.Validation.Regex;
 import static java.util.Collections.emptyList;
 
 /**
@@ -306,10 +311,13 @@ public abstract class Input extends Block {
          *
          * @param value value
          * @param path  input path
+         * @param validations validations
          * @throws InvalidInputException if the value is invalid
          */
         @SuppressWarnings("unused")
-        public void validate(Value value, String path) throws InvalidInputException {
+        public void validate(Value value,
+                             String path,
+                             Map<String, java.util.List<Regex>> validations) throws InputException {
         }
 
         /**
@@ -398,12 +406,13 @@ public abstract class Input extends Block {
     public static final class Text extends DeclaredInput {
 
         private final String defaultValue;
+        private final java.util.List<String> validations;
 
         private Text(Input.Builder builder) {
             super(builder);
+            this.validations = builder.attribute("validations", false).asList();
             this.defaultValue = builder.attribute("default", false).asString();
         }
-
 
         @Override
         public Value defaultValue() {
@@ -428,7 +437,43 @@ public abstract class Input extends Block {
                     + ", optional=" + isOptional()
                     + ", global=" + isGlobal()
                     + ", defaultValue='" + defaultValue + '\''
+                    + ", validations=['" + Lists.join(validations, a -> a, ",") + "]'"
                     + '}';
+        }
+
+        /**
+         * Get validations.
+         *
+         * @return validation ids
+         */
+        public java.util.List<String> validations() {
+            return validations;
+        }
+
+        @Override
+        public void validate(Value value,
+                             String path,
+                             Map<String, java.util.List<Regex>> validations) throws InvalidInputException {
+            if (validations == null || validations.isEmpty()) {
+                return;
+            }
+            validations().stream()
+                    .flatMap(id -> validationOps(id, validations).stream())
+                    .forEach(op -> {
+                        String textValue = value.asString();
+                        if (op.pattern().matcher(textValue).matches()) {
+                            return;
+                        }
+                        throw new ValidationException(textValue, path, op.pattern().pattern());
+                    });
+        }
+
+        private java.util.List<Regex> validationOps(String id, Map<String, java.util.List<Regex>> validations) {
+            java.util.List<Regex> ops = validations.get(id);
+            if (ops != null) {
+                return ops;
+            }
+            throw new IllegalArgumentException("Unresolved validation: " + id);
         }
     }
 
@@ -655,7 +700,9 @@ public abstract class Input extends Block {
         }
 
         @Override
-        public void validate(Value value, String path) throws InvalidInputException {
+        public void validate(Value value,
+                             String path,
+                             Map<String, java.util.List<Regex>> validations) throws InvalidInputException {
             String option = value.asString();
             if (optionIndex(option, options(n -> true)) == -1) {
                 throw new InvalidInputException(option, path);

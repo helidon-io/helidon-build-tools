@@ -18,8 +18,11 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,7 @@ import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
 import io.helidon.build.archetype.engine.v2.ast.Input.Option;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.context.Context;
@@ -44,11 +48,13 @@ import static io.helidon.build.archetype.engine.v2.ast.Input.Enum.optionIndex;
  *
  * @see Controller
  */
-public abstract class InputResolver implements Input.Visitor<Context> {
+public abstract class InputResolver implements Input.Visitor<Context>, Validation.Visitor<Context> {
 
+    private final Map<String, List<Validation.Regex>> validations = new HashMap<>();
     private final Deque<DeclaredInput> parents = new ArrayDeque<>();
     private final Deque<Step> currentSteps = new ArrayDeque<>();
     private final Set<Step> visitedSteps = new HashSet<>();
+    private LinkedList<Validation.Regex> regexs;
 
     /**
      * Get the stack of steps.
@@ -96,7 +102,7 @@ public abstract class InputResolver implements Input.Visitor<Context> {
             }
             return null;
         }
-        input.validate(value, scope.path(true));
+        input.validate(value, scope.path(true), validations);
         return input.visitValue(value);
     }
 
@@ -176,4 +182,18 @@ public abstract class InputResolver implements Input.Visitor<Context> {
         }
         return VisitResult.CONTINUE;
     }
+
+    @Override
+    public VisitResult visitValidation(Validation validation, Context arg) {
+        this.regexs = new LinkedList<>();
+        this.validations.put(validation.id(), this.regexs);
+        return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitRegex(Validation.Regex regex, Context arg) {
+        this.regexs.add(regex);
+        return VisitResult.CONTINUE;
+    }
+
 }

@@ -27,6 +27,10 @@
     <artifactId>helidon-build-licensing</artifactId>
     <name>Helidon Licensing Tools</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>

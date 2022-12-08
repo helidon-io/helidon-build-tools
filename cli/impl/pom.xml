@@ -29,6 +29,7 @@
 
     <properties>
         <mainClass>io.helidon.build.cli.impl.Helidon</mainClass>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

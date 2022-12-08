@@ -30,6 +30,7 @@
 
     <properties>
         <mainClass>io.helidon.build.archetype.engine.v2.Main</mainClass>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

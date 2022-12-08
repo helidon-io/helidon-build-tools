@@ -30,6 +30,10 @@
     <name>Helidon Archetype Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -68,6 +72,10 @@
         <dependency>
             <groupId>org.apache.maven.archetype</groupId>
             <artifactId>archetype-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>

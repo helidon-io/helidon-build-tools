@@ -168,6 +168,50 @@ public class Block extends Node {
         }
 
         /**
+         * Visit a validation block.
+         *
+         * @param validation validation
+         * @param arg        visitor argument
+         * @return result
+         */
+        default VisitResult visitValidation(Validation validation, A arg) {
+            return visitAny(validation, arg);
+        }
+
+        /**
+         * Visit a validation block after traversing the nested nodes.
+         *
+         * @param validation validation
+         * @param arg        visitor argument
+         * @return result
+         */
+        default VisitResult postVisitValidation(Validation validation, A arg) {
+            return visitAny(validation, arg);
+        }
+
+        /**
+         * Visit a regex block.
+         *
+         * @param regex regular expression
+         * @param arg   visitor argument
+         * @return  result
+         */
+        default VisitResult visitRegex(Validation.Regex regex, A arg) {
+            return visitAny(regex, arg);
+        }
+
+        /**
+         * Visit a regex block after traversing the nested nodes.
+         *
+         * @param regex regular expression
+         * @param arg   visitor argument
+         * @return  result
+         */
+        default VisitResult postVisitRegex(Validation.Regex regex, A arg) {
+            return visitAny(regex, arg);
+        }
+
+        /**
          * Visit a step block.
          *
          * @param step step
@@ -410,6 +454,21 @@ public class Block extends Node {
          * Transformation.
          */
         TRANSFORMATION,
+
+        /**
+         * Regular expression.
+         */
+        REGEX,
+
+        /**
+         * Validation.
+         */
+        VALIDATION,
+
+        /**
+         * Validations.
+         */
+        VALIDATIONS,
 
         /**
          * REPLACE.

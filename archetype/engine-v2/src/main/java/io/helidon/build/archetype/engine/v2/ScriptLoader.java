@@ -42,6 +42,7 @@ import io.helidon.build.archetype.engine.v2.ast.Output;
 import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
+import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.Maps;
@@ -152,6 +153,8 @@ public class ScriptLoader {
         EXECUTABLE,
         OUTPUT,
         MODEL,
+        REGEX,
+        VALIDATION,
         BLOCK
     }
 
@@ -271,6 +274,12 @@ public class ScriptLoader {
                 case MODEL:
                     processModel();
                     break;
+                case VALIDATION:
+                    processValidation();
+                    break;
+                case REGEX:
+                    processRegex();
+                    break;
                 default:
                     throw new XMLReaderException(String.format(
                             "Invalid state: %s. { element=%s }", ctx.state, qName));
@@ -317,6 +326,26 @@ public class ScriptLoader {
                             "Invalid input block: %s. { element=%s }", kind, qName));
             }
             addChild(nextState, Input.builder(info, kind));
+        }
+
+        void processValidation() {
+            Block.Kind kind = blockKind();
+            if (kind == Block.Kind.VALIDATION) {
+                addChild(State.REGEX, Validation.builder(info, blockKind()));
+                return;
+            }
+            throw new XMLReaderException(String.format(
+                    "Invalid validation block: %s. { element=%s }", kind, qName));
+        }
+
+        void processRegex() {
+            Block.Kind kind = blockKind();
+            if (kind == Block.Kind.REGEX) {
+                addChild(State.VALIDATION, Validation.builder(info, blockKind()));
+                return;
+            }
+            throw new XMLReaderException(String.format(
+                    "Invalid regex block: %s. { element=%s }", kind, qName));
         }
 
         void processPreset() {
@@ -439,6 +468,9 @@ public class ScriptLoader {
                     break;
                 case OUTPUT:
                     nextState = State.OUTPUT;
+                    break;
+                case VALIDATIONS:
+                    nextState = State.VALIDATION;
                     break;
                 default:
             }
