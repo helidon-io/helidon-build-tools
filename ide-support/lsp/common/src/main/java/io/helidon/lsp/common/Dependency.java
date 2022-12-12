@@ -27,7 +27,7 @@ import javax.json.JsonObject;
  */
 public class Dependency {
 
-    private final static JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
+    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
     private String groupId;
     private String artifactId;

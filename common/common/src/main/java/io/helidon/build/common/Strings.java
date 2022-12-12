@@ -174,6 +174,7 @@ public class Strings {
     /**
      * Count the amount of the symbols in the line that that match the predicate.
      *
+     * @param predicate predicate for the symbols
      * @param line line
      * @return amount of the symbols in the line that that match the predicate
      */

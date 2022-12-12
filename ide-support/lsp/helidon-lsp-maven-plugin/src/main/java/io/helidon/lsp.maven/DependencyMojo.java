@@ -60,7 +60,7 @@ import org.apache.maven.project.ProjectBuildingResult;
 public class DependencyMojo extends AbstractMojo {
 
     private static final String HOST = "127.0.0.1";
-    private final static JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
+    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
     /**
      * Scope to filter the dependencies.
