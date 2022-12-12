@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.lsp.server.service;
 
-import io.helidon.build.archetype.engine.v2.context.Context;
-import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
-import io.helidon.build.archetype.engine.v2.spi.TemplateSupportProvider;
+import java.util.Collections;
+import java.util.List;
+
+import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionParams;
 
 /**
- * Template support provider for {@link MustacheSupport}.
+ * Proposes completion for the given position in the meta configuration file if the appropriate TextDocumentHandler for this
+ * type of the file is not found.
  */
-public class MustacheProvider implements TemplateSupportProvider {
-
+public class EmptyTextDocumentHandler implements TextDocumentHandler {
     @Override
-    public String name() {
-        return "mustache";
-    }
-
-    @Override
-    public TemplateSupport create(MergedModel model, Context context) {
-        return new MustacheSupport(model, context);
+    public List<CompletionItem> completion(CompletionParams position) {
+        return Collections.emptyList();
     }
 }

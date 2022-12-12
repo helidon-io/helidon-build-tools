@@ -22,15 +22,19 @@ import { VSCodeHelidonCommands } from "./common";
 import { openStartPage } from "./startPage";
 import { updateWorkspaceDocuments } from "./propertiesSupport";
 import { commands, WorkspaceFoldersChangeEvent } from 'vscode';
-import { STEPS } from "./steps_data";
+import { deactivated, startLangServer } from './languageServer';
+import { setlogFile } from './logger';
 import { processLaunchConfig } from "./launchConfiguration";
 
 export function activate(context: vscode.ExtensionContext) {
 
+    setlogFile("plugin.log");
     let initialEnvPath = process.env.PATH;
     let initialEnvJavaHome = process.env.JAVA_HOME;
     let initialEnvM2Home = process.env.M2_HOME;
     let initialEnvMavenHome = process.env.MAVEN_HOME;
+
+    startLangServer(context);
 
     vscode.workspace.onDidChangeWorkspaceFolders((event: WorkspaceFoldersChangeEvent) => {
         processLaunchConfig(context);
@@ -45,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('helidon')){
+        if (event.affectsConfiguration('helidon')) {
             process.env.PATH = initialEnvPath;
             process.env.JAVA_HOME = initialEnvJavaHome;
             process.env.M2_HOME = initialEnvM2Home;
@@ -54,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
 
     context.subscriptions.push(vscode.commands.registerCommand(VSCodeHelidonCommands.GENERATE_PROJECT, () => {
-        showHelidonGenerator(context.extensionPath, STEPS);
+        showHelidonGenerator(context.extensionPath);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand(VSCodeHelidonCommands.START_PAGE, () => {
@@ -69,6 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
         stopHelidonDev();
     }));
 
+    //TODO remove or refactor
     updateWorkspaceDocuments(context);
 
     processLaunchConfig(context);
@@ -79,4 +84,5 @@ export function deactivate() {
     process.env.PATH = undefined;
     process.env.M2_HOME = undefined;
     process.env.MAVEN_HOME = undefined;
+    deactivated(true);
 }
