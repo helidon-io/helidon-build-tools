@@ -25,14 +25,26 @@ import org.eclipse.lsp4j.WorkspaceFolder;
  */
 public class LanguageServerContext {
 
+    private static final LanguageServerContext INSTANCE = new LanguageServerContext();
     private List<WorkspaceFolder> workspaceFolders;
 
+    private LanguageServerContext() {
+    }
+
+    /**
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
+     */
+    public static LanguageServerContext instance() {
+        return INSTANCE;
+    }
     /**
      * Get workspace folders in IDE.
      *
      * @return List of workspace folders.
      */
-    public List<WorkspaceFolder> getWorkspaceFolders() {
+    public List<WorkspaceFolder> workspaceFolders() {
         return workspaceFolders;
     }
 
@@ -41,7 +53,7 @@ public class LanguageServerContext {
      *
      * @param workspaceFolders List of workspace folders.
      */
-    public void setWorkspaceFolders(List<WorkspaceFolder> workspaceFolders) {
+    public void workspaceFolders(List<WorkspaceFolder> workspaceFolders) {
         this.workspaceFolders = workspaceFolders;
     }
 

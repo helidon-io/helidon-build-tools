@@ -16,9 +16,6 @@
 
 package io.helidon.lsp.server.core;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,30 +31,32 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 public class HelidonWorkspaceService implements WorkspaceService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
+    private static final HelidonWorkspaceService INSTANCE = new HelidonWorkspaceService();
+
+    private HelidonWorkspaceService() {
+    }
 
     /**
-     * Create a new instance.
+     * Get the instance of the class.
+     *
+     * @return instance of the class.
      */
-    public HelidonWorkspaceService() {
-    }
-
-    private Path archetypeDir() throws URISyntaxException {
-        Path codeSource = Paths.get(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
-        return codeSource.getParent().resolve("archetype");
+    public static HelidonWorkspaceService instance() {
+        return INSTANCE;
     }
 
     @Override
-    public void didChangeConfiguration(DidChangeConfigurationParams didChangeConfigurationParams) {
+    public void didChangeConfiguration(DidChangeConfigurationParams params) {
 
     }
 
     @Override
-    public void didChangeWatchedFiles(DidChangeWatchedFilesParams didChangeWatchedFilesParams) {
+    public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
         //happen when watched files are saved
         LOGGER.log(
                 Level.FINEST,
                 () -> "didChangeWatchedFiles(), save the files "
-                        + didChangeWatchedFilesParams
+                        + params
                         .getChanges().stream()
                         .map(FileEvent::getUri)
                         .collect(Collectors.joining(", ", "[", "]"))

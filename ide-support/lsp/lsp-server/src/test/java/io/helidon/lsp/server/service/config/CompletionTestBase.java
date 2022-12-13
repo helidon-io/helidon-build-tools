@@ -88,7 +88,7 @@ public abstract class CompletionTestBase {
         service.mavenSupport(mavenSupport);
         service.metadataProvider(provider);
         Set<Dependency> dependencies = getDependencies();
-        Mockito.when(mavenSupport.getDependencies(anyString())).thenReturn(dependencies);
+        Mockito.when(mavenSupport.dependencies(anyString())).thenReturn(dependencies);
         JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
         for (Dependency dependency : dependencies) {
             InputStream is = new FileInputStream(dependency.path());

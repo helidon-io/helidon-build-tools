@@ -97,6 +97,8 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 public class HelidonTextDocumentService implements TextDocumentService {
 
     private static final Logger LOGGER = Logger.getLogger(HelidonTextDocumentService.class.getName());
+    private static final HelidonTextDocumentService INSTANCE = new HelidonTextDocumentService();
+
     private static final List<String> PROPS_FILE_PATTERN = List.of(
             "microprofile-config.yaml",
             "microprofile-config.conf",
@@ -107,25 +109,27 @@ public class HelidonTextDocumentService implements TextDocumentService {
             "application.json",
             "application.properties"
     );
-    private final LanguageServerContext languageServerContext;
-    private final ConfigurationPropertiesService configurationPropertiesService;
+    private final ConfigurationPropertiesService configService;
     private final ContentManager contentManager;
 
     /**
-     * Create a new instance.
+     * Get the instance of the class.
      *
-     * @param languageServerContext languageServerContext.
+     * @return instance of the class.
      */
-    public HelidonTextDocumentService(LanguageServerContext languageServerContext) {
-        this.languageServerContext = languageServerContext;
-        configurationPropertiesService = ConfigurationPropertiesService.instance();
+    public static HelidonTextDocumentService instance() {
+        return INSTANCE;
+    }
+
+    private HelidonTextDocumentService() {
+        configService = ConfigurationPropertiesService.instance();
         contentManager = ContentManager.instance();
     }
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
         TextDocumentHandler textDocumentHandler = TextDocumentHandlerFactory
-                .getByFileExtension(position.getTextDocument().getUri());
+                .ofExtension(position.getTextDocument().getUri());
         return CompletableFuture.supplyAsync(() -> {
             long startTime = System.currentTimeMillis();
             List<CompletionItem> completionItems = textDocumentHandler.completion(position);
@@ -252,7 +256,7 @@ public class HelidonTextDocumentService implements TextDocumentService {
         if (PROPS_FILE_PATTERN.stream().anyMatch(docUri::endsWith)) {
             try {
                 //fill the cache
-                configurationPropertiesService.metadataForFile(docUri);
+                configService.metadataForFile(docUri);
             } catch (URISyntaxException | IOException e) {
                 LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
             }
@@ -272,8 +276,8 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 contentManager.write(docUri, List.of(didChangeTextDocumentParams.getContentChanges().get(0).getText()));
             }
             if (docUri.endsWith("pom.xml")) {
-                configurationPropertiesService.cleanCache(docUri);
-                configurationPropertiesService.metadataForFile(docUri);
+                configService.cleanCache(docUri);
+                configService.metadataForFile(docUri);
             }
         } catch (URISyntaxException | IOException e) {
             LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);

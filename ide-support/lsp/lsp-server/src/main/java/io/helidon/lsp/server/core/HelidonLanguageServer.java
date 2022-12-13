@@ -35,7 +35,7 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 public class HelidonLanguageServer implements LanguageServer, LanguageClientAware {
     private final TextDocumentService textDocumentService;
     private final WorkspaceService workspaceService;
-    private LanguageServerContext languageServerContext;
+    private final LanguageServerContext languageServerContext;
     private LanguageClient client;
     private int errorCode = 1;
 
@@ -43,18 +43,14 @@ public class HelidonLanguageServer implements LanguageServer, LanguageClientAwar
      * Create a new instance.
      */
     public HelidonLanguageServer() {
-        initContext();
-        this.textDocumentService = new HelidonTextDocumentService(languageServerContext);
-        this.workspaceService = new HelidonWorkspaceService();
-    }
-
-    private void initContext() {
-        languageServerContext = new LanguageServerContext();
+        this.languageServerContext = LanguageServerContext.instance();
+        this.textDocumentService = HelidonTextDocumentService.instance();
+        this.workspaceService = HelidonWorkspaceService.instance();
     }
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
-        languageServerContext.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
+        languageServerContext.workspaceFolders(initializeParams.getWorkspaceFolders());
 
         // Initialize the InitializeResult for this LS.
         final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());

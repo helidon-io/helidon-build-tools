@@ -40,8 +40,8 @@ public class TextDocumentHandlerFactory {
      * @param fileName              File name.
      * @return TextDocumentHandler instance for the file.
      */
-    public static TextDocumentHandler   getByFileExtension(String fileName) {
-        final String fileExtension = getFileExtension(fileName);
+    public static TextDocumentHandler ofExtension(String fileName) {
+        final String fileExtension = fileExtension(fileName);
         if (fileExtension.equalsIgnoreCase("properties")) {
             if (!FILE_EXTENSION_TO_HANDLER_MAP.containsKey("properties")) {
                 FILE_EXTENSION_TO_HANDLER_MAP.put("properties", PropertiesTextDocumentHandler.instance());
@@ -61,7 +61,7 @@ public class TextDocumentHandlerFactory {
      * @param fileName File name.
      * @return File extension for the given file.
      */
-    public static String getFileExtension(String fileName) {
+    private static String fileExtension(String fileName) {
         return Optional.ofNullable(fileName)
                 .filter(name -> name.contains("."))
                 .map(f -> f.substring(fileName.lastIndexOf(".") + 1).toLowerCase())

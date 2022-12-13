@@ -123,7 +123,7 @@ public class ConfigurationPropertiesService {
 
         long startTime = System.currentTimeMillis();
         List<String> dependencies = mavenSupport
-                .getDependencies(pom).stream()
+                .dependencies(pom).stream()
                 .map(Dependency::path)
                 .collect(Collectors.toList());
         dependencies = dependencies.stream().filter(d -> d.contains("helidon")).collect(Collectors.toList());
@@ -553,7 +553,7 @@ public class ConfigurationPropertiesService {
      */
     public Map<String, ConfigMetadata> metadataForFile(String fileUri) throws IOException, URISyntaxException {
         URI uri = new URI(fileUri);
-        String pomForFile = MavenSupport.instance().getPomForFile(uri.getPath());
+        String pomForFile = MavenSupport.instance().resolvePom(uri.getPath());
         return metadataForPom(pomForFile);
     }
 }

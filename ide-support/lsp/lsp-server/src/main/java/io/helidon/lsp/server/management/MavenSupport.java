@@ -97,7 +97,7 @@ public class MavenSupport {
      * @param timeout time in milliseconds to wait for maven command execution.
      * @return List that contains information about the dependencies.
      */
-    public Set<Dependency> getDependencies(final String pomPath, int timeout) {
+    public Set<Dependency> dependencies(final String pomPath, int timeout) {
         if (!isMavenInstalled) {
             return null;
         }
@@ -165,8 +165,8 @@ public class MavenSupport {
      * @param pomPath Path to the pom file.
      * @return List that contains information about the dependencies.
      */
-    public Set<Dependency> getDependencies(final String pomPath) {
-        return getDependencies(pomPath, DEFAULT_TIMEOUT);
+    public Set<Dependency> dependencies(final String pomPath) {
+        return dependencies(pomPath, DEFAULT_TIMEOUT);
     }
 
     /**
@@ -176,7 +176,7 @@ public class MavenSupport {
      * @return Get pom file for the given file or null if pom.xml is not found.
      * @throws IOException IOException
      */
-    public String getPomForFile(final String fileName) throws IOException {
+    public String resolvePom(final String fileName) throws IOException {
         final Path currentPath = Paths.get(fileName);
         Path currentDirPath;
         if (currentPath.toFile().isDirectory()) {
