@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2020 Oracle and/or its affiliates.
+@REM Copyright (c) 2020, 2022 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -14,7 +14,14 @@
 @REM limitations under the License.
 @REM
 
-if "%JENKINS_HOME%"=="" exit 0
+if not "%HELIDON_PIPELINES%"=="" (
+set SL4J_ARGS= -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
+               -Dorg.slf4j.simpleLogger.showDateTime=true ^
+               -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS
+  set MAVEN_ARGS=%MAVEN_ARGS% -B %MAVEN_HTTP_ARGS% -Djdk.toolchain.version=%JAVA_VERSION% %SL4J_ARGS%
+)
+
+if "%JENKINS_HOME%"=="" goto :eof
 
 set JAVA_HOME=C:\tools\graalvm-ce-java11-20.2.0
 set MAVEN_HOME=C:\tools\apache-maven-3.6.3
@@ -39,3 +46,4 @@ if not "%MAVEN_ARGS%"=="" (
 if not "%MAVEN_SETTINGS_FILE%"=="" (
     MAVEN_ARGS=%MAVEN_ARGS% -s %MAVEN_SETTINGS_FILE%
 )
+
