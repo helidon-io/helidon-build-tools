@@ -22,47 +22,6 @@ pipeline {
     parallelsAlwaysFailFast()
   }
   stages {
-    stage('default') {
-      parallel {
-        stage('build'){
-          steps {
-            script {
-              try {
-                sh './etc/scripts/build.sh'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,**/target/it/**/*.log"
-                junit testResults: '**/target/surefire-reports/*.xml,**/target/invoker-reports/*.xml'
-              }
-            }
-          }
-        }
-        stage('build-windows'){
-          agent {
-            label "windows"
-          }
-          steps {
-            script {
-              try {
-                bat './etc/scripts/build.bat'
-              } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt,helidon-cli/target/reports/*.txt,helidon-cli/impl/target/helidon.exe"
-                junit testResults: '**/target/surefire-reports/*.xml'
-              }
-            }
-          }
-        }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
-      }
-    }
     stage('release') {
       when {
         branch '**/release-*'

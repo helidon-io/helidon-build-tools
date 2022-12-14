@@ -14,6 +14,10 @@
 @REM limitations under the License.
 @REM
 
+if not "%HELIDON_PIPELINES%"=="" (
+  set MAVEN_ARGS=%MAVEN_ARGS% -B %MAVEN_HTTP_ARGS% -Djdk.toolchain.version=%JAVA_VERSION%
+)
+
 if "%JENKINS_HOME%"=="" exit 0
 
 set JAVA_HOME=C:\tools\graalvm-ce-java11-20.2.0
