@@ -143,7 +143,7 @@
         <version.lib.junit>5.8.0-M1</version.lib.junit>
         <version.lib.junit-platform>1.8.0-M1</version.lib.junit-platform>
         <version.lib.junit4>4.13.1</version.lib.junit4>
-        <version.lib.lsp4j>0.9.0</version.lib.lsp4j>
+        <version.lib.lsp4j>0.16.0</version.lib.lsp4j>
         <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
         <version.lib.maven>3.6.2</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
@@ -156,6 +156,7 @@
         <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.mustache>0.9.6</version.lib.mustache>
+        <version.lib.mockito>3.10.0</version.lib.mockito>
         <version.lib.picocli-jansi>1.1.0</version.lib.picocli-jansi>
         <version.lib.plexus-archiver>4.1.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
@@ -175,12 +176,13 @@
         -->
 
         <!-- maven plugin versions -->
+        <version.plugin.assembly>3.3.0</version.plugin.assembly>
         <version.plugin.build-helper>3.2.0</version.plugin.build-helper>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
-        <version.plugin.dependency>3.0.0</version.plugin.dependency>
+        <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
@@ -224,6 +226,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${version.plugin.assembly}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -793,6 +800,16 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${version.lib.hamcrest}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${version.lib.mockito}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.lib.mockito}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.wumpz</groupId>

@@ -18,8 +18,17 @@ export class FileSystemAPI {
 
     static fs = require('fs');
     static path = require('path');
+    static os = require('os');
 
     constructor() {
+    }
+
+    public static mkDir(path: string) {
+        return this.fs.mkdirSync( path, { recursive: true } );
+    }
+
+    public static tempDir() {
+        return this.os.tmpdir();
     }
 
     public static resolvePath(paths: string[]){

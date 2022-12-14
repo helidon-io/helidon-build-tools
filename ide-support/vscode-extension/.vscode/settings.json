@@ -15,5 +15,6 @@
   "typescript.tsc.autoDetect": "off",
   "java.completion.enabled": false,
   "java.debug.settings.enableRunDebugCodeLens": false,
-  "java.test.editor.enableShortcuts": false
+  "java.test.editor.enableShortcuts": false,
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

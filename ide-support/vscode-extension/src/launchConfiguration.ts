@@ -40,7 +40,7 @@ export function processLaunchConfig(context: vscode.ExtensionContext) {
                         (config.type != null && config.type === typeConfig) &&
                         (config.request != null && config.request === configRequest) &&
                         (config.mainClass != null && config.mainClass === mpMainClass) &&
-                        (config.projectName != null && config.mainClass === projectDir.name)
+                        (config.cwd != null && config.cwd === projectDir.uri.fsPath)
                     ) {
                         configContainsMpConfig = true;
                         workspaceContainsMpProjects = true;
