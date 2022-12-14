@@ -15,10 +15,13 @@
 @REM
 
 if not "%HELIDON_PIPELINES%"=="" (
-  set MAVEN_ARGS=%MAVEN_ARGS% -B %MAVEN_HTTP_ARGS% -Djdk.toolchain.version=%JAVA_VERSION%
+set SL4J_ARGS= -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
+               -Dorg.slf4j.simpleLogger.showDateTime=true ^
+               -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss,SSS
+  set MAVEN_ARGS=%MAVEN_ARGS% -B %MAVEN_HTTP_ARGS% -Djdk.toolchain.version=%JAVA_VERSION% %SL4J_ARGS%
 )
 
-if "%JENKINS_HOME%"=="" exit 0
+if "%JENKINS_HOME%"=="" goto :eof
 
 set JAVA_HOME=C:\tools\graalvm-ce-java11-20.2.0
 set MAVEN_HOME=C:\tools\apache-maven-3.6.3
@@ -43,3 +46,4 @@ if not "%MAVEN_ARGS%"=="" (
 if not "%MAVEN_SETTINGS_FILE%"=="" (
     MAVEN_ARGS=%MAVEN_ARGS% -s %MAVEN_SETTINGS_FILE%
 )
+
