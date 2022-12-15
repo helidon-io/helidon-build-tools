@@ -19,7 +19,7 @@
 <archetype-catalog modelVersion="1.0"
                    name="catalog2"
                    groupId="io.helidon.build-tools.archetype.tests"
-                   version="2.3.7-SNAPSHOT">
+                   version="2.3.7">
 
     <archetype name="test-archetype1"
                title="Test Archetype #1"
