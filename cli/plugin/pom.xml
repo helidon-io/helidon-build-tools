@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools.cli</groupId>
         <artifactId>helidon-cli-project</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-cli-plugin</artifactId>
     <name>Helidon Command Line Interface Plugin</name>
