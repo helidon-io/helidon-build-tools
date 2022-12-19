@@ -7,6 +7,15 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2]
+
+### Fixes
+
+- Sanitize environment/system properties [810](https://github.com/helidon-io/helidon-build-tools/pull/810) [798](https://github.com/helidon-io/helidon-build-tools/pull/798)
+- Handle Processing instructions in SimpleXmlParser [785](https://github.com/helidon-io/helidon-build-tools/pull/785) [780](https://github.com/helidon-io/helidon-build-tools/pull/780)
+- `helidon init` add defaults in case of the user has not specify mandatory options [776](https://github.com/helidon-io/helidon-build-tools/pull/776) [774](https://github.com/helidon-io/helidon-build-tools/pull/774)
+- Fix TemplateSupport caching [759](https://github.com/helidon-io/helidon-build-tools/pull/759)
+
 ## [3.0.0]
 
 This change entry describes **all** changes made for the 3.0.0 version ; it is an aggregation of the non GA 3.x entries below.
@@ -261,9 +270,11 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
-[3.0.0-RC3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC2...3.0.0-RC3
-[3.0.0-RC2]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC1...3.0.0-RC2
-[3.0.0-RC1]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
+[3.0.2]:      https://github.com/oracle/helidon-build-tools/tree/3.0.0...3.0.2
+[3.0.0]:      https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2...3.0.0
+[3.0.0-RC3]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC2...3.0.0-RC3
+[3.0.0-RC2]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC1...3.0.0-RC2
+[3.0.0-RC1]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
 [3.0.0-M4]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M3...3.0.0-M4
 [3.0.0-M3]:   https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0-M3
 [3.0.0-M2]:   https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2/cli
