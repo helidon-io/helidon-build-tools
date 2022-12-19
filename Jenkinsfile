@@ -37,6 +37,7 @@ pipeline {
           }
           steps {
             sh './etc/scripts/release.sh release_build'
+            archiveArtifacts artifacts: "ide-support/vscode-extension/target/vscode-helidon.vsix"
           }
         }
         stage('cli-native') {
