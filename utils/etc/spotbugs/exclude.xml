@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<FindBugsFilter
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <Match>
+        <!-- Can be vulnerable to Command Injection -->
+        <Class name="io.helidon.build.util.ApplicationGenerator"/>
+        <Bug pattern="COMMAND_INJECTION"/>
+    </Match>
+
+    <Match>
+        <!-- Can be vulnerable to Command Injection -->
+        <Class name="io.helidon.build.util.MavenCommand$Builder"/>
+        <Bug pattern="COMMAND_INJECTION"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.BuildToolsProperties"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.PrintStreams$PrintStreamAdapter"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.ConfigProperties"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.MustacheHelper"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.PomUtils"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.util.PrintStreams"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.Constants"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.FileUtils"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.JavaProcessBuilder"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.MavenCommand"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.MustacheHelper"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.util.MavenCommand$Builder"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- May fail to close stream -->
+        <Class name="io.helidon.build.util.SourcePath"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+
+    <Match>
+        <!-- May fail to close stream -->
+        <Class name="io.helidon.build.util.MavenCommand"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+
+    <Match>
+        <!-- Synchronization performed on java.util.concurrent.atomic.AtomicReference -->
+        <Class name="io.helidon.build.util.Instance"/>
+        <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER"/>
+    </Match>
+
+    <Match>
+        <!-- Reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.util.FileUtils"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- Reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.util.ProjectConfig"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- Possible information exposure through an error message -->
+        <Class name="io.helidon.build.util.LogFormatter"/>
+        <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
+    </Match>
+
+    <Match>
+        <!-- Redundant nullcheck of dirStream which is known to be null -->
+        <Class name="io.helidon.build.util.SourcePath"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- This web server request could be used by an attacker to expose internal services and filesystem -->
+        <Class name="io.helidon.build.util.NetworkConnection"/>
+        <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    </Match>
+
+    <Match>
+        <!-- Doesn't override equals(Object) -->
+        <Class name="io.helidon.build.util.MavenVersion"/>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
+    </Match>
+
+    <Match>
+        <!-- Implements Comparator but not Serializable -->
+        <Class name="io.helidon.build.util.SourcePath$SourceFileComparator"/>
+        <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
+    </Match>
+
+</FindBugsFilter>

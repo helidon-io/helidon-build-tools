@@ -28,6 +28,10 @@
     <artifactId>helidon-cli-harness</artifactId>
     <name>Helidon Command Line Interface Harness</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

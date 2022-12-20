@@ -27,6 +27,10 @@
     <artifactId>helidon-dev-loop</artifactId>
     <name>Helidon Dev Loop</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools</groupId>
