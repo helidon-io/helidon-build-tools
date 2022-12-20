@@ -45,10 +45,9 @@ public class ValidatorTest {
 
     @Test
     void testCompatibleSingleRegex() {
-        Validator.RegexValidator validator = new Validator.RegexValidator();
+        RegexValidator validator = new RegexValidator();
         Block block = validations(
-                validation("validation", "description", regex("/abc/"))
-        ).build();
+                validation("validation", "description", regex("/abc/")));
 
         Walker.walk(validator, block, Context.create());
         assertThat(validator.errors().size(), is(0));
@@ -56,7 +55,7 @@ public class ValidatorTest {
 
     @Test
     void testCompatibleMultiRegex() {
-        Validator.RegexValidator validator = new Validator.RegexValidator();
+        RegexValidator validator = new RegexValidator();
         Block block = validations(
                 validation("validation", "description",
                         regex("/abc/"),
@@ -65,7 +64,7 @@ public class ValidatorTest {
                 validation("validation1", "description1",
                         regex("/a/"),
                         regex("/b/"))
-        ).build();
+        );
 
         Walker.walk(validator, block, Context.create());
         assertThat(validator.errors().size(), is(0));
@@ -73,10 +72,9 @@ public class ValidatorTest {
 
     @Test
     void testIncompatibleSingleRegex() {
-        Validator.RegexValidator validator = new Validator.RegexValidator();
+        RegexValidator validator = new RegexValidator();
         Block block = validations(
-                validation("validation", "description", regex("[abc]"))
-        ).build();
+                validation("validation", "description", regex("[abc]")));
 
         Walker.walk(validator, block, Context.create());
         List<String> errors = validator.errors();
@@ -86,7 +84,7 @@ public class ValidatorTest {
 
     @Test
     void testIncompatibleMultiRegex() {
-        Validator.RegexValidator validator = new Validator.RegexValidator();
+        RegexValidator validator = new RegexValidator();
         Block block = validations(
                 validation("validation", "description",
                         regex("[abc]"),
@@ -94,8 +92,7 @@ public class ValidatorTest {
                         regex("/^(?=(?:.*[A-Z]){2})(?=(?:.*[a-z]){2})(?=.*\\d).{5,15}$/")),
                 validation("validation1", "description1",
                         regex("/a/"),
-                        regex("bar"))
-        ).build();
+                        regex("bar")));
 
         Walker.walk(validator, block, Context.create());
         List<String> errors = validator.errors();
@@ -116,12 +113,12 @@ public class ValidatorTest {
      * @param children      nested children
      * @return block builder
      */
-    private Block.Builder validations(Block.Builder... children) {
+    private Block validations(Block.Builder... children) {
         Block.Builder builder = Block.builder(BUILDER_INFO, Block.Kind.VALIDATIONS);
         for (Block.Builder child : children) {
             builder.addChild(child);
         }
-        return builder;
+        return builder.build();
     }
 
     /**
