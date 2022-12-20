@@ -28,6 +28,10 @@
     <artifactId>helidon-utils</artifactId>
     <name>Helidon Build Utilities</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.fusesource.jansi</groupId>

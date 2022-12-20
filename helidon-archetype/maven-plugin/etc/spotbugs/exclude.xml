@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<FindBugsFilter
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.archetype.maven.Converter"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference due to return value of called method -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!--  Exceptional return value of java.io.File.mkdirs() ignored -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    </Match>
+
+    <Match>
+        <!--  Exceptional return value of java.io.File.delete() ignored -->
+        <Class name="io.helidon.build.archetype.maven.postgenerate.EngineFacade"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    </Match>
+
+    <Match>
+        <!-- This API reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.archetype.maven.postgenerate.EngineFacade"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- Method creates a java.net.URLClassLoader classloader, which should be performed within a doPrivileged block -->
+        <Class name="io.helidon.build.archetype.maven.postgenerate.EngineFacade"/>
+        <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo$FileLogger"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Exceptional return value of java.io.File.mkdirs() ignored -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo$FileLogger"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.archetype.maven.MustacheHelper"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <!-- Method may fail to clean up java.io.InputStream -->
+        <Class name="io.helidon.build.archetype.maven.MojoHelper"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION"/>
+    </Match>
+
+    <Match>
+        <!-- Exceptional return value of java.io.File.mkdirs() ignored -->
+        <Class name="io.helidon.build.archetype.maven.IntegrationTestMojo"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference due to return value of called method -->
+        <Class name="io.helidon.build.archetype.maven.JarMojo"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- This API reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.archetype.maven.JarMojo"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
+
+    <Match>
+        <!-- May fail to close stream -->
+        <Class name="io.helidon.build.archetype.maven.JarMojo"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+
+    <Match>
+        <!-- Dead store to projectProperties -->
+        <Class name="io.helidon.build.archetype.maven.MojoHelper"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <Match>
+        <!-- Possible null pointer dereference -->
+        <Class name="io.helidon.build.archetype.maven.MustacheHelper"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+</FindBugsFilter>

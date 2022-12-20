@@ -28,6 +28,10 @@
     <artifactId>helidon-cli-codegen</artifactId>
     <name>Helidon Command Line Interface Code Generator</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.cli</groupId>
