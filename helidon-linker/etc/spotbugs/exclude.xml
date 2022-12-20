@@ -36,12 +36,6 @@
 
     <Match>
         <!-- This API reads a file whose location might be specified by user input -->
-        <Class name="io.helidon.linker.Linker"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-
-    <Match>
-        <!-- This API reads a file whose location might be specified by user input -->
         <Class name="io.helidon.linker.util.JavaRuntime"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
@@ -49,12 +43,6 @@
     <Match>
         <!-- This API reads a file whose location might be specified by user input -->
         <Class name="io.helidon.linker.Configuration$Builder"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-
-    <Match>
-        <!-- This API reads a file whose location might be specified by user input -->
-        <Class name="io.helidon.linker.Linker"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 
@@ -98,12 +86,6 @@
         <!-- can be vulnerable to Command Injection -->
         <Class name="io.helidon.linker.Linker"/>
         <Bug pattern="COMMAND_INJECTION"/>
-    </Match>
-
-    <Match>
-        <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.linker.StartScript"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
 </FindBugsFilter>

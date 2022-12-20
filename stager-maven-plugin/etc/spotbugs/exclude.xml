@@ -54,12 +54,6 @@
 
     <Match>
         <!-- This API reads a file whose location might be specified by user input -->
-        <Class name="io.helidon.build.stager.StagingContextImpl"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-
-    <Match>
-        <!-- This API reads a file whose location might be specified by user input -->
         <Class name="io.helidon.build.stager.StagerMojo$StagingContextImpl"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>

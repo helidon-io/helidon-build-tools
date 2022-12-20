@@ -30,12 +30,6 @@
 
     <Match>
         <!-- Uncallable method defined in anonymous class -->
-        <Class name="io.helidon.build.cli.codegen.AST$FieldDeclaration"/>
-        <Bug pattern="UMAC_UNCALLABLE_METHOD_OF_ANONYMOUS_CLASS"/>
-    </Match>
-
-    <Match>
-        <!-- Uncallable method defined in anonymous class -->
         <Class name="io.helidon.build.cli.codegen.ASTWriter$1"/>
         <Bug pattern="UMAC_UNCALLABLE_METHOD_OF_ANONYMOUS_CLASS"/>
     </Match>

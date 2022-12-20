@@ -23,12 +23,6 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Possible information exposure through an error message -->
-        <Class name="io.helidon.build.cli.harness.CommandContext$ExitAction"/>
-        <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
-    </Match>
-
-    <Match>
         <!-- The regular expression is vulnerable to a denial of service attack (ReDOS) -->
         <Class name="io.helidon.build.cli.harness.CommandLineInterface"/>
         <Bug pattern="REDOS"/>

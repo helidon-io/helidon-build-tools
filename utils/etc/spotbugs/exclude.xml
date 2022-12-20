@@ -35,12 +35,6 @@
     </Match>
 
     <Match>
-        <!-- Can be vulnerable to Command Injection -->
-        <Class name="io.helidon.build.util.OSType"/>
-        <Bug pattern="COMMAND_INJECTION"/>
-    </Match>
-
-    <Match>
         <!-- Found reliance on default encoding -->
         <Class name="io.helidon.build.util.BuildToolsProperties"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
@@ -140,18 +134,6 @@
         <!-- Reads a file whose location might be specified by user input -->
         <Class name="io.helidon.build.util.ProjectConfig"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-
-    <Match>
-        <!-- Reads a file whose location might be specified by user input -->
-        <Class name="io.helidon.build.util.ConfigProperties"/>
-        <Bug pattern="PATH_TRAVERSAL_IN"/>
-    </Match>
-
-    <Match>
-        <!-- Possible information exposure through an error message -->
-        <Class name="io.helidon.build.util.FileUtils"/>
-        <Bug pattern="INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE"/>
     </Match>
 
     <Match>

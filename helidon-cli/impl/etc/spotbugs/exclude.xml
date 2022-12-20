@@ -54,12 +54,6 @@
 
     <Match>
         <!-- Field should be package protected -->
-        <Class name="io.helidon.build.cli.impl.InitOptionsInfo"/>
-        <Bug pattern="MS_PKGPROTECT"/>
-    </Match>
-
-    <Match>
-        <!-- Field should be package protected -->
         <Class name="io.helidon.build.cli.impl.VersionCommandModel"/>
         <Bug pattern="MS_PKGPROTECT"/>
     </Match>
