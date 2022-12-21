@@ -1,0 +1,38 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.1 https://maven.apache.org/xsd/assembly-2.1.1.xsd">
+    <id>distribution</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/libs</directory>
+            <outputDirectory>/lib/libs</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>${project.build.directory}/helidon.jar</source>
+            <outputDirectory>/lib</outputDirectory>
+        </file>
+        <file>
+            <source>${project.basedir}/helidon.bat</source>
+            <outputDirectory>/bin</outputDirectory>
+        </file>
+        <file>
+            <source>${project.basedir}/helidon.sh</source>
+            <outputDirectory>/bin</outputDirectory>
+        </file>
+        <file>
+            <source>${project.basedir}/LICENSE.txt</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+    </files>
+
+</assembly>
