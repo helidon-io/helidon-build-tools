@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,8 @@ final class UsageCommand extends CommandModel {
         map.put(GlobalOptions.DEBUG_FLAG_ARGUMENT, GlobalOptions.DEBUG_FLAG_DESCRIPTION);
         map.put(GlobalOptions.ERROR_FLAG_ARGUMENT, GlobalOptions.ERROR_FLAG_DESCRIPTION);
         map.put(GlobalOptions.PLAIN_FLAG_ARGUMENT, GlobalOptions.PLAIN_FLAG_DESCRIPTION);
+        map.put(GlobalOptions.ARGS_FILE_OPTION_ARGUMENT, GlobalOptions.ARGS_FILE_OPTION_DESCRIPTION);
+        map.put(GlobalOptions.PROPS_FILE_OPTION_ARGUMENT, GlobalOptions.PROPS_FILE_OPTION_DESCRIPTION);
         return map;
     }
 

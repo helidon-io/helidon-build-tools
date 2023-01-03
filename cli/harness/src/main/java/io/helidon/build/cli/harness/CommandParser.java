@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.RequirementFailure;
 
 /**
  * Command parser.
@@ -242,7 +244,16 @@ public final class CommandParser {
                             continue;
                         }
                     }
-                    parsedParams.put(optionName, new KeyValueParam(optionName, it.next().trim()));
+                    KeyValueParam keyValueParam = new KeyValueParam(optionName, it.next().trim());
+                    parsedParams.put(optionName, keyValueParam);
+                    if (keyValueParam.name().equals(GlobalOptions.PROPS_FILE_OPTION_NAME)) {
+                        try {
+                            Properties props = FileUtils.loadProperties(keyValueParam.value);
+                            props.forEach((key, value) -> properties.put(String.valueOf(key), String.valueOf(value)));
+                        } catch (IOException e) {
+                            throw new RequirementFailure(e.getMessage());
+                        }
+                    }
                 } else if (paramInfo instanceof KeyValuesInfo) {
                     boolean required = ((KeyValuesInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {

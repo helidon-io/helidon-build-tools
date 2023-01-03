@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
+import static io.helidon.build.cli.harness.GlobalOptions.PROPS_FILE_OPTION_DESCRIPTION;
+import static io.helidon.build.cli.harness.GlobalOptions.PROPS_FILE_OPTION_NAME;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
 import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
 import static io.helidon.build.common.FileUtils.WORKING_DIR;
@@ -70,6 +72,7 @@ final class CommonOptions {
     private final boolean resetCache;
     private final MavenVersion sinceCliVersion;
     private Metadata metadata;
+    private final String propsFile;
 
     @Creator
     CommonOptions(@Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
@@ -81,7 +84,10 @@ final class CommonOptions {
                   @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
                   @Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
-                          visible = false) String since) {
+                          visible = false) String since,
+                  @KeyValue(name = PROPS_FILE_OPTION_NAME, description = PROPS_FILE_OPTION_DESCRIPTION,
+                          visible = false) String propsFile
+    ) {
         this.verbose = verbose || debug;
         this.debug = debug;
         this.error = error;
@@ -91,6 +97,7 @@ final class CommonOptions {
         this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
         this.resetCache = resetCache || since != null;
         this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
+        this.propsFile = propsFile;
     }
 
     CommonOptions(Path projectDir, CommonOptions options) {
@@ -104,6 +111,7 @@ final class CommonOptions {
         this.resetCache = false; // Don't do it again
         this.sinceCliVersion = options.sinceCliVersion;
         this.metadata = options.metadata;
+        this.propsFile = options.propsFile;
     }
 
     boolean verbose() {
@@ -152,6 +160,10 @@ final class CommonOptions {
                                .build();
         }
         return metadata;
+    }
+
+    String propsFile() {
+        return propsFile;
     }
 
     void checkForUpdates(boolean quiet) {

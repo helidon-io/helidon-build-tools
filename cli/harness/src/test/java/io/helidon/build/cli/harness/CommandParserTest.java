@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
+import io.helidon.build.common.RequirementFailure;
 
 import org.junit.jupiter.api.Test;
 
@@ -304,5 +306,34 @@ public class CommandParserTest {
                 () -> CommandParser.create("command", "--args-file", "not_existing_file.txt")
         );
         assertThat(e.getMessage(), containsString("java.nio.file.NoSuchFileException: not_existing_file.txt"));
+    }
+
+    @Test
+    public void testPropsFileOptionWithExistingFile() {
+        String argsFilePath = Objects.requireNonNull(getClass().getResource("test-props-file.properties")).getPath();
+        KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
+        CommandParameters cmd = new CommandParameters(propsFileOption);
+
+        CommandParser parser = CommandParser.create("command", "--props-file", argsFilePath);
+        CommandParser.Resolver resolver = parser.parseCommand(cmd);
+
+        Properties properties = resolver.properties();
+        assertThat(properties.get("security.atz"), is("abac"));
+        assertThat(properties.get("flavor"), is("mp"));
+        assertThat(properties.get("media"), is("json,multipart"));
+    }
+
+    @Test
+    public void testPropsFileOptionWithIncorrectFile() {
+        KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
+        CommandParameters cmd = new CommandParameters(propsFileOption);
+
+        CommandParser parser = CommandParser.create("command", "--props-file", "not_existing_props_file.txt");
+
+        RequirementFailure e = assertThrows(
+                RequirementFailure.class,
+                () -> parser.parseCommand(cmd)
+        );
+        assertThat(e.getMessage(), containsString("not_existing_props_file.txt (No such file or directory)"));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 package io.helidon.build.common;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +41,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -935,5 +938,20 @@ public final class FileUtils {
     public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
         Path path = Paths.get(fileUri.getPath());
         return Files.readAllLines(path);
+    }
+
+    /**
+     * Load content of the properties file.
+     *
+     * @param filePath path to file
+     * @return content of the properties file
+     * @throws IOException IOException
+     */
+    public static Properties loadProperties(String filePath) throws IOException {
+        try (InputStream input = new FileInputStream(filePath)) {
+            Properties props = new Properties();
+            props.load(input);
+            return props;
+        }
     }
 }
