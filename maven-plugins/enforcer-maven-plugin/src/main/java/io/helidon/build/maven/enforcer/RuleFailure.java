@@ -78,12 +78,8 @@ public class RuleFailure {
         return line;
     }
 
-    /**
-     * Print Rule failure content.
-     *
-     * @return rule failure description
-     */
-    public String print() {
+    @Override
+    public String toString() {
         return fr != null
                 ? "  " + this.fr.relativePath() + ":" + this.line + ": " + this.message
                 : "  " + this.message;

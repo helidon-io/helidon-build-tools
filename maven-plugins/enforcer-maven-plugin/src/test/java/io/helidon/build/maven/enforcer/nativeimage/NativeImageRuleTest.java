@@ -28,6 +28,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+/**
+ * Native-image enforcer rul tests.
+ */
 public class NativeImageRuleTest {
 
     @Test

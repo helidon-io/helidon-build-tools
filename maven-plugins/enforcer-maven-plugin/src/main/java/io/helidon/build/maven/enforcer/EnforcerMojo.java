@@ -200,7 +200,7 @@ public class EnforcerMojo extends AbstractMojo {
             failuresByRule.forEach((rule, failures) -> {
                 Log.error("Rule $(magenta " + rule + ") failed. Errors:");
                 for (RuleFailure failure : failures) {
-                    Log.error(failure.print());
+                    Log.error(failure.toString());
                 }
             });
 
@@ -231,7 +231,7 @@ public class EnforcerMojo extends AbstractMojo {
                 failuresByRule.put("native-image", errors);
             } else {
                 for (RuleFailure error : errors) {
-                    Log.warn(error.print());
+                    Log.warn(error.toString());
                 }
             }
         }
@@ -260,7 +260,7 @@ public class EnforcerMojo extends AbstractMojo {
                 failuresByRule.put("typos", errors);
             } else {
                 for (RuleFailure error : errors) {
-                    Log.warn(error.print());
+                    Log.warn(error.toString());
                 }
             }
         }
@@ -290,7 +290,7 @@ public class EnforcerMojo extends AbstractMojo {
                 failuresByRule.put("copyright", errors);
             } else {
                 for (RuleFailure error : errors) {
-                    Log.warn(error.print());
+                    Log.warn(error.toString());
                 }
             }
         }

@@ -30,23 +30,43 @@ public class VersionConfig {
     private String version;
     private String matcher;
 
+    /**
+     * Get version.
+     *
+     * @return version
+     */
     public String getVersion() {
         return version;
     }
 
+    /**
+     * Get matcher.
+     *
+     * @return matcher
+     */
     public String getMatcher() {
         return matcher;
     }
 
+    /**
+     * Set version.
+     *
+     * @param version version
+     */
     public void setVersion(String version) {
         this.version = version;
     }
 
+    /**
+     * Set matcher.
+     *
+     * @param matcher matcher
+     */
     public void setMatcher(String matcher) {
         this.matcher = matcher;
     }
 
-    private final List<String> availableMatcher = List.of(
+    private static final List<String> AVAILABLE_MATCHER = List.of(
             "greaterThan",
             "lessThan",
             "greaterThanOrEqualTo",
@@ -59,7 +79,7 @@ public class VersionConfig {
      * @param failures      list of errors
      */
     void checkVersion(MavenVersion nativeVersion, List<RuleFailure> failures) {
-        MavenVersion ruleVersion = toMavenVersion(getVersion());
+        MavenVersion ruleVersion = toMavenVersion(version);
         boolean success;
         switch (matcher.toLowerCase()) {
             case "greaterthan":
@@ -75,7 +95,7 @@ public class VersionConfig {
                 success = nativeVersion.isLessThanOrEqualTo(ruleVersion);
                 break;
             default:
-                throw new EnforcerNativeImageException(matcher, availableMatcher);
+                throw new EnforcerNativeImageException(matcher, AVAILABLE_MATCHER);
         }
         if (!success) {
             failures.add(RuleFailure.create(errorMessage(matcher, nativeVersion, ruleVersion)));
