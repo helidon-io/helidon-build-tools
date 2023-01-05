@@ -17,6 +17,8 @@
 package io.helidon.build.maven.enforcer.inclusivenaming;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
@@ -169,9 +172,9 @@ public class InclusiveNamingRule {
             return new InclusiveNamingRule(this);
         }
 
-        List<Term> terms() {
+        private List<Term> readTerms(Supplier<InputStream> supplier){
             List<Term> terms = new ArrayList<>();
-            try (InputStream is = InclusiveNamingRule.class.getResourceAsStream("index.json")) {
+            try (InputStream is = supplier.get()) {
                 JsonReader reader = Json.createReader(is);
                 JsonObject obj = reader.readObject();
                 JsonArray array = obj.getJsonArray("data");
@@ -188,9 +191,23 @@ public class InclusiveNamingRule {
                     }
                 });
             } catch (IOException e) {
-                throw new EnforcerException("Failed to read default template from classpath");
+                throw new EnforcerException("Failed to read inclusive naming file");
             }
             return terms;
+        }
+
+        List<Term> terms() {
+            if (inclusiveNamingConfig.inclusiveNamingFile().isPresent()) {
+                return readTerms(() -> {
+                    try {
+                        return new FileInputStream(inclusiveNamingConfig.inclusiveNamingFile().get());
+                    } catch (FileNotFoundException e) {
+                        throw new EnforcerException(inclusiveNamingConfig.inclusiveNamingFile().get() + " was not found");
+                    }
+                });
+            } else {
+                return readTerms(() -> InclusiveNamingRule.class.getResourceAsStream("inclusive-names.json"));
+            }
         }
 
         List<FileMatcher> excludes() {

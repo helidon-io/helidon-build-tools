@@ -16,7 +16,9 @@
 
 package io.helidon.build.maven.enforcer.inclusivenaming;
 
+import java.io.File;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.maven.plugins.annotations.Parameter;
@@ -45,10 +47,17 @@ public class InlusiveNamingConfig {
     @Parameter
     private String[] excludes;
 
+    /**
+     * File with the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
+     */
+    @Parameter
+    private File inclusiveNamingFile;
+
     @Override
     public String toString() {
         return "InlusiveNamingConfig{"
                 + "failOnError=" + failOnError
+                + ", inclusiveNamingFile=" + inclusiveNamingFile
                 + ", includes=" + Arrays.toString(includes)
                 + ", excludes=" + Arrays.toString(excludes)
                 + '}';
@@ -75,5 +84,9 @@ public class InlusiveNamingConfig {
             return Set.of();
         }
         return Set.of(includes);
+    }
+
+    Optional<File> inclusiveNamingFile() {
+        return Optional.ofNullable(inclusiveNamingFile);
     }
 }

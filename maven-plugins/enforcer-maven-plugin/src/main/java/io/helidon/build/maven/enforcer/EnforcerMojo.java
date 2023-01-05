@@ -45,7 +45,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  * <ul>
  *     <li>copyright - validate copyright of files</li>
  *     <li>typos - validate that files do not contain certain strings</li>
- *     <li>inclusiveNaming - validate that files do not contain inclusive naming strings</li>
+ *     <li>inclusive-naming - validate that files do not contain inclusive naming strings</li>
  * </ul>
  */
 @Mojo(name = "check",
@@ -65,7 +65,7 @@ public class EnforcerMojo extends AbstractMojo {
     private TypoConfig typosConfig;
 
     /**
-     * Configuration of inclusive naming  config rule.
+     * Configuration of inclusive naming config rule.
      */
     @Parameter
     private InlusiveNamingConfig inclusiveNamingConfig;
@@ -177,7 +177,7 @@ public class EnforcerMojo extends AbstractMojo {
             case "typos":
                 runTypos(filesToCheck, failuresByRule, warningsByRule);
                 break;
-            case "inclusiveNaming":
+            case "inclusive-naming":
                 runInclusiveNaming(filesToCheck, failuresByRule, warningsByRule);
                 break;
             default:
