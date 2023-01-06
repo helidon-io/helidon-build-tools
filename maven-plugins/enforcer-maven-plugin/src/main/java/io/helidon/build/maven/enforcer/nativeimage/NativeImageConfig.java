@@ -21,6 +21,9 @@ import io.helidon.build.common.Lists;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
+/**
+ * Native-image configuration.
+ */
 public class NativeImageConfig {
     /**
      * Fail if error found.

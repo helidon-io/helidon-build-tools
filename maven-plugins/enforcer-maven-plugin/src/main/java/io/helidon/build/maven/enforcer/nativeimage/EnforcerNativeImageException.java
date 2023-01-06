@@ -19,10 +19,19 @@ import java.util.List;
 
 import io.helidon.build.common.Lists;
 
+/**
+ * Enforcer native-image exception.
+ */
 public class EnforcerNativeImageException extends RuntimeException {
 
-    EnforcerNativeImageException(String matcher, List<String> availableRules) {
-        super(String.format("Invalid matcher '%s'. Has to be one of: "
-                + Lists.join(availableRules, r -> r, ","), matcher));
+    /**
+     * Create a new enforcer native-image exception.
+     *
+     * @param matcher          invalid matcher
+     * @param availableMatcher list of valid matcher
+     */
+    EnforcerNativeImageException(String matcher, List<String> availableMatcher) {
+        super(String.format("Invalid matcher '%s'. Has to be one of: %s", matcher,
+                Lists.join(availableMatcher, r -> r, ",")));
     }
 }

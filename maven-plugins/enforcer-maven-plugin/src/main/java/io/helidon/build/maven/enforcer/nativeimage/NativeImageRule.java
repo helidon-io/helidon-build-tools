@@ -41,7 +41,7 @@ public class NativeImageRule {
     private final List<VersionConfig> versionConfigs;
 
     /**
-     * Constructor.
+     * Create a new native-image rule.
      *
      * @param config native-image configuration
      */
