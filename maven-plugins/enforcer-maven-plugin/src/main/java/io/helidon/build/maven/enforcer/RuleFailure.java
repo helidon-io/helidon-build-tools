@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,16 @@ public class RuleFailure {
     }
 
     /**
+     * Create new rule failure.
+     *
+     * @param message description of the failure
+     * @return a new rule failure
+     */
+    public static RuleFailure create(String message) {
+        return new RuleFailure(null, 0, message);
+    }
+
+    /**
      * File request.
      *
      * @return file request causing this failure
@@ -66,5 +76,12 @@ public class RuleFailure {
      */
     public int line() {
         return line;
+    }
+
+    @Override
+    public String toString() {
+        return fr != null
+                ? "  " + this.fr.relativePath() + ":" + this.line + ": " + this.message
+                : "  " + this.message;
     }
 }
