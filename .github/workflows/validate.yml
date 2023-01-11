@@ -73,3 +73,11 @@ jobs:
           cache: maven
       - name: Maven build
         run: ${{ matrix.build_script }}
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: Upload artifacts
+          path: |
+            **/target/surefire-reports/*.txt
+            **/target/it/**/*.log
+            **/target/*.vsix
