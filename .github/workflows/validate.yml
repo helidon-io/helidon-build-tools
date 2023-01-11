@@ -85,4 +85,4 @@ jobs:
         with:
           name: helidon-vscode
           path: |
-            **/target/*.vsix
+            ide-support/vscode-extension/target/vscode-helidon.vsix
