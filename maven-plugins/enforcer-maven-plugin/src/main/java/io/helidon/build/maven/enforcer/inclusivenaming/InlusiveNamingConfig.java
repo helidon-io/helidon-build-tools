@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -42,10 +44,16 @@ public class InlusiveNamingConfig {
     private String[] includes;
 
     /**
-     * List of suffixes (such as {@code .js}) and file names (such as {@code Dockerfile}) to include.
+     * List of suffixes (such as {@code .js}) and file names (such as {@code Dockerfile}) to exclude.
      */
     @Parameter
     private String[] excludes;
+
+    /**
+     * List of words (such as {@code slave}) to exclude.
+     */
+    @Parameter
+    private String[] excludeTerms;
 
     /**
      * File with the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
@@ -60,6 +68,7 @@ public class InlusiveNamingConfig {
                 + ", inclusiveNamingFile=" + inclusiveNamingFile
                 + ", includes=" + Arrays.toString(includes)
                 + ", excludes=" + Arrays.toString(excludes)
+                + ", excludeTerms=" + Arrays.toString(excludeTerms)
                 + '}';
     }
 
@@ -84,6 +93,13 @@ public class InlusiveNamingConfig {
             return Set.of();
         }
         return Set.of(includes);
+    }
+
+    Set<String> excludeTerms() {
+        if (excludeTerms == null) {
+            return Set.of();
+        }
+        return Stream.of(excludeTerms).map(s -> s.toLowerCase()).collect(Collectors.toSet());
     }
 
     Optional<File> inclusiveNamingFile() {

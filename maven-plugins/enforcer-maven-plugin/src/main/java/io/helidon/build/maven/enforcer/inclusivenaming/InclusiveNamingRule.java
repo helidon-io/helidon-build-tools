@@ -181,8 +181,8 @@ public class InclusiveNamingRule {
                 array.forEach(e -> {
                     JsonObject element = e.asJsonObject();
                     String tier = element.getString("tier");
-                    if (!ALLOWED_TIERS.contains(tier)) {
-                        String term = element.getString("term");
+                    String term = element.getString("term");
+                    if (!ALLOWED_TIERS.contains(tier) && !inclusiveNamingConfig.excludeTerms().contains(term)) {
                         String recommendation = element.getString("recommendation");
                         String termPage = element.getString("term_page");
                         List<String> recommendedReplacements =
