@@ -73,3 +73,16 @@ jobs:
           cache: maven
       - name: Maven build
         run: ${{ matrix.build_script }}
+      - name: Archive test results
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: test-results
+          path: |
+            **/target/surefire-reports/*.txt
+            **/target/it/**/*.log
+      - name: Archive VSCode extension
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: helidon-vscode
+          path: |
+            ide-support/vscode-extension/target/vscode-helidon.vsix
