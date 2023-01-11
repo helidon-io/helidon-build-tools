@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-#Main entry point
 main() {
     local action command
     findRootDirectory
