@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.build.maven.enforcer;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -97,5 +99,101 @@ class ExcludeTest {
 
         excluded = exclude.matches(FileRequest.create("src/resources/sbin/copyright.txt"));
         assertThat("Should not matches directory", excluded, is(false));
+    }
+
+    @Test
+    void testNameEnd() {
+        FileMatcher exclude = new FileMatcher.NameEndExclude("bar");
+
+        boolean excluded;
+        excluded = exclude.matches(FileRequest.create("foo.bar"));
+        assertThat("Should matches foo.bar file", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("/foo/bar/foo.bar"));
+        assertThat("Should matches nested directory", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("foo/bar/foo.bar"));
+        assertThat("Should matches nested directory", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("foo.bar.foo"));
+        assertThat("Should not matches foo.bar.foo file", excluded, is(false));
+    }
+
+    @Test
+    void testNameStart() {
+        FileMatcher exclude = new FileMatcher.NameStartExclude("foo");
+
+        boolean excluded;
+        excluded = exclude.matches(FileRequest.create("foo.bar"));
+        assertThat("Should matches foo.bar file", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("/foo/bar/foo.bar"));
+        assertThat("Should matches nested directory", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("foo/bar/foo.bar"));
+        assertThat("Should matches nested directory", excluded, is(true));
+
+        excluded = exclude.matches(FileRequest.create("bar.foo.bar"));
+        assertThat("Should not matches foo.bar.foo file", excluded, is(false));
+    }
+
+    @Test
+    void testFileMatcherCreation() {
+        List<FileMatcher> matchers = FileMatcher.create(".foo");
+
+        assertThat(matchers.size(), is(2));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
+
+        matchers = FileMatcher.create("*.foo");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
+
+        matchers = FileMatcher.create("foo/bar/");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
+
+        matchers = FileMatcher.create("**/bar/");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
+
+        matchers = FileMatcher.create("/foo/bar");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.StartsWithMatcher.class));
+
+        matchers = FileMatcher.create("foo/bar");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.ContainsMatcher.class));
+    }
+
+    @Test
+    void testCreateFromGitPattern() {
+        FileMatcher matcher = FileMatcher.createFromGitPattern(".foo");
+        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("foo");
+        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("*.foo");
+        assertThat(matcher, instanceOf(FileMatcher.SuffixMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("foo/bar/");
+        assertThat(matcher, instanceOf(FileMatcher.DirectoryMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("/foo/bar");
+        assertThat(matcher, instanceOf(FileMatcher.StartsWithMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("foo/bar");
+        assertThat(matcher, instanceOf(FileMatcher.ContainsMatcher.class));
+
+        matcher = FileMatcher.createFromGitPattern("**.foo");
+        assertThat(matcher, instanceOf(FileMatcher.NameEndExclude.class));
+
+        matcher = FileMatcher.createFromGitPattern("foo.*");
+        assertThat(matcher, instanceOf(FileMatcher.NameStartExclude.class));
     }
 }

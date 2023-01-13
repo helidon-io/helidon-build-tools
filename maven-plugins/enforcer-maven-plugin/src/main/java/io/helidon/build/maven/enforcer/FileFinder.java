@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,31 +109,14 @@ public class FileFinder {
     private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes) {
         Path gitIgnore = gitRepoDir.resolve(".gitignore");
 
-        excludes.addAll(FileMatcher.create(".git/"));
+        excludes.add(FileMatcher.createFromGitPattern(".git/"));
 
-        List<String> lines = FileSystem.toLines(gitIgnore)
+        FileSystem.toLines(gitIgnore)
                 .stream()
                 .filter(it -> !it.startsWith("#"))
                 .filter(it -> !it.isBlank())
-                .collect(Collectors.toList());
-
-        for (String line : lines) {
-            if (line.contains("*")) {
-                if (line.startsWith("*.")) {
-                    excludes.addAll(FileMatcher.create(line.substring(1)));
-                } else {
-                    if (line.startsWith("*")) {
-                        excludes.add(new NameEndExclude(line.substring(1)));
-                    } else if (line.endsWith("*")) {
-                        excludes.add(new NameStartExclude(line.substring(line.length() - 1)));
-                    } else {
-                        Log.warn("$(YELLOW .gitignore) matches not supported: " + line);
-                    }
-                }
-            } else {
-                excludes.addAll(FileMatcher.create(line));
-            }
-        }
+                .map(FileMatcher::createFromGitPattern)
+                .forEach(excludes::add);
     }
 
     private Set<FileRequest> findAllFiles(Path gitRepoDir, Path basePath) {
@@ -244,32 +227,6 @@ public class FileFinder {
          */
         public FileFinder build() {
             return new FileFinder(this);
-        }
-    }
-
-    private static final class NameEndExclude implements FileMatcher {
-        private final String end;
-
-        private NameEndExclude(String end) {
-            this.end = end;
-        }
-
-        @Override
-        public boolean matches(FileRequest file) {
-            return file.fileName().endsWith(end);
-        }
-    }
-
-    private static final class NameStartExclude implements FileMatcher {
-        private final String start;
-
-        private NameStartExclude(String start) {
-            this.start = start;
-        }
-
-        @Override
-        public boolean matches(FileRequest file) {
-            return file.fileName().startsWith(start);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,36 @@ public interface FileMatcher {
             return List.of(new NameMatcher(pattern));
         }
         return List.of(new ContainsMatcher(pattern));
+    }
+
+    /**
+     * Create matcher from git pattern.
+     *
+     * @param pattern pattern to parse
+     * @return matcher that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
+     */
+    static FileMatcher createFromGitPattern(String pattern) {
+        if (pattern.contains("*")) {
+            if (pattern.startsWith("*.")) {
+                return new SuffixMatcher(pattern.substring(1));
+            }
+            if (pattern.startsWith("*")) {
+                return new NameEndExclude(pattern.substring(1));
+            }
+            if (pattern.endsWith("*")) {
+                return new NameStartExclude(pattern.substring(pattern.length() - 1));
+            }
+        }
+        if (pattern.startsWith("/")) {
+            return new StartsWithMatcher(pattern.substring(1));
+        }
+        if (pattern.endsWith("/")) {
+            return new DirectoryMatcher(pattern);
+        }
+        if (!pattern.contains("/")) {
+            return new NameMatcher(pattern);
+        }
+        return new ContainsMatcher(pattern);
     }
 
     /**
@@ -203,6 +233,48 @@ public interface FileMatcher {
         @Override
         public boolean matches(FileRequest file) {
             return file.suffix().equals(suffix);
+        }
+    }
+
+    /**
+     * Matches file name that end with the provided string.
+     */
+    class NameEndExclude implements FileMatcher {
+        private final String end;
+
+        /**
+         * Create a {@link NameEndExclude} matcher.
+         *
+         * @param end end of file name
+         */
+        NameEndExclude(String end) {
+            this.end = end;
+        }
+
+        @Override
+        public boolean matches(FileRequest file) {
+            return file.fileName().endsWith(end);
+        }
+    }
+
+    /**
+     * Matches file name that start with the provided string.
+     */
+    class NameStartExclude implements FileMatcher {
+        private final String start;
+
+        /**
+         * Create a {@link NameStartExclude} matcher.
+         *
+         * @param start start of file name
+         */
+        NameStartExclude(String start) {
+            this.start = start;
+        }
+
+        @Override
+        public boolean matches(FileRequest file) {
+            return file.fileName().startsWith(start);
         }
     }
 }
