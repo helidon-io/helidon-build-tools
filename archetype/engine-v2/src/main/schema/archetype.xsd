@@ -457,18 +457,23 @@
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                   The path of an input whose value is to be set in the context.
+                    The path of an input whose value is to be set in the context.
                     <br/>
                     <ul>
-                        <li>A path contains segments separated by <code>"."</code> characters</li>
+                        <li>A path contains segments separated by <code>"."</code> characters
+                        </li>
                         <li>Segments are ids of the parents for a given input</li>
-                        <li>Segments can contain only letters, digits and separator <code>"-"</code></li>
+                        <li>Segments can contain only letters, digits and separator
+                            <code>"-"</code>
+                        </li>
                         <li>The segment separator <code>"-"</code> must be used between valid characters ;
                             (<code>"--"</code> is prohibited
                         </li>
-                        <li>Two reference operators are available, root scope: <code>"~"</code> ; parent scope: <code>".."</code>
+                        <li>Two reference operators are available, root scope: <code>"~"</code> ; parent scope:
+                            <code>".."</code>
                         </li>
-                        <li>A path that starts with <code>"~"</code> is absolute. I.e. relative to the root scope</li>
+                        <li>A path that starts with <code>"~"</code> is absolute. I.e. relative to the root scope
+                        </li>
                         <li>A path that starts with a segment is relative, or a parent reference is relative</li>
                     </ul>
 
@@ -493,22 +498,38 @@
                     <br/>
                     Example:
                     <br/>
-                    <code>"foo.bar.bob"</code> is equivalent to <code>"bob"</code> if:
+                    <code>"foo.bar.bob"</code>
+                    is equivalent to <code>"bob"</code> if:
                     <ul>
                         <li>all inputs are global</li>
-                        <li><code>"foo"</code> and <code>"bar"</code> are global</li>
+                        <li>
+                            <code>"foo"</code>
+                            and <code>"bar"</code> are global
+                        </li>
                     </ul>
                     <br/>
-                    <code>"foo.bar.bob"</code> is equivalent to <code>"bar.bob"</code> if:
+                    <code>"foo.bar.bob"</code>
+                    is equivalent to <code>"bar.bob"</code> if:
                     <ul>
                         <li>all inputs are global</li>
-                        <li><code>"foo"</code> is global</li>
+                        <li>
+                            <code>"foo"</code>
+                            is global
+                        </li>
                     </ul>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
+
+    <xs:complexType name="required-string">
+        <xs:simpleContent>
+            <xs:restriction base="xs:string">
+                <xs:minLength value="1"/>
+            </xs:restriction>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <xs:complexType name="variables-type">
         <xs:annotation>
@@ -559,7 +580,7 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
+                        <xs:extension base="a:required-string">
                             <xs:attributeGroup ref="a:context-attribute-group"/>
                             <xs:attributeGroup ref="a:transient-attribute-group"/>
                         </xs:extension>
@@ -574,7 +595,7 @@
                             Define a list value.
                         </xs:documentation>
                     </xs:annotation>
-                    <xs:sequence maxOccurs="unbounded">
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
                         <xs:element name="value">
                             <xs:simpleType>
                                 <xs:restriction base="xs:string"/>
@@ -635,7 +656,7 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
+                        <xs:extension base="a:required-string">
                             <xs:attributeGroup ref="a:context-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>
@@ -1360,7 +1381,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="help" type="a:help-type" minOccurs="0"/>
-                <xs:element name="methods" type="a:method-types" minOccurs="0" />
+                <xs:element name="methods" type="a:method-types" minOccurs="0"/>
                 <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="output" type="a:output-type" minOccurs="0"/>
             </xs:sequence>

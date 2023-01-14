@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.common.VirtualFileSystem;
 
@@ -33,8 +34,10 @@ import static io.helidon.build.archetype.v2.json.JsonFactory.jsonDiff;
 import static io.helidon.build.archetype.v2.json.JsonFactory.readJson;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static javax.json.JsonValue.EMPTY_JSON_ARRAY;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Tests {@link ScriptSerializer}.
@@ -115,6 +118,7 @@ class ScriptSerializerTest {
     void testConvertExpression() throws IOException {
         int id = 1;
         JsonObjectBuilder builder = JsonFactory.createObjectBuilder();
+        //noinspection UnusedAssignment
         builder.add(String.valueOf(id++), convertExpression("['', 'adc', 'def'] contains 'foo'"))
                .add(String.valueOf(id++), convertExpression("!(['', 'adc', 'def'] contains 'foo' == false && false)"))
                .add(String.valueOf(id++), convertExpression("!false"))
@@ -144,5 +148,52 @@ class ScriptSerializerTest {
         Path targetDir = targetDir(this.getClass());
         Path expected = targetDir.resolve("test-classes/expected/expressions.json");
         assertThat(jsonDiff(jsonObject, readJson(expected)), is(EMPTY_JSON_ARRAY));
+    }
+
+    @Test
+    void testVariables() {
+        Path targetDir = targetDir(this.getClass());
+        Path scriptPath = targetDir.resolve("test-classes/variables.xml");
+        JsonObject jsonObject = ScriptSerializer.serialize(ScriptLoader.load(scriptPath), false);
+        JsonArray children = jsonObject.getJsonArray("children");
+        assertThat(children, is(not(nullValue())));
+        assertThat(children.size(), is(1));
+
+        JsonObject variablesNode = children.getJsonObject(0);
+        assertThat(variablesNode, is(not(nullValue())));
+
+        JsonArray variables = variablesNode.getJsonArray("children");
+        assertThat(variables, is(not(nullValue())));
+        assertThat(variables.size(), is(6));
+
+        JsonObject var1 = variables.getJsonObject(0);
+        assertThat(var1, is(not(nullValue())));
+        assertThat(var1.getString("path"), is("var1"));
+        assertThat(var1.isNull("value"), is(true));
+
+        JsonObject var2 = variables.getJsonObject(1);
+        assertThat(var2, is(not(nullValue())));
+        assertThat(var2.getString("path"), is("var2"));
+        assertThat(var2.getString("value"), is("some-value"));
+
+        JsonObject var3 = variables.getJsonObject(2);
+        assertThat(var3, is(not(nullValue())));
+        assertThat(var3.getString("path"), is("var3"));
+        assertThat(var3.getBoolean("value"), is(true));
+
+        JsonObject var4 = variables.getJsonObject(3);
+        assertThat(var4, is(not(nullValue())));
+        assertThat(var4.getString("path"), is("var4"));
+        assertThat(var4.getString("value"), is("some-constant"));
+
+        JsonObject var5 = variables.getJsonObject(4);
+        assertThat(var5, is(not(nullValue())));
+        assertThat(var5.getString("path"), is("var5"));
+        assertThat(var5.getJsonArray("value").size(), is(0));
+
+        JsonObject var6 = variables.getJsonObject(5);
+        assertThat(var6, is(not(nullValue())));
+        assertThat(var6.getString("path"), is("var6"));
+        assertThat(var6.getJsonArray("value").getString(0), is("item1"));
     }
 }
