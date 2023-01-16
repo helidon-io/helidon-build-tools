@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+@REM Copyright (c) 2022 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -15,38 +15,89 @@
 @REM
 
 @echo off
-SETLOCAL
 
-if NOT "%JAVA_HOME%"=="" set JAVACMD=%JAVA_HOME%\bin\java
-if "%JAVACMD%"=="" set JAVACMD=java
-
-@REM Find script base directory
-for %%i in ("%~dp0..") do set "BASEDIR=%%~fi"
-
-set JARFILE=%BASEDIR%\lib\helidon.jar
-set argCount=0
+set projectDir=%~dp0
+set targetDir=%projectDir%target
+set jarFile=%targetDir%\helidon.jar
+set attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
+set attachMvn="-Dmvn.debug.port=5006"
+set attachMvnChild="-Dmvn.child.debug.port=5007"
+set attachPlugin="-Dplugin.debug.port=5006"
+set action=
 set args=
-set attach=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
-set attachMvn=-Dmvn.debug.port=5006
-set attachMvnChild=-Dmvn.child.debug.port=5007
-set attachPlugin=-Dplugin.debug.port=5006
+set /a nbargs=0
+set /a loopcount=0
 
 for %%x in (%*) do (
-   call :parseArgs %%~x
+    set /a nbargs=nbargs+1
 )
 
-%JAVACMD% %JAVA_OPTS% -jar %JARFILE% %args%
+:start
 
-ENDLOCAL
+set add=yes
+
+if %loopcount%==%nbargs% (
+    goto exitloop
+)
+
+if %1==--attach (
+    call :appendJvm %attach%
+    set add=no
+)
+
+if %1==--attachMvn (
+    call :appendJvm %attachMvn%
+    set add=no
+)
+
+if %1==--attachMvnChild (
+    call :appendJvm %attachMvnChild%
+    set add=no
+)
+
+if %1==--attachPlugin (
+    call :appendJvm %attachPlugin%
+    set add=no
+)
+
+if %1==--dryRun (
+    set action=echo
+    set add=no
+)
+
+if %add%==yes (
+    call :appendArgs %1
+)
+shift
+
+set /a loopcount=loopcount+1
+
+goto start
+:exitloop
+
+%action% java %jvm% -jar %jarFile% %args%
+
+call :clear
+
 goto :eof
 
-:parseArgs
-if "--attach" == "%~1" set args=%args% %attach% & exit /b
-if "--attachMvn" == "%~1" set args=%args% %attachMvn% & exit /b
-if "--attachMvnChild" == "%~1" set args=%args% %attachMvnChild% & exit /b
-if "--attachPlugin" == "%~1" set args=%args% %attachPlugin% & exit /b
-if "--dryRun" == "%~1" set JAVACMD=echo & exit /b
-set args=%args% %~1
-exit /b
+:appendArgs
+    set args=%args% %~1
+EXIT /B 0
 
-exit /B 0
+:appendJvm
+    set jvm=%jvm% %~1
+EXIT /B 0
+
+:clear
+    set projectDir=
+    set targetDir=
+    set jarFile=
+    set attach=
+    set attachMvn=
+    set attachMvnChild=
+    set attachPlugin=
+    set action=
+    set args=
+    set jvm=
+EXIT /B 0
