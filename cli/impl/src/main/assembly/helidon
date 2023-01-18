@@ -16,40 +16,41 @@
 #
 
 main() {
-    local COMMAND IS_DEBUG
+    local command debug
     find_root_directory
     find_java_executable
     build_command "${@}"
-    if [ -n "$IS_DEBUG" ]; then
+    if [ -n "${debug}" ]; then
         echo "[WARNING] Use HELIDON_JAVA_OPS environment property to setup JVM arguments"
         echo "[DEBUG] Distribution located at : ${BASEDIR}"
-        echo "[DEBUG] Using java command : ${JAVA_EXECUTABLE}"
-        echo "[DEBUG] Command executed : ${COMMAND}"
+        echo "[DEBUG] Using java command : ${javaExec}"
+        echo "[DEBUG] Command executed : ${command}"
     fi
-    ${COMMAND}
+    ${command}
 }
 
 #Find archive directory and use it as based directory
 find_root_directory() {
-    WDIR="${0}"
-    while [ -h "${WDIR}" ]; do
-        ls=$(ls -ld "${WDIR}")
+    local wdir dir
+    wdir="${0}"
+    while [ -h "${wdir}" ]; do
+        ls=$(ls -ld "${wdir}")
         link=$(expr "${ls}" : '.*-> \(.*\)$')
         if expr "${link}" : '/.*' > /dev/null; then
-            WDIR="${link}"
+            wdir="${link}"
         else
-            WDIR=$(dirname "${WDIR}")/"$link"
+            wdir=$(dirname "${wdir}")/"$link"
         fi
     done
-    DIR=$(dirname "${WDIR}")
-    BASEDIR=$(cd "${DIR}/.." || exit; pwd)
+    dir=$(dirname "${wdir}")
+    BASEDIR=$(cd "${dir}/.." || exit; pwd)
 }
 
 #Look for JAVA_HOME java binary, then `which java` result
 find_java_executable() {
     if [ -z "${JAVA_HOME}" ]; then
-        JAVA_EXECUTABLE=$(which java)
-        echo "[WARNING] JAVA_HOME is not set, using ${JAVA_EXECUTABLE} instead"
+        javaExec=$(which java)
+        echo "[WARNING] JAVA_HOME is not set, using ${javaExec} instead"
         return
     fi
     if [ "$(uname)" == "CYGWIN" ]; then
@@ -57,7 +58,7 @@ find_java_executable() {
         JAVA_HOME=$(cygpath --path --windows "${JAVA_HOME}")
         BASEDIR=$(cygpath --path --windows "${BASEDIR}")
     fi
-    JAVA_EXECUTABLE="${JAVA_HOME}/bin/java"
+    javaExec="${JAVA_HOME}/bin/java"
 }
 
 #Build command line
@@ -66,13 +67,13 @@ build_command() {
 
     while (( ${#} > 0 )); do
         case "${1}" in
-            --cli-debug) IS_DEBUG="true";;
+            --cli-debug) debug="true";;
             *) append_var args "${1}" ;;
         esac
         shift
     done
 
-    COMMAND="${JAVA_EXECUTABLE} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/lib/helidon.jar ${args}"
+    command="${javaExec} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/lib/helidon.jar ${args}"
 }
 
 #Append variable value
