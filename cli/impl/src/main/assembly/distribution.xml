@@ -43,7 +43,7 @@
             <outputDirectory>/bin</outputDirectory>
         </file>
         <file>
-            <source>${project.basedir}/src/main/assembly/helidon.sh</source>
+            <source>${project.basedir}/src/main/assembly/helidon</source>
             <outputDirectory>/bin</outputDirectory>
         </file>
         <file>

@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# Copyright (c) 2023 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+main() {
+    local COMMAND IS_DEBUG
+    find_root_directory
+    find_java_executable
+    build_command "${@}"
+    if [ -n "$IS_DEBUG" ]; then
+        echo "[WARNING] Use HELIDON_JAVA_OPS environment property to setup JVM arguments"
+        echo "[DEBUG] Distribution located at : ${BASEDIR}"
+        echo "[DEBUG] Using java command : ${JAVA_EXECUTABLE}"
+        echo "[DEBUG] Command executed : ${COMMAND}"
+    fi
+    ${COMMAND}
+}
+
+#Find archive directory and use it as based directory
+find_root_directory() {
+    WDIR="${0}"
+    while [ -h "${WDIR}" ]; do
+        ls=$(ls -ld "${WDIR}")
+        link=$(expr "${ls}" : '.*-> \(.*\)$')
+        if expr "${link}" : '/.*' > /dev/null; then
+            WDIR="${link}"
+        else
+            WDIR=$(dirname "${WDIR}")/"$link"
+        fi
+    done
+    DIR=$(dirname "${WDIR}")
+    BASEDIR=$(cd "${DIR}/.." || exit; pwd)
+}
+
+#Look for JAVA_HOME java binary, then `which java` result
+find_java_executable() {
+    if [ -z "${JAVA_HOME}" ]; then
+        JAVA_EXECUTABLE=$(which java)
+        echo "[WARNING] JAVA_HOME is not set, using ${JAVA_EXECUTABLE} instead"
+        return
+    fi
+    if [ "$(uname)" == "CYGWIN" ]; then
+        JAVA_HOME=$(cygpath --unix "${JAVA_HOME}")
+        JAVA_HOME=$(cygpath --path --windows "${JAVA_HOME}")
+        BASEDIR=$(cygpath --path --windows "${BASEDIR}")
+    fi
+    JAVA_EXECUTABLE="${JAVA_HOME}/bin/java"
+}
+
+#Build command line
+build_command() {
+    local args
+
+    while (( ${#} > 0 )); do
+        case "${1}" in
+            --cli-debug) IS_DEBUG="true";;
+            *) append_var args "${1}" ;;
+        esac
+        shift
+    done
+
+    COMMAND="${JAVA_EXECUTABLE} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/lib/helidon.jar ${args}"
+}
+
+#Append variable value
+append_var() {
+    export "${1}"="${!1:+${!1} }${2}"
+}
+main "${@}"
