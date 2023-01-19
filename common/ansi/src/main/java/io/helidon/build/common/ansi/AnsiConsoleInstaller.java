@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import io.helidon.build.common.logging.LogLevel;
 
 import org.fusesource.jansi.Ansi;
-import picocli.jansi.graalvm.AnsiConsole;
+import org.fusesource.jansi.AnsiConsole;
 
 /**
  * Installer for {@link System#out} and {@link System#err} streams that support {@link Ansi} escapes, if possible.
@@ -159,6 +159,11 @@ public class AnsiConsoleInstaller {
                 Ansi.setEnabled(false);
             } else {
                 ConsoleType desiredType = desiredConsoleType();
+                String arch = System.getProperty("os.arch");
+                String vm = System.getProperty("java.vm.name");
+                if (arch != null && arch.endsWith("64") && "Substrate VM".equals(vm)) {
+                    System.setProperty("sun.arch.data.model", "64");
+                }
                 AnsiConsole.systemInstall();
                 consoleType = installedConsoleType(desiredType);
                 enabled = consoleType == ConsoleType.ANSI || consoleType == ConsoleType.DEFAULT;
