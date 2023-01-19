@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.build.cli.impl;
 
+import io.helidon.build.cli.common.ImageInfo;
 import io.helidon.build.cli.harness.CommandLineInterface;
 import io.helidon.build.cli.harness.CommandRunner;
 
-import org.graalvm.nativeimage.ImageInfo;
 import sun.misc.Signal;
 
 /**
