@@ -19,6 +19,8 @@ package io.helidon.build.maven.enforcer;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.maven.enforcer.FileMatcher.PatternFormat.GITIGNORE;
+import static io.helidon.build.maven.enforcer.FileMatcher.create;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -138,62 +140,70 @@ class ExcludeTest {
     }
 
     @Test
-    void testFileMatcherCreation() {
-        List<FileMatcher> matchers = FileMatcher.create(".foo");
+    void testDefaultFileMatcher() {
+        List<FileMatcher> matchers = create(".foo");
 
         assertThat(matchers.size(), is(2));
         assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
 
-        matchers = FileMatcher.create("*.foo");
+        matchers = create("*.foo");
 
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
 
-        matchers = FileMatcher.create("foo/bar/");
+        matchers = create("foo/bar/");
 
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
 
-        matchers = FileMatcher.create("**/bar/");
+        matchers = create("**/bar/");
 
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
 
-        matchers = FileMatcher.create("/foo/bar");
+        matchers = create("/foo/bar");
 
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.StartsWithMatcher.class));
 
-        matchers = FileMatcher.create("foo/bar");
+        matchers = create("foo/bar");
 
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.ContainsMatcher.class));
     }
 
     @Test
-    void testCreateFromGitPattern() {
-        FileMatcher matcher = FileMatcher.createFromGitPattern(".foo");
-        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
+    void testGitignoreFileMatcher() {
+        List<FileMatcher> matchers = create(".foo", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.NameMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("foo");
-        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
+        matchers = create("foo", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.NameMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("*.foo");
-        assertThat(matcher, instanceOf(FileMatcher.SuffixMatcher.class));
+        matchers = create("*.foo", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("foo/bar/");
-        assertThat(matcher, instanceOf(FileMatcher.DirectoryMatcher.class));
+        matchers = create("foo/bar/", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("/foo/bar");
-        assertThat(matcher, instanceOf(FileMatcher.StartsWithMatcher.class));
+        matchers = create("/foo/bar", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.StartsWithMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("foo/bar");
-        assertThat(matcher, instanceOf(FileMatcher.ContainsMatcher.class));
+        matchers = create("foo/bar", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.ContainsMatcher.class));
 
-        matcher = FileMatcher.createFromGitPattern("**.foo");
-        assertThat(matcher, instanceOf(FileMatcher.NameEndExclude.class));
+        matchers = create("**.foo", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.NameEndExclude.class));
 
-        matcher = FileMatcher.createFromGitPattern("foo.*");
-        assertThat(matcher, instanceOf(FileMatcher.NameStartExclude.class));
+        matchers = create("foo.*", GITIGNORE);
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.NameStartExclude.class));
     }
 }

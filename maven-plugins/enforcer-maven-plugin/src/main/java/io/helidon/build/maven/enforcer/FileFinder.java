@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
 
+import static io.helidon.build.maven.enforcer.FileMatcher.PatternFormat.GITIGNORE;
+import static io.helidon.build.maven.enforcer.FileMatcher.create;
+
 /**
  * Configuration of discovery of files to check.
  */
@@ -109,14 +112,14 @@ public class FileFinder {
     private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes) {
         Path gitIgnore = gitRepoDir.resolve(".gitignore");
 
-        excludes.add(FileMatcher.createFromGitPattern(".git/"));
+        excludes.addAll(create(".git/", GITIGNORE));
 
         FileSystem.toLines(gitIgnore)
                 .stream()
                 .filter(it -> !it.startsWith("#"))
                 .filter(it -> !it.isBlank())
-                .map(FileMatcher::createFromGitPattern)
-                .forEach(excludes::add);
+                .map(p -> create(p, GITIGNORE))
+                .forEach(excludes::addAll);
     }
 
     private Set<FileRequest> findAllFiles(Path gitRepoDir, Path basePath) {

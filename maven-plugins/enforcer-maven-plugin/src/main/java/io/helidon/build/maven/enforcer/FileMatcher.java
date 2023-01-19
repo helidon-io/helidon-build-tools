@@ -32,12 +32,36 @@ import java.util.List;
  */
 public interface FileMatcher {
     /**
-     * Create matcher(s) from pattern.
+     * Create default matcher(s) from pattern.
+     *
+     * @param pattern pattern to parse
+     * @return one or more matchers that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
+     */
+    static List<FileMatcher> create(String pattern) {
+        return create(pattern, PatternFormat.DEFAULT);
+    }
+
+    /**
+     * Create matcher(s) from pattern using {@link PatternFormat}.
+     *
+     * @param pattern pattern to parse
+     * @param format  pattern format
+     * @return one or more matchers that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
+     */
+    static List<FileMatcher> create(String pattern, PatternFormat format) {
+        if (format == PatternFormat.GITIGNORE) {
+            return List.of(createGitIgnore(pattern));
+        }
+        return createDefault(pattern);
+    }
+
+    /**
+     * Create default matcher(s) from pattern.
      *
      * @param pattern  pattern to parse
      * @return one or more matchers that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
      */
-    static List<FileMatcher> create(String pattern) {
+    private static List<FileMatcher> createDefault(String pattern) {
         // if starts with ., it is a suffix
         if (pattern.startsWith(".") && !pattern.endsWith("/")) {
             // .ico
@@ -68,7 +92,7 @@ public interface FileMatcher {
      * @param pattern pattern to parse
      * @return matcher that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
      */
-    static FileMatcher createFromGitPattern(String pattern) {
+    private static FileMatcher createGitIgnore(String pattern) {
         if (pattern.contains("*")) {
             if (pattern.startsWith("*.")) {
                 return new SuffixMatcher(pattern.substring(1));
@@ -276,5 +300,9 @@ public interface FileMatcher {
         public boolean matches(FileRequest file) {
             return file.fileName().startsWith(start);
         }
+    }
+
+    enum PatternFormat {
+        DEFAULT, GITIGNORE
     }
 }
