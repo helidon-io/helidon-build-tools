@@ -159,6 +159,7 @@ public class AnsiConsoleInstaller {
                 Ansi.setEnabled(false);
             } else {
                 ConsoleType desiredType = desiredConsoleType();
+                // workaround for https://github.com/fusesource/jansi/issues/162
                 String arch = System.getProperty("os.arch");
                 String vm = System.getProperty("java.vm.name");
                 if (arch != null && arch.endsWith("64") && "Substrate VM".equals(vm)) {
