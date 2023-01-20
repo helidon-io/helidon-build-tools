@@ -41,10 +41,12 @@
         <file>
             <source>${project.basedir}/src/main/assembly/helidon.bat</source>
             <outputDirectory>/bin</outputDirectory>
+            <fileMode>0755</fileMode>
         </file>
         <file>
             <source>${project.basedir}/src/main/assembly/helidon</source>
             <outputDirectory>/bin</outputDirectory>
+            <fileMode>0755</fileMode>
         </file>
         <file>
             <source>${project.basedir}./../LICENSE.txt</source>
