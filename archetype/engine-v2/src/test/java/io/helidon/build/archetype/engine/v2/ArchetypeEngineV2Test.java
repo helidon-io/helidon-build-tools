@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -456,8 +456,14 @@ class ArchetypeEngineV2Test {
                      Path directory,
                      Map<String, String> externalValues,
                      Map<String, String> externalDefaults) {
-        ArchetypeEngineV2 engine = new ArchetypeEngineV2(archetype);
-        Path outputDir = engine.generate(new BatchInputResolver(), externalValues, externalDefaults, n -> unique(directory, n));
+        ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
+                                                    .fileSystem(archetype)
+                                                    .inputResolver(new BatchInputResolver())
+                                                    .directorySupplier(n -> unique(directory, n))
+                                                    .externalDefaults(externalDefaults)
+                                                    .externalValues(externalValues)
+                                                    .build();
+        Path outputDir = engine.generate();
         assertThat(Files.exists(outputDir), is(true));
         return outputDir;
     }

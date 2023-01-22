@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,11 @@ class ReflectedEngineTest {
         Path sourceDir = targetDir.resolve("test-classes/simple");
         Path outputDir = targetDir.resolve("reflected-engine-ut");
         FileSystem fs = VirtualFileSystem.create(sourceDir);
-        ReflectedEngine engine = new ReflectedEngine(this.getClass().getClassLoader(), fs);
         Map<String, String> externalValues = Map.of("color", "red", "artifactId", "testGenerate");
-        Path projectDir = engine.generate(false, externalValues, Map.of(), n -> unique(outputDir, n));
+        ReflectedEngine engine = new ReflectedEngine(
+                this.getClass().getClassLoader(), fs, false,
+                externalValues, Map.of(), n -> unique(outputDir, n));
+        Path projectDir = engine.generate();
         assertThat(Files.exists(projectDir.resolve("color.txt")), is(true));
         assertThat(normalizeNewLines(readString(projectDir.resolve("color.txt"))), is("red\n"));
     }

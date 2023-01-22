@@ -154,8 +154,7 @@ public class GlobalOptions {
     /**
      * The --props-file option description.
      */
-    public static final String PROPS_FILE_OPTION_DESCRIPTION = "Path to a properties file with user inputs for Helidon init "
-            + "command";
+    public static final String PROPS_FILE_OPTION_DESCRIPTION = "Path to a properties file with user inputs for Helidon CLI tool";
 
     /**
      * The --props-file option argument.

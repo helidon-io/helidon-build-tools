@@ -11,4 +11,4 @@ Options
   --error             Print error stack traces
   --plain             Do not use color or styles in output
   --args-file         Path to a file with arguments for Helidon CLI tool
-  --props-file        Path to a properties file with user inputs for Helidon init command
+  --props-file        Path to a properties file with user inputs for Helidon CLI tool
