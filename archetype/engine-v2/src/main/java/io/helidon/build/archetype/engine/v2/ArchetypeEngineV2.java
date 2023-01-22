@@ -57,8 +57,7 @@ public class ArchetypeEngineV2 {
      *
      * @return output directory
      */
-    public Path generate()
-    {
+    public Path generate() {
         Context context = Context.builder()
                                  .cwd(cwd)
                                  .externalValues(externalValues)
@@ -169,7 +168,7 @@ public class ArchetypeEngineV2 {
          * @return this builder
          */
         public Builder inputResolver(InputResolver inputResolver) {
-            this.inputResolver = requireNonNull(inputResolver,"inputResolver is null");
+            this.inputResolver = requireNonNull(inputResolver, "inputResolver is null");
             return this;
         }
 
