@@ -156,7 +156,6 @@
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.mustache>0.9.6</version.lib.mustache>
         <version.lib.mockito>3.10.0</version.lib.mockito>
-        <version.lib.picocli-jansi>1.1.0</version.lib.picocli-jansi>
         <version.lib.plexus-archiver>4.1.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.plexus-component>2.0.0</version.lib.plexus-component>
@@ -829,11 +828,6 @@
                 <groupId>org.fusesource.jansi</groupId>
                 <artifactId>jansi</artifactId>
                 <version>${version.lib.jansi}</version>
-            </dependency>
-            <dependency>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli-jansi-graalvm</artifactId>
-                <version>${version.lib.picocli-jansi}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
