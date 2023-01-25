@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,8 @@ function preparePathForRegExp(path: string): string {
     return path.replace(/\\/g, "\\\\");
 }
 
-function configEnvPath(configPath : string, binPath: string, pathDelimiter: string) {
+function configEnvPath(configPath: string, binPath: string, pathDelimiter: string) {
+    // eslint-disable-next-line eqeqeq
     if (process.env.PATH != null) {
         if (!process.env.PATH.includes(configPath)) {
             process.env.PATH = `${binPath}${process.env.PATH}`;
@@ -155,20 +156,21 @@ function configEnvPath(configPath : string, binPath: string, pathDelimiter: stri
 }
 
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
-    let cmdSpan = "java";
+    const cmdSpan = "java";
     const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
 
-    let pathDelimiter = path.delimiter;
+    const pathDelimiter = path.delimiter;
 
-    let helidonConfig = vscode.workspace.getConfiguration('helidon');
+    const helidonConfig = vscode.workspace.getConfiguration('helidon');
 
-    let configJavaHome: string = helidonConfig.get("javaHomeDir")!;
-    let javaHomeBinDir: string = configJavaHome ? `${configJavaHome}/bin${pathDelimiter}` : "";
-    let configMavenHome: string = helidonConfig.get("mavenHomeDir")!;
-    let mavenBinDir: string = configMavenHome ? `${configMavenHome}/bin${pathDelimiter}` : "";
+    const configJavaHome: string = helidonConfig.get("javaHomeDir")!;
+    const javaHomeBinDir: string = configJavaHome ? `${configJavaHome}/bin${pathDelimiter}` : "";
+    const configMavenHome: string = helidonConfig.get("mavenHomeDir")!;
+    const mavenBinDir: string = configMavenHome ? `${configMavenHome}/bin${pathDelimiter}` : "";
 
+    // eslint-disable-next-line eqeqeq
     if (process.env.PATH != null) {
-        if (mavenBinDir !== ""){
+        if (mavenBinDir !== "") {
             process.env.M2_HOME = configMavenHome;
             process.env.MAVEN_HOME = configMavenHome;
             configEnvPath(configMavenHome, mavenBinDir, pathDelimiter);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import { processLaunchConfig } from "./launchConfiguration";
 export function activate(context: vscode.ExtensionContext) {
 
     setlogFile("plugin.log");
-    let initialEnvPath = process.env.PATH;
-    let initialEnvJavaHome = process.env.JAVA_HOME;
-    let initialEnvM2Home = process.env.M2_HOME;
-    let initialEnvMavenHome = process.env.MAVEN_HOME;
+    const initialEnvPath = process.env.PATH;
+    const initialEnvJavaHome = process.env.JAVA_HOME;
+    const initialEnvM2Home = process.env.M2_HOME;
+    const initialEnvMavenHome = process.env.MAVEN_HOME;
 
     startLangServer(context);
 
@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
         stopHelidonDev();
     }));
 
-    //TODO remove or refactor
+    // TODO remove or refactor
     updateWorkspaceDocuments(context);
 
     processLaunchConfig(context);

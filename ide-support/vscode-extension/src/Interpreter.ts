@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ export class Interpreter {
         return this.newElements;
     }
 
-    private visit(element: any,) {
+    private visit(element: any) {
         switch (element.kind) {
             case 'step':
                 this.processStep(element);
@@ -72,9 +72,10 @@ export class Interpreter {
 
     private processInputs(element: any) {
         if (element.children) {
-            for (let child of element.children) {
+            for (const child of element.children) {
                 child._scope = this.generatorData.context.newScope(child);
-                let contextValue = this.generatorData.context.getValue(child._scope.id);
+                const contextValue = this.generatorData.context.getValue(child._scope.id);
+                // eslint-disable-next-line eqeqeq
                 if (contextValue == null || child.kind !== 'boolean' || contextValue.value === true) {
                     this.visit(child);
                 }
@@ -84,20 +85,21 @@ export class Interpreter {
 
     private processStep(element: any) {
         if (element.children) {
-            for (let child of element.children) {
+            for (const child of element.children) {
                 this.visit(child);
             }
         }
     }
 
     private processList(element: any) {
-        let options: QuickPickItemExt[] = [];
-        let defaultValue: any[] = this.getDefaultValue(element);
-        let contextValue = this.generatorData.context.getValue(element._scope.id);
+        const options: QuickPickItemExt[] = [];
+        const defaultValue: any[] = this.getDefaultValue(element);
+        const contextValue = this.generatorData.context.getValue(element._scope.id);
+        // eslint-disable-next-line eqeqeq
         if (contextValue == null) {
             this.generatorData.context.setValue(element._scope.id, defaultValue, ContextValueKind.DEFAULT);
         }
-        let selectedOptions: QuickPickItemExt[] = [];
+        const selectedOptions: QuickPickItemExt[] = [];
         if (element.kind === 'boolean') {
             options.push(
                 {label: 'yes', children: element.children, value: 'true'},
@@ -112,13 +114,15 @@ export class Interpreter {
                 }
             }));
         }
+        // eslint-disable-next-line eqeqeq
         if (contextValue != null) {
             selectedOptions.push(
                 ...options.filter(option => {
                     if (Array.isArray(contextValue?.value)) {
                         return contextValue?.value.includes(option.value);
                     } else {
-                        if (element.kind === 'boolean'){
+                        if (element.kind === 'boolean') {
+                            // eslint-disable-next-line eqeqeq
                             return (option.value?.toLowerCase() === 'true') == contextValue?.value;
                         }
                         return option.value === contextValue?.value;
@@ -127,12 +131,12 @@ export class Interpreter {
             );
         } else if (defaultValue.length > 0) {
             selectedOptions.push(
-                ...options.filter(option => 
+                ...options.filter(option =>
                     defaultValue.includes(element.kind === 'boolean' ? (option.value?.toLowerCase() === 'true') : option.value!))
             );
         }
-        let optional = element.optional ? element.optional : false;
-        let result = {
+        const optional = element.optional ? element.optional : false;
+        const result = {
             title: element.name,
             placeholder: (element.name ?? "") + ` (optional - ${optional}). Press 'Enter' to confirm.`,
             items: options,
@@ -144,9 +148,10 @@ export class Interpreter {
             _skip: false
         };
 
-        let defaultContextValueKind = ContextValueKind.DEFAULT;
+        const defaultContextValueKind = ContextValueKind.DEFAULT;
+        // eslint-disable-next-line eqeqeq
         if (contextValue == null || contextValue.kind === defaultContextValueKind) {
-            if (options && options.length <=1) {
+            if (options && options.length <= 1) {
                 result._skip = true;
             }
 
@@ -160,6 +165,7 @@ export class Interpreter {
         if (element.selectedValues) {
             return element.selectedValues;
         }
+        // eslint-disable-next-line eqeqeq
         if (element.default != null) {
             if (element.kind === 'list') {
                 return element.default
@@ -176,11 +182,12 @@ export class Interpreter {
 
     private processText(element: any) {
         const optional = element.optional ? element.optional : false;
+        // eslint-disable-next-line eqeqeq
         if (element.default != null) {
             element.default = this.evaluateProps(element.default, (v: any) => this.generatorData.context.lookup(v));
         }
         const defValPlaceholder = element.default ? ` default value: ${element.default};` : "";
-        let result = {
+        const result = {
             title: element.name,
             placeholder: (element.name ?? "") + defValPlaceholder + ` (optional - ${optional}). Press 'Enter' to confirm.`,
             value: element.default ? element.default : "",
@@ -204,7 +211,7 @@ export class Interpreter {
 
     private processPreset(element: any) {
         if (element.children) {
-            for (let child of element.children) {
+            for (const child of element.children) {
                 this.generatorData.context.setValue(child.path, child.value, ContextValueKind.PRESET);
             }
         }
@@ -216,7 +223,7 @@ export class Interpreter {
 
     private processVariables(element: any) {
         if (element.children) {
-            for (let child of element.children) {
+            for (const child of element.children) {
                 const expressionResult = Expression.create(this.archetype.expressions[child.if])
                     .eval((val: string) => this.generatorData.context.lookup(val));
                 if (expressionResult === true) {
@@ -265,6 +272,7 @@ export class Interpreter {
             }
 
             let propValue = resolver(propName);
+            // eslint-disable-next-line eqeqeq
             if (propValue == null) {
                 propValue = '';
             } else if (regexp !== null && replace !== null) {
