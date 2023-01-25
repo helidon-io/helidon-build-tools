@@ -33,8 +33,7 @@ module.exports = {
     },
     "plugins": [
         "eslint-plugin-prefer-arrow",
-        "@typescript-eslint",
-        "@typescript-eslint/tslint"
+        "@typescript-eslint"
     ],
     "root": true,
     "rules": {
@@ -105,27 +104,6 @@ module.exports = {
                 "markers": [
                     "/"
                 ]
-            }
-        ],
-        "@typescript-eslint/tslint/config": [
-            "error",
-            {
-                "rules": {
-                    "encoding": true,
-                    "switch-final-break": [
-                        true,
-                        "always"
-                    ],
-                    "whitespace": [
-                        true,
-                        "check-branch",
-                        "check-decl",
-                        "check-module",
-                        "check-separator",
-                        "check-type",
-                        "check-preblock"
-                    ]
-                }
             }
         ]
     }
