@@ -510,13 +510,11 @@
         <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
-    <xs:complexType name="required-string">
-        <xs:simpleContent>
-            <xs:restriction base="xs:string">
-                <xs:minLength value="1"/>
-            </xs:restriction>
-        </xs:simpleContent>
-    </xs:complexType>
+    <xs:simpleType name="required-string">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="variables-type">
         <xs:annotation>
