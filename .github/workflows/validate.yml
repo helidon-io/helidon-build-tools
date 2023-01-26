@@ -61,7 +61,7 @@ jobs:
         os: [ ubuntu-20.04 ]
         include:
           - os: ubuntu-20.04
-            build_script: etc/scripts/build.sh
+            build_script: etc/scripts/github-build.sh
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
