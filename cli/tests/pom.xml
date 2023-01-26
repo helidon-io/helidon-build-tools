@@ -33,11 +33,11 @@
     <profiles>
         <profile>
             <id>run-test</id>
-            <activation>
-                <property>
-                    <name>!skipTests</name>
-                </property>
-            </activation>
+<!--            <activation>-->
+<!--                <property>-->
+<!--                    <name>!skipTests</name>-->
+<!--                </property>-->
+<!--            </activation>-->
             <modules>
                 <module>functional</module>
             </modules>
