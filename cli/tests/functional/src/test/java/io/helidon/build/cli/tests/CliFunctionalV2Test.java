@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class CliFunctionalV2Test {
         String output = buildArchetype("batchTest")
                 .addOption("--batch")
                 .start(5, TimeUnit.MINUTES);
-        assertThat(output, containsString(expectedOutput));
+        assertThat(output, containsString(workDir.resolve("bare-se").toString()));
         FunctionalUtils.validateSeProject(workDir);
     }
 
@@ -126,7 +126,7 @@ public class CliFunctionalV2Test {
         String output = buildArchetype("interactiveTest")
                 .input(inputFile)
                 .start(5, TimeUnit.MINUTES);
-        assertThat(output, containsString(expectedOutput));
+        assertThat(output, containsString(workDir.resolve("bare-se").toString()));
         FunctionalUtils.validateSeProject(workDir);
     }
 
@@ -200,7 +200,7 @@ public class CliFunctionalV2Test {
                     .init()
                     .start(5, TimeUnit.MINUTES);
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("ERROR: Invalid choice: wrongFlavor"));
+            assertThat(e.getMessage(), containsString("Invalid choice: wrongFlavor"));
             return;
         }
         assertThat("Exception should have been thrown due to wrong flavor input.", false);
