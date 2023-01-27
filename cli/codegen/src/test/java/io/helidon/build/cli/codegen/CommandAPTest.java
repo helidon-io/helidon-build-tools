@@ -23,7 +23,6 @@ import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.Unchecked.unchecked;
@@ -40,7 +39,6 @@ import static org.hamcrest.Matchers.notNullValue;
 /**
  * Tests {@link CommandAP}.
  */
-@Disabled
 class CommandAPTest {
 
     private static final List<String> COMPILER_OPTS = List.of(
