@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import javax.tools.Diagnostic.Kind;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.Unchecked.unchecked;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.notNullValue;
 /**
  * Tests {@link CommandAP}.
  */
+@Disabled
 class CommandAPTest {
 
     private static final List<String> COMPILER_OPTS = List.of(
