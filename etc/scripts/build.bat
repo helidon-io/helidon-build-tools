@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2020 Oracle and/or its affiliates.
+@REM Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 @REM
 
 @echo off
-call %~dp0\pipeline-env.bat
 
 cd %~dp0\..\..
 
@@ -23,4 +22,4 @@ mvn %MAVEN_ARGS% ^
     clean install ^
     --fail-at-end ^
     -Dmaven.test.failure.ignore=true ^
-    -Pnative-image
+    -Djdk.toolchain.version=${JAVA_VERSION}

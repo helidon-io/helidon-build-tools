@@ -58,10 +58,12 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-20.04, windows-latest ]
         include:
           - os: ubuntu-20.04
             build_script: etc/scripts/github-build.sh
+          - os: windows-latest
+            build_script: etc/scripts/build.bat
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -75,7 +77,8 @@ jobs:
         run: ${{ matrix.build_script }}
       - name: Archive test results
         uses: actions/upload-artifact@v3.1.2
-        if: always()
+        #https://github.com/actions/upload-artifact/issues/240
+        if: ${{ matrix.os != 'windows-latest'}}
         with:
           name: test-results
           path: |
