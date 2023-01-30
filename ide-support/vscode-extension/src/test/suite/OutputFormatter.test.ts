@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 
 import * as assert from "assert";
-import {OutputFormatter} from "../../OutputFormatter";
-import {OutputChannel} from "vscode";
+import { OutputFormatter } from "../../OutputFormatter";
+import { OutputChannel } from "vscode";
 
 let sandbox: any;
 const sinon = require("sinon");

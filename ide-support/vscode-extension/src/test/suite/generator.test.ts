@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 import * as vscode from "vscode";
 import * as assert from "assert";
 import * as helidonGenerator from "../../generator";
-import {ImportMock} from 'ts-mock-imports';
+import { ImportMock } from 'ts-mock-imports';
 import * as vscodeApi from "../../VSCodeAPI";
 import * as fsSystemApi from "../../FileSystemAPI";
-import {ChildProcess} from 'child_process';
+import { ChildProcess } from 'child_process';
 import * as childProcApi from "../../ChildProcessAPI";
 import * as events from "events";
 import * as stream from "stream";
@@ -30,6 +30,8 @@ let vsCodeApiMockManager: any;
 let fsSystemApiMockManager: any;
 let childProcessAPIManager: any;
 let generatorAPIManager: any;
+const axios = require('axios');
+const sinon = require('sinon');
 
 suite('Helidon Project Generator Test Suite', () => {
 
@@ -47,13 +49,15 @@ suite('Helidon Project Generator Test Suite', () => {
     });
 
     test('Correct flow leads to execute mvn command', async () => {
-        let generatorData = new Map();
+        const generatorData = new Map();
         generatorData.set("artifactId", "value");
         generatorAPIManager.mock('convertProjectDataElements', generatorData);
         vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
-        vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str:string){}});
+        vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str: string) {}});
         fsSystemApiMockManager.mock('isPathExistsSync', false);
-        let childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
+        sinon.stub(axios, 'get').callsFake(() => Promise.resolve({ status: 200, data: {} }));
+
+        const childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
         await helidonGenerator.showHelidonGenerator("helidonJarFolder");
         assert(childProcessMock.calledOnce);
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ export async function showHelidonGenerator(extensionPath: string) {
 
     function prepareProperties(propsMap: Map<string, string>): string {
         let result = "";
-        for (let [name, value] of propsMap) {
+        for (const [name, value] of propsMap) {
             result += ` -D${name}=${value}`;
         }
         return result;
@@ -157,13 +157,13 @@ export async function showHelidonGenerator(extensionPath: string) {
     }
 
     async function initArchetypes() {
-        const helidonVersion : string = generatorData.elements[0].selectedValues[0];
+        const helidonVersion: string = generatorData.elements[0].selectedValues[0];
         archetype = ARCHETYPE_CACHE.get(helidonVersion);
         if (!archetype) {
-            let helidonArchetypeResponse: any = await axios.get(ARCHETYPES_URL_PREFIX+helidonVersion);
+            const helidonArchetypeResponse: any = await axios.get(ARCHETYPES_URL_PREFIX+helidonVersion);
             archetype = helidonArchetypeResponse.data;
             ARCHETYPE_CACHE.set(helidonVersion, archetype);
-        } 
+        }
 
         if (!archetype && !archetype.children) {
             const errorMessage = "Unable to get Helidon archetype."
@@ -172,13 +172,13 @@ export async function showHelidonGenerator(extensionPath: string) {
             throw new Error(errorMessage);
         }
 
-        let temp = generatorData.elements[0];
+        const temp = generatorData.elements[0];
         generatorData.elements = [];
         generatorData.elements.push(temp);
         generatorData.context = new Context();
         interpreter = new Interpreter(archetype, generatorData);
-        
-        for (let child of archetype.children) {
+
+        for (const child of archetype.children) {
             const elements = interpreter.process(child);
             generatorData.elements.push(...elements);
         }
@@ -186,11 +186,15 @@ export async function showHelidonGenerator(extensionPath: string) {
 
     async function init() {
         try {
-            let helidonVersionsResponse: any = await axios.get(VERSIONS_URL);
-            let helidonVersions: HelidonVersions = helidonVersionsResponse.data;
+            const helidonVersionsResponse: any = await axios.get(VERSIONS_URL);
+            const helidonVersions: HelidonVersions = helidonVersionsResponse.data;
+            // eslint-disable-next-line eqeqeq
+            if (helidonVersions == null || Object.keys(helidonVersions).length === 0) {
+                return;
+            }
 
-            let options: QuickPickItemExt[] = [];
-            let defaultValue: any[] = [helidonVersions.latest];
+            const options: QuickPickItemExt[] = [];
+            const defaultValue: any[] = [helidonVersions.latest];
 
             options.push(...helidonVersions.versions.map((o: string) => {
                 return {
@@ -199,10 +203,10 @@ export async function showHelidonGenerator(extensionPath: string) {
                 }
             }));
 
-            let selectedOptions: QuickPickItemExt[] = [];
+            const selectedOptions: QuickPickItemExt[] = [];
             selectedOptions.push(...options.filter(option => defaultValue.includes(option.value)));
 
-            let result = {
+            const result = {
                 title: "Helidon version",
                 placeholder: "Helidon version (optional -false). Press 'Enter' to confirm.",
                 items: options,
@@ -238,14 +242,13 @@ export async function showHelidonGenerator(extensionPath: string) {
     }
 
     function prepareQuickPickData(element: any): QuickPickData {
-        let result: QuickPickData;
-        result = element;
+        const result: QuickPickData = element;
         result.currentStep = getCurrentStep();
         result.totalSteps = getTotalSteps();
         return result;
     }
 
-    function processUndoAction(){
+    function processUndoAction() {
         if (commandHistory.length !== 0) {
             do {
                 generatorData = commandHistory.pop()!.undo();
@@ -262,7 +265,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         inputBox.buttons = [QuickInputButtons.Back]
 
         inputBox.show();
-        let textCommand = new TextCommand(generatorData);
+        const textCommand = new TextCommand(generatorData);
 
         inputBox.onDidAccept(async () => {
             const insertedValue = inputBox.value;
@@ -292,14 +295,14 @@ export async function showHelidonGenerator(extensionPath: string) {
     }
 
     function processSelected(element: any, selectedValues: any[], childrenOfSelected: any[]): OptionCommand {
-        //will be used to evaluate expressions
-        let contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
+        // will be used to evaluate expressions
+        const contextValue = element.kind === `list` ? selectedValues : selectedValues[0];
         generatorData.context.setValue(element.path, contextValue, ContextValueKind.USER);
 
-        let optionCommand = new OptionCommand(generatorData);
-        
-        let processedChildren: any[] = [];
-        for (let child of childrenOfSelected) {
+        const optionCommand = new OptionCommand(generatorData);
+
+        const processedChildren: any[] = [];
+        for (const child of childrenOfSelected) {
             const elements = interpreter.process(child);
             processedChildren.push(...elements);
         }
@@ -312,16 +315,16 @@ export async function showHelidonGenerator(extensionPath: string) {
     }
 
     function processAccept(element: any) {
-        let selectedValues = element.selectedItems.map((item: QuickPickItemExt) => item.value);
-        let children: any[] = [];
-        for (let item of element.selectedItems) {
-            let option = item;
+        const selectedValues = element.selectedItems.map((item: QuickPickItemExt) => item.value);
+        const children: any[] = [];
+        for (const item of element.selectedItems) {
+            const option = item;
             if (option.children) {
                 children.push(...option.children);
             }
         }
 
-        let optionCommand = processSelected(element, selectedValues, children);
+        const optionCommand = processSelected(element, selectedValues, children);
         commandHistory.push(optionCommand);
     }
 
@@ -337,15 +340,15 @@ export async function showHelidonGenerator(extensionPath: string) {
         quickPick.show();
 
         quickPick.onDidAccept(async () => {
-            let selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
+            const selectedValues = quickPick.selectedItems.map(item => (<QuickPickItemExt>item).value);
             const validation = validateQuickPick(selectedValues, element);
             if (validation.length > 0) {
                 quickPick.placeholder = validation.map(error => error.message).join(' ');
             } else {
                 element.selectedValues = selectedValues;
-                let children: any[] = [];
-                for (let item of quickPick.selectedItems) {
-                    let option = <QuickPickItemExt>item;
+                const children: any[] = [];
+                for (const item of quickPick.selectedItems) {
+                    const option = <QuickPickItemExt>item;
                     if (option.children) {
                         children.push(...option.children);
                     }
@@ -355,7 +358,7 @@ export async function showHelidonGenerator(extensionPath: string) {
                     await element.additionalInstructions();
                 }
 
-                let optionCommand = processSelected(element, selectedValues, children);
+                const optionCommand = processSelected(element, selectedValues, children);
                 commandHistory.push(optionCommand);
 
                 resolve(quickPick.selectedItems);
@@ -363,11 +366,11 @@ export async function showHelidonGenerator(extensionPath: string) {
         });
         quickPick.onDidChangeSelection(items => {
             if (element.kind !== 'list') {
-                let newElements = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
-                if (newElements.length != 0) {
+                const newElements = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
+                if (newElements.length !== 0) {
                     quickPick.selectedItems = quickPick.selectedItems.filter(item => !lastSelectedItems.includes(item));
                 }
-                if (items.length == 0) {
+                if (items.length === 0) {
                     quickPick.selectedItems = lastSelectedItems;
                 }
 
@@ -414,13 +417,14 @@ export async function showHelidonGenerator(extensionPath: string) {
         let maxIterationCount = 100;
         let currentInput: Promise<QuickInput> | undefined;
         while (generatorData.currentElementIndex < generatorData.elements.length) {
-            let element = generatorData.elements[generatorData.currentElementIndex];
+            const element = generatorData.elements[generatorData.currentElementIndex];
             generatorData.context.pushScope(element._scope);
             if (element._skip === true) {
                 processAccept(element);
                 continue;
             }
             currentInput = getInput(element);
+            // eslint-disable-next-line eqeqeq
             if (currentInput != null) {
                 await currentInput;
             }
@@ -429,8 +433,9 @@ export async function showHelidonGenerator(extensionPath: string) {
                 break;
             }
         }
-        if (generatorData.elements.length !== 0) {
-            await generateProject(GeneratorDataAPI.convertProjectDataElements(generatorData));
+        const projectData = GeneratorDataAPI.convertProjectDataElements(generatorData);
+        if (projectData.size !== 0) {
+            await generateProject(projectData);
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);

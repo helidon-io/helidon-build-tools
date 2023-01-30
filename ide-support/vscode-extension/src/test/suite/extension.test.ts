@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import {VSCodeHelidonCommands} from "../../common";
-import {expect} from 'chai';
+import { VSCodeHelidonCommands } from "../../common";
+import { expect } from 'chai';
 
 suite('Extension Test Suite', () => {
 
@@ -37,7 +37,7 @@ suite('Extension Test Suite', () => {
             VSCodeHelidonCommands.DEV_SERVER_STOP
         ];
 
-        expect(commands).to.have.members(HELIDON_COMMANDS);
+        expect(commands).to.include.members(HELIDON_COMMANDS);
     });
 
 });

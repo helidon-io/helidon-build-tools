@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,25 @@ const configRequest = "launch";
 const pomFile = "pom.xml";
 
 export function processLaunchConfig(context: vscode.ExtensionContext) {
-    let projectsDir = VSCodeAPI.getWorkspaceFolders();
+    const projectsDir = VSCodeAPI.getWorkspaceFolders();
     let workspaceConfigChanged = false;
     let workspaceContainsMpProjects = false;
 
     if (projectsDir) {
-        for (let projectDir of projectsDir) {
-            let projectType = getProjectType(projectDir.uri.fsPath);
+        for (const projectDir of projectsDir) {
+            const projectType = getProjectType(projectDir.uri.fsPath);
             if (projectType === ProjectType.MP) {
-                let workspaceConfiguration = vscode.workspace.getConfiguration('launch', projectDir.uri);
-                let configurations = workspaceConfiguration.configurations;
+                const workspaceConfiguration = vscode.workspace.getConfiguration('launch', projectDir.uri);
+                const configurations = workspaceConfiguration.configurations;
                 let configContainsMpConfig = false;
-                for (let config of configurations) {
+                for (const config of configurations) {
                     if (
+                        /* eslint-disable eqeqeq */
                         (config.type != null && config.type === typeConfig) &&
                         (config.request != null && config.request === configRequest) &&
                         (config.mainClass != null && config.mainClass === mpMainClass) &&
                         (config.cwd != null && config.cwd === projectDir.uri.fsPath)
+                        /* eslint-enable eqeqeq */
                     ) {
                         configContainsMpConfig = true;
                         workspaceContainsMpProjects = true;
@@ -75,7 +77,7 @@ export function processLaunchConfig(context: vscode.ExtensionContext) {
 
 function getProjectType(projectPath: string): ProjectType {
 
-    let pomFilePath = FileSystemAPI.resolvePath([projectPath, pomFile]);
+    const pomFilePath = FileSystemAPI.resolvePath([projectPath, pomFile]);
     if (!FileSystemAPI.isPathExistsSync(pomFilePath)) {
         return ProjectType.OTHER;
     }

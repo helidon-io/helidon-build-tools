@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 function validateEnum(selectedValues: string[], enumElement: any): any[] {
     const errors: any[] = [];
+    // eslint-disable-next-line no-alert, eqeqeq
     if ((selectedValues == null || selectedValues.length === 0) && !enumElement.optional) {
         errors.push({elementId: enumElement.id, message: "You should choose some element."});
     }
@@ -24,6 +25,7 @@ function validateEnum(selectedValues: string[], enumElement: any): any[] {
 
 function validateList(selectedValues: string[], list: any): any[] {
     const errors: any[] = [];
+    // eslint-disable-next-line no-alert, eqeqeq
     if ((selectedValues == null || selectedValues.length === 0) && !list.optional) {
         errors.push({elementId: list.id, message: "At least one element must be selected."});
     }

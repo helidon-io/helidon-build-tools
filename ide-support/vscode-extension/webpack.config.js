@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-//@ts-check
+// @ts-check
 
 'use strict';
 
 const path = require('path');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
-/**@type {import('webpack').Configuration}*/
+/** @type {import('webpack').Configuration}*/
 const config = {
   target: 'node',
   entry: './src/extension.ts',
@@ -41,15 +42,6 @@ const config = {
     rules: [
       {
         test: /\.ts$/,
-        enforce: 'pre',
-        use: [
-            {
-                loader: 'tslint-loader'
-            }
-        ]
-      },
-      {
-        test: /\.ts$/,
         exclude: /node_modules/,
         use: [
           {
@@ -58,6 +50,11 @@ const config = {
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    new ESLintPlugin({
+      extensions: ['ts']
+    })
+  ],
 };
 module.exports = config;

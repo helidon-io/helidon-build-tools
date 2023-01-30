@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ export class Context {
     }
 
     public static clone(context: Context): Context {
-        let result = new Context();
+        const result = new Context();
         result.values = new Map(context.values);
         result.variables = new Map(context.variables);
         result.scope = {
@@ -72,10 +72,12 @@ export class Context {
     public lookup(query: string): any {
         const id = this.query(query);
         let value = this.variables.get(id);
+        // eslint-disable-next-line eqeqeq
         if (value != null) {
             return value;
         }
         value = this.values.get(id)
+        // eslint-disable-next-line eqeqeq
         if (value != null) {
             return value.value;
         }
@@ -168,6 +170,7 @@ export class ContextScope {
      * @param node {*|null}
      */
     constructor(parent: ContextScope | null, node: any) {
+        // eslint-disable-next-line eqeqeq
         this.global = node != null ? node.global : true
         this.children = new Map()
         if (parent !== null) {
