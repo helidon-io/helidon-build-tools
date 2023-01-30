@@ -52,9 +52,6 @@ public class CliDistributionTest {
         Path targetDir = Path.of(getProperty("helidon.executable.directory"));
         Path cliZip = targetDir.resolve("target/distribution/helidon.zip");
         unzip(cliZip, distDir);
-        list(distDir, 3).stream()
-                .map(Path::toFile)
-                .forEach(file -> file.setExecutable(true));
     }
 
     @Test
@@ -86,7 +83,7 @@ public class CliDistributionTest {
     @Test
     @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testBatchCreateProject() throws IOException {
-        runCreateProjectTest(distDir.resolve("helidon\\bin\\helidon.bat").toString());
+        runCreateProjectTest(distDir.resolve("helidon/bin/helidon.bat").toString());
     }
 
     @Test
@@ -98,7 +95,7 @@ public class CliDistributionTest {
     @Test
     @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testVersion() throws IOException {
-        runVersionTest(distDir.resolve("helidon\\bin\\helidon.bat").toString());
+        runVersionTest(distDir.resolve("helidon/bin/helidon.bat").toString());
     }
 
     private void runVersionTest(String cliExecutable) throws IOException {
