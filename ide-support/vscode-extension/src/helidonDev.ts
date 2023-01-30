@@ -22,6 +22,7 @@ import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { OutputFormatter } from "./OutputFormatter";
 import * as vscode from "vscode";
+import { logger } from "./logger";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
@@ -70,6 +71,7 @@ export async function startHelidonDev(extensionPath: string): Promise<Map<string
 
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
         return new Map();
     }
 }
@@ -233,6 +235,7 @@ export async function stopHelidonDev() {
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
         return;
     }
 }

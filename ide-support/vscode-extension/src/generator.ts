@@ -224,9 +224,11 @@ export async function showHelidonGenerator(extensionPath: string) {
             await getInput(generatorData.elements[generatorData.currentElementIndex]);
         } catch (e) {
             if (typeof e === "string") {
+                VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e}`);
                 logger.error(e);
             } else if (e instanceof Error) {
-                logger.error(e.message);
+                VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e.message}`);
+                logger.error(e.stack);
             }
         }
     }
@@ -439,6 +441,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
     }
 
 }

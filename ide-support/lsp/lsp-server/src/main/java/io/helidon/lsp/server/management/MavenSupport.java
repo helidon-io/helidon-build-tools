@@ -36,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
@@ -99,11 +100,13 @@ public class MavenSupport {
      */
     public Set<Dependency> dependencies(final String pomPath, int timeout) {
         if (!isMavenInstalled) {
+            LOGGER.log(Level.WARNING, "It is not possible to get Helidon dependencies from the maven repository. Maven is not "
+                    + "installed.");
             return null;
         }
         long startTime = System.currentTimeMillis();
+        MavenPrintStream output = new MavenPrintStream();
         try (ServerSocket serverSocket = new ServerSocket(0)) {
-            PrintStream output = new MavenPrintStream();
             MavenCommand.builder()
                         .addArgument(lspMvnDependenciesCommand)
                         .addArgument("-Dport=" + serverSocket.getLocalPort())
@@ -123,7 +126,12 @@ public class MavenSupport {
                     result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
                     }.getType());
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
+                    LOGGER.log(
+                            Level.SEVERE,
+                            "Error when executing the maven command - " + lspMvnDependenciesCommand + System.lineSeparator()
+                                    + output.content().stream().collect(Collectors.joining(System.lineSeparator())),
+                            e
+                    );
                 }
                 LOGGER.log(
                         Level.FINEST,
@@ -133,7 +141,12 @@ public class MavenSupport {
                 return result;
             }).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
+            LOGGER.log(
+                    Level.SEVERE,
+                    "Error when executing the maven command - " + lspMvnDependenciesCommand + System.lineSeparator()
+                            + output.content().stream().collect(Collectors.joining(System.lineSeparator())),
+                    e
+            );
         }
         LOGGER.log(
                 Level.FINEST,

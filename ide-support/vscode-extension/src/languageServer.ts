@@ -90,7 +90,9 @@ async function startSocketLangServer(
     try {
         // wait for the server start
         serverSocket = await getServerSocket(connectionInfo);
-    } catch (error) {
+    } catch (error: any) {
+        logger.error("Cannot get a serverSocket for the Language Server");
+        logger.error(error.stack);
         return;
     }
 

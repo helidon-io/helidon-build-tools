@@ -122,10 +122,13 @@ public class ConfigurationPropertiesService {
         }
 
         long startTime = System.currentTimeMillis();
-        List<String> dependencies = mavenSupport
-                .dependencies(pom).stream()
-                .map(Dependency::path)
-                .collect(Collectors.toList());
+        Set<Dependency> dependenciesSet = mavenSupport.dependencies(pom);
+        if (dependenciesSet == null) {
+            return Map.of();
+        }
+        List<String> dependencies = dependenciesSet.stream()
+                                            .map(Dependency::path)
+                                            .collect(Collectors.toList());
         dependencies = dependencies.stream().filter(d -> d.contains("helidon")).collect(Collectors.toList());
         List<ConfiguredType> configuredTypes = new LinkedList<>();
         Map<String, ConfiguredType> typesMap = new HashMap<>();

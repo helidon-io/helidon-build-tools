@@ -17,6 +17,7 @@
 package io.helidon.lsp.server.core;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -276,7 +277,7 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 contentManager.write(docUri, List.of(didChangeTextDocumentParams.getContentChanges().get(0).getText()));
             }
             if (docUri.endsWith("pom.xml")) {
-                configService.cleanCache(docUri);
+                configService.cleanCache(new URI(docUri).getPath());
                 configService.metadataForFile(docUri);
             }
         } catch (URISyntaxException | IOException e) {
