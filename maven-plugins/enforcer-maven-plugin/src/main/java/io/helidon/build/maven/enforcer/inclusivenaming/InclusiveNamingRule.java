@@ -17,25 +17,22 @@
 package io.helidon.build.maven.enforcer.inclusivenaming;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.enforcer.EnforcerException;
@@ -48,6 +45,7 @@ import io.helidon.build.maven.enforcer.RuleFailure;
  * Rule for Inclusive Naming checking.
  */
 public class InclusiveNamingRule {
+    private static final String INCLUSIVE_NAMING_XML = "inclusive-names.xml";
     private static final Set<String> ALLOWED_TIERS = Set.of("0");
     private static final Set<String> DEFAULT_INCLUDES = Set.of(".java", ".xml", ".adoc",
                                                                ".txt", ".md", ".html",
@@ -172,42 +170,34 @@ public class InclusiveNamingRule {
             return new InclusiveNamingRule(this);
         }
 
-        private List<Term> readTerms(Supplier<InputStream> supplier){
+        private List<Term> readTerms(String file){
             List<Term> terms = new ArrayList<>();
-            try (InputStream is = supplier.get()) {
-                JsonReader reader = Json.createReader(is);
-                JsonObject obj = reader.readObject();
-                JsonArray array = obj.getJsonArray("data");
-                array.forEach(e -> {
-                    JsonObject element = e.asJsonObject();
-                    String tier = element.getString("tier");
-                    String term = element.getString("term");
+            try (InputStream is = InclusiveNamingRule.class.getResourceAsStream(file)) {
+                XmlInclusiveNaming xml = xmlInclusiveNaming(is);
+                for (XmlData data : xml.getData()) {
+                    String tier = data.getTier();
+                    String term = data.getTerm();
                     if (!ALLOWED_TIERS.contains(tier) && !inclusiveNamingConfig.excludeTerms().contains(term)) {
-                        String recommendation = element.getString("recommendation");
-                        String termPage = element.getString("term_page");
-                        List<String> recommendedReplacements =
-                                element.getJsonArray("recommended_replacements").getValuesAs(i -> i.toString());
-                        terms.add(new Term(term, tier, recommendation, termPage, recommendedReplacements));
+                        String recommendation = data.getRecommendation();
+                        String termPage = data.getTermPage();
+                        terms.add(new Term(term, tier, recommendation, termPage,
+                                Arrays.asList(data.getRecommendedReplacements())));
                     }
-                });
-            } catch (IOException e) {
-                throw new EnforcerException("Failed to read inclusive naming file");
+                }
+            } catch (IOException | JAXBException e) {
+                throw new EnforcerException("Failed to read inclusive naming file", e);
             }
             return terms;
         }
 
+        private XmlInclusiveNaming xmlInclusiveNaming(InputStream is) throws JAXBException {
+            JAXBContext contextObj = JAXBContext.newInstance(XmlInclusiveNaming.class);
+            Unmarshaller unmarshaller = contextObj.createUnmarshaller();
+            return (XmlInclusiveNaming) unmarshaller.unmarshal(is);
+        }
+
         List<Term> terms() {
-            if (inclusiveNamingConfig.inclusiveNamingFile().isPresent()) {
-                return readTerms(() -> {
-                    try {
-                        return new FileInputStream(inclusiveNamingConfig.inclusiveNamingFile().get());
-                    } catch (FileNotFoundException e) {
-                        throw new EnforcerException(inclusiveNamingConfig.inclusiveNamingFile().get() + " was not found");
-                    }
-                });
-            } else {
-                return readTerms(() -> InclusiveNamingRule.class.getResourceAsStream("inclusive-names.json"));
-            }
+            return readTerms(INCLUSIVE_NAMING_XML);
         }
 
         List<FileMatcher> excludes() {

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<root>
+    <data>
+        <term>abort</term>
+        <tier>1</tier>
+        <recommendation>Replace when possible.</recommendation>
+        <recommended_replacements>User-Initiated Termination</recommended_replacements>
+        <recommended_replacements>Force quit</recommended_replacements>
+        <recommended_replacements>Cancel</recommended_replacements>
+        <recommended_replacements>System-Initiated Termination</recommended_replacements>
+        <recommended_replacements>Fail</recommended_replacements>
+        <recommended_replacements>Close (app, program, connection)</recommended_replacements>
+        <recommended_replacements>End</recommended_replacements>
+        <recommended_replacements>Halt</recommended_replacements>
+        <recommended_replacements>Hard stop</recommended_replacements>
+        <recommended_replacements>Stop (something you triggered)</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/abort/index.html</term_page>
+    </data>
+    <data>
+        <term>blackbox</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term may be used without restriction. Black box refers to opacity, such as details that aren&apos;t visible or are not the focus. This term is not based on a good/bad binary where white is represented as good or black is represented as bad and so does not promote racial bias.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/blackbox/index.html</term_page>
+    </data>
+    <data>
+        <term>blackhat-whitehat</term>
+        <tier>1</tier>
+        <recommendation>Replace immediately.</recommendation>
+        <recommended_replacements>ethical hacker</recommended_replacements>
+        <recommended_replacements>unethical hacker, attacker</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/blackhat-whitehat/index.html</term_page>
+    </data>
+    <data>
+        <term>Blackout</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term may be used without restriction. This term is not based on a good/bad binary where white is represented as good or black is represented as bad and so does not promote racial bias.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/blackout/index.html</term_page>
+    </data>
+    <data>
+        <term>cripple</term>
+        <tier>1</tier>
+        <recommendation>Adopt immediately.</recommendation>
+        <recommended_replacements>Impact</recommended_replacements>
+        <recommended_replacements>Degraded</recommended_replacements>
+        <recommended_replacements>Restrict</recommended_replacements>
+        <recommended_replacements>Immobilize</recommended_replacements>
+        <recommended_replacements>Examples of replacement</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/_cripple/index.html</term_page>
+    </data>
+    <data>
+        <term>disable</term>
+        <tier>0</tier>
+        <recommendation>Do not change. The terms &apos;disable&apos; and &apos;disabled&apos; are valid in the context of technology, such as disabling an application or a network component. In the context of talking about disabled people, however, follow the guidance around it from the AP Style Guide, the [UK Government](https://www.gov.uk/government/publications/inclusive-communication/inclusive-language-words-to-use-and-avoid-when-writing-about-disability), the [National Center for Disability and Journalism](https://ncdj.org/style-guide/), or other sources. In most cases, the recommendation is to use the word &apos;disabled&apos; to refer to disabled people rather than alternate terms. The [National Center for Disability and Journalism](https://ncdj.org/style-guide/) recommends to specify the disability where relevant, instead of grouping all people under the general term.</recommendation>
+        <recommended_replacements>Deactivate/activate</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/disable/index.html</term_page>
+    </data>
+    <data>
+        <term>fair hiring practice</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term is not biased because it&apos;s easy to distinguish &apos;fair&apos; in the sense of unbiased from &apos;fair&apos; in the sense of a light-skinned person in context.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/fair-hiring-practice/index.html</term_page>
+    </data>
+    <data>
+        <term>fellow</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. Fellow refers to the most senior rank or title one can achieve on a technical career in certain companies or a member of a learned or professional society, or a person who has been awarded a grant for studies, typically in the field of scientific research, or a person who has earned a fellowship. A Fellow can be of any gender. This term does not promote gender bias.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/fellow/index.html</term_page>
+    </data>
+    <data>
+        <term>man-in-the-middle</term>
+        <tier>3</tier>
+        <recommendation>Consider replacement</recommendation>
+        <recommended_replacements>Adversary-in-the-middle attack</recommended_replacements>
+        <recommended_replacements>Interceptor attack</recommended_replacements>
+        <recommended_replacements>Intermediary attack</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-3/man-in-middle/index.html</term_page>
+    </data>
+    <data>
+        <term>master</term>
+        <tier>1</tier>
+        <recommendation>Adopt immediately.</recommendation>
+        <recommended_replacements>main</recommended_replacements>
+        <recommended_replacements>original</recommended_replacements>
+        <recommended_replacements>source</recommended_replacements>
+        <recommended_replacements>control plane</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/_master/index.html</term_page>
+    </data>
+    <data>
+        <term>master inventor</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term does not fall under the criteria for replacing the term &apos;master&apos;. It refers to a level of skill rather than a dominant/subordinate relationship.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/master-inventor/index.html</term_page>
+    </data>
+    <data>
+        <term>master-slave</term>
+        <tier>1</tier>
+        <recommendation>Adopt immediately</recommendation>
+        <recommended_replacements>Control plane/control plane node</recommended_replacements>
+        <recommended_replacements>Controller/doer</recommended_replacements>
+        <recommended_replacements>Primary/replica</recommended_replacements>
+        <recommended_replacements>Primary/secondary</recommended_replacements>
+        <recommended_replacements>Leader/follower</recommended_replacements>
+        <recommended_replacements>Parent/child</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/_master-slave/index.html</term_page>
+    </data>
+    <data>
+        <term>mastermind</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term does not fall under the criteria for replacing the term &apos;master&apos;. It refers to a level of skill rather than a dominant/subordinate relationship.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/mastermind/index.html</term_page>
+    </data>
+    <data>
+        <term>parent child</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. Although the relationship of parent and child is one of dependency, it is appropriate. Parents do have legal rights over children until a certain age, so it is a natural dependency relationship. Children falling victim to adult power is neither the main nor the intended result of this relationship, so this term does not typically represent an abuse of power.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/parent-child/index.html</term_page>
+    </data>
+    <data>
+        <term>red team</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This use of &apos;red&apos; does not refer to Indigenous people and does not reinforce a negative stereotype.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/red-team/index.html</term_page>
+    </data>
+    <data>
+        <term>sanity-check</term>
+        <tier>2</tier>
+        <recommendation>Replace</recommendation>
+        <recommended_replacements>confidence check</recommended_replacements>
+        <recommended_replacements>coherence check</recommended_replacements>
+        <recommended_replacements>test</recommended_replacements>
+        <recommended_replacements>verification</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-2/sanity-check/index.html</term_page>
+    </data>
+    <data>
+        <term>Segregate</term>
+        <tier>3</tier>
+        <recommendation>Replace</recommendation>
+        <recommended_replacements>Segment/segmentation</recommended_replacements>
+        <recommended_replacements>Separate/separation</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-3/segregate/index.html</term_page>
+    </data>
+    <data>
+        <term>Tribe</term>
+        <tier>1</tier>
+        <recommendation>Use with caution. Do not use to refer to a group formed to accomplish a task.</recommendation>
+        <recommended_replacements>Squad of squads</recommended_replacements>
+        <recommended_replacements>Team</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-3/tribe/index.html</term_page>
+    </data>
+    <data>
+        <term>white-label</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term may be used without restriction.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/whitelabel/index.html</term_page>
+    </data>
+    <data>
+        <term>whitebox</term>
+        <tier>0</tier>
+        <recommendation>No change recommended. This term may be used without restriction.</recommendation>
+        <recommended_replacements>None</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/no-change/whitebox/index.html</term_page>
+    </data>
+    <data>
+        <term>whitelist</term>
+        <tier>1</tier>
+        <recommendation>Adopt immediately</recommendation>
+        <recommended_replacements>allowedNouns/deniedNouns (or other verbs)</recommended_replacements>
+        <recommended_replacements>allowlist/denylist</recommended_replacements>
+        <term_page>https://inclusivenaming.org/word-lists/tier-1/whitelist/index.html</term_page>
+    </data>
+</root>
