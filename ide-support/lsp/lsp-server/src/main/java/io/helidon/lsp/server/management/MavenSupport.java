@@ -158,7 +158,7 @@ public class MavenSupport {
 
     private static String getMavenVersion() {
         final Properties properties = new Properties();
-        final String corePomProperties = "META-INF/maven/io.helidon.ide-support.lsp/io.helidon.lsp.server/pom.properties";
+        final String corePomProperties = "META-INF/maven/io.helidon.ide-support.lsp/helidon-lsp-server/pom.properties";
 
         try (InputStream in = MavenSupport.class.getClassLoader().getResourceAsStream(corePomProperties)) {
             if (in != null) {

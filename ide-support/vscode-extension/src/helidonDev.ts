@@ -105,10 +105,12 @@ function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: s
         const helidonServer = launchedServers.get(helidonDirName)!;
         if (helidonServer.isActive) {
             helidonServer.outputChannel.show();
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${helidonDirName}' has already running`);
             return helidonServer;
         }
         // change existing instance
         helidonServer.serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
+        VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${helidonDirName}' has already running`);
         helidonServer.outputChannel.show();
         configureServerOutput(helidonServer.serverProcess, helidonServer.outputChannel);
         helidonServer.isActive = true;
@@ -231,7 +233,10 @@ export async function stopHelidonDev() {
 
         if (stopServerName) {
             currentHelidonServer = launchedServers.get(stopServerName)!;
+            currentHelidonServer.outputChannel.show();
             deactivateServer(currentHelidonServer);
+        } else {
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${stopServerName}' is not started`);
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
