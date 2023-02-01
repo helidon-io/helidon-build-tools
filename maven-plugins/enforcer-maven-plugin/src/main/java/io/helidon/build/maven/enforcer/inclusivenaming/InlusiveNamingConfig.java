@@ -18,6 +18,8 @@ package io.helidon.build.maven.enforcer.inclusivenaming;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -53,6 +55,12 @@ public class InlusiveNamingConfig {
      */
     @Parameter
     private String excludeTermsRegExp;
+
+    /**
+     * Inclusions of terms.
+     */
+    @Parameter
+    private XmlData[] includeTerms;
 
     /**
      * File with the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
@@ -104,5 +112,12 @@ public class InlusiveNamingConfig {
 
     Optional<File> inclusiveNamingFile() {
         return Optional.ofNullable(inclusiveNamingFile);
+    }
+
+    List<XmlData> includeTerms() {
+        if (includeTerms == null) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(includeTerms);
     }
 }

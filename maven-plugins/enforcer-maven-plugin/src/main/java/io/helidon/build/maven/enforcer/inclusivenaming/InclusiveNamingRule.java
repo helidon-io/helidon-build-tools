@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,7 +61,7 @@ public class InclusiveNamingRule {
                                                                ".gradle", ".MF");
     private final List<FileMatcher> excludes;
     private final List<FileMatcher> includes;
-    private final List<Term> terms;
+    private final List<XmlData> terms;
 
     private InclusiveNamingRule(Builder builder) {
         this.excludes = builder.excludes();
@@ -110,12 +109,12 @@ public class InclusiveNamingRule {
         try (BufferedReader bufferedReader = Files.newBufferedReader(fr.path(), StandardCharsets.UTF_8)) {
             String line;
             int lineNum = 0;
-            List<Term> found = new LinkedList<>();
+            List<XmlData> found = new LinkedList<>();
             while ((line = bufferedReader.readLine()) != null) {
                 // we want to start from 1
                 lineNum++;
-                for (Term term : terms) {
-                    if (line.toLowerCase().contains(term.term)) {
+                for (XmlData term : terms) {
+                    if (line.toLowerCase().contains(term.getTerm())) {
                         found.add(term);
                     }
                 }
@@ -175,8 +174,8 @@ public class InclusiveNamingRule {
             return new InclusiveNamingRule(this);
         }
 
-        private List<Term> readTerms(Supplier<InputStream> supplier){
-            List<Term> terms = new ArrayList<>();
+        private List<XmlData> readTerms(Supplier<InputStream> supplier){
+            List<XmlData> terms = new ArrayList<>();
             Optional<Pattern> excludeTermsRegExp = inclusiveNamingConfig.excludeTermsRegExp();
             try (InputStream is = supplier.get()) {
                 XmlInclusiveNaming xml = xmlInclusiveNaming(is);
@@ -185,16 +184,14 @@ public class InclusiveNamingRule {
                     String term = data.getTerm();
                     if (!ALLOWED_TIERS.contains(tier)) {
                         if (!excludeTermsRegExp.isPresent() || !excludeTermsRegExp.get().matcher(term).matches()) {
-                            String recommendation = data.getRecommendation();
-                            String termPage = data.getTermPage();
-                            terms.add(new Term(term, tier, recommendation, termPage,
-                                    Arrays.asList(data.getRecommendedReplacements())));
+                            terms.add(data);
                         }
                     }
                 }
             } catch (IOException | JAXBException e) {
                 throw new EnforcerException("Failed to read inclusive naming file", e);
             }
+            terms.addAll(inclusiveNamingConfig.includeTerms());
             return terms;
         }
 
@@ -204,7 +201,7 @@ public class InclusiveNamingRule {
             return (XmlInclusiveNaming) unmarshaller.unmarshal(is);
         }
 
-        List<Term> terms() {
+        List<XmlData> terms() {
             if (inclusiveNamingConfig.inclusiveNamingFile().isPresent()) {
                 return readTerms(() -> {
                     try {
@@ -236,29 +233,4 @@ public class InclusiveNamingRule {
         }
     }
 
-    static class Term {
-        private final String term;
-        private final String tier;
-        private final String recommendation;
-        private final String termPage;
-        private final List<String> recommendedReplacements;
-
-        Term(String term, String tier, String recommendation, String termPage,
-                List<String> recommendedReplacements) {
-            this.term = term;
-            this.tier = tier;
-            this.recommendation = recommendation;
-            this.termPage = termPage;
-            this.recommendedReplacements = recommendedReplacements;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("{").append(term).append(": ").append(recommendation)
-            .append(" Recommended replacements").append(recommendedReplacements).append("}");
-            return builder.toString();
-        }
-
-    }
 }

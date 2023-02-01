@@ -16,9 +16,14 @@
 
 package io.helidon.build.maven.enforcer.inclusivenaming;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * XML Data.
@@ -26,17 +31,23 @@ import javax.xml.bind.annotation.XmlElement;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 public class XmlData {
+
     @XmlElement(name = "recommended_replacements")
-    private String[] recommendedReplacements;
+    @Parameter
+    private String[] recommendedReplacements = new String[0];
 
-    private String tier;
+    @Parameter
+    private String tier = "";
 
-    private String recommendation;
+    @Parameter
+    private String recommendation = "";
 
-    private String term;
+    @Parameter
+    private String term = "";
 
     @XmlElement(name = "term_page")
-    private String termPage;
+    @Parameter
+    private String termPage = "";
 
     /**
      * Default constructor.
@@ -49,8 +60,8 @@ public class XmlData {
      *
      * @return the recommendedReplacements
      */
-    public String[] getRecommendedReplacements() {
-        return recommendedReplacements;
+    public List<String> getRecommendedReplacements() {
+        return Arrays.asList(recommendedReplacements);
     }
 
     /**
@@ -134,4 +145,11 @@ public class XmlData {
         this.termPage = termPage;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{").append(term).append(": ").append(recommendation)
+        .append(" Recommended replacements").append(Arrays.asList(recommendedReplacements)).append("}");
+        return builder.toString();
+    }
 }
