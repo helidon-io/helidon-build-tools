@@ -28,9 +28,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
@@ -175,16 +177,19 @@ public class InclusiveNamingRule {
 
         private List<Term> readTerms(Supplier<InputStream> supplier){
             List<Term> terms = new ArrayList<>();
+            Optional<Pattern> excludeTermsRegExp = inclusiveNamingConfig.excludeTermsRegExp();
             try (InputStream is = supplier.get()) {
                 XmlInclusiveNaming xml = xmlInclusiveNaming(is);
                 for (XmlData data : xml.getData()) {
                     String tier = data.getTier();
                     String term = data.getTerm();
-                    if (!ALLOWED_TIERS.contains(tier) && !inclusiveNamingConfig.excludeTerms().contains(term)) {
-                        String recommendation = data.getRecommendation();
-                        String termPage = data.getTermPage();
-                        terms.add(new Term(term, tier, recommendation, termPage,
-                                Arrays.asList(data.getRecommendedReplacements())));
+                    if (!ALLOWED_TIERS.contains(tier)) {
+                        if (!excludeTermsRegExp.isPresent() || !excludeTermsRegExp.get().matcher(term).matches()) {
+                            String recommendation = data.getRecommendation();
+                            String termPage = data.getTermPage();
+                            terms.add(new Term(term, tier, recommendation, termPage,
+                                    Arrays.asList(data.getRecommendedReplacements())));
+                        }
                     }
                 }
             } catch (IOException | JAXBException e) {

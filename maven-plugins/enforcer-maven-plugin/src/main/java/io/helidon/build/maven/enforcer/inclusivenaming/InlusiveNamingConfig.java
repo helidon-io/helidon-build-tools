@@ -20,8 +20,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.regex.Pattern;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -50,10 +49,10 @@ public class InlusiveNamingConfig {
     private String[] excludes;
 
     /**
-     * List of words (such as {@code slave}) to exclude.
+     * Regular expression containing to exclude terms (such as {@code ((?i)master)|((?i)slave)}).
      */
     @Parameter
-    private String[] excludeTerms;
+    private String excludeTermsRegExp;
 
     /**
      * File with the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
@@ -68,7 +67,7 @@ public class InlusiveNamingConfig {
                 + ", inclusiveNamingFile=" + inclusiveNamingFile
                 + ", includes=" + Arrays.toString(includes)
                 + ", excludes=" + Arrays.toString(excludes)
-                + ", excludeTerms=" + Arrays.toString(excludeTerms)
+                + ", excludeTermsRegExp=" + excludeTermsRegExp
                 + '}';
     }
 
@@ -95,11 +94,12 @@ public class InlusiveNamingConfig {
         return Set.of(includes);
     }
 
-    Set<String> excludeTerms() {
-        if (excludeTerms == null) {
-            return Set.of();
+    Optional<Pattern> excludeTermsRegExp() {
+        Pattern pattern = null;
+        if (excludeTermsRegExp != null) {
+            pattern  = Pattern.compile(excludeTermsRegExp);
         }
-        return Stream.of(excludeTerms).map(s -> s.toLowerCase()).collect(Collectors.toSet());
+        return Optional.ofNullable(pattern);
     }
 
     Optional<File> inclusiveNamingFile() {
