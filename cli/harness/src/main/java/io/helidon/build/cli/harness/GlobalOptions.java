@@ -15,11 +15,17 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
+import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.RequirementFailure;
 
 /**
  * Global option constants.
@@ -162,6 +168,17 @@ public class GlobalOptions {
     public static final String PROPS_FILE_OPTION_ARGUMENT = "--" + PROPS_FILE_OPTION_NAME;
 
     /**
+     * The --props-file option info.
+     */
+    public static final ParameterInfo<String> PROPS_FILE_OPTION_INFO = new CommandModel.KeyValueInfo<>(
+            String.class,
+            PROPS_FILE_OPTION_NAME,
+            PROPS_FILE_OPTION_DESCRIPTION,
+            null,
+            false,
+            false);
+
+    /**
      * Tests whether the given argument is a global flag.
      *
      * @param argument The argument.
@@ -169,6 +186,16 @@ public class GlobalOptions {
      */
     public static boolean isGlobalFlag(String argument) {
         return GLOBAL_FLAG_ARGUMENTS.contains(argument);
+    }
+
+    /**
+     * Tests whether the given argument is a global option.
+     *
+     * @param argument The argument.
+     * @return {@code true} if a global option.
+     */
+    public static boolean isGlobal(String argument) {
+        return GLOBAL_OPTIONS.containsKey(argument);
     }
 
     /**
@@ -185,6 +212,32 @@ public class GlobalOptions {
     private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Stream.of(GLOBAL_FLAGS)
                                                                    .map(f -> "--" + f.name())
                                                                    .collect(Collectors.toSet());
+
+    /**
+     * Global options.
+     */
+    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS = Map.of(
+            HELP_FLAG_NAME, HELP_FLAG_INFO,
+            VERBOSE_FLAG_NAME, VERBOSE_FLAG_INFO,
+            DEBUG_FLAG_NAME, DEBUG_FLAG_INFO,
+            ERROR_FLAG_NAME, ERROR_FLAG_INFO,
+            PLAIN_FLAG_NAME, PLAIN_FLAG_INFO,
+            PROPS_FILE_OPTION_NAME, PROPS_FILE_OPTION_INFO
+    );
+
+    /**
+     * Get properties from the file declared in the --props-file option.
+     *
+     * @param filePath path to the file with properties.
+     * @return properties from the file.
+     */
+    public static Properties propsFileContent(String filePath) {
+        try {
+            return FileUtils.loadProperties(filePath);
+        } catch (IOException e) {
+            throw new RequirementFailure(e.getMessage());
+        }
+    }
 
     private GlobalOptions() {
     }

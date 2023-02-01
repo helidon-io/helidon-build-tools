@@ -39,8 +39,6 @@ import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
-import io.helidon.build.common.FileUtils;
-import io.helidon.build.common.RequirementFailure;
 
 /**
  * Command parser.
@@ -225,14 +223,12 @@ public final class CommandParser {
             }
             rawArg = rawArg.trim();
             String arg = rawArg.toLowerCase();
-            if (GlobalOptions.isGlobalFlag(arg)) {
-                parsedParams.put(arg, new FlagParam(arg));
-            } else if (isParam(arg)) {
+            if (isParam(arg)) {
                 String optionName = arg.substring(2);
                 if (!Option.VALID_NAME.test(optionName)) {
                     throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
                 }
-                ParameterInfo<?> paramInfo = parametersMap.get(optionName);
+                ParameterInfo<?> paramInfo = parameterInfo(optionName, parametersMap);
                 if (paramInfo instanceof FlagInfo) {
                     parsedParams.put(optionName, new FlagParam(optionName));
                 } else if (paramInfo instanceof KeyValueInfo) {
@@ -247,12 +243,8 @@ public final class CommandParser {
                     KeyValueParam keyValueParam = new KeyValueParam(optionName, it.next().trim());
                     parsedParams.put(optionName, keyValueParam);
                     if (keyValueParam.name().equals(GlobalOptions.PROPS_FILE_OPTION_NAME)) {
-                        try {
-                            Properties props = FileUtils.loadProperties(keyValueParam.value);
+                            Properties props = GlobalOptions.propsFileContent(keyValueParam.value);
                             props.forEach((key, value) -> properties.put(String.valueOf(key), String.valueOf(value)));
-                        } catch (IOException e) {
-                            throw new RequirementFailure(e.getMessage());
-                        }
                     }
                 } else if (paramInfo instanceof KeyValuesInfo) {
                     boolean required = ((KeyValuesInfo<?>) paramInfo).required();
@@ -291,6 +283,13 @@ public final class CommandParser {
             }
         }
         return new Resolver(parsedParams, properties);
+    }
+
+    private ParameterInfo<?> parameterInfo(String paramName, Map<String, ParameterInfo<?>> parametersMap) {
+        if (GlobalOptions.isGlobal(paramName)) {
+            return GlobalOptions.GLOBAL_OPTIONS.get(paramName);
+        }
+        return parametersMap.get(paramName);
     }
 
     /**
