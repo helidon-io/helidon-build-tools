@@ -757,7 +757,6 @@ public final class FileUtils {
     public static Path zip(Path zip, Path directory, Consumer<Path> fileConsumer) {
         ensureDirectory(zip.getParent());
         try (FileSystem fs = newZipFileSystem(zip)) {
-            boolean posix = isPosix(directory);
             try (Stream<Path> entries = Files.walk(directory)) {
                 entries.sorted(Comparator.reverseOrder())
                        .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
@@ -769,10 +768,6 @@ public final class FileUtils {
                                    Files.createDirectories(parent);
                                }
                                Files.copy(p, target, REPLACE_EXISTING);
-                               if (posix) {
-                                   Set<PosixFilePermission> perms = Files.getPosixFilePermissions(p);
-                                   Files.setPosixFilePermissions(target, perms);
-                               }
                                return target;
                            } catch (IOException ioe) {
                                throw new UncheckedIOException(ioe);
