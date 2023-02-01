@@ -67,19 +67,19 @@
     "commands": [
       {
         "command": "helidon.generate",
-        "title": "Helidon: generate a new Helidon project"
+        "title": "Helidon: Generate a New Helidon Project"
       },
       {
         "command": "helidon.startPage",
-        "title": "Helidon: start page"
+        "title": "Helidon: Getting Started"
       },
       {
         "command": "helidon.startDev",
-        "title": "Helidon: start 'helidon dev'"
+        "title": "Helidon: Start Helidon Dev Loop"
       },
       {
         "command": "helidon.stopDev",
-        "title": "Helidon: stop 'helidon dev'"
+        "title": "Helidon: Stop Helidon Dev Loop"
       }
     ]
   },

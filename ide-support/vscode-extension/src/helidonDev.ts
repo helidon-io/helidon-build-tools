@@ -105,12 +105,11 @@ function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: s
         const helidonServer = launchedServers.get(helidonDirName)!;
         if (helidonServer.isActive) {
             helidonServer.outputChannel.show();
-            VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${helidonDirName}' has already running`);
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in the folder '${helidonDirName}' is already running`);
             return helidonServer;
         }
         // change existing instance
         helidonServer.serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
-        VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${helidonDirName}' has already running`);
         helidonServer.outputChannel.show();
         configureServerOutput(helidonServer.serverProcess, helidonServer.outputChannel);
         helidonServer.isActive = true;
@@ -212,15 +211,18 @@ function configureServerOutput(serverProcess: ChildProcess, outputChannel: Outpu
 
     serverProcess.on('close', (code: string) => {
         outputChannel.appendLine("Server stopped");
-        stopHelidonDev();
+        stopHelidonDev(true);
     });
 }
 
-export async function stopHelidonDev() {
+export async function stopHelidonDev(flag?: boolean) {
     try {
         let currentHelidonServer: HelidonServerInstance;
         const activeServerNames = getActiveServerNames();
         if (activeServerNames.length === 0) {
+            if (flag === undefined){
+                VSCodeAPI.showInformationMessage(`Dev Loop is not started`);
+            }
             return;
         }
         if (activeServerNames.length === 1) {
@@ -236,7 +238,7 @@ export async function stopHelidonDev() {
             currentHelidonServer.outputChannel.show();
             deactivateServer(currentHelidonServer);
         } else {
-            VSCodeAPI.showInformationMessage(`Dev Loop for the project in '${stopServerName}' is not started`);
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in the folder '${stopServerName}' is not started`);
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
