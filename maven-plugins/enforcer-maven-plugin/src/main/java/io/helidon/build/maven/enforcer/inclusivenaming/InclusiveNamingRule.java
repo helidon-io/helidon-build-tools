@@ -17,6 +17,8 @@
 package io.helidon.build.maven.enforcer.inclusivenaming;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBContext;
@@ -170,9 +173,9 @@ public class InclusiveNamingRule {
             return new InclusiveNamingRule(this);
         }
 
-        private List<Term> readTerms(String file){
+        private List<Term> readTerms(Supplier<InputStream> supplier){
             List<Term> terms = new ArrayList<>();
-            try (InputStream is = InclusiveNamingRule.class.getResourceAsStream(file)) {
+            try (InputStream is = supplier.get()) {
                 XmlInclusiveNaming xml = xmlInclusiveNaming(is);
                 for (XmlData data : xml.getData()) {
                     String tier = data.getTier();
@@ -197,7 +200,17 @@ public class InclusiveNamingRule {
         }
 
         List<Term> terms() {
-            return readTerms(INCLUSIVE_NAMING_XML);
+            if (inclusiveNamingConfig.inclusiveNamingFile().isPresent()) {
+                return readTerms(() -> {
+                    try {
+                        return new FileInputStream(inclusiveNamingConfig.inclusiveNamingFile().get());
+                    } catch (FileNotFoundException e) {
+                        throw new EnforcerException(inclusiveNamingConfig.inclusiveNamingFile().get() + " was not found");
+                    }
+                });
+            } else {
+                return readTerms(() -> InclusiveNamingRule.class.getResourceAsStream(INCLUSIVE_NAMING_XML));
+            }
         }
 
         List<FileMatcher> excludes() {
