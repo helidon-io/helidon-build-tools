@@ -73,10 +73,29 @@ The Helidon extension provides:
 
 ![](images/stop_server_selection.png)
 
+## Configuration of the extension
+
+Helidon VSCode extension has three options that can be configured in the settings of the extension :
+* Helidon: Show Start Page (`helidon.showStartPage`) :
+  
+  If start page should be displayed on the extension startup. 
+  
+  Default value - true.
+* Helidon: Maven Home Dir (`helidon.mavenHomeDir`) :
+  
+  Path to the directory where Apache Maven is installed that will be used by the plugin.
+  
+  Default value - empty string (default Maven version for your Operating System will be used).
+* Helidon: Java Home Dir (`helidon.javaHomeDir`) :
+  
+  Path to the JAVA_HOME directory of the installed JDK that will be used by the plugin.
+  
+  Default value - empty string (default Java version for your Operating System will be used).
+
 ## How to test
 
 1. Clone the project [helidon-build-tools](https://github.com/oracle/helidon-build-tools)
-2. You will need to build a module `ide-support` using `Maven`. This module contains backend and frontend part of the VSCode extension,
+2. You will need to build a module `ide-support` using `Maven`. This module contains backend and frontend parts of the VSCode extension,
  its dependencies and a maven plugin that is used by `Helidon Language Server`. 
 3. Open the module `helidon-vscode-extension` in `VS Code`.
 4. Run it

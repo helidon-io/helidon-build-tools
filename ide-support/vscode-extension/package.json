@@ -59,7 +59,7 @@
           "helidon.mavenHomeDir": {
             "type": "string",
             "default": "",
-            "description": "Path to the directory where Apache Maven is install that will be used by the plugin."
+            "description": "Path to the directory where Apache Maven is installed that will be used by the plugin."
           }
         }
       }
@@ -111,7 +111,6 @@
     "gulp": "^4.0.2",
     "gulp-rename": "^1.4.0",
     "mocha": "^9.2.2",
-    "node-fetch": "^2.6.9",
     "sinon": "^9.2.4",
     "ts-loader": "^9.2.6",
     "ts-mock-imports": "^1.3.3",
@@ -124,6 +123,7 @@
   "dependencies": {
     "command-exists": "^1.2.9",
     "get-port": "^5.1.1",
+    "node-fetch": "^2.6.9",
     "strip-ansi": "^6.0.0",
     "tcp-port-used": "^1.0.2",
     "tree-kill": "^1.2.2",
