@@ -25,12 +25,12 @@ import * as childProcApi from "../../ChildProcessAPI";
 import * as events from "events";
 import * as stream from "stream";
 import * as generatorAPI from "../../GeneratorCommand";
+import fetch from 'node-fetch';
 
 let vsCodeApiMockManager: any;
 let fsSystemApiMockManager: any;
 let childProcessAPIManager: any;
 let generatorAPIManager: any;
-const fetch = require('node-fetch');
 const sinon = require('sinon');
 
 suite('Helidon Project Generator Test Suite', () => {

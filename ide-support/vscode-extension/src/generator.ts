@@ -22,6 +22,7 @@ import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { BaseCommand, GeneratorData, GeneratorDataAPI, OptionCommand, TextCommand } from "./GeneratorCommand";
 import { validateQuickPick, validateText } from "./validationApi";
+import fetch from 'node-fetch';
 
 import { logger } from './logger';
 import { Interpreter } from "./Interpreter";
@@ -40,7 +41,6 @@ const EXISTING_FOLDER = ' already exists in selected directory.';
 const ARCHETYPE_CACHE: Map<string, any> = new Map();
 const VERSIONS_URL: string = 'https://helidon.io/api/versions';
 const ARCHETYPES_URL_PREFIX = 'https://helidon.io/api/starter/';
-const fetch = require('node-fetch');
 
 export async function showHelidonGenerator(extensionPath: string) {
 

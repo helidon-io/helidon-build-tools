@@ -1,6 +1,6 @@
 # Helidon support for Visual Studio Code
 
-This extension helps users to generate their first Helidon project, develop and run it.
+This extension helps users to generate a Helidon project, develop and run it.
 
 The [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) extension is optional 
 but recommended for the installation in Visual Studio Code to support Java projects. 
@@ -17,7 +17,7 @@ The Helidon extension provides:
 * Helidon project creation wizard
 * Start/stop Developer Loop (as you make source code changes the project will automatically recompile and restart your
   application)
-* auto completion for configuration properties files (application.yaml, microprofile-config.properties, etc.)
+* Auto completion for configuration properties files (application.yaml, microprofile-config.properties, etc.)
 
 ## How to open the start page for the extension
 
@@ -29,7 +29,7 @@ The Helidon extension provides:
 
 3. Choose `Helidon: Getting Started`.
 
-## How to generate Helidon Project
+## How to generate a Helidon Project
 
 1. Open Command Palette.
 2. Start typing `Helidon` :
