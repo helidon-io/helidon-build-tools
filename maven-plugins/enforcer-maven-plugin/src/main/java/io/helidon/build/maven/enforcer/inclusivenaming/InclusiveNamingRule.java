@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -176,14 +175,20 @@ public class InclusiveNamingRule {
 
         private List<XmlData> readTerms(Supplier<InputStream> supplier){
             List<XmlData> terms = new ArrayList<>();
-            Optional<Pattern> excludeTermsRegExp = inclusiveNamingConfig.excludeTermsRegExp();
             try (InputStream is = supplier.get()) {
                 XmlInclusiveNaming xml = xmlInclusiveNaming(is);
                 for (XmlData data : xml.getData()) {
                     String tier = data.getTier();
                     String term = data.getTerm();
                     if (!ALLOWED_TIERS.contains(tier)) {
-                        if (!excludeTermsRegExp.isPresent() || !excludeTermsRegExp.get().matcher(term).matches()) {
+                        boolean exclude = false;
+                        for (Pattern pattern : inclusiveNamingConfig.excludeTermsRegExps()) {
+                            if (pattern.matcher(term).matches()) {
+                                exclude = true;
+                                break;
+                            }
+                        }
+                        if (!exclude) {
                             terms.add(data);
                         }
                     }
@@ -191,7 +196,7 @@ public class InclusiveNamingRule {
             } catch (IOException | JAXBException e) {
                 throw new EnforcerException("Failed to read inclusive naming file", e);
             }
-            terms.addAll(inclusiveNamingConfig.includeTerms());
+            terms.addAll(inclusiveNamingConfig.additionalTerms());
             return terms;
         }
 

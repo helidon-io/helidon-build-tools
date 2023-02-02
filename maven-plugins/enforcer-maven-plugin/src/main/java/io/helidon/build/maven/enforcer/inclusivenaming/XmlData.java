@@ -32,7 +32,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class XmlData {
 
-    @XmlElement(name = "recommended_replacements")
+    @XmlElement
     @Parameter
     private String[] recommendedReplacements = new String[0];
 
@@ -45,7 +45,7 @@ public class XmlData {
     @Parameter
     private String term = "";
 
-    @XmlElement(name = "term_page")
+    @XmlElement
     @Parameter
     private String termPage = "";
 

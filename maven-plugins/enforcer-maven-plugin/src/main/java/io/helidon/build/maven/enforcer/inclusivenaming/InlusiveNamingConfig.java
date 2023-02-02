@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -33,7 +34,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  */
 public class InlusiveNamingConfig {
     /**
-     * Fail if copyright is invalid.
+     * Fail if inclusive naming is invalid.
      */
     @Parameter(defaultValue = "false")
     private boolean failOnError;
@@ -51,19 +52,19 @@ public class InlusiveNamingConfig {
     private String[] excludes;
 
     /**
-     * Regular expression containing to exclude terms (such as {@code ((?i)master)|((?i)slave)}).
+     * Regular expressions containing to exclude terms (such as {@code ((?i)master)}).
      */
     @Parameter
-    private String excludeTermsRegExp;
+    private String[] excludeTermsRegExps;
 
     /**
-     * Inclusions of terms.
+     * Additional terms.
      */
     @Parameter
-    private XmlData[] includeTerms;
+    private XmlData[] additionalTerms;
 
     /**
-     * File with the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
+     * XML file equivalent to the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
      */
     @Parameter
     private File inclusiveNamingFile;
@@ -75,7 +76,8 @@ public class InlusiveNamingConfig {
                 + ", inclusiveNamingFile=" + inclusiveNamingFile
                 + ", includes=" + Arrays.toString(includes)
                 + ", excludes=" + Arrays.toString(excludes)
-                + ", excludeTermsRegExp=" + excludeTermsRegExp
+                + ", excludeTermsRegExps=" + Arrays.toString(excludeTermsRegExps)
+                + ", additionalTerms=" + Arrays.toString(additionalTerms)
                 + '}';
     }
 
@@ -102,22 +104,22 @@ public class InlusiveNamingConfig {
         return Set.of(includes);
     }
 
-    Optional<Pattern> excludeTermsRegExp() {
-        Pattern pattern = null;
-        if (excludeTermsRegExp != null) {
-            pattern  = Pattern.compile(excludeTermsRegExp);
+    Set<Pattern> excludeTermsRegExps() {
+        if (excludeTermsRegExps == null) {
+            return Set.of();
         }
-        return Optional.ofNullable(pattern);
+        return Set.of(excludeTermsRegExps).stream()
+                .map(str -> Pattern.compile(str)).collect(Collectors.toSet());
     }
 
     Optional<File> inclusiveNamingFile() {
         return Optional.ofNullable(inclusiveNamingFile);
     }
 
-    List<XmlData> includeTerms() {
-        if (includeTerms == null) {
+    List<XmlData> additionalTerms() {
+        if (additionalTerms == null) {
             return Collections.emptyList();
         }
-        return Arrays.asList(includeTerms);
+        return Arrays.asList(additionalTerms);
     }
 }
