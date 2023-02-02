@@ -105,19 +105,19 @@ suite('HelidonDev Test Suite', () => {
         const launchedServers = new Map([
             ["helidonDir1", <HelidonServerInstance>{
                 isActive: true,
-                outputChannel: {},
+                outputChannel: createOutputChannel(),
                 projectFolder: '/dir/helidonDir1/',
                 serverProcess: {}
             }],
             ["helidonDir2", <HelidonServerInstance>{
                 isActive: false,
-                outputChannel: {},
+                outputChannel: createOutputChannel(),
                 projectFolder: '/dir/helidonDir2/',
                 serverProcess: {}
             }],
             ["helidonDir3", <HelidonServerInstance>{
                 isActive: true,
-                outputChannel: {},
+                outputChannel: createOutputChannel(),
                 projectFolder: '/dir/helidonDir3/',
                 serverProcess: {}
             }]
@@ -139,7 +139,7 @@ suite('HelidonDev Test Suite', () => {
 
         await stopHelidonDev();
         const resultServers = getLaunchedServers();
-        // expect(resultServers.get('helidonDir3')!.isActive).is.false;
+        expect(resultServers.get('helidonDir3')!.isActive).is.false;
     });
 
     test('A helidon server is chosen and starts when a few Helidon projects exist in the workspace', async () => {

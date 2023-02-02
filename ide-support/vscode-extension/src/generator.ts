@@ -40,7 +40,7 @@ const EXISTING_FOLDER = ' already exists in selected directory.';
 const ARCHETYPE_CACHE: Map<string, any> = new Map();
 const VERSIONS_URL: string = 'https://helidon.io/api/versions';
 const ARCHETYPES_URL_PREFIX = 'https://helidon.io/api/starter/';
-const axios = require('axios');
+const fetch = require('node-fetch');
 
 export async function showHelidonGenerator(extensionPath: string) {
 
@@ -160,8 +160,8 @@ export async function showHelidonGenerator(extensionPath: string) {
         const helidonVersion: string = generatorData.elements[0].selectedValues[0];
         archetype = ARCHETYPE_CACHE.get(helidonVersion);
         if (!archetype) {
-            const helidonArchetypeResponse: any = await axios.get(ARCHETYPES_URL_PREFIX+helidonVersion);
-            archetype = helidonArchetypeResponse.data;
+            const helidonArchetypeResponse: any = await fetch(ARCHETYPES_URL_PREFIX+helidonVersion);
+            archetype = await helidonArchetypeResponse.json();
             ARCHETYPE_CACHE.set(helidonVersion, archetype);
         }
 
@@ -186,8 +186,8 @@ export async function showHelidonGenerator(extensionPath: string) {
 
     async function init() {
         try {
-            const helidonVersionsResponse: any = await axios.get(VERSIONS_URL);
-            const helidonVersions: HelidonVersions = helidonVersionsResponse.data;
+            const helidonVersionsResponse: any = await fetch(VERSIONS_URL);
+            const helidonVersions: HelidonVersions =await helidonVersionsResponse.json();
             // eslint-disable-next-line eqeqeq
             if (helidonVersions == null || Object.keys(helidonVersions).length === 0) {
                 return;
@@ -228,8 +228,7 @@ export async function showHelidonGenerator(extensionPath: string) {
                 logger.error(e);
             } else if (e instanceof Error) {
                 VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e.message}`);
-                logger.error((e as any).request);
-                logger.error((e as any).response);
+                logger.error(e.stack);
             }
         }
     }
@@ -442,8 +441,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
-        // logger.error(e.stack);
-        logger.error(e.toString());
+        logger.error(e.stack);
     }
 
 }
