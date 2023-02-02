@@ -50,30 +50,25 @@ import static org.hamcrest.Matchers.is;
  */
 public class FileUtilsTest {
 
-    private static Path zipDir;
     private static Path outputDir;
-    private static Path zipFile;
 
     @BeforeAll
     static void setup() throws IOException {
         outputDir = Files.createDirectories(
-                TestFiles.targetDir(FileUtilsTest.class).resolve("test-classes/archives"));
-        zipFile = createZip();
-        zipDir = Files.createTempDirectory("zip");
-        Files.createDirectories(zipDir.resolve("dir"));
-        Files.createFile(zipDir.resolve("file1"));
-        Files.createFile(zipDir.resolve("dir/file2"));
+                TestFiles.targetDir(FileUtilsTest.class).resolve("test-classes/file-utils"));
     }
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
-    void testZipPermissions() {
+    void testZipPermissions() throws IOException {
+        Path wd = outputDir.resolve("zip-permissions");
+        Path zipDir = createZipDirectory(wd);
         Set<PosixFilePermission> permissions = Set.of(
                 GROUP_EXECUTE,
                 OWNER_EXECUTE,
                 OTHERS_EXECUTE);
 
-        Path zip = zip(outputDir.resolve("zip-permissions/archive.zip"), zipDir, path -> unchecked(() -> {
+        Path zip = zip(wd.resolve("archive.zip"), zipDir, path -> unchecked(() -> {
             if (Files.isRegularFile(path)) {
                 Files.setPosixFilePermissions(path, permissions);
             }
@@ -87,16 +82,23 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs(OS.WINDOWS)
-    void testZipPermissions2() {
-        zip(outputDir.resolve("zip-permissions/archive.zip"), zipDir,
+    void testZipPermissions2() throws IOException {
+        Path wd = outputDir.resolve("zip-permissions");
+        Path zipDir = createZipDirectory(wd);
+        Path zip = wd.resolve("archive.zip");
+        zip(zip, zipDir,
                 p -> unchecked(() -> Files.setPosixFilePermissions(p, Set.of(OWNER_EXECUTE))));
+        assertThat(Files.exists(zip), is(true));
     }
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testZipOriginalPermissions() throws IOException {
-        Set<PosixFilePermission> permissions = setPosixPermissions();
-        Path zip = zip(outputDir.resolve("original-permissions/archive.zip"), zipDir);
+        Path wd = outputDir.resolve("original-permissions");
+        Path zipDir = createZipDirectory(wd);
+        Set<PosixFilePermission> permissions = setPosixPermissions(zipDir);
+
+        Path zip = zip(wd.resolve("archive.zip"), zipDir);
 
         readZipFileContent(zip, path -> unchecked(() -> {
             Set<PosixFilePermission> posixPermissions = Files.getPosixFilePermissions(path);
@@ -105,26 +107,22 @@ public class FileUtilsTest {
     }
 
     @Test
-    @EnabledOnOs(OS.WINDOWS)
-    void testZipOriginalPermissions2() {
-        zip(outputDir.resolve("original-permissions2/archive.zip"), zipDir);
-    }
-
-    @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testUnzipPermissions() throws IOException {
-        Path directory = outputDir.resolve("unzip-permissions");
-        unzip(zipFile, directory);
-        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(directory.resolve("file"));
+        Path wd = outputDir.resolve("unzip-permissions");
+        Path zipFile = createZipFile(wd);
+        unzip(zipFile, wd);
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(wd.resolve("file"));
         assertThat(permissions, is(Set.of(OWNER_READ, OWNER_EXECUTE)));
     }
 
     @Test
     @EnabledOnOs(OS.WINDOWS)
-    void testUnzipPermissions2() {
-        Path directory = outputDir.resolve("unzip-permissions2");
-        unzip(zipFile, directory);
-        File file = directory.resolve("file").toFile();
+    void testUnzipPermissions2() throws IOException {
+        Path wd = outputDir.resolve("unzip-permissions2");
+        Path zipFile = createZipFile(wd);
+        unzip(zipFile, wd);
+        File file = wd.resolve("file").toFile();
         assertThat(file.canRead(), is(true));
         assertThat(file.canExecute(), is(true));
     }
@@ -132,11 +130,12 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testE2ePermissions() throws IOException {
-        Path directory = outputDir.resolve("e2e-permissions");
-        Set<PosixFilePermission> permissions = setPosixPermissions();
-        zipAndUnzip(directory);
-        list(directory).stream()
-                .filter(p -> !p.equals(outputDir) && Files.isRegularFile(p))
+        Path wd = outputDir.resolve("e2e-permissions");
+        Path zipDir = createZipDirectory(wd);
+        Set<PosixFilePermission> permissions = setPosixPermissions(zipDir);
+        zipAndUnzip(zipDir);
+        list(wd).stream()
+                .filter(Files::isRegularFile)
                 .forEach(path -> unchecked(() -> {
                     Set<PosixFilePermission> posixPermissions = Files.getPosixFilePermissions(path);
                     assertThat(permissions, is(posixPermissions));
@@ -145,17 +144,10 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs(OS.WINDOWS)
-    void testE2ePermissions2() {
-        Path directory = outputDir.resolve("e2e-permissions2");
-        setPermissions();
-        zipAndUnzip(directory);
-        list(directory).stream()
-                .filter(p -> !p.equals(directory) && Files.isRegularFile(p))
-                .forEach(path -> {
-                    File file = path.toFile();
-                    assertThat(file.canRead(), is(true));
-                    assertThat(file.canExecute(), is(true));
-                });
+    void testE2ePermissions2() throws IOException {
+        Path wd = outputDir.resolve("e2e-permissions2");
+        Path zipDir = createZipDirectory(wd);
+        zipAndUnzip(zipDir);
     }
 
     private static void readZipFileContent(Path zip, Consumer<Path> consumer) {
@@ -171,36 +163,36 @@ public class FileUtilsTest {
     }
 
     private static void zipAndUnzip(Path directory) {
-        Path zip = zip(directory.resolve("archive.zip"), zipDir);
-        unzip(zip, directory);
+        Path zip = zip(directory.resolve("archive.zip"), directory);
+        unzip(zip, directory.getParent());
     }
 
-    private static Path createZip() throws IOException {
-        Path zip = outputDir.resolve("archive.zip");
+    private static Path createZipFile(Path directory) throws IOException {
+        Path zip = directory.resolve("archive.zip");
+        if (!Files.exists(directory)) {
+            Files.createDirectories(directory);
+        }
         Path source = Files.createTempFile("file", "");
         try (FileSystem fs = newZipFileSystem(zip)) {
             Path target = fs.getPath("file");
             Files.copy(source, target, REPLACE_EXISTING);
-            if (OSType.currentOS().isPosix()) {
-                Files.setPosixFilePermissions(target, Set.of(OWNER_READ, OWNER_EXECUTE));
-            }
+            Files.setPosixFilePermissions(target, Set.of(OWNER_READ, OWNER_EXECUTE));
         }
         return zip;
     }
 
-    private static Set<PosixFilePermission> setPosixPermissions() throws IOException {
+    private static Set<PosixFilePermission> setPosixPermissions(Path directory) throws IOException {
         Set<PosixFilePermission> permissions = Set.of(OWNER_READ, OWNER_EXECUTE);
-        Files.setPosixFilePermissions(zipDir.resolve("file1"), permissions);
-        Files.setPosixFilePermissions(zipDir.resolve("dir/file2"), permissions);
+        Files.setPosixFilePermissions(directory.resolve("file1"), permissions);
+        Files.setPosixFilePermissions(directory.resolve("dir/file2"), permissions);
         return permissions;
     }
 
-    private static void setPermissions() {
-        File file1 = zipDir.resolve("file1").toFile();
-        File file2 = zipDir.resolve("dir/file2").toFile();
-        file1.setReadable(true);
-        file2.setReadable(true);
-        file1.setExecutable(true);
-        file2.setExecutable(true);
+    private static Path createZipDirectory(Path wd) throws IOException {
+        Path zipDir = Files.createDirectories(wd.resolve("zip-data"));
+        Files.createDirectories(zipDir.resolve("dir"));
+        Files.createFile(zipDir.resolve("file1"));
+        Files.createFile(zipDir.resolve("dir/file2"));
+        return zipDir;
     }
 }
