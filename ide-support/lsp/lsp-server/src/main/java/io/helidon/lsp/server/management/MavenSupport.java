@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -42,12 +40,10 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
-import io.helidon.lsp.server.core.LanguageServerContext;
 import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.eclipse.lsp4j.MessageParams;
 
 /**
  * Support operations with maven.

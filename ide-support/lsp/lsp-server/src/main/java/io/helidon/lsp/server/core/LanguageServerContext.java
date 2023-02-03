@@ -33,10 +33,20 @@ public class LanguageServerContext {
     private LanguageServerContext() {
     }
 
+    /**
+     * Get LanguageClient.
+     *
+     * @return LanguageClient
+     */
     public LanguageClient client() {
         return client;
     }
 
+    /**
+     * Set LanguageClient
+     *
+     * @param client LanguageClient
+     */
     public void client(LanguageClient client) {
         this.client = client;
     }
@@ -49,6 +59,7 @@ public class LanguageServerContext {
     public static LanguageServerContext instance() {
         return INSTANCE;
     }
+
     /**
      * Get workspace folders in IDE.
      *

@@ -29,7 +29,7 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class LanguageClientLogUtil {
 
-    private static final LanguageClient client = LanguageServerContext.instance().client();
+    private static final LanguageClient CLIENT = LanguageServerContext.instance().client();
 
     private LanguageClientLogUtil() {
     }
@@ -46,7 +46,7 @@ public class LanguageClientLogUtil {
         MessageParams messageParams = new MessageParams();
         String messageBegin = message != null && !message.trim().isEmpty() ? message + " :" + System.lineSeparator() : "";
         messageParams.setMessage(messageBegin + sw);
-        client.logMessage(messageParams);
+        CLIENT.logMessage(messageParams);
     }
 
     /**
@@ -57,6 +57,6 @@ public class LanguageClientLogUtil {
     public static void logMessage(String message) {
         MessageParams messageParams = new MessageParams();
         messageParams.setMessage(message);
-        client.logMessage(messageParams);
+        CLIENT.logMessage(messageParams);
     }
 }
