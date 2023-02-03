@@ -45,7 +45,7 @@ public class LanguageServerContext {
     /**
      * Set LanguageClient
      *
-     * @param client LanguageClient
+     * @param client LanguageClient.
      */
     public void client(LanguageClient client) {
         this.client = client;
