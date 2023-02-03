@@ -35,33 +35,32 @@
                     <rules>
                         <rule>inclusive-naming</rule>
                     </rules>
+                    <useGit>false</useGit>
+                    <honorGitIgnore>false</honorGitIgnore>
                     <inclusiveNamingConfig>
-                        <failOnError>true</failOnError>
+                        <failOnError>false</failOnError>
                         <excludes>
-                            <exclude>.java</exclude>
-                            <exclude>.adoc</exclude>
-                            <exclude>.md</exclude>
+                            <exclude>excludedFile.txt</exclude>
+                            <exclude>pom.xml</exclude>
                         </excludes>
                         <excludeTermsRegExps>
-                            <excludeTermsRegExp>(?i)master</excludeTermsRegExp>
-                            <excludeTermsRegExp>(?i)slave</excludeTermsRegExp>
+                            <excludeTermsRegExp>master</excludeTermsRegExp>
                         </excludeTermsRegExps>
                         <additionalTerms>
                             <additionalTerm>
-                                <term>class</term>
-                                <recommendedReplacements>
-                                    <recommendedReplacement>clazz</recommendedReplacement>
-                                    <recommendedReplacement>klass</recommendedReplacement>
-                                </recommendedReplacements>
-                            </additionalTerm>
-                            <additionalTerm>
                                 <term>package</term>
+                                <recommendedReplacements>
+                                    <recommendedReplacement>box</recommendedReplacement>
+                                    <recommendedReplacement>bag</recommendedReplacement>
+                                </recommendedReplacements>
                             </additionalTerm>
                         </additionalTerms>
                     </inclusiveNamingConfig>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>helidon-enforcer</id>
+                        <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
