@@ -34,6 +34,7 @@ import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.build.common.FileUtils.list;
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
+import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.unzip;
 import static io.helidon.build.common.FileUtils.zip;
 import static io.helidon.build.common.Unchecked.unchecked;
@@ -61,7 +62,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testZipPermissions() throws IOException {
-        Path wd = outputDir.resolve("zip-permissions");
+        Path wd = unique(outputDir, "zip-permissions");
         Path zipDir = createZipDirectory(wd);
         Set<PosixFilePermission> permissions = Set.of(
                 GROUP_EXECUTE,
@@ -83,7 +84,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     void testZipPermissions2() throws IOException {
-        Path wd = outputDir.resolve("zip-permissions");
+        Path wd = unique(outputDir, "zip-permissions");
         Path zipDir = createZipDirectory(wd);
         Path zip = wd.resolve("archive.zip");
         zip(zip, zipDir,
@@ -94,7 +95,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testZipOriginalPermissions() throws IOException {
-        Path wd = outputDir.resolve("original-permissions");
+        Path wd = unique(outputDir, "original-permissions");
         Path zipDir = createZipDirectory(wd);
         Set<PosixFilePermission> permissions = setPosixPermissions(zipDir);
 
@@ -109,7 +110,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testUnzipPermissions() throws IOException {
-        Path wd = outputDir.resolve("unzip-permissions");
+        Path wd = unique(outputDir, "unzip-permissions");
         Path zipFile = createZipFile(wd);
         unzip(zipFile, wd);
         Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(wd.resolve("file"));
@@ -119,7 +120,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     void testUnzipPermissions2() throws IOException {
-        Path wd = outputDir.resolve("unzip-permissions2");
+        Path wd = unique(outputDir, "unzip-permissions");
         Path zipFile = createZipFile(wd);
         unzip(zipFile, wd);
         File file = wd.resolve("file").toFile();
@@ -130,7 +131,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
     void testE2ePermissions() throws IOException {
-        Path wd = outputDir.resolve("e2e-permissions");
+        Path wd = unique(outputDir, "e2e-permissions");
         Path zipDir = createZipDirectory(wd);
         Set<PosixFilePermission> permissions = setPosixPermissions(zipDir);
         zipAndUnzip(zipDir);
@@ -145,7 +146,7 @@ public class FileUtilsTest {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     void testE2ePermissions2() throws IOException {
-        Path wd = outputDir.resolve("e2e-permissions2");
+        Path wd = unique(outputDir, "e2e-permissions");
         Path zipDir = createZipDirectory(wd);
         zipAndUnzip(zipDir);
     }
