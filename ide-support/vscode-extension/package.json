@@ -7,9 +7,12 @@
   "author": "Oracle Corporation",
   "publisher": "Oracle",
   "license": "SEE LICENSE IN LICENSE.txt",
-  "bugs": "https://github.com/oracle/helidon-build-tools/issues",
+  "bugs": "https://github.com/helidon-io/helidon-build-tools/issues",
   "engines": {
     "vscode": "^1.64.0"
+  },
+  "vsce": {
+    "baseImagesUrl": "https://github.com/helidon-io/helidon-build-tools/raw/HEAD/ide-support/vscode-extension"
   },
   "categories": [
     "Other"
@@ -20,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/oracle/helidon-build-tools"
+    "url": "https://github.com/helidon-io/helidon-build-tools"
   },
   "keywords": [
     "java",

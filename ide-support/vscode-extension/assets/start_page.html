@@ -67,11 +67,11 @@
 
 <h2 class="code-line" data-line-start=7 data-line-end=8><a id="How_to_start_7"></a>How to generate a Helidon Project</h2>
 <ol>
-    <li class="has-line-data" data-line-start="8" data-line-end="9">Open Command Palette using `View -> Command Pallette...` from the top menu bar or by shortcut for this command for your Operating System
-        (for Windows and Linux - `Ctrl+Shift+A`, for Mac - `Cmd+Shift+P`).
+    <li class="has-line-data" data-line-start="8" data-line-end="9">Open Command Palette using <code>View -> Command Pallette...</code> from the top menu bar or by shortcut for this command for your Operating System
+        (for Windows and Linux - <code>Ctrl+Shift+A</code>, for Mac - <code>Cmd+Shift+P</code>).
     </li>
-    <li class="has-line-data" data-line-start="9" data-line-end="10">Start typing 'Helidon'.</li>
-    <li class="has-line-data" data-line-start="13" data-line-end="15">Choose 'Helidon: Generate a New Helidon Project'.
+    <li class="has-line-data" data-line-start="9" data-line-end="10">Start typing <code>Helidon</code>.</li>
+    <li class="has-line-data" data-line-start="13" data-line-end="15">Choose <code>Helidon: Generate a New Helidon Project</code>.
     </li>
     <li class="has-line-data">Choose Helidon version.</li>
     <li class="has-line-data">Follow generator till the end.</li>
@@ -84,24 +84,51 @@
 <h2 class="code-line">How to start Helidon Dev Loop</h2>
 <ul>
     <li class="has-line-data">Open Command Palette.</li>
-    <li class="has-line-data">Start typing 'Helidon'.</li>
-    <li class="has-line-data">Choose 'Helidon: Start Helidon Dev Loop'.</li>
-    <li class="has-line-data">If a workspace contains only one Helidon project, 'Helidon Dev Loop' starts automatically. If the workspace contains more than one
-        Helidon project, you will be asked to choose a directory to start `Helidon Dev Loop`.
+    <li class="has-line-data">Start typing <code>Helidon</code>.</li>
+    <li class="has-line-data">Choose <code>Helidon: Start Helidon Dev Loop</code>.</li>
+    <li class="has-line-data">If a workspace contains only one Helidon project, <code>Helidon Dev Loop</code> starts automatically. If the workspace contains more than one
+        Helidon project, you will be asked to choose a directory to start <code>Helidon Dev Loop</code>.
     </li>
-    <li class="has-line-data">You will find the server logs in the bottom panel in the output tab.
-        You can select a server to show the logs choosing project directory in the drop-down list.
+    <li class="has-line-data">You will find the server logs in the bottom panel in the tab <code>OUTPUT</code>. You can select a server to show the logs
+        choosing a project directory in the drop-down list.
     </li>
 </ul>
 
-<h2 class="code-line">How to stop helidon dev</h2>
+<h2 class="code-line">How to stop Helidon Dev Loop</h2>
 <ul>
-    <li class="has-line-data">Open Command Palette by shortcut you are using (default: Ctrl+Shift+P).</li>
-    <li class="has-line-data">Start typing 'Helidon'.</li>
-    <li class="has-line-data">Choose 'Helidon: Stop helidon dev'.</li>
-    <li class="has-line-data">If workspace contains only one running helidon project, helidon dev stops automatically.
-        If workspace contains more than one running helidon project, you will be asked to choose a directory to stop
-        helidon dev.
+    <li class="has-line-data">Open Command Palette.</li>
+    <li class="has-line-data">Start typing <code>Helidon</code>.</li>
+    <li class="has-line-data">Choose <code>Helidon: Stop Helidon Dev Loop</code>.</li>
+    <li class="has-line-data">If the workspace contains only one running Helidon project, <code>Helidon Dev Loop</code> stops automatically. If the workspace contains more
+        than one running Helidon project, you will be asked to choose a directory to stop <code>Helidon Dev Loop</code>.
+    </li>
+</ul>
+
+<h2 class="code-line">Configuration of the extension</h2>
+<p>
+    Helidon VSCode extension has three options that can be configured in the settings of the extension :
+</p>
+<ul>
+    <li class="has-line-data">
+        <dl>
+            <dt>Helidon: Show Start Page (<code>helidon.showStartPage</code>) :</dt>
+            <dd>If start page should be displayed on the extension startup. </dd>
+            <dd>Default value - true.</dd>
+        </dl>
+    </li>
+    <li class="has-line-data">
+        <dl>
+            <dt>Helidon: Maven Home Dir (<code>helidon.mavenHomeDir</code>) :</dt>
+            <dd>Path to the directory where Apache Maven is installed that will be used by the plugin.</dd>
+            <dd>Default value - empty string (default Maven version for your Operating System will be used).</dd>
+        </dl>
+    </li>
+    <li class="has-line-data">
+        <dl>
+            <dt>Helidon: Java Home Dir (<code>helidon.javaHomeDir</code>) :</dt>
+            <dd>Path to the JAVA_HOME directory of the installed JDK that will be used by the plugin.</dd>
+            <dd>Default value - empty string (default Java version for your Operating System will be used).</dd>
+        </dl>
     </li>
 </ul>
 
@@ -117,7 +144,7 @@
 <p class="has-line-data" data-line-start="20" data-line-end="21">Let us know if you need help with Helidon on our
     Slack channel or report an issue on our issue tracker.</p>
 <p class="has-line-data" data-line-start="22" data-line-end="24"><a
-        href="https://github.com/oracle/helidon-build-tools/issues">Github issues</a><br>
+        href="https://github.com/helidon-io/helidon-build-tools/issues">Github issues</a><br>
     <a
             href="https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LWNiNGIzOGFhZDdjNzAyM2Y2MzlmMDI4NWY4YjE1OWQ2OTdkYTZkN2FlNDcxNmUyZmZmMTZhZmZhNWI2ZTI1NGI">Slack
         channel</a></p>
@@ -126,7 +153,7 @@
     <h2 class="section-title">Get started</h2>
     <p>Create a new Helidon project.</p>
     <a href="command:helidon.generate">
-        <button>Create Helidon project</button>
+        <button>Create a Helidon project</button>
     </a>
 </div>
 
