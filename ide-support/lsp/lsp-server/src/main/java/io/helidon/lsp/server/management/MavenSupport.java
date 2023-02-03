@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -40,9 +42,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
+import io.helidon.lsp.server.core.LanguageServerContext;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.eclipse.lsp4j.MessageParams;
 
 /**
  * Support operations with maven.
@@ -80,7 +85,9 @@ public class MavenSupport {
         try {
             mavenPath = MavenCommand.mavenExecutable();
         } catch (IllegalStateException e) {
-            LOGGER.log(Level.SEVERE, "Maven is not installed in the system", e);
+            String message = "Maven is not installed in the system";
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
             return;
         }
         if (mavenPath != null) {
@@ -126,12 +133,11 @@ public class MavenSupport {
                     result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
                     }.getType());
                 } catch (IOException e) {
-                    LOGGER.log(
-                            Level.SEVERE,
-                            "Error when executing the maven command - " + lspMvnDependenciesCommand + System.lineSeparator()
-                                    + output.content().stream().collect(Collectors.joining(System.lineSeparator())),
-                            e
-                    );
+                    String message = "Error when executing the maven command - "
+                            + lspMvnDependenciesCommand + System.lineSeparator()
+                            + output.content().stream().collect(Collectors.joining(System.lineSeparator()));
+                    LOGGER.log(Level.SEVERE, message, e);
+                    LanguageClientLogUtil.logMessage(message, e);
                 }
                 LOGGER.log(
                         Level.FINEST,
@@ -141,12 +147,11 @@ public class MavenSupport {
                 return result;
             }).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            LOGGER.log(
-                    Level.SEVERE,
-                    "Error when executing the maven command - " + lspMvnDependenciesCommand + System.lineSeparator()
-                            + output.content().stream().collect(Collectors.joining(System.lineSeparator())),
-                    e
-            );
+            String message = "Error when executing the maven command - " + lspMvnDependenciesCommand
+                    + System.lineSeparator()
+                    + output.content().stream().collect(Collectors.joining(System.lineSeparator()));
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
         }
         LOGGER.log(
                 Level.FINEST,
@@ -165,6 +170,7 @@ public class MavenSupport {
                 properties.load(in);
             }
         } catch (IOException ioe) {
+            LanguageClientLogUtil.logMessage("", ioe);
             return "";
         }
 

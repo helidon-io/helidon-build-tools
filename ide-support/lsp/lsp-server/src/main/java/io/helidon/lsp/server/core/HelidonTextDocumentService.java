@@ -28,6 +28,7 @@ import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.TextDocumentHandlerFactory;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import org.eclipse.lsp4j.CallHierarchyIncomingCall;
 import org.eclipse.lsp4j.CallHierarchyIncomingCallsParams;
@@ -259,7 +260,9 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 //fill the cache
                 configService.metadataForFile(docUri);
             } catch (URISyntaxException | IOException e) {
-                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+                String message = "Exception while opening the file " + docUri;
+                LOGGER.log(Level.SEVERE, message, e);
+                LanguageClientLogUtil.logMessage(message, e);
             }
         }
     }
@@ -281,7 +284,9 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 configService.metadataForFile(docUri);
             }
         } catch (URISyntaxException | IOException e) {
-            LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+            String message = "Exception while opening the file " + docUri;
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
         }
     }
 

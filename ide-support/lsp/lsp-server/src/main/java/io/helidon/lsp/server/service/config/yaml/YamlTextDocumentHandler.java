@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
 import io.helidon.lsp.server.service.metadata.ConfiguredOptionKind;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -110,6 +111,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
             return prepareCompletionItems(completionDetails);
         } catch (IOException | URISyntaxException e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
+            LanguageClientLogUtil.logMessage("", e);
         }
         return List.of();
     }
@@ -181,12 +183,15 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                 return matcher.group("key");
             }
         } catch (Exception e) {
-            LOGGER.log(
-                    Level.WARNING,
-                    "Exception {0} when trying to get substring of string: {1}, at position {2} in row {3}",
-                    new Object[]{e.getClass(), currentLine, completionDetails.position.getCharacter(),
-                            completionDetails.position.getLine()}
+            String message = String.format(
+                    "Exception %s when trying to get substring of string: %s, at position %s in row %s",
+                    e.getClass(),
+                    currentLine,
+                    completionDetails.position.getCharacter(),
+                    completionDetails.position.getLine()
             );
+            LOGGER.log(Level.WARNING, message);
+            LanguageClientLogUtil.logMessage(message, e);
             throw e;
         }
         return null;

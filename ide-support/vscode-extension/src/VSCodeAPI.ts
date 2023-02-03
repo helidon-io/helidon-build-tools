@@ -39,6 +39,8 @@ export interface InputBoxData {
 
 export class VSCodeAPI {
 
+    static outputChannels: Map<string, OutputChannel> = new Map();
+
     constructor() {
     }
 
@@ -61,8 +63,13 @@ export class VSCodeAPI {
         return workspace.workspaceFolders;
     }
 
-    public static createOutputChannel(name: string): OutputChannel {
-        return window.createOutputChannel(name);
+    public static outputChannel(name: string): OutputChannel {
+        if (this.outputChannels.has(name)){
+            return this.outputChannels.get(name)!;
+        }
+        const outputChannel = window.createOutputChannel(name);
+        this.outputChannels.set(name, outputChannel);
+        return outputChannel;
     }
 
     public static createQuickPick(data: QuickPickData): QuickPick<QuickPickItem> {

@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { InputBox, QuickInput, QuickInputButtons, QuickPick, Uri } from 'vscode';
-import { getSubstringBetween, QuickPickData, QuickPickItemExt } from "./common";
+import { getSubstringBetween, HELIDON_OUTPUT_CHANNEL, QuickPickData, QuickPickItemExt } from "./common";
 import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
@@ -42,6 +42,8 @@ const ARCHETYPE_CACHE: Map<string, any> = new Map();
 const VERSIONS_URL: string = 'https://helidon.io/api/versions';
 const ARCHETYPES_URL_PREFIX = 'https://helidon.io/api/starter/';
 
+const channel = VSCodeAPI.outputChannel(HELIDON_OUTPUT_CHANNEL);
+
 export async function showHelidonGenerator(extensionPath: string) {
 
     let interpreter: Interpreter;
@@ -62,7 +64,6 @@ export async function showHelidonGenerator(extensionPath: string) {
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
             ${archetypeValues}`;
 
-        const channel = VSCodeAPI.createOutputChannel('helidon');
         channel.appendLine(cmd);
 
         const opts = {
@@ -226,9 +227,11 @@ export async function showHelidonGenerator(extensionPath: string) {
             if (typeof e === "string") {
                 VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e}`);
                 logger.error(e);
+                channel.appendLine(e);
             } else if (e instanceof Error) {
                 VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e.message}`);
                 logger.error(e.stack);
+                channel.appendLine(e.stack ?? e.message);
             }
         }
     }
@@ -442,6 +445,7 @@ export async function showHelidonGenerator(extensionPath: string) {
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
         logger.error(e.stack);
+        channel.appendLine(e.stack ?? e.message);
     }
 
 }

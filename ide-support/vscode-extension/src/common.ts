@@ -17,6 +17,8 @@
 import { QuickPickItem } from "vscode";
 import * as vscode from "vscode";
 
+export const HELIDON_OUTPUT_CHANNEL = "Helidon support";
+
 export interface QuickPickItemExt extends QuickPickItem {
     children?: any;
     value?: string;
@@ -60,7 +62,7 @@ export function validateUserInput(userInput: string, pattern: RegExp, errorMessa
 }
 
 export function getSubstringBetween(initString: string, startSubstring: string, endSubstring: string): string {
-    const startPosition = initString.lastIndexOf(startSubstring)+startSubstring.length;
+    const startPosition = initString.lastIndexOf(startSubstring) + startSubstring.length;
     const endPosition = initString.lastIndexOf(endSubstring);
     return initString.substring(startPosition, endPosition).trim();
 }
@@ -71,7 +73,7 @@ export function getSubstringBetween(initString: string, startSubstring: string, 
  * @param array2 {*}
  * @return {boolean}
  */
-export function arrayEquals (array1: any, array2: any): boolean {
+export function arrayEquals(array1: any, array2: any): boolean {
     return Array.isArray(array1) &&
         Array.isArray(array2) &&
         array1.length === array2.length &&

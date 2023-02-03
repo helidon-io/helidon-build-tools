@@ -23,11 +23,14 @@ import { ChildProcessAPI } from "./ChildProcessAPI";
 import { OutputFormatter } from "./OutputFormatter";
 import * as vscode from "vscode";
 import { logger } from "./logger";
+import { HELIDON_OUTPUT_CHANNEL } from "./common";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
 const EXCLUDE_DIRS: RegExp[] = [/target/i, /^\./i];
 const launchedServers: Map<string, HelidonServerInstance> = new Map();
+
+const logChannel = VSCodeAPI.outputChannel(HELIDON_OUTPUT_CHANNEL);
 
 export interface HelidonServerInstance {
     serverProcess: ChildProcess;
@@ -72,6 +75,7 @@ export async function startHelidonDev(extensionPath: string): Promise<Map<string
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
         logger.error(e.stack);
+        logChannel.appendLine(e.stack ?? e.message);
         return new Map();
     }
 }
@@ -118,7 +122,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: s
     }
 
     // create new instance
-    const outputChannel = VSCodeAPI.createOutputChannel(helidonDirName);
+    const outputChannel = VSCodeAPI.outputChannel(helidonDirName);
     outputChannel.show();
     const serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
     configureServerOutput(serverProcess, outputChannel);
@@ -243,6 +247,7 @@ export async function stopHelidonDev(flag?: boolean) {
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
         logger.error(e.stack);
+        logChannel.appendLine(e.stack ?? e.message);
         return;
     }
 }

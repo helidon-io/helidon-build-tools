@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.build.common.FileUtils;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 /**
  * Stores the last changes in the traceable project files.
@@ -50,7 +51,9 @@ public class ContentManager {
         try {
             filesFolder = Files.createDirectories(filesFolder);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Cannot create directory {0}", new Object[]{filesFolder.toString()});
+            String message = String.format("Cannot create directory %s", filesFolder.toString());
+            LOGGER.log(Level.SEVERE, message);
+            LanguageClientLogUtil.logMessage(message, e);
             filesFolder = Paths.get(tmpDir);
         }
     }
@@ -121,7 +124,9 @@ public class ContentManager {
             Files.write(tmp, content);
             return tmp.toUri().toString();
         } catch (URISyntaxException | IOException e) {
-            LOGGER.log(Level.SEVERE, "Cannot create temp file for {0}. Exception - {1}", new Object[]{fileName, e.getMessage()});
+            String message = String.format("Cannot create temp file for %s. Exception - %s", fileName, e.getMessage());
+            LOGGER.log(Level.SEVERE, message);
+            LanguageClientLogUtil.logMessage(message, e);
             return null;
         }
     }

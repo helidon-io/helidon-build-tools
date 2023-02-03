@@ -23,13 +23,13 @@ import { ChildProcess } from "child_process";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import * as vscode from 'vscode';
 import { logger } from "./logger";
+import { HELIDON_OUTPUT_CHANNEL } from "./common";
 
 let helidonLangServerProcess: ChildProcess;
 let deactivatedExtension = false;
-const clientName = 'Helidon Language Client';
-const serverOutputChannel = VSCodeAPI.createOutputChannel("Helidon LS LOGS");
-const clientOutputChannel = VSCodeAPI.createOutputChannel(clientName);
-const outputFormatter = new OutputFormatter(serverOutputChannel);
+const langClientName = 'Helidon Language Client';
+const outputChannel = VSCodeAPI.outputChannel(HELIDON_OUTPUT_CHANNEL);
+const outputFormatter = new OutputFormatter(outputChannel);
 let client: LanguageClient;
 const net = require("net");
 const getPort = require('get-port');
@@ -93,6 +93,7 @@ async function startSocketLangServer(
     } catch (error: any) {
         logger.error("Cannot get a serverSocket for the Language Server");
         logger.error(error.stack);
+        outputChannel.appendLine(error.stack ?? error.message);
         return;
     }
 
@@ -108,8 +109,7 @@ async function startSocketLangServer(
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
-        outputChannel: clientOutputChannel,
-        outputChannelName: clientName,
+        outputChannel: outputChannel,
         documentSelector: [
             {
                 scheme: 'file',
@@ -130,7 +130,7 @@ async function startSocketLangServer(
     };
 
     // Create the language client and start the client.
-    client = new LanguageClient('HelidonLanguageClient', clientName, serverOptions, clientOptions);
+    client = new LanguageClient('HelidonLanguageClient', langClientName, serverOptions, clientOptions);
     configureLangClient(client, context, maxCountRestart);
     logger.info("Helidon Language Server started. Pid - " + langServerProcess.pid);
     // Disposables to remove on deactivation.

@@ -164,7 +164,7 @@ suite('HelidonDev Test Suite', () => {
         fsSystemApiMockManager.mock('readDirSync', []);
         fsSystemApiMockManager.mock('readTextFileSync', '<dependencies><dependency>\n<groupId>helidon-group<\/groupId>\n');
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
-        vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
+        vsCodeApiMockManager.mock('outputChannel', createOutputChannel());
 
         const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);
@@ -181,7 +181,7 @@ suite('HelidonDev Test Suite', () => {
         fsSystemApiMockManager.mock('readDirSync', []);
         fsSystemApiMockManager.mock('readTextFileSync', '<dependencies><dependency>\n<groupId>other-group<\/groupId>\n');
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
-        vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
+        vsCodeApiMockManager.mock('outputChannel', createOutputChannel());
 
         const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(0);
@@ -196,7 +196,7 @@ suite('HelidonDev Test Suite', () => {
         fsSystemApiMockManager.mock('readDirSync', []);
         fsSystemApiMockManager.mock('readTextFileSync', '<dependencies><dependency>\n<groupId>helidon-group<\/groupId>\n');
         childProcessAPIManager.mock('spawnProcess', createServerProcess());
-        vsCodeApiMockManager.mock('createOutputChannel', createOutputChannel());
+        vsCodeApiMockManager.mock('outputChannel', createOutputChannel());
 
         const launchedServers = await startHelidonDev("extensionPath");
         expect(launchedServers.size).is.equal(1);

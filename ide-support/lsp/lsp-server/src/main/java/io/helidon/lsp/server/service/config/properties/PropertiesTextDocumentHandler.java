@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -117,10 +118,9 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
                 return completionItemsForValue(configMetadata.get(currentKey));
             }
         } catch (Exception e) {
-            LOGGER.log(
-                    Level.SEVERE,
-                    "Exception when trying to get auto-completion data for CompletionParams position in " + fileUri,
-                    e);
+            String message = "Exception when trying to get auto-completion data for CompletionParams position in " + fileUri;
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
         }
         return completionItems;
     }
