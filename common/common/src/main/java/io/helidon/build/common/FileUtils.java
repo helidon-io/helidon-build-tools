@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -742,12 +743,24 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
+        return zip(zip, directory, path -> {});
+    }
+
+    /**
+     * Zip a directory.
+     *
+     * @param zip           target file
+     * @param directory     source directory
+     * @param fileConsumer  zipped file consumer
+     * @return zip file
+     */
+    public static Path zip(Path zip, Path directory, Consumer<Path> fileConsumer) {
         ensureDirectory(zip.getParent());
         try (FileSystem fs = newZipFileSystem(zip)) {
             try (Stream<Path> entries = Files.walk(directory)) {
                 entries.sorted(Comparator.reverseOrder())
                        .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                       .forEach(p -> {
+                       .map(p -> {
                            try {
                                Path target = fs.getPath(directory.relativize(p).toString());
                                Path parent = target.getParent();
@@ -755,10 +768,12 @@ public final class FileUtils {
                                    Files.createDirectories(parent);
                                }
                                Files.copy(p, target, REPLACE_EXISTING);
+                               return target;
                            } catch (IOException ioe) {
                                throw new UncheckedIOException(ioe);
                            }
-                       });
+                       })
+                       .forEach(fileConsumer);
             }
             return zip;
         } catch (IOException ioe) {
