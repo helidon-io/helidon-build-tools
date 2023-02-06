@@ -26,6 +26,8 @@ import java.util.Map;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.enforcer.copyright.Copyright;
 import io.helidon.build.maven.enforcer.copyright.CopyrightConfig;
+import io.helidon.build.maven.enforcer.inclusivenaming.InclusiveNamingRule;
+import io.helidon.build.maven.enforcer.inclusivenaming.InlusiveNamingConfig;
 import io.helidon.build.maven.enforcer.nativeimage.EnforcerNativeImageException;
 import io.helidon.build.maven.enforcer.nativeimage.NativeImageConfig;
 import io.helidon.build.maven.enforcer.nativeimage.NativeImageRule;
@@ -47,6 +49,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  *     <li>copyright - validate copyright of files</li>
  *     <li>typos - validate that files do not contain certain strings</li>
  *     <li>native-image - validate native-image version</li>
+ *     <li>inclusive-naming - validate that files do not contain inclusive naming strings</li>
  * </ul>
  */
 @Mojo(name = "check",
@@ -70,6 +73,12 @@ public class EnforcerMojo extends AbstractMojo {
      */
     @Parameter
     private NativeImageConfig nativeImageConfig;
+
+    /**
+     * Configuration of inclusive naming config rule.
+     */
+    @Parameter
+    private InlusiveNamingConfig inclusiveNamingConfig;
 
     /**
      * Root of the repository.
@@ -181,6 +190,9 @@ public class EnforcerMojo extends AbstractMojo {
             case "native-image":
                 runNativeImage(failuresByRule, warningsByRule);
                 break;
+            case "inclusive-naming":
+                runInclusiveNaming(filesToCheck, failuresByRule, warningsByRule);
+                break;
             default:
                 throw new MojoExecutionException("Unsupported rule defined: " + rule);
             }
@@ -233,6 +245,35 @@ public class EnforcerMojo extends AbstractMojo {
                 for (RuleFailure error : errors) {
                     Log.warn(error.toString());
                 }
+            }
+        }
+    }
+
+    private void runInclusiveNaming(FoundFiles filesToCheck,
+            Map<String, List<RuleFailure>> failuresByRule,
+            Map<String, List<RuleFailure>> warningsByRule) throws MojoFailureException {
+        Log.info("-- inclusive naming rule");
+        Log.verbose("Inclusive naming config: " + inclusiveNamingConfig);
+
+        InclusiveNamingRule rule = InclusiveNamingRule.builder()
+          .config(inclusiveNamingConfig)
+          .build();
+
+        List<RuleFailure> errors;
+        try {
+            errors = rule.check(filesToCheck);
+        } catch (EnforcerException e) {
+            throw new MojoFailureException("Failed to validate inclusive naming", e);
+        }
+
+        if (!errors.isEmpty()) {
+            warningsByRule.put("inclusiveNaming", errors);
+            if (inclusiveNamingConfig.failOnError()) {
+              failuresByRule.put("inclusiveNaming", errors);
+            } else {
+              for (RuleFailure error : errors) {
+                  Log.warn(error.toString());
+              }
             }
         }
     }
