@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-tools-project</artifactId>
-        <version>3.0.4-SNAPSHOT</version>
+        <version>3.0.4</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>sitegen-maven-plugin</artifactId>
