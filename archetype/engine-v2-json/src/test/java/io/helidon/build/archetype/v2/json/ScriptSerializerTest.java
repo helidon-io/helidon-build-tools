@@ -118,7 +118,6 @@ class ScriptSerializerTest {
         FileSystem fs = VirtualFileSystem.create(sourceDir);
 
         JsonObject archetypeJson = ScriptSerializer.serialize(fs, true);
-        System.out.println(JsonFactory.toPrettyString(archetypeJson));
         assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
     }
 
