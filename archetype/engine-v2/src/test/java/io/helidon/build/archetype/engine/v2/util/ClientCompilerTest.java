@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,8 +107,16 @@ class ClientCompilerTest {
     }
 
     @Test
-    void testFiltering() {
-        Script script = load("compiler/filtering/main.xml");
+    void testEmptyMethod() {
+        Script script = load("compiler/empty-method/main.xml");
+        Script compiledScript = ClientCompiler.compile(script, false);
+        assertThat(compiledScript.methods().isEmpty(), is(true));
+        assertThat(compiledScript.children().isEmpty(), is(true));
+    }
+
+    @Test
+    void testFiltering1() {
+        Script script = load("compiler/filtering1/main.xml");
         Script compiledScript = ClientCompiler.compile(script, false);
         int[] index = new int[]{0};
         walk(new Node.Visitor<>() {
@@ -157,6 +165,67 @@ class ClientCompilerTest {
             }
         }, compiledScript);
         assertThat(index[0], is(3));
+    }
+
+    @Test
+    void testFiltering2() {
+        Script script = load("compiler/filtering2/main.xml");
+        Script compiledScript = ClientCompiler.compile(script, false);
+        assertThat(compiledScript.methods().isEmpty(), is(true));
+        assertThat(compiledScript.children().isEmpty(), is(true));
+    }
+
+    @Test
+    void testFiltering3() {
+        Script script = load("compiler/filtering3/main.xml");
+        Script compiledScript = ClientCompiler.compile(script, false);
+        assertThat(compiledScript.methods().isEmpty(), is(true));
+        int[] index = new int[]{0};
+        walk(new Node.Visitor<>() {
+            @Override
+            public VisitResult visitBlock(Block block, Void arg) {
+                return block.accept(new Block.Visitor<>() {
+                    @Override
+                    public VisitResult visitStep(Step step, Void arg) {
+                        assertThat(++index[0], is(1));
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitAny(Block block, Void arg) {
+                        switch (block.kind()) {
+                            case SCRIPT:
+                                break;
+                            case INPUTS:
+                                assertThat(++index[0], is(2));
+                                break;
+                            default:
+                                fail(String.format("Unexpected input: %s, index=%d", block, index[0]));
+                        }
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitInput(Input input, Void arg) {
+                        return input.accept(new Input.Visitor<>() {
+                            @Override
+                            public VisitResult visitBoolean(Input.Boolean input, Void arg) {
+                                assertThat(++index[0], is(3));
+                                assertThat(input.id(), is("boolean1"));
+                                assertThat(input.name(), is("Boolean1"));
+                                return VisitResult.CONTINUE;
+                            }
+
+                            @Override
+                            public VisitResult visitAny(Input input, Void arg) {
+                                fail(String.format("Unexpected input: %s, index=%d", block, index[0]));
+                                return VisitResult.CONTINUE;
+                            }
+                        }, arg);
+                    }
+                }, arg);
+            }
+        }, compiledScript);
     }
 
     @Test

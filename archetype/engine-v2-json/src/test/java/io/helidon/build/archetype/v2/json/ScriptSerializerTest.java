@@ -26,6 +26,7 @@ import javax.json.JsonObjectBuilder;
 
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
+import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
@@ -100,18 +101,47 @@ class ScriptSerializerTest {
     }
 
     @Test
-    void testFiltering() throws IOException {
+    void testEmptyMethodNotCompiled() throws IOException {
         Path targetDir = targetDir(this.getClass());
-        Path sourceDir = targetDir.resolve("test-classes/filtering");
-        Path expected = targetDir.resolve("test-classes/expected/filtering.json");
+        Path sourceDir = targetDir.resolve("test-classes/empty-method");
+        Path expected = targetDir.resolve("test-classes/expected/empty-method.json");
+
+        JsonObject archetypeJson = ScriptSerializer.serialize0(loadScript(sourceDir), true);
+        assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
+    }
+
+    @Test
+    void testEmptyMethodCompiled() throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/empty-method");
+        Path expected = targetDir.resolve("test-classes/expected/empty.json");
+        FileSystem fs = VirtualFileSystem.create(sourceDir);
+
+        JsonObject archetypeJson = ScriptSerializer.serialize(fs, true);
+        System.out.println(JsonFactory.toPrettyString(archetypeJson));
+        assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
+    }
+
+    @Test
+    void testFiltering1() throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/filtering1");
+        Path expected = targetDir.resolve("test-classes/expected/filtering1.json");
         FileSystem fs = VirtualFileSystem.create(sourceDir);
 
         JsonObject archetypeJson = ScriptSerializer.serialize(fs);
         assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
     }
 
-    private static JsonArray convertExpression(String expression) {
-        return ScriptSerializer.serialize(Expression.parse(expression));
+    @Test
+    void testFiltering2() throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/filtering2");
+        Path expected = targetDir.resolve("test-classes/expected/empty.json");
+        FileSystem fs = VirtualFileSystem.create(sourceDir);
+
+        JsonObject archetypeJson = ScriptSerializer.serialize(fs);
+        assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
     }
 
     @Test
@@ -195,5 +225,15 @@ class ScriptSerializerTest {
         assertThat(var6, is(not(nullValue())));
         assertThat(var6.getString("path"), is("var6"));
         assertThat(var6.getJsonArray("value").getString(0), is("item1"));
+    }
+
+    private static Script loadScript(Path sourceDir) {
+        FileSystem fs = VirtualFileSystem.create(sourceDir);
+        Path scriptPath = fs.getPath("/").resolve("main.xml");
+        return ScriptLoader.load(scriptPath);
+    }
+
+    private static JsonArray convertExpression(String expression) {
+        return ScriptSerializer.serialize(Expression.parse(expression));
     }
 }
