@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class OptimizedWalker<T> implements Node.Visitor<Void> {
         DeclaredBlock block = blocks.get(node);
         if (block != null) {
             Set<Node> blockNodes = nodes.get(block);
-            return blockNodes != null && !blockNodes.contains(node);
+            return blockNodes == null || !blockNodes.contains(node);
         }
         return true;
     }
@@ -154,7 +154,7 @@ public class OptimizedWalker<T> implements Node.Visitor<Void> {
             completed = true;
             while (it.hasNext()) {
                 Map.Entry<DeclaredBlock, Set<Invocation>> entry = it.next();
-                Node target = entry.getKey();
+                DeclaredBlock target = entry.getKey();
                 Set<Invocation> refs = entry.getValue();
                 if (!nodes.containsKey(target)) {
                     // target is empty

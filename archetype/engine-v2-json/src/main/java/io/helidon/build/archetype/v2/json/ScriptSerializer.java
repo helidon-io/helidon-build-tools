@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.json.JsonArray;
@@ -63,10 +65,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     private final AtomicInteger nextMethodId = new AtomicInteger();
     private final Map<Expression, String> exprIds = new HashMap<>();
     private final Map<Step, String> stepsIds = new HashMap<>();
-    private final Deque<Context> stack = new ArrayDeque<>();
+    private final Deque<BuilderContext> stack = new ArrayDeque<>();
     private final JsonObjectBuilder expressionsBuilder = JsonFactory.createObjectBuilder();
     private final Map<String, String> methodIds = new HashMap<>();
-    private final Map<String, Context> methodContexts = new HashMap<>();
+    private final Map<String, BuilderContext> methodBuilders = new HashMap<>();
+    private final Set<String> methodSet = new HashSet<>();
     private final JsonObjectBuilder methodsBuilder = JsonFactory.createObjectBuilder();
     private final JsonArrayBuilder directivesBuilder = JsonFactory.createArrayBuilder();
     private final boolean obfuscate;
@@ -102,11 +105,23 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
     /**
      * Serialize the given archetype to JSON.
      *
-     * @param script    entrypoint script
+     * @param script entrypoint script
      * @return JsonObject
      */
     public static JsonObject serialize(Script script) {
         return serialize(script, true);
+    }
+
+    /**
+     * Compile and serialize the given archetype to JSON.
+     *
+     * @param script    entrypoint script
+     * @param obfuscate {@code true} if the script path and method name should be replaced with ids
+     * @return JsonObject
+     */
+    public static JsonObject serialize(Script script, boolean obfuscate) {
+        Script compiledScript = ClientCompiler.compile(script, obfuscate);
+        return serialize0(compiledScript, obfuscate);
     }
 
     /**
@@ -116,10 +131,9 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
      * @param obfuscate {@code true} if the script path and method name should be replaced with ids
      * @return JsonObject
      */
-    public static JsonObject serialize(Script script, boolean obfuscate) {
+    static JsonObject serialize0(Script script, boolean obfuscate) {
         ScriptSerializer serializer = new ScriptSerializer(obfuscate);
-        Script compiledScript = ClientCompiler.compile(script, obfuscate);
-        Walker.walk(serializer, compiledScript, compiledScript);
+        Walker.walk(serializer, script, script);
         return JsonFactory.createObjectBuilder()
                           .add("expressions", serializer.expressionsBuilder.build())
                           .add("methods", serializer.methodsBuilder.build())
@@ -141,13 +155,13 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         return builder.build();
     }
 
-    private static final class Context {
+    private static final class BuilderContext {
 
         private final JsonObjectBuilder block;
         private final JsonArrayBuilder children;
         private final String exprId;
 
-        Context(JsonObjectBuilder block, JsonArrayBuilder children, String exprId) {
+        BuilderContext(JsonObjectBuilder block, JsonArrayBuilder children, String exprId) {
             this.block = block;
             this.children = children;
             this.exprId = exprId;
@@ -190,17 +204,17 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         Block.Kind kind = block.kind();
         if (block instanceof DeclaredBlock) {
             if (block.equals(script)) {
-                stack.push(new Context(null, directivesBuilder, null));
+                stack.push(new BuilderContext(null, directivesBuilder, null));
                 return VisitResult.CONTINUE;
             }
-            if (block instanceof Method){
+            if (block instanceof Method) {
                 String methodId = methodIds.get(((Method) block).name());
-                Context ctx = methodContexts.get(methodId);
+                BuilderContext ctx = methodBuilders.get(methodId);
                 if (ctx == null) {
-                    JsonObjectBuilder builder = blockBuilder(block);
-                    builder.add("name", methodId);
-                    ctx = new Context(builder, JsonFactory.createArrayBuilder(), null);
-                    methodContexts.put(methodId, ctx);
+                    JsonObjectBuilder blockBuilder = blockBuilder(block);
+                    blockBuilder.add("name", methodId);
+                    ctx = new BuilderContext(blockBuilder, JsonFactory.createArrayBuilder(), null);
+                    methodBuilders.put(methodId, ctx);
                     stack.push(ctx);
                     return VisitResult.CONTINUE;
                 }
@@ -221,7 +235,7 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         JsonObjectBuilder builder = blockBuilder(block);
         String exprId = this.exprId;
         this.exprId = null;
-        stack.push(new Context(builder, JsonFactory.createArrayBuilder(), exprId));
+        stack.push(new BuilderContext(builder, JsonFactory.createArrayBuilder(), exprId));
         return block.accept(this, builder);
     }
 
@@ -232,10 +246,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
                 stack.pop();
                 return VisitResult.CONTINUE;
             }
-            if (block instanceof Method){
+            if (block instanceof Method) {
                 String methodId = methodIds.get(((Method) block).name());
                 JsonArray methodDirectives = stack.pop().children.build();
-                if (!methodDirectives.isEmpty()) {
+                if (!methodSet.contains(methodId)) {
+                    methodSet.add(methodId);
                     methodsBuilder.add(methodId, methodDirectives);
                 }
                 return VisitResult.CONTINUE;
@@ -249,7 +264,7 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
                 return VisitResult.CONTINUE;
             default:
         }
-        Context ctx = stack.pop();
+        BuilderContext ctx = stack.pop();
         if (ctx.exprId != null) {
             ctx.block.add("if", ctx.exprId);
         }
@@ -257,11 +272,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         if (!children.isEmpty()) {
             ctx.block.add("children", children);
         }
-        Context parentCtx = stack.peek();
-        if (parentCtx == null) {
-            throw new IllegalStateException("parent context is null");
+        BuilderContext parent = stack.peek();
+        if (parent == null) {
+            throw new IllegalStateException("parent builder is null");
         }
-        parentCtx.children.add(ctx.block.build());
+        parent.children.add(ctx.block.build());
         return VisitResult.CONTINUE;
     }
 
@@ -326,8 +341,8 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         return builder;
     }
 
-    private Context ctx() {
-        Context ctx = stack.peek();
+    private BuilderContext ctx() {
+        BuilderContext ctx = stack.peek();
         if (ctx == null) {
             throw new IllegalStateException("ctx is null");
         }

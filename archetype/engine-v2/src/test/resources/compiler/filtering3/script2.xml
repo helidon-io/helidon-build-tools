@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,19 +20,27 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
 
-    <variables>
-        <boolean path="foo" transient="true">true</boolean>
-    </variables>
-    <step name="Step1">
-        <inputs>
-            <boolean id="boolean1" name="Boolean1">
-                <output>
-                    <file source="foo.txt" target="foo.txt"/>
-                </output>
-            </boolean>
-        </inputs>
-    </step>
-    <step name="Step2">
-        <inputs></inputs>
-    </step>
+    <methods>
+        <method name="module-dir-noop-transformation">
+            <output>
+                <transformation id="module-dir" if="${foo}">
+                    <replace regex="" replacement=""/>
+                </transformation>
+            </output>
+        </method>
+        <method name="module-dir-transformation">
+            <output if="!${foo}">
+                <transformation id="module-dir">
+                    <replace regex="^(.*)$" replacement="${module-dir}/$1"/>
+                </transformation>
+            </output>
+        </method>
+    </methods>
+    <call method="module-dir-noop-transformation"/>
+    <call method="module-dir-transformation"/>
+    <output>
+        <model>
+            <value key="module-dir">${module-dir}</value>
+        </model>
+    </output>
 </archetype-script>
