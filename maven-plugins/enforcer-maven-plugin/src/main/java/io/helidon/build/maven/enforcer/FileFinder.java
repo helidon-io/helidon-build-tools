@@ -73,8 +73,9 @@ public class FileFinder {
         Path gitRepoDir = (repositoryRoot == null ? GitCommands.repositoryRoot(basePath) : repositoryRoot);
 
         List<FileMatcher> excludes = new ArrayList<>();
+        List<FileMatcher> includes = new ArrayList<>();
         if (useGit && honorGitIgnore) {
-            addGitIgnore(gitRepoDir, excludes);
+            addGitIgnore(gitRepoDir, excludes, includes);
         }
 
         Set<FileRequest> foundFiles;
@@ -91,7 +92,7 @@ public class FileFinder {
         }
 
         List<FileRequest> fileRequests = foundFiles.stream()
-                .filter(file -> isValid(file, excludes))
+                .filter(file -> isValid(file, excludes, includes))
                 .collect(Collectors.toList());
 
         Set<String> filteredLocallyModified = exclude(excludes, locallyModified);
@@ -109,7 +110,7 @@ public class FileFinder {
                 + '}';
     }
 
-    private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes) {
+    private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes, List<FileMatcher> includes) {
         Path gitIgnore = gitRepoDir.resolve(".gitignore");
 
         excludes.addAll(create(".git/", GITIGNORE));
@@ -118,8 +119,16 @@ public class FileFinder {
                 .stream()
                 .filter(it -> !it.startsWith("#"))
                 .filter(it -> !it.isBlank())
-                .map(p -> create(p, GITIGNORE))
-                .forEach(excludes::addAll);
+                .map(FileMatcher::createGitIgnore)
+                .forEach(matcher -> {
+                    if (matcher instanceof FileMatcher.GitIncludeMatcher) {
+                        if (isParentExcluded(matcher.pattern(), excludes)) {
+                            includes.add(matcher);
+                        }
+                        return;
+                    }
+                    excludes.add(matcher);
+                });
     }
 
     private Set<FileRequest> findAllFiles(Path gitRepoDir, Path basePath) {
@@ -163,12 +172,20 @@ public class FileFinder {
     }
 
     private boolean isValid(FileRequest file,
-                            List<FileMatcher> excludes) {
+                                     List<FileMatcher> excludes,
+                                     List<FileMatcher> includes) {
 
         // file may have been deleted from GIT (or locally)
         if (!Files.exists(file.path())) {
             Log.debug("File " + file.relativePath() + " does not exist, ignoring.");
             return false;
+        }
+
+        for (FileMatcher include : includes) {
+            if (include.matches(file)) {
+                Log.debug("Including back " + file.relativePath());
+                return true;
+            }
         }
 
         for (FileMatcher exclude : excludes) {
@@ -178,6 +195,17 @@ public class FileFinder {
             }
         }
 
+        return true;
+    }
+
+    private boolean isParentExcluded(String pattern, List<FileMatcher> excludes) {
+        String parent = Path.of(pattern).getParent().toString();
+        FileRequest file = FileRequest.create(parent + "/");
+        for (FileMatcher exclude : excludes) {
+            if (exclude.matches(file)) {
+                return false;
+            }
+        }
         return true;
     }
 
