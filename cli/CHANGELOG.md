@@ -7,6 +7,18 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4]
+
+### Fixes
+
+- Fix archetype optimizer and JSON serializer [884](https://github.com/helidon-io/helidon-build-tools/pull/884)
+- Remove usage of `picocli.jansi.graalvm.AnsiConsole.systemInstall()` [860](https://github.com/helidon-io/helidon-build-tools/pull/860)
+- Remove graal-sdk [861](https://github.com/helidon-io/helidon-build-tools/pull/861)
+
+## 3.0.3
+
+This release of helidon-build-tools does not contain changes related to the Helidon CLI.
+
 ## [3.0.2]
 
 ### Fixes
@@ -270,8 +282,9 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
-[3.0.2]:      https://github.com/oracle/helidon-build-tools/tree/3.0.0...3.0.2
-[3.0.0]:      https://github.com/oracle/helidon-build-tools/tree/3.0.0-M2...3.0.0
+[3.0.4]:      https://github.com/oracle/helidon-build-tools/compare/3.0.2...3.0.4
+[3.0.2]:      https://github.com/oracle/helidon-build-tools/compare/3.0.0...3.0.2
+[3.0.0]:      https://github.com/oracle/helidon-build-tools/compare/3.0.0-M2...3.0.0
 [3.0.0-RC3]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC2...3.0.0-RC3
 [3.0.0-RC2]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-RC1...3.0.0-RC2
 [3.0.0-RC1]:  https://github.com/oracle/helidon-build-tools/compare/3.0.0-M4...3.0.0-RC1
