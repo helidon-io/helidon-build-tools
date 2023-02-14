@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 import { FileSystemAPI } from "./FileSystemAPI";
 import * as DailyRotateFile from 'winston-daily-rotate-file';
 
-let winston = require('winston');
+const winston = require('winston');
 
 export const logger = winston.createLogger({
   format: winston.format.combine(
@@ -39,7 +39,7 @@ export function setlogFile(fileName: string) {
 }
 
 function logsDir(): string {
-  let logsDir = FileSystemAPI.resolvePath([FileSystemAPI.tempDir(), "vscode-helidon", "plugin", "logs"]);
+  const logsDir = FileSystemAPI.resolvePath([FileSystemAPI.tempDir(), "vscode-helidon", "plugin", "logs"]);
   if (!FileSystemAPI.isPathExistsSync(logsDir)) {
     FileSystemAPI.mkDir(logsDir);
   }

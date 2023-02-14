@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
                 <xs:documentation source="description">URL of a script.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
     <xs:complexType name="exec-type">
@@ -456,7 +457,7 @@
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                   The path of an input whose value is to be set in the context.
+                    The path of an input whose value is to be set in the context.
                     <br/>
                     <ul>
                         <li>A path contains segments separated by <code>"."</code> characters</li>
@@ -509,6 +510,12 @@
         <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
+    <xs:simpleType name="required-string">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="variables-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -558,7 +565,7 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
+                        <xs:extension base="a:required-string">
                             <xs:attributeGroup ref="a:context-attribute-group"/>
                             <xs:attributeGroup ref="a:transient-attribute-group"/>
                         </xs:extension>
@@ -573,7 +580,7 @@
                             Define a list value.
                         </xs:documentation>
                     </xs:annotation>
-                    <xs:sequence maxOccurs="unbounded">
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
                         <xs:element name="value">
                             <xs:simpleType>
                                 <xs:restriction base="xs:string"/>
@@ -634,7 +641,7 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
+                        <xs:extension base="a:required-string">
                             <xs:attributeGroup ref="a:context-attribute-group"/>
                         </xs:extension>
                     </xs:simpleContent>

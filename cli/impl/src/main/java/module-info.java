@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ module io.helidon.build.cli.impl {
     requires io.helidon.build.archetype.engine.v1;
     requires io.helidon.build.archetype.engine.v2;
     requires io.helidon.build.cli.plugin;
-    requires org.graalvm.sdk;
     requires io.helidon.build.common.ansi;
     requires io.helidon.build.common;
     requires io.helidon.build.common.maven;

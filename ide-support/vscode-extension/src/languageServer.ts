@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,20 @@ const clientName = 'Helidon Language Client';
 const serverOutputChannel = VSCodeAPI.createOutputChannel("Helidon LS LOGS");
 const clientOutputChannel = VSCodeAPI.createOutputChannel(clientName);
 const outputFormatter = new OutputFormatter(serverOutputChannel);
-let client : LanguageClient;
+let client: LanguageClient;
 const net = require("net");
 const getPort = require('get-port');
 
-export function getHelidonLangServerClient() : LanguageClient {
+export function getHelidonLangServerClient(): LanguageClient {
     return client;
 }
 
-export function deactivated(value: boolean){
+export function deactivated(value: boolean) {
     deactivatedExtension = value;
 }
 
 export function startLangServer(context: ExtensionContext) {
-    let maxCountRestart = 5;
+    const maxCountRestart = 5;
     startSocketLangServer(context, maxCountRestart);
 }
 
@@ -51,25 +51,25 @@ async function startSocketLangServer(
     context: ExtensionContext,
     maxCountRestart: number
 ) {
-
+    // eslint-disable-next-line prefer-const
     let langServerProcess: ChildProcess | undefined;
 
-    if (helidonLangServerProcess){
+    if (helidonLangServerProcess) {
         logger.info("Helidon language server will be restarted. The previous instance of the server will be stopped. Pid - " + helidonLangServerProcess.pid);
         ChildProcessAPI.killProcess(helidonLangServerProcess.pid);
-        if (client){
+        if (client) {
             client.stop();
         }
     }
 
-    //start Language Server
-    let executable: string = 'java';
-    let jarFileDir = path.join(__dirname, '..', 'server');
+    // start Language Server
+    const executable: string = 'java';
+    const jarFileDir = path.join(__dirname, '..', 'server');
     const opts = {
         cwd: jarFileDir
     };
 
-    let connectionInfo = {
+    const connectionInfo = {
         port: await getPort(),
         host: "localhost"
     };
@@ -80,24 +80,24 @@ async function startSocketLangServer(
     }
     args.push('-jar', 'helidon-lsp-server.jar');
     args.push(connectionInfo.port);
-
+    // eslint-disable-next-line prefer-const
     langServerProcess = ChildProcessAPI.spawnProcess(executable, args, opts);
     configureLangServer(langServerProcess);
 
-    //connect to the Language Server
+    // connect to the Language Server
     let serverSocket: any;
 
     try {
-        //wait for the server start
+        // wait for the server start
         serverSocket = await getServerSocket(connectionInfo);
     } catch (error) {
         return;
     }
 
-    let serverOptions = () => {
+    const serverOptions = () => {
         // Connect to language server via socket
-        let socket = serverSocket;
-        let result: StreamInfo = {
+        const socket = serverSocket;
+        const result: StreamInfo = {
             writer: socket,
             reader: socket
         };
@@ -105,7 +105,7 @@ async function startSocketLangServer(
     };
 
     // Options to control the language client
-    let clientOptions: LanguageClientOptions = {
+    const clientOptions: LanguageClientOptions = {
         outputChannel: clientOutputChannel,
         outputChannelName: clientName,
         documentSelector: [
@@ -147,11 +147,11 @@ function configureLangClient(
     maxCountRestart: number
 ) {
     logger.info("Configure Helidon Language Server");
-    //reconnect to the server if it stopped
+    // reconnect to the server if it stopped
     client.onDidChangeState(async event => {
         logger.info("Client for Helidon Language Server has changed its state from " + event.oldState + " to " + event.newState);
         if (event.newState === 1 && maxCountRestart > 0) {
-            if (deactivatedExtension && helidonLangServerProcess){
+            if (deactivatedExtension && helidonLangServerProcess) {
                 logger.info("Helidon Language Server will be stopped because plugin is deactivated. Pid - " + helidonLangServerProcess.pid);
                 ChildProcessAPI.killProcess(helidonLangServerProcess.pid);
                 client.stop();
@@ -161,7 +161,7 @@ function configureLangClient(
             await new Promise(resolve => {
                 setTimeout(resolve, 1000);
             });
-            if (!deactivatedExtension){
+            if (!deactivatedExtension) {
                 logger.info("Helidon Language Server will be restarted, maxCountRestart - " + maxCountRestart);
                 startSocketLangServer(context, maxCountRestart);
             }
@@ -192,7 +192,7 @@ function getServerSocket(connectionInfo: any): Promise<any> {
     let maxReconnectAttempt = 10;
     const errorMessage = "Connection to Helidon Language Server failed";
 
-    return new Promise((resolve, reject)=>{
+    return new Promise((resolve, reject)=> {
         let socket = connect(connectionInfo)
         socket.on('error', onError);
         socket.on('connect', onConnect);

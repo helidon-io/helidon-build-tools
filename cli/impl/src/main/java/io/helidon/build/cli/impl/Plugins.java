@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.build.cli.common.ImageInfo;
 import io.helidon.build.cli.plugin.Plugin;
 import io.helidon.build.common.JavaProcessBuilder;
 import io.helidon.build.common.ProcessMonitor;
@@ -34,8 +35,6 @@ import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.Proxies;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
-
-import org.graalvm.nativeimage.ImageInfo;
 
 import static io.helidon.build.cli.impl.CommandRequirements.unsupportedJavaVersion;
 import static io.helidon.build.common.PrintStreams.STDOUT;

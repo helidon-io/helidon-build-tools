@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ export class Expression {
                 value = token.value
             } else if (token.kind === TokenKind.VARIABLE) {
                 const resolvedValue = resolver(token.value)
+                // eslint-disable-next-line eqeqeq
                 if (resolvedValue == null) {
                     throw new Error('Unresolved variable: ' + token.value)
                 }
@@ -88,7 +89,7 @@ export class Expression {
      * @param data data
      * @return {Expression}
      */
-    public static create (data: any) : Expression {
+    public static create(data: any): Expression {
         const tokens = []
         if (!Array.isArray(data)) {
             throw new TypeError('Invalid expression data: ' + JSON.stringify(data))

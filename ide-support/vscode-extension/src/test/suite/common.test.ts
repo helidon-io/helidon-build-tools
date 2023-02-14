@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 import * as vscode from "vscode";
 import * as assert from "assert";
-import {getPageContent} from "../../common";
+import { getPageContent } from "../../common";
 import * as path from "path";
 
 suite('Common functions Test Suite', () => {
 
     test('Content of the file should be loaded', async () => {
-        let extensionPath = vscode.extensions.getExtension("Oracle.helidon")?.extensionPath;
+        const extensionPath = vscode.extensions.getExtension("Oracle.helidon")?.extensionPath;
         getPageContent(path.join(
             extensionPath ? extensionPath : '', 'assets', 'start_page.html'))
             .then(content =>

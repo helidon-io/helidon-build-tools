@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 import { Context } from "./Context";
 
 export interface GeneratorData {
-    steps: any[],
-    elements: any[],
-    currentElementIndex: number,
+    steps: any[];
+    elements: any[];
+    currentElementIndex: number;
     context: Context;
 }
 
@@ -27,7 +27,7 @@ export class GeneratorDataAPI {
 
     public static convertProjectDataElements(generatorData: GeneratorData): Map<string, string> {
         const result: Map<string, string> = new Map();
-        for (let element of generatorData.elements) {
+        for (const element of generatorData.elements) {
             if (element._skip === true) {
                 continue;
             }
@@ -47,6 +47,7 @@ export class GeneratorDataAPI {
             } else if (element.kind === 'text') {
                 value = element.value;
             }
+            // eslint-disable-next-line eqeqeq
             if (value != null) {
                 result.set(element._scope.id, value);
             }

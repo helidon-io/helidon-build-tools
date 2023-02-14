@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,8 +130,8 @@ public class ClientCompiler implements Node.Visitor<Script> {
                         builder.addChild(Block.builder(builderInfo, Block.Kind.VALUE).value(value));
                     }
                 } else {
-                    String value = String.valueOf(declaredValue.value().unwrap());
-                    builder.value(value);
+                    Object rawValue = declaredValue.value().unwrap();
+                    builder.value(rawValue != null ? rawValue.toString() : null);
                 }
             } else if (block instanceof Step) {
                 builder = Step.builder(builderInfo(block));

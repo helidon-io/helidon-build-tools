@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ export class VSCodeAPI {
         return window.createOutputChannel(name);
     }
 
-    public static createQuickPick(data: QuickPickData) : QuickPick<QuickPickItem> {
+    public static createQuickPick(data: QuickPickData): QuickPick<QuickPickItem> {
         const quickPick = window.createQuickPick();
         quickPick.title = data.title;
         quickPick.totalSteps = data.totalSteps;
@@ -106,7 +106,7 @@ export class VSCodeAPI {
         return window.showWarningMessage(message, ...items);
     }
 
-    public static updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { uri: Uri, name?: string }[]): boolean {
+    public static updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { uri: Uri; name?: string }[]): boolean {
         return workspace.updateWorkspaceFolders(start, deleteCount, ...workspaceFoldersToAdd);
     }
 
@@ -119,6 +119,7 @@ export class VSCodeAPI {
     }
 
     public static createInputBox(data?: InputBoxData): InputBox {
+        // eslint-disable-next-line eqeqeq
         if (data == null) {
             return window.createInputBox();
         }

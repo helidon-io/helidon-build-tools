@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@ import java.util.Map;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.enforcer.copyright.Copyright;
 import io.helidon.build.maven.enforcer.copyright.CopyrightConfig;
+import io.helidon.build.maven.enforcer.inclusivenaming.InclusiveNamingRule;
+import io.helidon.build.maven.enforcer.inclusivenaming.InlusiveNamingConfig;
+import io.helidon.build.maven.enforcer.nativeimage.EnforcerNativeImageException;
+import io.helidon.build.maven.enforcer.nativeimage.NativeImageConfig;
+import io.helidon.build.maven.enforcer.nativeimage.NativeImageRule;
 import io.helidon.build.maven.enforcer.typo.TypoConfig;
 import io.helidon.build.maven.enforcer.typo.TyposRule;
 
@@ -43,6 +48,8 @@ import org.apache.maven.plugins.annotations.Parameter;
  * <ul>
  *     <li>copyright - validate copyright of files</li>
  *     <li>typos - validate that files do not contain certain strings</li>
+ *     <li>native-image - validate native-image version</li>
+ *     <li>inclusive-naming - validate that files do not contain inclusive naming strings</li>
  * </ul>
  */
 @Mojo(name = "check",
@@ -60,6 +67,18 @@ public class EnforcerMojo extends AbstractMojo {
      */
     @Parameter
     private TypoConfig typosConfig;
+
+    /**
+     * Configuration of native image rule.
+     */
+    @Parameter
+    private NativeImageConfig nativeImageConfig;
+
+    /**
+     * Configuration of inclusive naming config rule.
+     */
+    @Parameter
+    private InlusiveNamingConfig inclusiveNamingConfig;
 
     /**
      * Root of the repository.
@@ -168,6 +187,12 @@ public class EnforcerMojo extends AbstractMojo {
             case "typos":
                 runTypos(filesToCheck, failuresByRule, warningsByRule);
                 break;
+            case "native-image":
+                runNativeImage(failuresByRule, warningsByRule);
+                break;
+            case "inclusive-naming":
+                runInclusiveNaming(filesToCheck, failuresByRule, warningsByRule);
+                break;
             default:
                 throw new MojoExecutionException("Unsupported rule defined: " + rule);
             }
@@ -187,12 +212,7 @@ public class EnforcerMojo extends AbstractMojo {
             failuresByRule.forEach((rule, failures) -> {
                 Log.error("Rule $(magenta " + rule + ") failed. Errors:");
                 for (RuleFailure failure : failures) {
-                    Log.error("  "
-                                      + failure.fr().relativePath()
-                                      + ":"
-                                      + failure.line()
-                                      + ": "
-                                      + failure.message());
+                    Log.error(failure.toString());
                 }
             });
 
@@ -200,6 +220,60 @@ public class EnforcerMojo extends AbstractMojo {
                 throw new MojoExecutionException("Failed to validate rules: " + String.join(", " + failuresByRule.keySet()));
             } else {
                 Log.warn("Plugin is configured not to fail on error");
+            }
+        }
+    }
+
+    private void runNativeImage(Map<String, List<RuleFailure>> failuresByRule,
+                                Map<String, List<RuleFailure>> warningsByRule) throws MojoFailureException {
+        Log.info("-- native image rule");
+        Log.verbose("Native Image config: " + nativeImageConfig);
+
+        NativeImageRule rule = new NativeImageRule(nativeImageConfig);
+        List<RuleFailure> errors;
+        try {
+            errors = rule.check();
+        } catch (EnforcerNativeImageException e) {
+            throw new MojoFailureException("Failed to validate native image", e);
+        }
+
+        if (!errors.isEmpty()) {
+            warningsByRule.put("native-image", errors);
+            if (nativeImageConfig.failOnError()) {
+                failuresByRule.put("native-image", errors);
+            } else {
+                for (RuleFailure error : errors) {
+                    Log.warn(error.toString());
+                }
+            }
+        }
+    }
+
+    private void runInclusiveNaming(FoundFiles filesToCheck,
+            Map<String, List<RuleFailure>> failuresByRule,
+            Map<String, List<RuleFailure>> warningsByRule) throws MojoFailureException {
+        Log.info("-- inclusive naming rule");
+        Log.verbose("Inclusive naming config: " + inclusiveNamingConfig);
+
+        InclusiveNamingRule rule = InclusiveNamingRule.builder()
+          .config(inclusiveNamingConfig)
+          .build();
+
+        List<RuleFailure> errors;
+        try {
+            errors = rule.check(filesToCheck);
+        } catch (EnforcerException e) {
+            throw new MojoFailureException("Failed to validate inclusive naming", e);
+        }
+
+        if (!errors.isEmpty()) {
+            warningsByRule.put("inclusiveNaming", errors);
+            if (inclusiveNamingConfig.failOnError()) {
+              failuresByRule.put("inclusiveNaming", errors);
+            } else {
+              for (RuleFailure error : errors) {
+                  Log.warn(error.toString());
+              }
             }
         }
     }
@@ -227,7 +301,7 @@ public class EnforcerMojo extends AbstractMojo {
                 failuresByRule.put("typos", errors);
             } else {
                 for (RuleFailure error : errors) {
-                    Log.warn(error.fr().relativePath() + ":" + error.line() + " " + error.message());
+                    Log.warn(error.toString());
                 }
             }
         }
@@ -257,7 +331,7 @@ public class EnforcerMojo extends AbstractMojo {
                 failuresByRule.put("copyright", errors);
             } else {
                 for (RuleFailure error : errors) {
-                    Log.warn(error.fr().relativePath() + ":" + error.line() + " " + error.message());
+                    Log.warn(error.toString());
                 }
             }
         }

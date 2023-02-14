@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {ImportMock} from 'ts-mock-imports';
+import { ImportMock } from 'ts-mock-imports';
 import * as assert from "assert";
 import {
     addLaunchedServers,
@@ -26,12 +26,12 @@ import {
 import * as vscodeApi from "../../VSCodeAPI";
 import * as fsSystemApi from "../../FileSystemAPI";
 import * as childProcApi from "../../ChildProcessAPI";
-import {ChildProcess} from 'child_process';
+import { ChildProcess } from 'child_process';
 import events = require('events');
 import stream = require('stream');
 import * as vscode from "vscode";
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 let vsCodeApiMockManager: any;
 let fsSystemApiMockManager: any;
 let childProcessAPIManager: any;
@@ -56,7 +56,7 @@ suite('HelidonDev Test Suite', () => {
 
     test('No helidon server stops when the workspace is empty', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
-        let killProcessMock = childProcessAPIManager.mock('killProcess');
+        const killProcessMock = childProcessAPIManager.mock('killProcess');
 
         await stopHelidonDev();
 
@@ -65,7 +65,7 @@ suite('HelidonDev Test Suite', () => {
 
     test('No helidon server stops when there is no running Helidon project exists in the workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
-        let launchedServers = new Map([
+        const launchedServers = new Map([
             ["helidonDir1", <HelidonServerInstance>{
                 isActive: false,
                 outputChannel: {},
@@ -74,17 +74,17 @@ suite('HelidonDev Test Suite', () => {
             }]
         ]);
         addLaunchedServers(launchedServers);
-        let killProcessMock = childProcessAPIManager.mock('killProcess');
+        const killProcessMock = childProcessAPIManager.mock('killProcess');
 
         await stopHelidonDev();
-        let resultServers = getLaunchedServers();
+        const resultServers = getLaunchedServers();
         expect(resultServers.values().next().value.isActive).is.false;
         assert(killProcessMock.notCalled);
     });
 
     test('A helidon server stops when a running Helidon project exists in the workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
-        let launchedServers = new Map([
+        const launchedServers = new Map([
             ["helidonDir1", <HelidonServerInstance>{
                 isActive: true,
                 outputChannel: {},
@@ -96,13 +96,13 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('killProcess');
 
         await stopHelidonDev();
-        let resultServers = getLaunchedServers();
+        const resultServers = getLaunchedServers();
         expect(resultServers.values().next().value.isActive).is.false;
     });
 
     test('A helidon server is chosen and stops when a few running Helidon projects exist in the workspace', async () => {
         childProcessAPIManager.mock('isCommandExist', true);
-        let launchedServers = new Map([
+        const launchedServers = new Map([
             ["helidonDir1", <HelidonServerInstance>{
                 isActive: true,
                 outputChannel: {},
@@ -138,7 +138,7 @@ suite('HelidonDev Test Suite', () => {
         childProcessAPIManager.mock('killProcess');
 
         await stopHelidonDev();
-        let resultServers = getLaunchedServers();
+        const resultServers = getLaunchedServers();
         expect(resultServers.get('helidonDir3')!.isActive).is.false;
     });
 
@@ -212,7 +212,7 @@ suite('HelidonDev Test Suite', () => {
 });
 
 function createOutputChannel(): vscode.OutputChannel {
-    let outputChannel = <vscode.OutputChannel>{};
+    const outputChannel = <vscode.OutputChannel>{};
     outputChannel.show = sandbox.stub();
     return outputChannel;
 }

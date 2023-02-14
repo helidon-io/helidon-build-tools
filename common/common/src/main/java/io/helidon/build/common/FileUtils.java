@@ -34,6 +34,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Base64;
@@ -43,9 +44,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,7 +65,10 @@ import static java.util.Objects.requireNonNull;
  */
 public final class FileUtils {
 
-    private static final Map<String, String> FS_ENV = Map.of("create", "true");
+    private static final Map<String, String> FS_ENV = Map.of(
+            "create", "true", // enable creation of new zip files
+            "enablePosixFileAttributes", "true" // enable reading of posix attributes
+    );
     private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
     private static final Path TMPDIR = Path.of(System.getProperty("java.io.tmpdir"));
     private static final Random RANDOM = new Random();
@@ -726,7 +732,6 @@ public final class FileUtils {
         }
         URI uri = URI.create(uriPrefix + zip.toString().replace("\\", "/"));
         try {
-            Files.createDirectories(zip.getParent());
             return FileSystems.newFileSystem(uri, FS_ENV);
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
@@ -741,11 +746,24 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
+        return zip(zip, directory, path -> {});
+    }
+
+    /**
+     * Zip a directory.
+     *
+     * @param zip           target file
+     * @param directory     source directory
+     * @param fileConsumer  zipped file consumer
+     * @return zip file
+     */
+    public static Path zip(Path zip, Path directory, Consumer<Path> fileConsumer) {
+        ensureDirectory(zip.getParent());
         try (FileSystem fs = newZipFileSystem(zip)) {
             try (Stream<Path> entries = Files.walk(directory)) {
                 entries.sorted(Comparator.reverseOrder())
                        .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                       .forEach(p -> {
+                       .map(p -> {
                            try {
                                Path target = fs.getPath(directory.relativize(p).toString());
                                Path parent = target.getParent();
@@ -753,15 +771,27 @@ public final class FileUtils {
                                    Files.createDirectories(parent);
                                }
                                Files.copy(p, target, REPLACE_EXISTING);
+                               return target;
                            } catch (IOException ioe) {
                                throw new UncheckedIOException(ioe);
                            }
-                       });
+                       })
+                       .forEach(fileConsumer);
             }
             return zip;
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
+    }
+
+    /**
+     * Test if the given path supports POSIX file attributes.
+     *
+     * @param path path to test
+     * @return {@code true} if POSIX attributes are supported, {@code false} otherwise
+     */
+    public static boolean isPosix(Path path) {
+        return path.getFileSystem().supportedFileAttributeViews().contains("posix");
     }
 
     /**
@@ -772,9 +802,8 @@ public final class FileUtils {
      */
     public static void unzip(Path zip, Path directory) {
         try (FileSystem fs = newZipFileSystem(zip)) {
-            if (!Files.exists(directory)) {
-                Files.createDirectory(directory);
-            }
+            ensureDirectory(directory);
+            boolean posix = isPosix(directory);
             Path root = fs.getRootDirectories().iterator().next();
             try (Stream<Path> entries = Files.walk(root)) {
                 entries.filter(p -> !p.equals(root))
@@ -785,6 +814,10 @@ public final class FileUtils {
                                    Files.createDirectories(filePath);
                                } else {
                                    Files.copy(file, filePath);
+                               }
+                               if (posix) {
+                                   Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+                                   Files.setPosixFilePermissions(filePath, perms);
                                }
                            } catch (IOException ioe) {
                                throw new UncheckedIOException(ioe);

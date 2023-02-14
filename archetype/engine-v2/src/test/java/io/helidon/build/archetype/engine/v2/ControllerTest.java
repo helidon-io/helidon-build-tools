@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
@@ -104,6 +105,42 @@ class ControllerTest {
 
         List<String> values = modelValues(script, context);
         assertThat(values, contains("green"));
+    }
+
+    @Test
+    void testInvocationCondition() {
+        Script script = load("controller/invocation.xml");
+        Context context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .externalValues(Map.of("source", "true", "exec", "true"))
+                .build();
+
+        List<String> values = modelValues(script, context);
+        assertThat(values, contains("red", "green"));
+
+        context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .externalValues(Map.of("source", "true", "exec", "false"))
+                .build();
+
+        values = modelValues(script, context);
+        assertThat(values, contains("green"));
+
+        context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .externalValues(Map.of("source", "false", "exec", "true"))
+                .build();
+
+        values = modelValues(script, context);
+        assertThat(values, contains("red"));
+
+        context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .externalValues(Map.of("source", "false", "exec", "false"))
+                .build();
+
+        values = modelValues(script, context);
+        assertThat(values.size(), is(0));
     }
 
     private static List<String> modelValues(Block block, Context context) {
