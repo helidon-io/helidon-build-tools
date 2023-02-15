@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -129,11 +130,7 @@ public class MavenSupport {
                     result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
                     }.getType());
                 } catch (IOException e) {
-                    String message = "Error when executing the maven command - "
-                            + lspMvnDependenciesCommand + System.lineSeparator()
-                            + output.content().stream().collect(Collectors.joining(System.lineSeparator()));
-                    LOGGER.log(Level.SEVERE, message, e);
-                    LanguageClientLogUtil.logMessage(message, e);
+                    throw new UncheckedIOException(e);
                 }
                 LOGGER.log(
                         Level.FINEST,
