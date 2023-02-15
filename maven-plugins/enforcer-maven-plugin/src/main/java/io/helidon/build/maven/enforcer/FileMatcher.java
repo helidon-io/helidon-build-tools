@@ -71,8 +71,7 @@ public interface FileMatcher {
 
         if (pattern.contains("**")) {
             if (pattern.startsWith("**/")) {
-                //Todo **/foo cannot match foo
-                return new ContainsMatcher(pattern.substring(2));
+                return new EndsWithMatcher(pattern.substring(2));
             }
             if (pattern.endsWith("/**")) {
                 return new StartsWithMatcher(pattern.substring(0, pattern.length() - 2));

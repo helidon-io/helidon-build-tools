@@ -291,6 +291,10 @@ class ExcludeTest {
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.NameEndExclude.class));
 
+        matchers = createGitIgnore("**/foo");
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.EndsWithMatcher.class));
+
         matchers = createGitIgnore("foo.*");
         assertThat(matchers.size(), is(1));
         assertThat(matchers.get(0), instanceOf(FileMatcher.NameStartExclude.class));

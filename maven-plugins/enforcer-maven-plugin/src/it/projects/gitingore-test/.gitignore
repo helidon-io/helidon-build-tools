@@ -1,0 +1,9 @@
+dir/file.txt
+dir/dir3/
+/dir/dir4/?i[a-z]e4
+dir/**/file2.txt
+dir/dir6/**
+**/file5.txt
+\!dir/file.txt
+*.ico
+file7

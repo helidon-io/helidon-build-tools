@@ -177,6 +177,9 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <cloneAllFiles>true</cloneAllFiles>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

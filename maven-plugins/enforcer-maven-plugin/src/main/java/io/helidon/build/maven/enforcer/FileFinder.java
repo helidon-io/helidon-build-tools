@@ -74,7 +74,7 @@ public class FileFinder {
 
         List<FileMatcher> excludes = new ArrayList<>();
         List<FileMatcher> includes = new ArrayList<>();
-        if (useGit && honorGitIgnore) {
+        if (honorGitIgnore) {
             addGitIgnore(gitRepoDir, excludes, includes);
         }
 
