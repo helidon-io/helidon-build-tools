@@ -33,8 +33,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
 
-import static io.helidon.build.maven.enforcer.FileMatcher.PatternFormat.GITIGNORE;
-import static io.helidon.build.maven.enforcer.FileMatcher.create;
+import static io.helidon.build.maven.enforcer.GitParser.addGitIgnore;
 
 /**
  * Configuration of discovery of files to check.
@@ -110,27 +109,6 @@ public class FileFinder {
                 + '}';
     }
 
-    private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes, List<FileMatcher> includes) {
-        Path gitIgnore = gitRepoDir.resolve(".gitignore");
-
-        excludes.addAll(create(".git/", GITIGNORE));
-
-        FileSystem.toLines(gitIgnore)
-                .stream()
-                .filter(it -> !it.startsWith("#"))
-                .filter(it -> !it.isBlank())
-                .map(FileMatcher::createGitIgnore)
-                .forEach(matcher -> {
-                    if (matcher instanceof FileMatcher.GitIncludeMatcher) {
-                        if (isParentExcluded(matcher.pattern(), excludes)) {
-                            includes.add(matcher);
-                        }
-                        return;
-                    }
-                    excludes.add(matcher);
-                });
-    }
-
     private Set<FileRequest> findAllFiles(Path gitRepoDir, Path basePath) {
         Set<FileRequest> result = new HashSet<>();
 
@@ -195,17 +173,6 @@ public class FileFinder {
             }
         }
 
-        return true;
-    }
-
-    private boolean isParentExcluded(String pattern, List<FileMatcher> excludes) {
-        String parent = Path.of(pattern).getParent().toString();
-        FileRequest file = FileRequest.create(parent + "/");
-        for (FileMatcher exclude : excludes) {
-            if (exclude.matches(file)) {
-                return false;
-            }
-        }
         return true;
     }
 

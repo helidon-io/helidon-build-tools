@@ -19,6 +19,8 @@ package io.helidon.build.maven.enforcer;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static io.helidon.build.maven.enforcer.GitParser.createGitIgnore;
+
 /**
  * A matcher for files created from a list of excludes or includes.
  * Supports the following patterns:
@@ -54,53 +56,6 @@ public interface FileMatcher {
             return List.of(createGitIgnore(pattern));
         }
         return createDefault(pattern);
-    }
-
-    /**
-     * Create matcher from git pattern.
-     *
-     * @param pattern pattern to parse
-     * @return matcher that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
-     */
-    static FileMatcher createGitIgnore(String pattern) {
-        //Start with '!', negates the pattern. It is not possible to re-include a file if a parent directory
-        //of that file is excluded.
-        if (pattern.startsWith("\\!")) {
-            return new GitIncludeMatcher(pattern);
-        }
-
-        if (pattern.contains("**")) {
-            if (pattern.startsWith("**/")) {
-                return new EndsWithMatcher(pattern.substring(2));
-            }
-            if (pattern.endsWith("/**")) {
-                return new StartsWithMatcher(pattern.substring(0, pattern.length() - 2));
-            }
-            if (pattern.contains("/**/")) {
-                return new MiddleDirectoryMatcher(pattern);
-            }
-        }
-        if (pattern.contains("*")) {
-            if (pattern.startsWith("*.")) {
-                return new SuffixMatcher(pattern.substring(1));
-            }
-            if (pattern.startsWith("*")) {
-                return new NameEndExclude(pattern.substring(1));
-            }
-            if (pattern.endsWith("*")) {
-                return new NameStartExclude(pattern.substring(0, pattern.length() - 1));
-            }
-        }
-        if (pattern.startsWith("/")) {
-            return new StartsWithMatcher(pattern.substring(1));
-        }
-        if (pattern.endsWith("/")) {
-            return new DirectoryMatcher(pattern);
-        }
-        if (!pattern.contains("/")) {
-            return new NameMatcher(pattern);
-        }
-        return new ContainsMatcher(pattern);
     }
 
     /**
