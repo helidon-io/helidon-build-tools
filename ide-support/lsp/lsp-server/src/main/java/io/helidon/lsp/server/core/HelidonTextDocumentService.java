@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.lsp.server.core;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +28,7 @@ import io.helidon.lsp.server.service.ContentManager;
 import io.helidon.lsp.server.service.TextDocumentHandler;
 import io.helidon.lsp.server.service.TextDocumentHandlerFactory;
 import io.helidon.lsp.server.service.config.ConfigurationPropertiesService;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import org.eclipse.lsp4j.CallHierarchyIncomingCall;
 import org.eclipse.lsp4j.CallHierarchyIncomingCallsParams;
@@ -258,7 +260,9 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 //fill the cache
                 configService.metadataForFile(docUri);
             } catch (URISyntaxException | IOException e) {
-                LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+                String message = "Exception while opening the file " + docUri;
+                LOGGER.log(Level.SEVERE, message, e);
+                LanguageClientLogUtil.logMessage(message, e);
             }
         }
     }
@@ -276,11 +280,13 @@ public class HelidonTextDocumentService implements TextDocumentService {
                 contentManager.write(docUri, List.of(didChangeTextDocumentParams.getContentChanges().get(0).getText()));
             }
             if (docUri.endsWith("pom.xml")) {
-                configService.cleanCache(docUri);
+                configService.cleanCache(new URI(docUri).getPath());
                 configService.metadataForFile(docUri);
             }
         } catch (URISyntaxException | IOException e) {
-            LOGGER.log(Level.SEVERE, "exception while opening the file " + docUri, e);
+            String message = "Exception while opening the file " + docUri;
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
         }
     }
 

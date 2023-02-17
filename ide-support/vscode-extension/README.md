@@ -1,94 +1,104 @@
 # Helidon support for Visual Studio Code
 
-This extension helps users to generate their first Helidon project, develop and run it.
+This extension helps users to generate a Helidon project, develop and run it.
+
+The [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) extension is optional 
+but recommended for the installation in Visual Studio Code to support Java projects. 
 
 ## Requirements
 
-* Maven 3.5.3+ is required to be installed on your system.
-* Helidon CLI is required to be installed on your system if you want to use continuous compilation and application
-  restart.
-*
-
-The [Language Support for Eclipse MicroProfile](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-microprofile)
-extension is required to be installed in Visual Studio Code.
-
-* The [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java)
-  extension is required to be installed in Visual Studio Code.
-* The [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) extension is
-  optional but recommended.
+* Maven 3.8.2 or newer is required to be installed in your system.
+* Java 17 or newer is required to be installed in your system.
 
 ## Features
 
 The Helidon extension provides:
 
 * Helidon project creation wizard
-* Start/stop helidon dev (as you make source code changes the project will automatically recompile and restart your
+* Start/stop Developer Loop (as you make source code changes the project will automatically recompile and restart your
   application)
-* auto completion for the application.properties files
+* Auto completion for configuration properties files (application.yaml, microprofile-config.properties, etc.)
 
 ## How to open the start page for the extension
 
-1. Open Command Palette by shortcut you are using (default: Ctrl+Shift+P).
-2. Start typing 'Helidon':
+* Open Command Palette using `View -> Command Pallette...` from the top menu bar or by shortcut for this command for your Operating System
+   (for Windows and Linux - `Ctrl+Shift+A`, for Mac - `Cmd+Shift+P`).
+* Start typing `Helidon` 
 
 ![](images/helidon_command_palette.png)
 
-3. Choose 'Helidon: Start page'.
+* Choose `Helidon: Getting Started`.
 
-## How to generate Helidon Project
+## How to generate a Helidon Project
 
-1. Open Command Palette by shortcut you are using (default: Ctrl+Shift+P).
-2. Start typing 'Helidon' :
+* Open Command Palette.
+* Start typing `Helidon` 
 
 ![](images/helidon_command_palette.png)
 
-3. Choose 'Helidon: Generate a Helidon project'.
-4. Choose type of the Helidon project :
+* Choose `Helidon: Generate a New Helidon Project`.
+* Choose Helidon version 
 
-![](images/generator_type_project_selection.png)
+![](images/generator_helidon_version.png)
 
-5. Follow generator till the end.
-6. You will receive messages during the process, and a request where do you want to open the project:
+* Follow generator till the end.
+* You will receive messages during the process, and a request where do you want to open the project
 
 ![](images/project_generator_messages.png)
 
-7. Your new project is generated
+* Your new project is generated
 
-## How to start helidon dev
+## How to start Helidon Dev Loop
 
-1. Open Command Palette by shortcut you are using (default: Ctrl+Shift+P)
-2. Start typing 'Helidon'
-3. Choose 'Helidon: Start helidon dev'
-4. If workspace contains only one helidon project, helidon dev starts automatically. If workspace contains more than one
-   helidon project, you will be asked to choose a directory to start helidon dev.
+* Open Command Palette
+* Start typing `Helidon`
+* Choose `Helidon: Start Helidon Dev Loop`
+* If a workspace contains only one Helidon project, `Helidon Dev Loop` starts automatically. If the workspace contains more than one
+   Helidon project, you will be asked to choose a directory to start `Helidon Dev Loop`.
 
 ![](images/start_server_selection.png)
 
-5. You will find the server logs in the bottom panel in the output tab. You can select a server to show the logs
-   choosing project directory in the drop-down list.
+* You will find the server logs in the bottom panel in the tab `OUTPUT`. You can select a server to show the logs
+   choosing a project directory in the drop-down list.
 
 ![](images/running_server_output.png)
 
-## How to stop helidon dev
+## How to stop Helidon Dev Loop
 
-1. Open Command Palette by shortcut you are using (default: Ctrl+Shift+P)
-2. Start typing 'Helidon'
-3. Choose 'Helidon: Stop helidon dev'
-4. If workspace contains only one running helidon project, helidon dev stops automatically. If workspace contains more
-   than one running helidon project, you will be asked to choose a directory to stop helidon dev.
+* Open Command Palette
+* Start typing `Helidon`
+* Choose `Helidon: Stop Helidon Dev Loop`
+* If the workspace contains only one running Helidon project, `Helidon Dev Loop` stops automatically. If the workspace contains more
+   than one running Helidon project, you will be asked to choose a directory to stop `Helidon Dev Loop`.
 
 ![](images/stop_server_selection.png)
 
+## Configuration of the extension
+
+Helidon VSCode extension has three options that can be configured in the settings of the extension :
+* Helidon: Show Start Page (`helidon.showStartPage`) :
+  
+  If start page should be displayed on the extension startup. 
+  
+  Default value - true.
+* Helidon: Maven Home Dir (`helidon.mavenHomeDir`) :
+  
+  Path to the directory where Apache Maven is installed that will be used by the plugin.
+  
+  Default value - empty string (default Maven version for your Operating System will be used).
+* Helidon: Java Home Dir (`helidon.javaHomeDir`) :
+  
+  Path to the JAVA_HOME directory of the installed JDK that will be used by the plugin.
+  
+  Default value - empty string (default Java version for your Operating System will be used).
+
 ## How to test
 
-1. Clone the project
-2. Run the following command in your newly cloned project folder
-    * npm install
-2. Open it in VS Code
-3. Run it
-4. You will need a backend part of the project Lsp4helidon
-   from [helidon-build-tools](https://github.com/oracle/helidon-build-tools)
-5. To build the backend part of the project run `npm run build`. This command runs scripts from package.json.
+* Clone the project [helidon-build-tools](https://github.com/helidon-io/helidon-build-tools)
+* You will need to build a module `ide-support` using `Maven`. This module contains backend and frontend parts of the VSCode extension,
+ its dependencies and a maven plugin that is used by `Helidon Language Server`. 
+* Open the module `helidon-vscode-extension` in `VS Code`.
+* Run it
 
 ## Helidon Documentation
 
@@ -101,5 +111,5 @@ Helidon provides detailed documentation and guides for its components.
 
 Let us know if you need help with Helidon on our Slack channel or report an issue on our issue tracker.
 
-[Github issues](https://github.com/oracle/helidon-build-tools/issues)
+[Github issues](https://github.com/helidon-io/helidon-build-tools/issues)
 [Slack channel](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LWNiNGIzOGFhZDdjNzAyM2Y2MzlmMDI4NWY4YjE1OWQ2OTdkYTZkN2FlNDcxNmUyZmZmMTZhZmZhNWI2ZTI1NGI)

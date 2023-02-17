@@ -25,12 +25,12 @@ import * as childProcApi from "../../ChildProcessAPI";
 import * as events from "events";
 import * as stream from "stream";
 import * as generatorAPI from "../../GeneratorCommand";
+import fetch from 'node-fetch';
 
 let vsCodeApiMockManager: any;
 let fsSystemApiMockManager: any;
 let childProcessAPIManager: any;
 let generatorAPIManager: any;
-const axios = require('axios');
 const sinon = require('sinon');
 
 suite('Helidon Project Generator Test Suite', () => {
@@ -55,10 +55,10 @@ suite('Helidon Project Generator Test Suite', () => {
         vsCodeApiMockManager.mock('showOpenFolderDialog', <vscode.Uri>{fsPath: "fsPath"});
         vsCodeApiMockManager.mock('createOutputChannel', <vscode.OutputChannel>{appendLine(str: string) {}});
         fsSystemApiMockManager.mock('isPathExistsSync', false);
-        sinon.stub(axios, 'get').callsFake(() => Promise.resolve({ status: 200, data: {} }));
-
+        const stub = sinon.stub(fetch, 'Promise').resolves({ json: () => Promise.resolve({}) });
         const childProcessMock = childProcessAPIManager.mock('execProcess', createChildProcess());
         await helidonGenerator.showHelidonGenerator("helidonJarFolder");
+        stub.restore();
         assert(childProcessMock.calledOnce);
     });
 });

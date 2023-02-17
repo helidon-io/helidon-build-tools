@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -36,9 +37,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
+import io.helidon.lsp.server.util.LanguageClientLogUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -79,7 +82,9 @@ public class MavenSupport {
         try {
             mavenPath = MavenCommand.mavenExecutable();
         } catch (IllegalStateException e) {
-            LOGGER.log(Level.SEVERE, "Maven is not installed in the system", e);
+            String message = "Maven is not installed in the system";
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
             return;
         }
         if (mavenPath != null) {
@@ -99,11 +104,13 @@ public class MavenSupport {
      */
     public Set<Dependency> dependencies(final String pomPath, int timeout) {
         if (!isMavenInstalled) {
+            LOGGER.log(Level.WARNING, "It is not possible to get Helidon dependencies from the maven repository. Maven is not "
+                    + "installed.");
             return null;
         }
         long startTime = System.currentTimeMillis();
+        MavenPrintStream output = new MavenPrintStream();
         try (ServerSocket serverSocket = new ServerSocket(0)) {
-            PrintStream output = new MavenPrintStream();
             MavenCommand.builder()
                         .addArgument(lspMvnDependenciesCommand)
                         .addArgument("-Dport=" + serverSocket.getLocalPort())
@@ -123,7 +130,7 @@ public class MavenSupport {
                     result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {
                     }.getType());
                 } catch (IOException e) {
-                    LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
+                    throw new UncheckedIOException(e);
                 }
                 LOGGER.log(
                         Level.FINEST,
@@ -133,7 +140,11 @@ public class MavenSupport {
                 return result;
             }).get(timeout, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error when executing the maven command - " + lspMvnDependenciesCommand, e);
+            String message = "Error when executing the maven command - " + lspMvnDependenciesCommand
+                    + System.lineSeparator()
+                    + output.content().stream().collect(Collectors.joining(System.lineSeparator()));
+            LOGGER.log(Level.SEVERE, message, e);
+            LanguageClientLogUtil.logMessage(message, e);
         }
         LOGGER.log(
                 Level.FINEST,
@@ -145,13 +156,14 @@ public class MavenSupport {
 
     private static String getMavenVersion() {
         final Properties properties = new Properties();
-        final String corePomProperties = "META-INF/maven/io.helidon.ide-support.lsp/io.helidon.lsp.server/pom.properties";
+        final String corePomProperties = "META-INF/maven/io.helidon.ide-support.lsp/helidon-lsp-server/pom.properties";
 
         try (InputStream in = MavenSupport.class.getClassLoader().getResourceAsStream(corePomProperties)) {
             if (in != null) {
                 properties.load(in);
             }
         } catch (IOException ioe) {
+            LanguageClientLogUtil.logMessage("", ioe);
             return "";
         }
 

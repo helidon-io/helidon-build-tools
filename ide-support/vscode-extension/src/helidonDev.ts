@@ -22,11 +22,15 @@ import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { OutputFormatter } from "./OutputFormatter";
 import * as vscode from "vscode";
+import { logger } from "./logger";
+import { HELIDON_OUTPUT_CHANNEL } from "./common";
 
 const POM_XML_FILE: string = 'pom.xml';
 const SRC_DIR: string = 'src';
 const EXCLUDE_DIRS: RegExp[] = [/target/i, /^\./i];
 const launchedServers: Map<string, HelidonServerInstance> = new Map();
+
+const logChannel = VSCodeAPI.outputChannel(HELIDON_OUTPUT_CHANNEL);
 
 export interface HelidonServerInstance {
     serverProcess: ChildProcess;
@@ -70,6 +74,8 @@ export async function startHelidonDev(extensionPath: string): Promise<Map<string
 
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
+        logChannel.appendLine(e.stack ?? e.message);
         return new Map();
     }
 }
@@ -103,6 +109,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: s
         const helidonServer = launchedServers.get(helidonDirName)!;
         if (helidonServer.isActive) {
             helidonServer.outputChannel.show();
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in the folder '${helidonDirName}' is already running`);
             return helidonServer;
         }
         // change existing instance
@@ -115,7 +122,7 @@ function obtainHelidonServerInstance(helidonProjectDir: string, extensionPath: s
     }
 
     // create new instance
-    const outputChannel = VSCodeAPI.createOutputChannel(helidonDirName);
+    const outputChannel = VSCodeAPI.outputChannel(helidonDirName);
     outputChannel.show();
     const serverProcess = obtainNewServerProcess(helidonProjectDir, extensionPath);
     configureServerOutput(serverProcess, outputChannel);
@@ -208,15 +215,18 @@ function configureServerOutput(serverProcess: ChildProcess, outputChannel: Outpu
 
     serverProcess.on('close', (code: string) => {
         outputChannel.appendLine("Server stopped");
-        stopHelidonDev();
+        stopHelidonDev(true);
     });
 }
 
-export async function stopHelidonDev() {
+export async function stopHelidonDev(flag?: boolean) {
     try {
         let currentHelidonServer: HelidonServerInstance;
         const activeServerNames = getActiveServerNames();
         if (activeServerNames.length === 0) {
+            if (flag === undefined){
+                VSCodeAPI.showInformationMessage(`Dev Loop is not started`);
+            }
             return;
         }
         if (activeServerNames.length === 1) {
@@ -229,10 +239,15 @@ export async function stopHelidonDev() {
 
         if (stopServerName) {
             currentHelidonServer = launchedServers.get(stopServerName)!;
+            currentHelidonServer.outputChannel.show();
             deactivateServer(currentHelidonServer);
+        } else {
+            VSCodeAPI.showInformationMessage(`Dev Loop for the project in the folder '${stopServerName}' is not started`);
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
+        logChannel.appendLine(e.stack ?? e.message);
         return;
     }
 }

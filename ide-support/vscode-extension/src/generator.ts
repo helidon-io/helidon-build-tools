@@ -16,12 +16,13 @@
 
 import * as path from 'path';
 import { InputBox, QuickInput, QuickInputButtons, QuickPick, Uri } from 'vscode';
-import { getSubstringBetween, QuickPickData, QuickPickItemExt } from "./common";
+import { getSubstringBetween, HELIDON_OUTPUT_CHANNEL, QuickPickData, QuickPickItemExt } from "./common";
 import { VSCodeAPI } from "./VSCodeAPI";
 import { FileSystemAPI } from "./FileSystemAPI";
 import { ChildProcessAPI } from "./ChildProcessAPI";
 import { BaseCommand, GeneratorData, GeneratorDataAPI, OptionCommand, TextCommand } from "./GeneratorCommand";
 import { validateQuickPick, validateText } from "./validationApi";
+import fetch from 'node-fetch';
 
 import { logger } from './logger';
 import { Interpreter } from "./Interpreter";
@@ -40,7 +41,8 @@ const EXISTING_FOLDER = ' already exists in selected directory.';
 const ARCHETYPE_CACHE: Map<string, any> = new Map();
 const VERSIONS_URL: string = 'https://helidon.io/api/versions';
 const ARCHETYPES_URL_PREFIX = 'https://helidon.io/api/starter/';
-const axios = require('axios');
+
+const channel = VSCodeAPI.outputChannel(HELIDON_OUTPUT_CHANNEL);
 
 export async function showHelidonGenerator(extensionPath: string) {
 
@@ -62,7 +64,6 @@ export async function showHelidonGenerator(extensionPath: string) {
         const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
             ${archetypeValues}`;
 
-        const channel = VSCodeAPI.createOutputChannel('helidon');
         channel.appendLine(cmd);
 
         const opts = {
@@ -160,8 +161,8 @@ export async function showHelidonGenerator(extensionPath: string) {
         const helidonVersion: string = generatorData.elements[0].selectedValues[0];
         archetype = ARCHETYPE_CACHE.get(helidonVersion);
         if (!archetype) {
-            const helidonArchetypeResponse: any = await axios.get(ARCHETYPES_URL_PREFIX+helidonVersion);
-            archetype = helidonArchetypeResponse.data;
+            const helidonArchetypeResponse: any = await fetch(ARCHETYPES_URL_PREFIX+helidonVersion);
+            archetype = await helidonArchetypeResponse.json();
             ARCHETYPE_CACHE.set(helidonVersion, archetype);
         }
 
@@ -186,8 +187,8 @@ export async function showHelidonGenerator(extensionPath: string) {
 
     async function init() {
         try {
-            const helidonVersionsResponse: any = await axios.get(VERSIONS_URL);
-            const helidonVersions: HelidonVersions = helidonVersionsResponse.data;
+            const helidonVersionsResponse: any = await fetch(VERSIONS_URL);
+            const helidonVersions: HelidonVersions =await helidonVersionsResponse.json();
             // eslint-disable-next-line eqeqeq
             if (helidonVersions == null || Object.keys(helidonVersions).length === 0) {
                 return;
@@ -224,9 +225,13 @@ export async function showHelidonGenerator(extensionPath: string) {
             await getInput(generatorData.elements[generatorData.currentElementIndex]);
         } catch (e) {
             if (typeof e === "string") {
+                VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e}`);
                 logger.error(e);
+                channel.appendLine(e);
             } else if (e instanceof Error) {
-                logger.error(e.message);
+                VSCodeAPI.showErrorMessage(`Cannot get information about Helidon archetypes : ${e.message}`);
+                logger.error(e.stack);
+                channel.appendLine(e.stack ?? e.message);
             }
         }
     }
@@ -439,6 +444,8 @@ export async function showHelidonGenerator(extensionPath: string) {
         }
     } catch (e: any) {
         VSCodeAPI.showErrorMessage(e.message);
+        logger.error(e.stack);
+        channel.appendLine(e.stack ?? e.message);
     }
 
 }

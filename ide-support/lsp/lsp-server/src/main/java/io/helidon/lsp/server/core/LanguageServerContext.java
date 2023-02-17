@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.lsp.server.core;
 import java.util.List;
 
 import org.eclipse.lsp4j.WorkspaceFolder;
+import org.eclipse.lsp4j.services.LanguageClient;
 
 /**
  * Context data for the running instance of the Helidon Language Server.
@@ -27,8 +28,27 @@ public class LanguageServerContext {
 
     private static final LanguageServerContext INSTANCE = new LanguageServerContext();
     private List<WorkspaceFolder> workspaceFolders;
+    private LanguageClient client;
 
     private LanguageServerContext() {
+    }
+
+    /**
+     * Get LanguageClient.
+     *
+     * @return LanguageClient
+     */
+    public LanguageClient client() {
+        return client;
+    }
+
+    /**
+     * Set LanguageClient.
+     *
+     * @param client LanguageClient
+     */
+    public void client(LanguageClient client) {
+        this.client = client;
     }
 
     /**
@@ -39,6 +59,7 @@ public class LanguageServerContext {
     public static LanguageServerContext instance() {
         return INSTANCE;
     }
+
     /**
      * Get workspace folders in IDE.
      *
