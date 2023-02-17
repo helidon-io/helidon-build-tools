@@ -65,6 +65,7 @@ public final class InitOptions {
     private final String groupIdOption;
     private final String artifactIdOption;
     private final String packageNameOption;
+    private final String outputPropsFileOption;
     private final boolean batch;
     private String projectName;
     private String groupId;
@@ -107,6 +108,7 @@ public final class InitOptions {
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
+            @KeyValue(name = "output-props-file", description = "Path to file where user inputs will be saved") String outputPropsFile,
             @Option.Flag(name = "batch", description = "Enable non-interactive mode") boolean batch) {
 
         this.buildOption = build;
@@ -120,6 +122,7 @@ public final class InitOptions {
         this.groupIdOption = groupId;
         this.artifactIdOption = artifactId;
         this.packageNameOption = packageName;
+        this.outputPropsFileOption = outputPropsFile;
         this.batch = batch;
 
         // The following will be updated by applyConfig:
@@ -128,6 +131,10 @@ public final class InitOptions {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.packageName = packageName;
+    }
+
+    public String outputPropsFileOption() {
+        return outputPropsFileOption;
     }
 
     /**

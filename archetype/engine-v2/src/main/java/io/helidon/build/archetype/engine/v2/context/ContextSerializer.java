@@ -29,25 +29,7 @@ public class ContextSerializer implements ContextEdge.Visitor {
 
     private static final Set<ContextValue.ValueKind> DEFAULT_VALUE_KIND_FILTER =
             Set.of(ContextValue.ValueKind.EXTERNAL, ContextValue.ValueKind.USER);
-    private static final Predicate<ContextEdge> DEFAULT_CONTEXT_FILTER =
-            edge ->
-                    edge.value() != null
-                            && !edge.node().visibility().equals(ContextScope.Visibility.UNSET)
-                            && DEFAULT_VALUE_KIND_FILTER.contains(edge.value().kind());
-    private static final Function<String, String> DEFAULT_VALUE_MAPPER = value -> {
-        Set<Character> forRemoval = Set.of('[', ']');
-        if (value == null || value.length() == 0) {
-            return value;
-        }
-        StringBuilder builder = new StringBuilder(value);
-        if (forRemoval.contains(builder.charAt(0))) {
-            builder.deleteCharAt(0);
-        }
-        if (builder.length() > 0 && forRemoval.contains(builder.charAt(builder.length() - 1))) {
-            builder.deleteCharAt(builder.length() - 1);
-        }
-        return builder.toString();
-    };
+
     private static final String DEFAULT_VALUE_DELIMITER = ",";
 
     private final Map<String, String> result;
@@ -110,9 +92,29 @@ public class ContextSerializer implements ContextEdge.Visitor {
      */
     public static Map<String, String> serialize(Context context) {
         Map<String, String> result = new HashMap<>();
-        context.scope()
-               .visitEdges(new ContextSerializer(result, DEFAULT_CONTEXT_FILTER, DEFAULT_VALUE_MAPPER, DEFAULT_VALUE_DELIMITER),
-                       false);
+        context.scope().visitEdges(new ContextSerializer(result, ContextSerializer::defaultContextFilter,
+                        ContextSerializer::defaultValueMapper, DEFAULT_VALUE_DELIMITER), false);
         return result;
+    }
+
+    private static String defaultValueMapper(String value) {
+        Set<Character> forRemoval = Set.of('[', ']');
+        if (value == null || value.length() == 0) {
+            return value;
+        }
+        StringBuilder builder = new StringBuilder(value);
+        if (forRemoval.contains(builder.charAt(0))) {
+            builder.deleteCharAt(0);
+        }
+        if (builder.length() > 0 && forRemoval.contains(builder.charAt(builder.length() - 1))) {
+            builder.deleteCharAt(builder.length() - 1);
+        }
+        return builder.toString();
+    }
+
+    private static boolean defaultContextFilter(ContextEdge edge) {
+        return edge.value() != null
+                && !edge.node().visibility().equals(ContextScope.Visibility.UNSET)
+                && DEFAULT_VALUE_KIND_FILTER.contains(edge.value().kind());
     }
 }

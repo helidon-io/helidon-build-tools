@@ -46,6 +46,6 @@ class ArchetypeInvokerTest {
     }
 
     private static InitOptions initOptions(String helidonVersion) {
-        return new InitOptions(null, null, helidonVersion, null, null, null, null, null, false);
+        return new InitOptions(null, null, helidonVersion, null, null, null, null, null, null, false);
     }
 }

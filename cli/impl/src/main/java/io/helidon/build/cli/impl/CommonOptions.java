@@ -81,8 +81,7 @@ final class CommonOptions {
                   @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
                   @Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
-                          visible = false) String since
-    ) {
+                          visible = false) String since) {
         this.verbose = verbose || debug;
         this.debug = debug;
         this.error = error;

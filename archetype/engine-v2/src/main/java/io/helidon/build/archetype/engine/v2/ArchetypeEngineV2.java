@@ -18,13 +18,14 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextSerializer;
+import io.helidon.build.common.FileUtils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -42,6 +43,7 @@ public class ArchetypeEngineV2 {
     private final Map<String, String> externalDefaults;
     private final Runnable onResolved;
     private final Function<String, Path> directorySupplier;
+    private final String outputPropsFile;
 
     private ArchetypeEngineV2(Builder builder) {
         this.cwd = builder.cwd;
@@ -50,6 +52,7 @@ public class ArchetypeEngineV2 {
         this.externalDefaults = builder.externalDefaults;
         this.onResolved = builder.onResolved;
         this.directorySupplier = builder.directorySupplier;
+        this.outputPropsFile = builder.outputPropsFile;
     }
 
     /**
@@ -79,16 +82,17 @@ public class ArchetypeEngineV2 {
         // resolve model  (full traversal)
         MergedModel model = MergedModel.resolveModel(script, context);
 
-        Map<String, String> userInputsMap = ContextSerializer.serialize(context);
-        String userInputs = userInputsMap.entrySet().stream()
-                                         .map(entry -> entry.getKey() + "=" + entry.getValue())
-                                         .collect(Collectors.joining(System.lineSeparator()));
-        model.node().add(new MergedModel.Value(model.node(), "user-inputs", 100, userInputs, null));
-
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
         context.requireRootScope();
+
+        if (outputPropsFile != null) {
+            Map<String, String> userInputsMap = ContextSerializer.serialize(context);
+            String path = Paths.get(outputPropsFile).isAbsolute() ? outputPropsFile : directory.resolve(outputPropsFile)
+                                                                                               .toString();
+            FileUtils.saveToPropertiesFile(userInputsMap, path);
+        }
 
         return directory;
     }
@@ -113,8 +117,20 @@ public class ArchetypeEngineV2 {
         private Map<String, String> externalDefaults = Map.of();
         private Runnable onResolved = () -> {};
         private Function<String, Path> directorySupplier;
+        private String outputPropsFile;
 
         private Builder() {
+        }
+
+        /**
+         * Set the path to the output properties file to save user inputs.
+         *
+         * @param outputPropsFile path to the output properties file
+         * @return this builder
+         */
+        public Builder outputPropsFile(String outputPropsFile) {
+            this.outputPropsFile = outputPropsFile;
+            return this;
         }
 
         /**

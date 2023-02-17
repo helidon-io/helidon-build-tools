@@ -55,8 +55,7 @@ final class ReflectedEngine {
                     boolean isInteractive,
                     Map<String, String> externalValues,
                     Map<String, String> externalDefaults,
-                    Function<String, Path> directorySupplier
-    ) {
+                    Function<String, Path> directorySupplier) {
         try {
             classLoader = cl;
             Class<?> engineClass = cl.loadClass(ENGINE_FCN);

@@ -29,6 +29,7 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.zip;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -251,6 +252,16 @@ class ArchetypeEngineV2Test {
     }
 
     @Test
+    void testOutputPropsFile() throws IOException {
+        Path outputDir = e2eZip("testOutputPropsFile", Map.of(
+                "theme", "shapes",
+                "theme.base", "custom"),
+                "output.properties");
+
+        assertOutputPropsFile(outputDir);
+    }
+
+    @Test
     void testCustomShapesZip() throws IOException {
         Path outputDir = e2eZip("testCustomShapesZip", Map.of(
                 "theme", "shapes",
@@ -329,6 +340,15 @@ class ArchetypeEngineV2Test {
                 + "\n"
                 + "Notes:\n"
                 + "- Shapes can have many styles\n"));
+    }
+
+    private void assertOutputPropsFile(Path outputDir) throws IOException {
+        Path outputPropsFile = outputDir.resolve("output.properties");
+        assertThat(Files.exists(outputPropsFile), is(true));
+        String props = readFile(outputPropsFile);
+        assertThat(props, containsString(""
+                + "theme=shapes\n"
+                + "theme.base=custom\n"));
     }
 
     private void assertCustomReadme(Path outputDir) throws IOException {
@@ -425,6 +445,17 @@ class ArchetypeEngineV2Test {
         return e2eZip(name, externalValues, Map.of());
     }
 
+    private Path e2eZip(String name, Map<String, String> externalValues, String outputPropsFile) throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/e2e");
+        Path testOutputDir = targetDir.resolve("engine-ut");
+        Path zipFile = unique(testOutputDir, "archetype", ".zip");
+        zip(zipFile, sourceDir);
+        FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
+        Path outputDir = unique(testOutputDir, name);
+        return e2e(fs, outputDir, externalValues, Map.of(), outputPropsFile);
+    }
+
     private Path e2eZip(String name,
                         Map<String, String> externalValues,
                         Map<String, String> externalDefaults) throws IOException {
@@ -436,7 +467,7 @@ class ArchetypeEngineV2Test {
         zip(zipFile, sourceDir);
         FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues, externalDefaults);
+        return e2e(fs, outputDir, externalValues, externalDefaults, null);
     }
 
     private Path e2eDir(String name, Map<String, String> externalValues) {
@@ -449,19 +480,21 @@ class ArchetypeEngineV2Test {
         Path testOutputDir = targetDir.resolve("engine-ut");
         FileSystem fs = VirtualFileSystem.create(sourceDir);
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues, externalDefaults);
+        return e2e(fs, outputDir, externalValues, externalDefaults, null);
     }
 
     private Path e2e(FileSystem archetype,
                      Path directory,
                      Map<String, String> externalValues,
-                     Map<String, String> externalDefaults) {
+                     Map<String, String> externalDefaults,
+                     String outputPropsFile) {
         ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
                                                     .fileSystem(archetype)
                                                     .inputResolver(new BatchInputResolver())
                                                     .directorySupplier(n -> unique(directory, n))
                                                     .externalDefaults(externalDefaults)
                                                     .externalValues(externalValues)
+                                                    .outputPropsFile(outputPropsFile)
                                                     .build();
         Path outputDir = engine.generate();
         assertThat(Files.exists(outputDir), is(true));

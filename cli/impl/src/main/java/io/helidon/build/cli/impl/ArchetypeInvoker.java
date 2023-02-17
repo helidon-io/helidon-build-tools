@@ -466,6 +466,7 @@ abstract class ArchetypeInvoker {
                                                         .externalDefaults(externalDefaults)
                                                         .onResolved(onResolved())
                                                         .directorySupplier(projectDirSupplier())
+                                                        .outputPropsFile(initOptions.outputPropsFileOption())
                                                         .build();
             try {
                 return engine.generate();

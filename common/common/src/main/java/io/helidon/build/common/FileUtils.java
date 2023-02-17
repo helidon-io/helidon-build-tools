@@ -17,8 +17,10 @@ package io.helidon.build.common;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -978,13 +980,30 @@ public final class FileUtils {
      *
      * @param filePath path to file
      * @return content of the properties file
-     * @throws IOException IOException
      */
-    public static Properties loadProperties(String filePath) throws IOException {
+    public static Properties loadProperties(String filePath) {
         try (InputStream input = new FileInputStream(filePath)) {
             Properties props = new Properties();
             props.load(input);
             return props;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Save data that is stored in Map {@code values} to properties file.
+     *
+     * @param values   data to store
+     * @param filePath path to file
+     */
+    public static void saveToPropertiesFile(Map<String, String> values, String filePath) {
+        try (OutputStream output = new FileOutputStream(filePath)) {
+            Properties props = new Properties();
+            props.putAll(values);
+            props.store(output, null);
+        } catch (IOException io) {
+            throw new UncheckedIOException(io);
         }
     }
 }

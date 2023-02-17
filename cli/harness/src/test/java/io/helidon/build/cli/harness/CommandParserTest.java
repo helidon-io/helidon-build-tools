@@ -26,7 +26,6 @@ import java.util.Properties;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
-import io.helidon.build.common.RequirementFailure;
 
 import org.junit.jupiter.api.Test;
 
@@ -330,10 +329,9 @@ public class CommandParserTest {
 
         CommandParser parser = CommandParser.create("command", "--props-file", "not_existing_props_file.txt");
 
-        RequirementFailure e = assertThrows(
-                RequirementFailure.class,
-                () -> parser.parseCommand(cmd)
-        );
+        UncheckedIOException e = assertThrows(
+                UncheckedIOException.class,
+                () -> parser.parseCommand(cmd));
         assertThat(e.getMessage(), containsString("not_existing_props_file.txt (No such file or directory)"));
     }
 }

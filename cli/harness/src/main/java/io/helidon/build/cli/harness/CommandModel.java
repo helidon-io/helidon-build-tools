@@ -35,7 +35,7 @@ public abstract class CommandModel extends CommandParameters {
      * @param params command parameters
      */
     protected CommandModel(CommandInfo commandInfo, ParameterInfo<?>... params) {
-        super(GlobalOptions.GLOBAL_FLAGS, params);
+        super(GlobalOptions.GLOBAL_OPTIONS_INFO, params);
         this.commandInfo = Objects.requireNonNull(commandInfo, "commandInfo is null");
     }
 

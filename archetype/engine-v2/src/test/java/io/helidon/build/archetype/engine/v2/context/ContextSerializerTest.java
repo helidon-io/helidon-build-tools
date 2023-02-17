@@ -35,21 +35,18 @@ class ContextSerializerTest {
                 "foo", "foo",
                 "foo1", "",
                 "foo2", "some_var_default",
-                "foo3", "bar1_value"
-        );
+                "foo3", "bar1_value");
         Context context = Context.builder()
                                  .externalDefaults(Map.of(
                                          "some_var", "some_var_default",
-                                         "bar1", "bar1_default_value"
-                                 ))
+                                         "bar1", "bar1_default_value"))
                                  .externalValues(Map.of(
                                          "foo", "foo",
                                          "bar", "${foo}",
                                          "foo1", "${non_exist_var}",
                                          "foo2", "${some_var}",
                                          "bar1", "bar1_value",
-                                         "foo3", "${bar1}"
-                                 ))
+                                         "foo3", "${bar1}"))
                                  .build();
 
         Map<String, String> result = ContextSerializer.serialize(context,

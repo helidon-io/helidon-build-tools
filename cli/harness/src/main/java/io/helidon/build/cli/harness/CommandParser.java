@@ -39,6 +39,7 @@ import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
+import io.helidon.build.common.FileUtils;
 
 /**
  * Command parser.
@@ -209,7 +210,7 @@ public final class CommandParser {
      * @return resolver that can be used to resolve the values for the parsed parameters
      */
     Resolver parseCommand() {
-        return parseCommand(new CommandParameters(GlobalOptions.GLOBAL_FLAGS));
+        return parseCommand(new CommandParameters(GlobalOptions.GLOBAL_OPTIONS_INFO));
     }
 
     private Resolver parseCommand(Map<String, ParameterInfo<?>> parametersMap) {
@@ -243,7 +244,7 @@ public final class CommandParser {
                     KeyValueParam keyValueParam = new KeyValueParam(optionName, it.next().trim());
                     parsedParams.put(optionName, keyValueParam);
                     if (keyValueParam.name().equals(GlobalOptions.PROPS_FILE_OPTION_NAME)) {
-                            Properties props = GlobalOptions.propsFileContent(keyValueParam.value);
+                            Properties props = FileUtils.loadProperties(keyValueParam.value);
                             props.forEach((key, value) -> properties.put(String.valueOf(key), String.valueOf(value)));
                     }
                 } else if (paramInfo instanceof KeyValuesInfo) {

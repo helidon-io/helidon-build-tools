@@ -15,17 +15,14 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
-import io.helidon.build.common.FileUtils;
-import io.helidon.build.common.RequirementFailure;
 
 /**
  * Global option constants.
@@ -153,6 +150,17 @@ public class GlobalOptions {
     public static final String ARGS_FILE_OPTION_ARGUMENT = "--" + ARGS_FILE_OPTION_NAME;
 
     /**
+     * The --args-file option info.
+     */
+    public static final ParameterInfo<String> ARGS_FILE_OPTION_INFO = new CommandModel.KeyValueInfo<>(
+            String.class,
+            ARGS_FILE_OPTION_NAME,
+            ARGS_FILE_OPTION_DESCRIPTION,
+            null,
+            false,
+            false);
+
+    /**
      * The --props-file option name.
      */
     public static final String PROPS_FILE_OPTION_NAME = "props-file";
@@ -185,7 +193,7 @@ public class GlobalOptions {
      * @return {@code true} if a global flag.
      */
     public static boolean isGlobalFlag(String argument) {
-        return GLOBAL_FLAG_ARGUMENTS.contains(argument);
+        return GLOBAL_OPTION_ARGUMENTS.contains(argument) && GLOBAL_OPTIONS.get(argument.substring(2)) instanceof FlagInfo ;
     }
 
     /**
@@ -199,45 +207,29 @@ public class GlobalOptions {
     }
 
     /**
-     * Global flags.
+     * Global options info.
      */
-    static final FlagInfo[] GLOBAL_FLAGS = new FlagInfo[]{
+    static final ParameterInfo<?>[] GLOBAL_OPTIONS_INFO = new ParameterInfo[]{
             HELP_FLAG_INFO,
             VERBOSE_FLAG_INFO,
             DEBUG_FLAG_INFO,
             ERROR_FLAG_INFO,
-            PLAIN_FLAG_INFO
+            PLAIN_FLAG_INFO,
+            PROPS_FILE_OPTION_INFO,
+            ARGS_FILE_OPTION_INFO
     };
 
-    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Stream.of(GLOBAL_FLAGS)
-                                                                   .map(f -> "--" + f.name())
+    private static final Set<String> GLOBAL_OPTION_ARGUMENTS = Stream.of(GLOBAL_OPTIONS_INFO)
+                                                                   .map(info -> (CommandModel.NamedOptionInfo<?>) info)
+                                                                   .map(info -> "--" + info.name())
                                                                    .collect(Collectors.toSet());
 
     /**
      * Global options.
      */
-    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS = Map.of(
-            HELP_FLAG_NAME, HELP_FLAG_INFO,
-            VERBOSE_FLAG_NAME, VERBOSE_FLAG_INFO,
-            DEBUG_FLAG_NAME, DEBUG_FLAG_INFO,
-            ERROR_FLAG_NAME, ERROR_FLAG_INFO,
-            PLAIN_FLAG_NAME, PLAIN_FLAG_INFO,
-            PROPS_FILE_OPTION_NAME, PROPS_FILE_OPTION_INFO
-    );
-
-    /**
-     * Get properties from the file declared in the --props-file option.
-     *
-     * @param filePath path to the file with properties.
-     * @return properties from the file.
-     */
-    public static Properties propsFileContent(String filePath) {
-        try {
-            return FileUtils.loadProperties(filePath);
-        } catch (IOException e) {
-            throw new RequirementFailure(e.getMessage());
-        }
-    }
+    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS = Stream.of(GLOBAL_OPTIONS_INFO)
+            .map(info->(CommandModel.NamedOptionInfo<?>)info)
+            .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
     private GlobalOptions() {
     }
