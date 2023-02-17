@@ -193,7 +193,7 @@ public class GlobalOptions {
      * @return {@code true} if a global flag.
      */
     public static boolean isGlobalFlag(String argument) {
-        return GLOBAL_OPTION_ARGUMENTS.contains(argument) && GLOBAL_OPTIONS.get(argument.substring(2)) instanceof FlagInfo ;
+        return GLOBAL_OPTION_ARGUMENTS.contains(argument) && GLOBAL_OPTIONS.get(argument.substring(2)) instanceof FlagInfo;
     }
 
     /**
@@ -220,16 +220,17 @@ public class GlobalOptions {
     };
 
     private static final Set<String> GLOBAL_OPTION_ARGUMENTS = Stream.of(GLOBAL_OPTIONS_INFO)
-                                                                   .map(info -> (CommandModel.NamedOptionInfo<?>) info)
-                                                                   .map(info -> "--" + info.name())
-                                                                   .collect(Collectors.toSet());
+                                                                     .map(info -> (CommandModel.NamedOptionInfo<?>) info)
+                                                                     .map(info -> "--" + info.name())
+                                                                     .collect(Collectors.toSet());
 
     /**
      * Global options.
      */
-    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS = Stream.of(GLOBAL_OPTIONS_INFO)
-            .map(info->(CommandModel.NamedOptionInfo<?>)info)
-            .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
+    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS =
+            Stream.of(GLOBAL_OPTIONS_INFO)
+                  .map(info -> (CommandModel.NamedOptionInfo<?>) info)
+                  .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
     private GlobalOptions() {
     }

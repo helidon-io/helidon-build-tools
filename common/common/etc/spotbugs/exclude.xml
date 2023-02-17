@@ -29,6 +29,12 @@
     </Match>
 
     <Match>
+        <!-- This API writes to a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.common.FileUtils"/>
+        <Bug pattern="PATH_TRAVERSAL_OUT"/>
+    </Match>
+
+    <Match>
         <!-- This random generator (java.util.Random) is predictable -->
         <Class name="io.helidon.build.common.FileUtils"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>

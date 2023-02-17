@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,8 @@ public final class InitOptions {
             @KeyValue(name = "artifactid", description = "Project's artifact ID") String artifactId,
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
-            @KeyValue(name = "output-props-file", description = "Path to file where user inputs will be saved") String outputPropsFile,
+            @KeyValue(name = "output-props-file", description = "Path to file where user inputs will be saved")
+            String outputPropsFile,
             @Option.Flag(name = "batch", description = "Enable non-interactive mode") boolean batch) {
 
         this.buildOption = build;
@@ -133,6 +134,11 @@ public final class InitOptions {
         this.packageName = packageName;
     }
 
+    /**
+     * Get the output-props-file option.
+     *
+     * @return output-props-file
+     */
     public String outputPropsFileOption() {
         return outputPropsFileOption;
     }

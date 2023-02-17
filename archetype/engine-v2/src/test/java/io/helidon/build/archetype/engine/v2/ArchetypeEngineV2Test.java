@@ -346,9 +346,8 @@ class ArchetypeEngineV2Test {
         Path outputPropsFile = outputDir.resolve("output.properties");
         assertThat(Files.exists(outputPropsFile), is(true));
         String props = readFile(outputPropsFile);
-        assertThat(props, containsString(""
-                + "theme=shapes\n"
-                + "theme.base=custom\n"));
+        assertThat(props, containsString("theme=shapes\n"));
+        assertThat(props, containsString("theme.base=custom\n"));
     }
 
     private void assertCustomReadme(Path outputDir) throws IOException {
