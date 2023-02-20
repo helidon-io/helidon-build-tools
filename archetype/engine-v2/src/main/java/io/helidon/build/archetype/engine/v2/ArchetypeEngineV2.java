@@ -18,7 +18,6 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.function.Function;
 
