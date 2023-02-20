@@ -981,8 +981,8 @@ public final class FileUtils {
      * @param filePath path to file
      * @return content of the properties file
      */
-    public static Properties loadProperties(String filePath) {
-        try (InputStream input = new FileInputStream(filePath)) {
+    public static Properties loadProperties(Path filePath) {
+        try (InputStream input = Files.newInputStream(filePath)) {
             Properties props = new Properties();
             props.load(input);
             return props;
@@ -997,13 +997,13 @@ public final class FileUtils {
      * @param values   data to store
      * @param filePath path to file
      */
-    public static void saveToPropertiesFile(Map<String, String> values, String filePath) {
-        try (OutputStream output = new FileOutputStream(filePath)) {
+    public static void saveToPropertiesFile(Map<String, String> values, Path filePath) {
+        try (OutputStream output = Files.newOutputStream(filePath)) {
             Properties props = new Properties();
             props.putAll(values);
             props.store(output, null);
-        } catch (IOException io) {
-            throw new UncheckedIOException(io);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

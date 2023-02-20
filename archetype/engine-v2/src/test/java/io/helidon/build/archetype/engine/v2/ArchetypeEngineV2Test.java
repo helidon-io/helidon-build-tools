@@ -452,7 +452,7 @@ class ArchetypeEngineV2Test {
         zip(zipFile, sourceDir);
         FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues, Map.of(), outputPropsFile);
+        return e2e(fs, outputDir, externalValues, Map.of(), Path.of(outputPropsFile));
     }
 
     private Path e2eZip(String name,
@@ -486,7 +486,7 @@ class ArchetypeEngineV2Test {
                      Path directory,
                      Map<String, String> externalValues,
                      Map<String, String> externalDefaults,
-                     String outputPropsFile) {
+                     Path outputPropsFile) {
         ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
                                                     .fileSystem(archetype)
                                                     .inputResolver(new BatchInputResolver())

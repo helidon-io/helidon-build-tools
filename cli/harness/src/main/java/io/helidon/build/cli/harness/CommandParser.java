@@ -244,7 +244,7 @@ public final class CommandParser {
                     KeyValueParam keyValueParam = new KeyValueParam(optionName, it.next().trim());
                     parsedParams.put(optionName, keyValueParam);
                     if (keyValueParam.name().equals(GlobalOptions.PROPS_FILE_OPTION_NAME)) {
-                            Properties props = FileUtils.loadProperties(keyValueParam.value);
+                            Properties props = FileUtils.loadProperties(Path.of(keyValueParam.value));
                             props.forEach((key, value) -> properties.put(String.valueOf(key), String.valueOf(value)));
                     }
                 } else if (paramInfo instanceof KeyValuesInfo) {

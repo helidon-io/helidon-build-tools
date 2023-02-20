@@ -332,6 +332,6 @@ public class CommandParserTest {
         UncheckedIOException e = assertThrows(
                 UncheckedIOException.class,
                 () -> parser.parseCommand(cmd));
-        assertThat(e.getMessage(), containsString("not_existing_props_file.txt (No such file or directory)"));
+        assertThat(e.getMessage(), containsString("NoSuchFileException: not_existing_props_file.txt"));
     }
 }

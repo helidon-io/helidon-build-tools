@@ -43,7 +43,7 @@ public class ArchetypeEngineV2 {
     private final Map<String, String> externalDefaults;
     private final Runnable onResolved;
     private final Function<String, Path> directorySupplier;
-    private final String outputPropsFile;
+    private final Path outputPropsFile;
 
     private ArchetypeEngineV2(Builder builder) {
         this.cwd = builder.cwd;
@@ -89,8 +89,7 @@ public class ArchetypeEngineV2 {
 
         if (outputPropsFile != null) {
             Map<String, String> userInputsMap = ContextSerializer.serialize(context);
-            String path = Paths.get(outputPropsFile).isAbsolute() ? outputPropsFile : directory.resolve(outputPropsFile)
-                                                                                               .toString();
+            Path path = outputPropsFile.isAbsolute() ? outputPropsFile : directory.resolve(outputPropsFile);
             FileUtils.saveToPropertiesFile(userInputsMap, path);
         }
 
@@ -117,7 +116,7 @@ public class ArchetypeEngineV2 {
         private Map<String, String> externalDefaults = Map.of();
         private Runnable onResolved = () -> {};
         private Function<String, Path> directorySupplier;
-        private String outputPropsFile;
+        private Path outputPropsFile;
 
         private Builder() {
         }
@@ -128,7 +127,7 @@ public class ArchetypeEngineV2 {
          * @param outputPropsFile path to the output properties file
          * @return this builder
          */
-        public Builder outputPropsFile(String outputPropsFile) {
+        public Builder outputPropsFile(Path outputPropsFile) {
             this.outputPropsFile = outputPropsFile;
             return this;
         }

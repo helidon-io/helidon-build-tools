@@ -15,6 +15,7 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public final class InitOptions {
     private final String groupIdOption;
     private final String artifactIdOption;
     private final String packageNameOption;
-    private final String outputPropsFileOption;
+    private final Path outputPropsFileOption;
     private final boolean batch;
     private String projectName;
     private String groupId;
@@ -123,7 +124,7 @@ public final class InitOptions {
         this.groupIdOption = groupId;
         this.artifactIdOption = artifactId;
         this.packageNameOption = packageName;
-        this.outputPropsFileOption = outputPropsFile;
+        this.outputPropsFileOption = outputPropsFile == null ? null : Path.of(outputPropsFile);
         this.batch = batch;
 
         // The following will be updated by applyConfig:
@@ -139,7 +140,7 @@ public final class InitOptions {
      *
      * @return output-props-file
      */
-    public String outputPropsFileOption() {
+    public Path outputPropsFileOption() {
         return outputPropsFileOption;
     }
 
