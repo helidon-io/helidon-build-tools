@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.File;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class ArchetypeEngineV2 {
     private final Map<String, String> externalDefaults;
     private final Runnable onResolved;
     private final Function<String, Path> directorySupplier;
-    private final Path outputPropsFile;
+    private final File outputPropsFile;
 
     private ArchetypeEngineV2(Builder builder) {
         this.cwd = builder.cwd;
@@ -88,7 +89,7 @@ public class ArchetypeEngineV2 {
 
         if (outputPropsFile != null) {
             Map<String, String> userInputsMap = ContextSerializer.serialize(context);
-            Path path = outputPropsFile.isAbsolute() ? outputPropsFile : directory.resolve(outputPropsFile);
+            Path path = outputPropsFile.isAbsolute() ? outputPropsFile.toPath() : directory.resolve(outputPropsFile.toPath());
             FileUtils.saveToPropertiesFile(userInputsMap, path);
         }
 
@@ -115,18 +116,18 @@ public class ArchetypeEngineV2 {
         private Map<String, String> externalDefaults = Map.of();
         private Runnable onResolved = () -> {};
         private Function<String, Path> directorySupplier;
-        private Path outputPropsFile;
+        private File outputPropsFile;
 
         private Builder() {
         }
 
         /**
-         * Set the path to the output properties file to save user inputs.
+         * Set the output properties file to save user inputs.
          *
-         * @param outputPropsFile path to the output properties file
+         * @param outputPropsFile output properties file
          * @return this builder
          */
-        public Builder outputPropsFile(Path outputPropsFile) {
+        public Builder outputPropsFile(File outputPropsFile) {
             this.outputPropsFile = outputPropsFile;
             return this;
         }

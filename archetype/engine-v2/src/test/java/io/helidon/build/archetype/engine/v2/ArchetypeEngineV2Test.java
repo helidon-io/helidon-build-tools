@@ -15,6 +15,7 @@
  */
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -452,7 +453,7 @@ class ArchetypeEngineV2Test {
         zip(zipFile, sourceDir);
         FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
         Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, externalValues, Map.of(), Path.of(outputPropsFile));
+        return e2e(fs, outputDir, externalValues, Map.of(), Path.of(outputPropsFile).toFile());
     }
 
     private Path e2eZip(String name,
@@ -486,7 +487,7 @@ class ArchetypeEngineV2Test {
                      Path directory,
                      Map<String, String> externalValues,
                      Map<String, String> externalDefaults,
-                     Path outputPropsFile) {
+                     File outputPropsFile) {
         ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
                                                     .fileSystem(archetype)
                                                     .inputResolver(new BatchInputResolver())
