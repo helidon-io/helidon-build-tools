@@ -44,7 +44,7 @@ class MavenSupportTest {
         String pomForFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "pom.xml")
                                  .toAbsolutePath()
                                  .toString();
-        String testFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "test.txt")
+        String testFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "src", "main", "test.txt")
                                .toAbsolutePath()
                                .toString();
         String resolvedPom = MavenSupport.instance().resolvePom(testFile);
