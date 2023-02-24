@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.load;
 import static io.helidon.build.archetype.engine.v2.TestHelper.readFile;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,6 +44,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class OutputGeneratorTest {
 
+    @Test
+    void testContextValues() throws IOException {
+        Path outputDir = generate("generator/context-values.xml");
+        Path expected = outputDir.resolve("context-values.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), containsString("bar\n"));
+        assertThat(readFile(expected), containsString("se\n"));
+        assertThat(readFile(expected), containsString("true\n"));
+        assertThat(readFile(expected), containsString("test variable 1\n"));
+        assertThat(readFile(expected), containsString("test variable 2\n"));
+        assertThat(readFile(expected), containsString("test variable 3\n"));
+        assertThat(readFile(expected), not(containsString("test variable 4\n")));
+    }
     @Test
     void testFile() throws IOException {
         Path outputDir = generate("generator/file.xml");
