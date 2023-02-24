@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,13 +46,13 @@ public class CommandParameters {
     /**
      * Create a new command parameters.
      *
-     * @param globalFlags global flags info
+     * @param globalOptions global options info
      * @param params      parameters info
      */
-    protected CommandParameters(CommandModel.FlagInfo[] globalFlags, ParameterInfo<?>... params) {
+    protected CommandParameters(CommandParameters.ParameterInfo<?>[] globalOptions, ParameterInfo<?>... params) {
         this.params = new LinkedList<>();
-        if (globalFlags != null) {
-            Collections.addAll(this.params, globalFlags);
+        if (globalOptions != null) {
+            Collections.addAll(this.params, globalOptions);
         }
         if (params != null) {
             Collections.addAll(this.params, params);

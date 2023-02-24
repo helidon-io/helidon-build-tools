@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public abstract class CommandModel extends CommandParameters {
      * @param params command parameters
      */
     protected CommandModel(CommandInfo commandInfo, ParameterInfo<?>... params) {
-        super(GlobalOptions.GLOBAL_FLAGS, params);
+        super(GlobalOptions.GLOBAL_OPTIONS_INFO, params);
         this.commandInfo = Objects.requireNonNull(commandInfo, "commandInfo is null");
     }
 
