@@ -3,6 +3,6 @@ Excluding dir/dir5/file5.txt
 Excluding dir/file.ico
 Excluding dir/dir7/file7
 Excluding dir/dir3/file3
-Including back dir/file.txt
+Including dir/file.txt
 Excluding dir/dir4/file4
 Excluding dir/dir2/file2.txt

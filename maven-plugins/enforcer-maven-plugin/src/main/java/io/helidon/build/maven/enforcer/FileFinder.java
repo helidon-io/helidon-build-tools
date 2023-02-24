@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
 
-import static io.helidon.build.maven.enforcer.GitParser.addGitIgnore;
+import static io.helidon.build.maven.enforcer.GitIgnore.create;
 
 /**
  * Configuration of discovery of files to check.
@@ -72,9 +72,9 @@ public class FileFinder {
         Path gitRepoDir = (repositoryRoot == null ? GitCommands.repositoryRoot(basePath) : repositoryRoot);
 
         List<FileMatcher> excludes = new ArrayList<>();
-        List<FileMatcher> includes = new ArrayList<>();
         if (honorGitIgnore) {
-            addGitIgnore(gitRepoDir, excludes, includes);
+            Log.debug("Git repository: " + gitRepoDir);
+            excludes.add(create(gitRepoDir));
         }
 
         Set<FileRequest> foundFiles;
@@ -91,7 +91,7 @@ public class FileFinder {
         }
 
         List<FileRequest> fileRequests = foundFiles.stream()
-                .filter(file -> isValid(file, excludes, includes))
+                .filter(file -> isValid(file, excludes))
                 .collect(Collectors.toList());
 
         Set<String> filteredLocallyModified = exclude(excludes, locallyModified);
@@ -149,21 +149,12 @@ public class FileFinder {
                 .collect(Collectors.toSet());
     }
 
-    private boolean isValid(FileRequest file,
-                                     List<FileMatcher> excludes,
-                                     List<FileMatcher> includes) {
+    private boolean isValid(FileRequest file, List<FileMatcher> excludes) {
 
         // file may have been deleted from GIT (or locally)
         if (!Files.exists(file.path())) {
             Log.debug("File " + file.relativePath() + " does not exist, ignoring.");
             return false;
-        }
-
-        for (FileMatcher include : includes) {
-            if (include.matches(file)) {
-                Log.debug("Including back " + file.relativePath());
-                return true;
-            }
         }
 
         for (FileMatcher exclude : excludes) {

@@ -20,7 +20,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.maven.enforcer.FileMatcher.PatternFormat.GITIGNORE;
+import static io.helidon.build.maven.enforcer.GitIgnore.EndsWithMatcher;
+import static io.helidon.build.maven.enforcer.GitIgnore.GitIncludeMatcher;
+import static io.helidon.build.maven.enforcer.GitIgnore.MiddleDirectoryMatcher;
+import static io.helidon.build.maven.enforcer.GitIgnore.NameEndExclude;
+import static io.helidon.build.maven.enforcer.GitIgnore.NameStartExclude;
+import static io.helidon.build.maven.enforcer.GitIgnore.RegexMatcher;
 import static io.helidon.build.maven.enforcer.FileMatcher.create;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -106,7 +111,7 @@ class ExcludeTest {
 
     @Test
     void testNameEnd() {
-        FileMatcher exclude = new FileMatcher.NameEndExclude("bar");
+        FileMatcher exclude = new NameEndExclude("bar");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo.bar"));
@@ -124,7 +129,7 @@ class ExcludeTest {
 
     @Test
     void testNameStart() {
-        FileMatcher exclude = new FileMatcher.NameStartExclude("foo");
+        FileMatcher exclude = new NameStartExclude("foo");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo.bar"));
@@ -142,7 +147,7 @@ class ExcludeTest {
 
     @Test
     void testRegexMatcher() {
-        FileMatcher exclude = new FileMatcher.RegexMatcher("[a-z]oo");
+        FileMatcher exclude = new RegexMatcher("[a-z]oo");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo"));
@@ -154,14 +159,14 @@ class ExcludeTest {
         excluded = exclude.matches(FileRequest.create("1oo"));
         assertThat("Should not matches 1oo file", excluded, is(false));
 
-        exclude = new FileMatcher.RegexMatcher("foo-[a-z]oo");
+        exclude = new RegexMatcher("foo-[a-z]oo");
         excluded = exclude.matches(FileRequest.create("foo-foo"));
         assertThat("Should matches foo-foo file", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("foo-1oo"));
         assertThat("Should not matches foo-1oo file", excluded, is(false));
 
-        exclude = new FileMatcher.RegexMatcher("foo-[a-z]oo-[a-z]oo");
+        exclude = new RegexMatcher("foo-[a-z]oo-[a-z]oo");
         excluded = exclude.matches(FileRequest.create("foo-foo-foo"));
         assertThat("Should matches foo-foo-foo file", excluded, is(true));
 
@@ -177,7 +182,7 @@ class ExcludeTest {
 
     @Test
     void testMiddleDirectory() {
-        FileMatcher exclude = new FileMatcher.MiddleDirectoryMatcher("a/**/b");
+        FileMatcher exclude = new MiddleDirectoryMatcher("a/**/b");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("a/c/b"));
@@ -201,24 +206,24 @@ class ExcludeTest {
 
     @Test
     void testEndsWith() {
-        FileMatcher exclude = new FileMatcher.EndsWithMatcher("src/main/java");
+        FileMatcher exclude = new EndsWithMatcher("src/main/java");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("src/main/java"));
         assertThat("Should matches src/main/java directory", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("root/src/main/java"));
-        assertThat(exclude, instanceOf(FileMatcher.EndsWithMatcher.class));
+        assertThat(exclude, instanceOf(EndsWithMatcher.class));
         assertThat("Should matches root/src/main/java directory", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("src/main/java/directory"));
-        assertThat(exclude, instanceOf(FileMatcher.EndsWithMatcher.class));
+        assertThat(exclude, instanceOf(EndsWithMatcher.class));
         assertThat("Should not matches src/main/java/directory directory", excluded, is(false));
     }
 
     @Test
     void testInclude() {
-        FileMatcher exclude = new FileMatcher.GitIncludeMatcher("\\!etc/copyright.txt");
+        FileMatcher exclude = new GitIncludeMatcher("\\!etc/copyright.txt");
 
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("etc/copyright.txt"));
@@ -263,57 +268,43 @@ class ExcludeTest {
 
     @Test
     void testGitFileMatcherInstance() {
-        List<FileMatcher> matchers = createGitIgnore(".foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.NameMatcher.class));
+        FileMatcher matcher = GitIgnore.create(".foo");
+        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
 
-        matchers = createGitIgnore("foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.NameMatcher.class));
+        matcher = GitIgnore.create("foo");
+        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
 
-        matchers = createGitIgnore("*.foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
+        matcher = GitIgnore.create("*.foo");
+        assertThat(matcher, instanceOf(FileMatcher.SuffixMatcher.class));
 
-        matchers = createGitIgnore("foo/bar/");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
+        matcher = GitIgnore.create("foo/bar/");
+        assertThat(matcher, instanceOf(FileMatcher.DirectoryMatcher.class));
 
-        matchers = createGitIgnore("/foo/bar");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.StartsWithMatcher.class));
+        matcher = GitIgnore.create("/foo/bar");
+        assertThat(matcher, instanceOf(FileMatcher.StartsWithMatcher.class));
 
-        matchers = createGitIgnore("foo/bar");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.ContainsMatcher.class));
+        matcher = GitIgnore.create("foo/bar");
+        assertThat(matcher, instanceOf(FileMatcher.ContainsMatcher.class));
 
-        matchers = createGitIgnore("**.foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.NameEndExclude.class));
+        matcher = GitIgnore.create("**.foo");
+        assertThat(matcher, instanceOf(NameEndExclude.class));
 
-        matchers = createGitIgnore("**/foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.EndsWithMatcher.class));
+        matcher = GitIgnore.create("**/foo");
+        assertThat(matcher, instanceOf(EndsWithMatcher.class));
 
-        matchers = createGitIgnore("foo.*");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.NameStartExclude.class));
+        matcher = GitIgnore.create("foo.*");
+        assertThat(matcher, instanceOf(NameStartExclude.class));
 
-        matchers = createGitIgnore("[a-z]oo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.NameMatcher.class));
+        matcher = GitIgnore.create("[a-z]oo");
+        assertThat(matcher, instanceOf(FileMatcher.NameMatcher.class));
 
-        matchers = createGitIgnore("\\!foo");
-        assertThat(matchers.size(), is(1));
-        assertThat(matchers.get(0), instanceOf(FileMatcher.GitIncludeMatcher.class));
+        matcher = GitIgnore.create("\\!foo");
+        assertThat(matcher, instanceOf(GitIncludeMatcher.class));
     }
 
     @Test
     void testCombinedName() {
-        List<FileMatcher> matchers = createGitIgnore("[a-z]o?");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("[a-z]o?");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo"));
         assertThat(exclude, instanceOf(FileMatcher.NameMatcher.class));
@@ -342,10 +333,7 @@ class ExcludeTest {
 
     @Test
     void testCombinedSuffix() {
-        List<FileMatcher> matchers = createGitIgnore("*.[a-z]oo");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("*.[a-z]oo");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("src/main/icon.foo"));
         assertThat(exclude, instanceOf(FileMatcher.SuffixMatcher.class));
@@ -360,10 +348,7 @@ class ExcludeTest {
 
     @Test
     void testCombinedStartsWith() {
-        List<FileMatcher> matchers = createGitIgnore("/etc/[a-z]opyright.?xt");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("/etc/[a-z]opyright.?xt");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("/etc/copyright.txt"));
         assertThat(exclude, instanceOf(FileMatcher.StartsWithMatcher.class));
@@ -378,10 +363,7 @@ class ExcludeTest {
 
     @Test
     void testCombinedDirectory() {
-        List<FileMatcher> matchers = createGitIgnore("ta[a-z]get/");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("ta[a-z]get/");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("webserver/target/classes/test.class"));
         assertThat(exclude, instanceOf(FileMatcher.DirectoryMatcher.class));
@@ -405,10 +387,7 @@ class ExcludeTest {
 
     @Test
     void testCombinedContains() {
-        List<FileMatcher> matchers = createGitIgnore("src/[a-z]esources/bin");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("src/[a-z]esources/bin");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("src/resources/bin/copyright.txt"));
         assertThat(exclude, instanceOf(FileMatcher.ContainsMatcher.class));
@@ -423,13 +402,10 @@ class ExcludeTest {
 
     @Test
     void testCombinedNameEnd() {
-        List<FileMatcher> matchers = createGitIgnore("*[a-z]ar");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("*[a-z]ar");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo.bar"));
-        assertThat(exclude, instanceOf(FileMatcher.NameEndExclude.class));
+        assertThat(exclude, instanceOf(NameEndExclude.class));
         assertThat("Should matches foo.bar file", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("/foo/bar/foo.bar"));
@@ -444,13 +420,10 @@ class ExcludeTest {
 
     @Test
     void testCombinedNameStart() {
-        List<FileMatcher> matchers = createGitIgnore("[a-z]oo*");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("[a-z]oo*");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo.bar"));
-        assertThat(exclude, instanceOf(FileMatcher.NameStartExclude.class));
+        assertThat(exclude, instanceOf(NameStartExclude.class));
         assertThat("Should matches foo.bar file", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("/foo/bar/foo.bar"));
@@ -465,7 +438,7 @@ class ExcludeTest {
 
     @Test
     void testCombinedEndsWith() {
-        FileMatcher exclude = new FileMatcher.EndsWithMatcher("foo/[a-z]ar");
+        FileMatcher exclude = new EndsWithMatcher("foo/[a-z]ar");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("foo/bar"));
         assertThat("Should matches foo/bar", excluded, is(true));
@@ -479,13 +452,10 @@ class ExcludeTest {
 
     @Test
     void testCombinedMiddleDirectory() {
-        List<FileMatcher> matchers = createGitIgnore("[a-z]/**/[a-z]");
-        assertThat(matchers.size(), is(1));
-
-        FileMatcher exclude = matchers.get(0);
+        FileMatcher exclude = GitIgnore.create("[a-z]/**/[a-z]");
         boolean excluded;
         excluded = exclude.matches(FileRequest.create("a/c/b"));
-        assertThat(exclude, instanceOf(FileMatcher.MiddleDirectoryMatcher.class));
+        assertThat(exclude, instanceOf(MiddleDirectoryMatcher.class));
         assertThat("Should matches a/c/b directory", excluded, is(true));
 
         excluded = exclude.matches(FileRequest.create("/a/c/b"));
@@ -502,9 +472,5 @@ class ExcludeTest {
 
         excluded = exclude.matches(FileRequest.create("a/foo/bar/bar"));
         assertThat("Should matches a/foo/bar/bar", excluded, is(false));
-    }
-
-    private static List<FileMatcher> createGitIgnore(String pattern) {
-        return create(pattern, GITIGNORE);
     }
 }
