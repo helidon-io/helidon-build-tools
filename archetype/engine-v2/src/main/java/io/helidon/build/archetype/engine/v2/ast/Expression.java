@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
+import io.helidon.build.archetype.engine.v2.ast.Value.TypedValue;
 import io.helidon.build.common.GenericType;
 
 import static java.util.Spliterator.ORDERED;
@@ -93,6 +94,73 @@ public final class Expression {
      */
     public boolean eval() {
         return eval(s -> null);
+    }
+
+    /**
+     * Evaluate this expression.
+     *
+     * @param resolver variable resolver
+     * @return result
+     */
+    public Value eval1(Function<String, Value> resolver) {
+        Deque<Value> stack = new ArrayDeque<>();
+        for (Token token : tokens) {
+            Value value;
+            if (token.operator != null) {
+                Value result = null;
+                Value lastOperand = stack.pop();
+                if (token.operator == Operator.NOT) {
+                    result = new Value.TypedValue(!lastOperand.asBoolean(), ValueTypes.BOOLEAN);
+                } else if (token.operator == Operator.TERNARY_IF) {
+                    result = lastOperand;
+                } else if (token.operator == Operator.TERNARY_ELSE) {
+                    Value ifOperand = stack.pop();
+                    Value condition = stack.pop();
+                    result = condition.asBoolean() ? ifOperand : lastOperand;
+                } else {
+                    Value operand2 = stack.pop();
+                    switch (token.operator) {
+                        case OR:
+                            result = new TypedValue(operand2.asBoolean() || lastOperand.asBoolean(), ValueTypes.BOOLEAN);
+                            break;
+                        case AND:
+                            result = new TypedValue(operand2.asBoolean() && lastOperand.asBoolean(), ValueTypes.BOOLEAN);
+                            break;
+                        case EQUAL:
+                            result = new TypedValue(Value.equals(operand2, lastOperand), ValueTypes.BOOLEAN);
+                            break;
+                        case NOT_EQUAL:
+                            result = new TypedValue(!Value.equals(operand2, lastOperand), ValueTypes.BOOLEAN);
+                            break;
+                        case CONTAINS:
+                            if (lastOperand.type() == ValueTypes.STRING_LIST) {
+                                result = new TypedValue(new HashSet<>(operand2.asList()).containsAll(lastOperand.asList()), ValueTypes.BOOLEAN);
+                            } else {
+                                if (operand2.type() == ValueTypes.STRING) {
+                                    result = new TypedValue(operand2.asString().contains(lastOperand.asString()), ValueTypes.BOOLEAN);
+                                } else {
+                                    result = new TypedValue(operand2.asList().contains(lastOperand.asString()), ValueTypes.BOOLEAN);
+                                }
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("Unsupported operator: " + token.operator);
+                    }
+                }
+                value = result;
+            } else if (token.operand != null) {
+                value = token.operand;
+            } else if (token.variable != null) {
+                value = resolver.apply(token.variable);
+                if (value == null) {
+                    throw new UnresolvedVariableException(token.variable);
+                }
+            } else {
+                throw new IllegalStateException("Invalid token");
+            }
+            stack.push(value);
+        }
+        return stack.pop();
     }
 
     /**
@@ -226,7 +294,38 @@ public final class Expression {
                     while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
                         Operator currentOp = OPS.get(symbol.value);
                         Operator leftOp = OPS.get(stack.peek().value);
-                        if ((leftOp.precedence >= currentOp.precedence)) {
+                        if (leftOp.precedence >= currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            continue;
+                        }
+                        break;
+                    }
+                    stack.push(symbol);
+                    break;
+                case TERNARY_IF_OPERATOR:
+                    while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
+                        Operator currentOp = OPS.get(symbol.value);
+                        Operator leftOp = OPS.get(stack.peek().value);
+                        if (leftOp == currentOp) {
+                            break;
+                        }
+                        if (leftOp.precedence > currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            continue;
+                        }
+                        break;
+                    }
+                    stack.push(symbol);
+                    break;
+                case TERNARY_ELSE_OPERATOR:
+                    while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
+                        Operator currentOp = OPS.get(symbol.value);
+                        Operator leftOp = OPS.get(stack.peek().value);
+                        if (leftOp.precedence == currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            break;
+                        }
+                        if (leftOp.precedence > currentOp.precedence) {
                             stackSize += 1 - addToken(stack.pop(), tokens);
                             continue;
                         }
@@ -332,7 +431,17 @@ public final class Expression {
         /**
          * Not operator.
          */
-        NOT(13, "!");
+        NOT(13, "!"),
+
+        /**
+         * Ternary operator (first part).
+         */
+        TERNARY_IF(2, "?"),
+
+        /**
+         * Ternary operator (second part).
+         */
+        TERNARY_ELSE(2, ":");
 
         private final int precedence;
         private final String symbol;
@@ -485,6 +594,8 @@ public final class Expression {
                 case UNARY_LOGICAL_OPERATOR:
                 case EQUALITY_OPERATOR:
                 case CONTAINS_OPERATOR:
+                case TERNARY_IF_OPERATOR:
+                case TERNARY_ELSE_OPERATOR:
                     return new Token(OPS.get(symbol.value), null, null);
                 case BOOLEAN:
                     return new Token(null, null, Value.create(Boolean.parseBoolean(symbol.value)));
@@ -523,7 +634,9 @@ public final class Expression {
             UNARY_LOGICAL_OPERATOR("^[!]"),
             CONTAINS_OPERATOR("^contains"),
             PARENTHESIS("^[()]"),
-            COMMENT("#.*\\R");
+            COMMENT("#.*\\R"),
+            TERNARY_IF_OPERATOR("^\\?"),
+            TERNARY_ELSE_OPERATOR("^:");
 
             private final Pattern pattern;
 

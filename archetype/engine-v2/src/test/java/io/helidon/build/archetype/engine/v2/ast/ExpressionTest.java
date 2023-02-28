@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,65 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Tests {@link Expression}.
  */
 class ExpressionTest {
+
+    @Test
+    public void testTernaryExpression() {
+        Expression exp;
+        Map<String, Value> variables;
+
+        exp = Expression.parse("${shape} == 'circle' ? 'red' : 'blue'");
+        variables = Map.of("shape", Value.create("circle"));
+        assertThat(exp.eval1(variables::get).asText(), is("red"));
+
+        exp = Expression.parse("${shape} != 'circle' ? 'red' : 'blue'");
+        variables = Map.of("shape", Value.create("circle"));
+        assertThat(exp.eval1(variables::get).asText(), is("blue"));
+
+        exp = Expression.parse("false ? 'red' : 'blue'");
+        assertThat(exp.eval1(variables::get).asText(), is("blue"));
+
+        exp = Expression.parse("${shape} == 'circle' ? ${var1} contains ${var2} : false");
+        variables = Map.of(
+                "shape", Value.create("circle"),
+                "var1", Value.create(List.of("a", "b", "c")),
+                "var2", Value.create("b"));
+        assertThat(exp.eval1(variables::get).asBoolean(), is(true));
+
+        exp = Expression.parse("${shape} == 'circle' ? ${var1} contains ${var2} ? 'circle_b' : 'not_circle_b' : ${var1} "
+                + "contains ${var3} ? 'circle_c' : 'not_circle_c'");
+        variables = Map.of(
+                "shape", Value.create("circle"),
+                "var1", Value.create(List.of("a", "b", "c")),
+                "var2", Value.create("b"),
+                "var3", Value.create("c"));
+        assertThat(exp.eval1(variables::get).asText(), is("circle_b"));
+
+        exp = Expression.parse("${shape} == 'circle' ? (${var1} contains ${var2} ? 'circle_b' : 'not_circle_b') : (${var1} "
+                + "contains ${var3} ? 'circle_c' : 'not_circle_c')");
+        variables = Map.of(
+                "shape", Value.create("circle"),
+                "var1", Value.create(List.of("a", "b", "c")),
+                "var2", Value.create("b"),
+                "var3", Value.create("c"));
+        assertThat(exp.eval1(variables::get).asText(), is("circle_b"));
+
+        exp = Expression.parse("${shape} != 'circle' ? ${var1} contains ${var2} : false");
+        variables = Map.of(
+                "shape", Value.create("circle"),
+                "var1", Value.create(List.of("a", "b", "c")),
+                "var2", Value.create("b"));
+        assertThat(exp.eval1(variables::get).asBoolean(), is(false));
+
+        exp = Expression.parse("${var1} contains ${var2} == ${var3} && ${var4} || ${var5} ? ['', 'adc', 'def'] contains 'foo' "
+                + "== false && true || !false : ['', 'adc', 'def'] contains 'foo' == true && false");
+        variables = Map.of(
+                "var1", Value.create(List.of("a", "b", "c")),
+                "var2", Value.create("c"),
+                "var3", Value.TRUE,
+                "var4", Value.TRUE,
+                "var5", Value.FALSE);
+        assertThat(exp.eval1(variables::get).asBoolean(), is(true));
+    }
 
     @Test
     void testEvaluateWithVariables() {
