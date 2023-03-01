@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public final class Expression {
      *
      * @return result
      */
-    public boolean eval() {
+    public Value eval() {
         return eval(s -> null);
     }
 
@@ -102,7 +102,7 @@ public final class Expression {
      * @param resolver variable resolver
      * @return result
      */
-    public Value eval1(Function<String, Value> resolver) {
+    public Value eval(Function<String, Value> resolver) {
         Deque<Value> stack = new ArrayDeque<>();
         for (Token token : tokens) {
             Value value;
@@ -134,12 +134,15 @@ public final class Expression {
                             break;
                         case CONTAINS:
                             if (lastOperand.type() == ValueTypes.STRING_LIST) {
-                                result = new TypedValue(new HashSet<>(operand2.asList()).containsAll(lastOperand.asList()), ValueTypes.BOOLEAN);
+                                result = new TypedValue(new HashSet<>(operand2.asList()).containsAll(lastOperand.asList()),
+                                        ValueTypes.BOOLEAN);
                             } else {
                                 if (operand2.type() == ValueTypes.STRING) {
-                                    result = new TypedValue(operand2.asString().contains(lastOperand.asString()), ValueTypes.BOOLEAN);
+                                    result = new TypedValue(operand2.asString().contains(lastOperand.asString()),
+                                            ValueTypes.BOOLEAN);
                                 } else {
-                                    result = new TypedValue(operand2.asList().contains(lastOperand.asString()), ValueTypes.BOOLEAN);
+                                    result = new TypedValue(operand2.asList().contains(lastOperand.asString()),
+                                            ValueTypes.BOOLEAN);
                                 }
                             }
                             break;
@@ -161,67 +164,6 @@ public final class Expression {
             stack.push(value);
         }
         return stack.pop();
-    }
-
-    /**
-     * Evaluate this expression.
-     *
-     * @param resolver variable resolver
-     * @return result
-     */
-    public boolean eval(Function<String, Value> resolver) {
-        Deque<Value> stack = new ArrayDeque<>();
-        for (Token token : tokens) {
-            Value value;
-            if (token.operator != null) {
-                boolean result;
-                Value operand1 = stack.pop();
-                if (token.operator == Operator.NOT) {
-                    result = !operand1.asBoolean();
-                } else {
-                    Value operand2 = stack.pop();
-                    switch (token.operator) {
-                        case OR:
-                            result = operand2.asBoolean() || operand1.asBoolean();
-                            break;
-                        case AND:
-                            result = operand2.asBoolean() && operand1.asBoolean();
-                            break;
-                        case EQUAL:
-                            result = Value.equals(operand2, operand1);
-                            break;
-                        case NOT_EQUAL:
-                            result = !Value.equals(operand2, operand1);
-                            break;
-                        case CONTAINS:
-                            if (operand1.type() == ValueTypes.STRING_LIST) {
-                                result = new HashSet<>(operand2.asList()).containsAll(operand1.asList());
-                            } else {
-                                if (operand2.type() == ValueTypes.STRING) {
-                                    result = operand2.asString().contains(operand1.asString());
-                                } else {
-                                    result = operand2.asList().contains(operand1.asString());
-                                }
-                            }
-                            break;
-                        default:
-                            throw new IllegalStateException("Unsupported operator: " + token.operator);
-                    }
-                }
-                value = Value.create(result);
-            } else if (token.operand != null) {
-                value = token.operand;
-            } else if (token.variable != null) {
-                value = resolver.apply(token.variable);
-                if (value == null) {
-                    throw new UnresolvedVariableException(token.variable);
-                }
-            } else {
-                throw new IllegalStateException("Invalid token");
-            }
-            stack.push(value);
-        }
-        return stack.pop().asBoolean();
     }
 
     /**
