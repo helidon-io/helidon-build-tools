@@ -43,6 +43,9 @@ class ExpressionTest {
         Expression exp;
         Map<String, Value> variables;
 
+        exp = Expression.parse("'circle'");
+        assertThat(exp.eval().asText(), is("circle"));
+
         exp = Expression.parse("${shape} == 'circle' ? 'red' : 'blue'");
         variables = Map.of("shape", Value.create("circle"));
         assertThat(exp.eval(variables::get).asText(), is("red"));
