@@ -5,5 +5,5 @@ dir/**/file2.txt
 dir/dir6/**
 **/file5.txt
 \!dir/file.txt
-*.ico
-file7
+dir/*.ico
+dir/dir7/file7.*

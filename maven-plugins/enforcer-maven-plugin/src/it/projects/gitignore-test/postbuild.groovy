@@ -14,45 +14,15 @@
  * limitations under the License.
  */
 
-def actualIndex = 0
-def actualLines = new File(basedir, "build.log").readLines()
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.enforcer.GitIgnoreTestIT
 
-def findLines(actualIndex, actualLines, fname) {
-    def expectedLines = new File(basedir, fname).readLines()
-    def found = false
-    def errors = ["build.log does not contain ${fname}"]
-    while (!found && actualIndex < actualLines.size() - 1) {
-        // seek
-        for (; actualIndex < actualLines.size(); actualIndex++) {
-            if (actualLines[actualIndex].contains(expectedLines[0])) {
-                break;
-            }
-        }
-        for (def expectedIndex = 1; expectedIndex < expectedLines.size() && actualIndex < actualLines.size() - 1; expectedIndex++) {
-            def expected = expectedLines[expectedIndex]
-            def actual = actualLines[++actualIndex]
-            if (!actual.endsWith(expected)) {
-                errors.add("line: ${('' + actualIndex).padRight(5)} >>${expected}<< != >>${actual}<<")
-                break;
-            }
-            if (expectedIndex == expectedLines.size() -1) {
-                found = true
-            }
-        }
-    }
-    assertTrue(found, errors)
-}
-
-def assertTrue(found, errors) {
-    if (!found) {
-        throw new AssertionError("""
-
-------------------------------------------------------------------------
-${errors.join('\n')}
-------------------------------------------------------------------------
-
-""")
-    }
-}
-
-findLines(actualIndex, actualLines, "expected.log")
+JUnitLauncher.builder()
+        .select(GitIgnoreTestIT.class, "test1", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("build-gitignore-it-test")
+        .suiteDisplayName("Build GitIgnore Integration Test")
+        .build()
+        .launch()

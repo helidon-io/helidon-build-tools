@@ -73,7 +73,6 @@ public class FileFinder {
 
         List<FileMatcher> excludes = new ArrayList<>();
         if (honorGitIgnore) {
-            Log.debug("Git repository: " + gitRepoDir);
             excludes.add(create(gitRepoDir));
         }
 

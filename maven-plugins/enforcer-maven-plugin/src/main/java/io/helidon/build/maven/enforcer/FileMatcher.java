@@ -18,8 +18,6 @@ package io.helidon.build.maven.enforcer;
 
 import java.util.List;
 
-import static io.helidon.build.maven.enforcer.GitIgnore.RegexMatcher;
-
 /**
  * A matcher for files created from a list of excludes or includes.
  * Supports the following patterns:
@@ -34,7 +32,7 @@ import static io.helidon.build.maven.enforcer.GitIgnore.RegexMatcher;
  */
 public interface FileMatcher {
     /**
-     * Create default matcher(s) from pattern.
+     * Create matcher(s) from pattern.
      *
      * @param pattern  pattern to parse
      * @return one or more matchers that can be matched against a {@link io.helidon.build.maven.enforcer.FileRequest}
@@ -73,51 +71,14 @@ public interface FileMatcher {
     boolean matches(FileRequest file);
 
     /**
-     * Get file matcher pattern.
-     *
-     * @return pattern
-     */
-    String pattern();
-
-    /**
-     * {@link FileMatcher} base implementation class.
-     */
-    abstract class FileMatcherBase implements FileMatcher {
-        /**
-         * Regular expression matcher.
-         */
-        private final RegexMatcher matcher;
-        /**
-         * File matcher pattern.
-         */
-        private final String pattern;
-
-        protected FileMatcherBase(String pattern) {
-            this(pattern, pattern);
-        }
-
-        protected FileMatcherBase(String pattern, String regex) {
-            this.matcher = RegexMatcher.create(regex);
-            this.pattern = pattern;
-        }
-
-        @Override
-        public String pattern() {
-            return this.pattern;
-        }
-
-        RegexMatcher matcher() {
-            return this.matcher;
-        }
-    }
-
-    /**
      * Matches relative paths that start with the provided string.
      */
-    class StartsWithMatcher extends FileMatcherBase {
+    class StartsWithMatcher implements FileMatcher {
+        // exact path from repository root, such as etc/copyright.txt
+        private final String pattern;
 
         StartsWithMatcher(String pattern) {
-            super(pattern);
+            this.pattern = pattern;
         }
 
         /**
@@ -132,28 +93,18 @@ public interface FileMatcher {
 
         @Override
         public boolean matches(FileRequest file) {
-            if (matcher() == null) {
-                return file.relativePath().startsWith(pattern());
-            }
-            String path = file.relativePath().startsWith("/")
-                    ? file.relativePath().substring(1)
-                    : file.relativePath();
-            if (path.length() < matcher().length()) {
-                return false;
-            }
-            return matcher().matches(path.substring(0, matcher().length()));
+            return file.relativePath().startsWith(pattern);
         }
     }
 
     /**
      * Matches relative paths that contain the directory.
      */
-    class DirectoryMatcher extends FileMatcherBase {
+    class DirectoryMatcher implements FileMatcher {
         private final ContainsMatcher contains;
         private final StartsWithMatcher startWith;
 
         DirectoryMatcher(String directory) {
-            super(directory);
             // either the directory is within the tree
             this.contains = new ContainsMatcher("/" + directory);
             // or the tree starts with it
@@ -179,10 +130,12 @@ public interface FileMatcher {
     /**
      * Matches relative paths that contain the string.
      */
-    class ContainsMatcher extends FileMatcherBase {
+    class ContainsMatcher implements FileMatcher {
+        // such as src/main/proto
+        private final String contains;
 
         ContainsMatcher(String contains) {
-            super(contains);
+            this.contains = contains;
         }
 
         /**
@@ -197,32 +150,20 @@ public interface FileMatcher {
 
         @Override
         public boolean matches(FileRequest file) {
-            if (matcher() == null) {
-                return file.relativePath().contains(pattern());
-            }
-            String path = file.relativePath();
-            if (matcher().length() > path.length()) {
-                return false;
-            }
-            int i = 0;
-            while (i < path.length() - matcher().length()) {
-                if (matcher().matches(path.substring(i, i + matcher().length()))) {
-                    return true;
-                }
-                i++;
-            }
-            return false;
+            return file.relativePath().contains(contains);
         }
     }
 
     /**
      * Matches file name.
      */
-    class NameMatcher extends FileMatcherBase {
+    class NameMatcher implements FileMatcher {
+        private final String name;
 
         NameMatcher(String name) {
-            super(name);
+            this.name = name;
         }
+
         /**
          * A new matcher that matches the provided file name.
          *
@@ -235,19 +176,18 @@ public interface FileMatcher {
 
         @Override
         public boolean matches(FileRequest file) {
-            return matcher() == null
-                    ? file.fileName().equals(pattern())
-                    : matcher().matches(file.fileName());
+            return file.fileName().equals(name);
         }
     }
 
     /**
      * Matches file suffix.
      */
-    class SuffixMatcher extends FileMatcherBase {
+    class SuffixMatcher implements FileMatcher {
+        private final String suffix;
 
         SuffixMatcher(String suffix) {
-            super(suffix);
+            this.suffix = suffix;
         }
 
         /**
@@ -262,10 +202,7 @@ public interface FileMatcher {
 
         @Override
         public boolean matches(FileRequest file) {
-            return matcher() == null
-                    ? file.suffix().equals(pattern())
-                    : matcher().matches(file.suffix());
-
+            return file.suffix().equals(suffix);
         }
     }
 }

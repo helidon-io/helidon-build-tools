@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.maven.cache;
+
+package io.helidon.build.maven.enforcer;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,17 +22,13 @@ import java.util.List;
 
 import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
-
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-/**
- * Integration test that verifies the projects under {@code src/it/projects}.
- */
-final class ProjectsTestIT {
+public class GitIgnoreTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
@@ -39,21 +36,7 @@ final class ProjectsTestIT {
         BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
         int index = buildLog.indexOf("BUILD SUCCESS", 0);
         assertThat(index > 0, is(true));
-        index = buildLog.indexOf("BUILD SUCCESS", index);
-        assertThat(index > 0, is(true));
-        List<String> diffs = buildLog.diff(new File(basedir, "expected.log"), index);
+        List<String> diffs = buildLog.diff(new File(basedir, "expected.log"), 0);
         assertDiffs(diffs);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void test2(String basedir) throws IOException {
-        BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
-        int index = buildLog.indexOf("BUILD SUCCESS", 0);
-        assertThat(index > 0, is(true));
-        List<String> diffs1 = buildLog.diff(new File(basedir, "expected1.log"), index);
-        assertDiffs(diffs1);
-        List<String> diffs2 = buildLog.diff(new File(basedir, "expected2.log"), index);
-        assertDiffs(diffs2);
     }
 }
