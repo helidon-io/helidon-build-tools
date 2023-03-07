@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+
+import io.helidon.build.common.Strings
+
 import java.nio.file.Files
 
 static void assertExists(file) {
@@ -23,6 +26,7 @@ static void assertExists(file) {
 }
 
 static void assertEqual(expected, actual) {
+    actual = Strings.normalizeNewLines(actual)
     if (actual != expected) {
         throw new AssertionError("Expected '${expected}' but got '${actual}'")
     }
