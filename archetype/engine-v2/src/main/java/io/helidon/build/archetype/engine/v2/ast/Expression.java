@@ -196,7 +196,12 @@ public final class Expression {
      */
     public static final class FormatException extends RuntimeException {
 
-        private FormatException(String message) {
+        /**
+         * Create new instance.
+         * 
+         * @param message message
+         */
+        public FormatException(String message) {
             super(message);
         }
     }
@@ -293,6 +298,7 @@ public final class Expression {
                 case BOOLEAN:
                 case STRING:
                 case ARRAY:
+                case INTEGER:
                 case VARIABLE:
                     stackSize += 1 - addToken(symbol, tokens);
                     break;
@@ -543,6 +549,8 @@ public final class Expression {
                     return new Token(null, null, Value.create(Boolean.parseBoolean(symbol.value)));
                 case STRING:
                     return new Token(null, null, Value.create(symbol.value.substring(1, symbol.value.length() - 1)));
+                case INTEGER:
+                    return new Token(null, null, Value.create(Integer.parseInt(symbol.value), ValueTypes.INT));
                 case ARRAY:
                     return new Token(null, null, Value.create(parseArray(symbol.value)));
                 case VARIABLE:
@@ -578,7 +586,8 @@ public final class Expression {
             PARENTHESIS("^[()]"),
             COMMENT("#.*\\R"),
             TERNARY_IF_OPERATOR("^\\?"),
-            TERNARY_ELSE_OPERATOR("^:");
+            TERNARY_ELSE_OPERATOR("^:"),
+            INTEGER("^[0-9]+");
 
             private final Pattern pattern;
 

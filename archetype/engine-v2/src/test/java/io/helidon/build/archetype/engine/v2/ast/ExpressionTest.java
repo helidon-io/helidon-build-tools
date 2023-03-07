@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.archetype.engine.v2.ast.Expression.parse;
 import static io.helidon.build.common.Maps.mapValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
@@ -39,12 +40,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ExpressionTest {
 
     @Test
+    public void testValue() {
+        Expression exp;
+
+        exp = Expression.parse("'circle'");
+        assertThat(exp.eval().asString(), is("circle"));
+
+        exp = Expression.parse("true");
+        assertThat(exp.eval().asBoolean(), is(true));
+
+        exp = Expression.parse("1");
+        assertThat(exp.eval().asInt(), is(1));
+
+        exp = Expression.parse("['', 'adc', 'def']");
+        assertThat(exp.eval().asList(), containsInAnyOrder("", "adc", "def"));
+    }
+
+    @Test
     public void testTernaryExpression() {
         Expression exp;
         Map<String, Value> variables;
-
-        exp = Expression.parse("'circle'");
-        assertThat(exp.eval().asText(), is("circle"));
 
         exp = Expression.parse("${shape} == 'circle' ? 'red' : 'blue'");
         variables = Map.of("shape", Value.create("circle"));
