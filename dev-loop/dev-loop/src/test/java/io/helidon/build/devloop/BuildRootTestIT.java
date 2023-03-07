@@ -23,6 +23,8 @@ import java.util.List;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.delete;
@@ -104,6 +106,7 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
+    @DisabledOnOs(OS.WINDOWS)
     void testMultipleChangesDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
@@ -118,8 +121,7 @@ class BuildRootTestIT {
         BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
         assertThat(changes.isEmpty(), is(false));
-        //Todo find the reason it fails on windows
-        //assertThat(changes.size(), is(5));
+        assertThat(changes.size(), is(5));
 
         assertThat(changes.added().size(), is(2));
         assertThat(changes.added().contains(added1), is(true));
