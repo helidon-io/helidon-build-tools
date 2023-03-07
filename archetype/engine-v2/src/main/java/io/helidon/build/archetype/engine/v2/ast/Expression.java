@@ -198,7 +198,7 @@ public final class Expression {
 
         /**
          * Create new instance.
-         * 
+         *
          * @param message message
          */
         public FormatException(String message) {

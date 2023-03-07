@@ -31,6 +31,9 @@ public class ValueHandler {
 
     private static final Pattern VAR_NO_BRACE = Pattern.compile("^\\w+");
 
+    private ValueHandler() {
+    }
+
     /**
      * Process expression.
      *
