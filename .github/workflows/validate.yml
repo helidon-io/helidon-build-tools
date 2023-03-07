@@ -62,8 +62,8 @@ jobs:
         include:
           - os: ubuntu-20.04
             build_script: etc/scripts/github-build.sh
-#          - os: windows-latest
-#            build_script: etc/scripts/build.bat
+          - os: windows-latest
+            build_script: etc/scripts/build.bat
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -78,8 +78,7 @@ jobs:
       - name: Archive test results
         uses: actions/upload-artifact@v3.1.2
         #https://github.com/actions/upload-artifact/issues/240
-        if: always()
-#        if: ${{ matrix.os != 'windows-latest'}}
+        if: always() && ${{ matrix.os != 'windows-latest'}}
         with:
           name: test-results
           path: |
