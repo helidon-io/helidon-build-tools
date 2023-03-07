@@ -21,5 +21,5 @@ cd %~dp0\..\..
 mvn %MAVEN_ARGS% ^
     clean install ^
     --fail-at-end ^
-    -Dmaven.test.failure.ignore=true ^
+    -Dmaven.test.failure.ignore=false ^
     -Djdk.toolchain.version=${JAVA_VERSION}
