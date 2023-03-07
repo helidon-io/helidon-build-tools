@@ -58,7 +58,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-20.04, windows-latest ]
         include:
           - os: ubuntu-20.04
             build_script: etc/scripts/github-build.sh
@@ -78,7 +78,7 @@ jobs:
       - name: Archive test results
         uses: actions/upload-artifact@v3.1.2
         #https://github.com/actions/upload-artifact/issues/240
-        if: always() && ${{ matrix.os != 'windows-latest'}}
+        if: always() &amp;&amp; ${{ matrix.os != 'windows-latest'}}
         with:
           name: test-results
           path: |
