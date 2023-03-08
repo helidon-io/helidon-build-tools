@@ -46,9 +46,7 @@ public class FunctionalUtils {
 
     private static final Logger LOGGER = Logger.getLogger(FunctionalUtils.class.getName());
     private static final String MAVEN_DIST_URL = "https://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
-    static final String ARCHETYPE_URL = OSType.currentOS() == OSType.Windows
-        ? String.format("file:///%s/cli-data", targetDir(FunctionalUtils.class))
-        : String.format("file://%s/cli-data", targetDir(FunctionalUtils.class));
+    static final String ARCHETYPE_URL = FileUtils.urlOf(targetDir(FunctionalUtils.class).resolve("cli-data")).toString();
     static final String CLI_VERSION = getProperty("cli.version");
 
     static {
