@@ -38,6 +38,7 @@
                     <name>!skipTests</name>
                 </property>
                 <os>
+                    <!-- https://github.com/helidon-io/helidon-build-tools/issues/898 -->
                     <family>unix</family>
                 </os>
             </activation>

@@ -106,7 +106,8 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    @DisabledOnOs(OS.WINDOWS)
+    @DisabledOnOs(value = OS.WINDOWS,
+                  disabledReason = "https://github.com/helidon-io/helidon-build-tools/issues/897")
     void testMultipleChangesDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());

@@ -310,7 +310,8 @@ public class CommandParserTest {
     }
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason="Fails to parse 'test-props-file.properties' absolute path")
+    @DisabledOnOs(value = OS.WINDOWS,
+            disabledReason="https://github.com/helidon-io/helidon-build-tools/issues/896")
     public void testPropsFileOptionWithExistingFile() {
         String argsFilePath = Objects.requireNonNull(getClass().getResource("test-props-file.properties")).getPath();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
