@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.archetype.engine.v2.context;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
+import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +38,7 @@ class ContextPrinterTest {
         node.putValue("bob.alice", Value.create("alice1"), ValueKind.USER);
         node.putValue("foo", Value.create("foo2"), ValueKind.USER);
 
-        String actual = ContextPrinter.print(node);
+        String actual = Strings.normalizeNewLines(ContextPrinter.print(node));
 
         assertThat(actual, is(""
                 + " +- foo\n"

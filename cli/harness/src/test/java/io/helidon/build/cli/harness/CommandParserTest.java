@@ -28,6 +28,8 @@ import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -308,6 +310,8 @@ public class CommandParserTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS,
+            disabledReason="https://github.com/helidon-io/helidon-build-tools/issues/896")
     public void testPropsFileOptionWithExistingFile() {
         String argsFilePath = Objects.requireNonNull(getClass().getResource("test-props-file.properties")).getPath();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);

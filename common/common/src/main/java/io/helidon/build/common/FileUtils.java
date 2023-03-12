@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -1002,6 +1003,20 @@ public final class FileUtils {
             props.store(output, null);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Convert Path to URL.
+     *
+     * @param path path to convert
+     * @return URL of path
+     */
+    public static URL urlOf(Path path) {
+        try {
+            return path.toUri().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
