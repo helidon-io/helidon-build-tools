@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package io.helidon.build.maven.enforcer;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.maven.enforcer.FileMatcher.create;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -97,5 +101,38 @@ class ExcludeTest {
 
         excluded = exclude.matches(FileRequest.create("src/resources/sbin/copyright.txt"));
         assertThat("Should not matches directory", excluded, is(false));
+    }
+
+    @Test
+    void testDefaultFileMatcher() {
+        List<FileMatcher> matchers = create(".foo");
+
+        assertThat(matchers.size(), is(2));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
+
+        matchers = create("*.foo");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.SuffixMatcher.class));
+
+        matchers = create("foo/bar/");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
+
+        matchers = create("**/bar/");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.DirectoryMatcher.class));
+
+        matchers = create("/foo/bar");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.StartsWithMatcher.class));
+
+        matchers = create("foo/bar");
+
+        assertThat(matchers.size(), is(1));
+        assertThat(matchers.get(0), instanceOf(FileMatcher.ContainsMatcher.class));
     }
 }
