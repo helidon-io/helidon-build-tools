@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public final class EngineFacade {
             Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
             Files.delete(projectDir.resolve("pom.xml"));
             boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
-            new ReflectedEngine(ecl, fileSystem).generate(interactiveMode, props, emptyMap(), n -> projectDir);
+            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), n -> projectDir).generate();
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }

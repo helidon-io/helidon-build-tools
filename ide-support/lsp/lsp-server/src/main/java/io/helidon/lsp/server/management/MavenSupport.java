@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.lsp.common.Dependency;
@@ -53,6 +54,8 @@ public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
     private static final String POM_FILE_NAME = "pom.xml";
+    private static final String SRC_FOLDER = "src";
+    private static final String MAIN_FOLDER = "main";
     private static final int DEFAULT_TIMEOUT = 10000;
     private static final Gson GSON = new Gson();
     private static final String LSP_MAVEN_PLUGIN = "io.helidon.ide-support.lsp:helidon-lsp-maven-plugin";
@@ -212,11 +215,25 @@ public class MavenSupport {
         if (listFiles == null) {
             return null;
         }
-        return Arrays.stream(listFiles)
-                     .filter(file ->
-                             file.isFile() && file.getName().equals(POM_FILE_NAME))
-                     .findFirst()
-                     .map(File::getAbsolutePath).orElse(null);
+        String pomFile = Arrays.stream(listFiles)
+                         .filter(file ->
+                                 file.isFile() && file.getName().equals(POM_FILE_NAME))
+                         .findFirst()
+                         .map(File::getAbsolutePath).orElse(null);
+        if (pomFile != null) {
+            Boolean mavenSrcFolder = Arrays.stream(listFiles)
+                                           .filter(file -> file.isDirectory() && file.getName().equals(SRC_FOLDER))
+                                           .findFirst()
+                                           .map(File::listFiles)
+                                           .map(files -> Stream.of(files)
+                                                               .anyMatch(file -> file.isDirectory() && file.getName()
+                                                                                                           .equals(MAIN_FOLDER)))
+                                           .orElse(false);
+            if (!mavenSrcFolder) {
+                pomFile = null;
+            }
+        }
+        return pomFile;
     }
 
     private static class MavenPrintStream extends PrintStream {

@@ -17,7 +17,10 @@ package io.helidon.build.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -40,6 +43,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -968,5 +972,51 @@ public final class FileUtils {
     public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
         Path path = Paths.get(fileUri.getPath());
         return Files.readAllLines(path);
+    }
+
+    /**
+     * Load content of the properties file.
+     *
+     * @param filePath path to file
+     * @return content of the properties file
+     */
+    public static Properties loadProperties(Path filePath) {
+        try (InputStream input = Files.newInputStream(filePath)) {
+            Properties props = new Properties();
+            props.load(input);
+            return props;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Save data that is stored in Map {@code values} to properties file.
+     *
+     * @param values   data to store
+     * @param filePath path to file
+     */
+    public static void saveToPropertiesFile(Map<String, String> values, Path filePath) {
+        try (OutputStream output = Files.newOutputStream(filePath)) {
+            Properties props = new Properties();
+            props.putAll(values);
+            props.store(output, null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Convert Path to URL.
+     *
+     * @param path path to convert
+     * @return URL of path
+     */
+    public static URL urlOf(Path path) {
+        try {
+            return path.toUri().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

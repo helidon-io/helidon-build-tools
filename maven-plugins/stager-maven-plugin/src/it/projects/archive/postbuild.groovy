@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,47 +14,15 @@
  * limitations under the License.
  */
 
-import java.nio.file.FileSystems
-import java.nio.file.Files
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.stager.ProjectsTestIT
 
-static void assertExists(file) {
-    if (!Files.exists(file)) {
-        throw new AssertionError((Object) "${file.toString()} does not exist")
-    }
-}
-
-static void assertEqual(expected, actual) {
-    if (actual != expected) {
-        throw new AssertionError((Object) "Expected '${expected}' but got '${actual}'")
-    }
-}
-
-static newZipFileSystem(zip) {
-    String uriPrefix = "jar:file:"
-    if (File.pathSeparator == ";") {
-        uriPrefix += "/"
-    }
-    URI uri = URI.create("${uriPrefix}${zip.toString().replace("\\", "/")}")
-    return FileSystems.newFileSystem(uri, [:])
-}
-
-def stageDir = basedir.toPath().resolve("target/stage")
-assertExists(stageDir)
-def archive = stageDir.resolve("cli-data/2.0.0-RC1/cli-data.zip")
-assertExists(archive)
-
-def archiveRoot = newZipFileSystem(archive).getPath("/")
-def file1 = archiveRoot.resolve("versions.json")
-assertExists(file1)
-assertEqual("""{
-    "versions": [
-            "3.0.0-SNAPSHOT",
-            "2.5.0",
-            "2.4.2",
-            "2.4.0",
-            "2.0.1",
-            "2.0.0"
-    ],
-    "latest": "3.0.0-SNAPSHOT"
-}
-""", Files.readString(file1))
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "test1", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("build-stager-archive-it-test")
+        .suiteDisplayName("Build Stager Archive Integration Test")
+        .build()
+        .launch()

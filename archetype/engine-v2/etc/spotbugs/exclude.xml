@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -80,6 +80,12 @@
         <!-- Unchecked/unconfirmed cast -->
         <Class name="io.helidon.build.archetype.engine.v2.util.ArchetypeScanner"/>
         <Bug pattern="BC_UNCONFIRMED_CAST"/>
+    </Match>
+
+    <Match>
+        <!-- This API reads a file whose location might be specified by user input -->
+        <Class name="io.helidon.build.archetype.engine.v2.ArchetypeEngineV2"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 
 </FindBugsFilter>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
+import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
 
 /**
  * Global option constants.
@@ -132,29 +135,102 @@ public class GlobalOptions {
     public static final String PLAIN_FLAG_ARGUMENT = "--" + PLAIN_FLAG_NAME;
 
     /**
+     * The --args-file option name.
+     */
+    public static final String ARGS_FILE_OPTION_NAME = "args-file";
+
+    /**
+     * The --args-file option description.
+     */
+    public static final String ARGS_FILE_OPTION_DESCRIPTION = "Path to a file with arguments for Helidon CLI tool";
+
+    /**
+     * The --args-file option argument.
+     */
+    public static final String ARGS_FILE_OPTION_ARGUMENT = "--" + ARGS_FILE_OPTION_NAME;
+
+    /**
+     * The --args-file option info.
+     */
+    public static final ParameterInfo<String> ARGS_FILE_OPTION_INFO = new CommandModel.KeyValueInfo<>(
+            String.class,
+            ARGS_FILE_OPTION_NAME,
+            ARGS_FILE_OPTION_DESCRIPTION,
+            null,
+            false,
+            false);
+
+    /**
+     * The --props-file option name.
+     */
+    public static final String PROPS_FILE_OPTION_NAME = "props-file";
+
+    /**
+     * The --props-file option description.
+     */
+    public static final String PROPS_FILE_OPTION_DESCRIPTION = "Path to a properties file with user inputs for Helidon CLI tool";
+
+    /**
+     * The --props-file option argument.
+     */
+    public static final String PROPS_FILE_OPTION_ARGUMENT = "--" + PROPS_FILE_OPTION_NAME;
+
+    /**
+     * The --props-file option info.
+     */
+    public static final ParameterInfo<String> PROPS_FILE_OPTION_INFO = new CommandModel.KeyValueInfo<>(
+            String.class,
+            PROPS_FILE_OPTION_NAME,
+            PROPS_FILE_OPTION_DESCRIPTION,
+            null,
+            false,
+            false);
+
+    /**
      * Tests whether the given argument is a global flag.
      *
      * @param argument The argument.
      * @return {@code true} if a global flag.
      */
     public static boolean isGlobalFlag(String argument) {
-        return GLOBAL_FLAG_ARGUMENTS.contains(argument);
+        return GLOBAL_OPTION_ARGUMENTS.contains(argument) && GLOBAL_OPTIONS.get(argument.substring(2)) instanceof FlagInfo;
     }
 
     /**
-     * Global flags.
+     * Tests whether the given argument is a global option.
+     *
+     * @param argument The argument.
+     * @return {@code true} if a global option.
      */
-    static final FlagInfo[] GLOBAL_FLAGS = new FlagInfo[]{
+    public static boolean isGlobal(String argument) {
+        return GLOBAL_OPTIONS.containsKey(argument);
+    }
+
+    /**
+     * Global options info.
+     */
+    static final ParameterInfo<?>[] GLOBAL_OPTIONS_INFO = new ParameterInfo[]{
             HELP_FLAG_INFO,
             VERBOSE_FLAG_INFO,
             DEBUG_FLAG_INFO,
             ERROR_FLAG_INFO,
-            PLAIN_FLAG_INFO
+            PLAIN_FLAG_INFO,
+            PROPS_FILE_OPTION_INFO,
+            ARGS_FILE_OPTION_INFO
     };
 
-    private static final Set<String> GLOBAL_FLAG_ARGUMENTS = Stream.of(GLOBAL_FLAGS)
-                                                                   .map(f -> "--" + f.name())
-                                                                   .collect(Collectors.toSet());
+    private static final Set<String> GLOBAL_OPTION_ARGUMENTS = Stream.of(GLOBAL_OPTIONS_INFO)
+                                                                     .map(info -> (CommandModel.NamedOptionInfo<?>) info)
+                                                                     .map(info -> "--" + info.name())
+                                                                     .collect(Collectors.toSet());
+
+    /**
+     * Global options.
+     */
+    static final Map<String, ParameterInfo<?>> GLOBAL_OPTIONS =
+            Stream.of(GLOBAL_OPTIONS_INFO)
+                  .map(info -> (CommandModel.NamedOptionInfo<?>) info)
+                  .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
     private GlobalOptions() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
+import io.helidon.build.common.FileUtils;
 
 /**
  * Command parser.
@@ -209,7 +210,7 @@ public final class CommandParser {
      * @return resolver that can be used to resolve the values for the parsed parameters
      */
     Resolver parseCommand() {
-        return parseCommand(new CommandParameters(GlobalOptions.GLOBAL_FLAGS));
+        return parseCommand(new CommandParameters(GlobalOptions.GLOBAL_OPTIONS_INFO));
     }
 
     private Resolver parseCommand(Map<String, ParameterInfo<?>> parametersMap) {
@@ -223,14 +224,12 @@ public final class CommandParser {
             }
             rawArg = rawArg.trim();
             String arg = rawArg.toLowerCase();
-            if (GlobalOptions.isGlobalFlag(arg)) {
-                parsedParams.put(arg, new FlagParam(arg));
-            } else if (isParam(arg)) {
+            if (isParam(arg)) {
                 String optionName = arg.substring(2);
                 if (!Option.VALID_NAME.test(optionName)) {
                     throw new CommandParserException(INVALID_OPTION_NAME + ": " + optionName);
                 }
-                ParameterInfo<?> paramInfo = parametersMap.get(optionName);
+                ParameterInfo<?> paramInfo = parameterInfo(optionName, parametersMap);
                 if (paramInfo instanceof FlagInfo) {
                     parsedParams.put(optionName, new FlagParam(optionName));
                 } else if (paramInfo instanceof KeyValueInfo) {
@@ -242,7 +241,12 @@ public final class CommandParser {
                             continue;
                         }
                     }
-                    parsedParams.put(optionName, new KeyValueParam(optionName, it.next().trim()));
+                    KeyValueParam keyValueParam = new KeyValueParam(optionName, it.next().trim());
+                    parsedParams.put(optionName, keyValueParam);
+                    if (keyValueParam.name().equals(GlobalOptions.PROPS_FILE_OPTION_NAME)) {
+                            Properties props = FileUtils.loadProperties(Path.of(keyValueParam.value));
+                            props.forEach((key, value) -> properties.put(String.valueOf(key), String.valueOf(value)));
+                    }
                 } else if (paramInfo instanceof KeyValuesInfo) {
                     boolean required = ((KeyValuesInfo<?>) paramInfo).required();
                     if (!it.hasNext()) {
@@ -280,6 +284,13 @@ public final class CommandParser {
             }
         }
         return new Resolver(parsedParams, properties);
+    }
+
+    private ParameterInfo<?> parameterInfo(String paramName, Map<String, ParameterInfo<?>> parametersMap) {
+        if (GlobalOptions.isGlobal(paramName)) {
+            return GlobalOptions.GLOBAL_OPTIONS.get(paramName);
+        }
+        return parametersMap.get(paramName);
     }
 
     /**

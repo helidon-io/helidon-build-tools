@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -465,8 +465,13 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void generate(Path archetypeFile, Properties props, Path outputDir) {
         try {
             FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
-            ArchetypeEngineV2 engine = new ArchetypeEngineV2(fileSystem);
-            engine.generate(new BatchInputResolver(), Maps.fromProperties(props), Map.of(), n -> outputDir);
+            ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
+                                                        .fileSystem(fileSystem)
+                                                        .inputResolver(new BatchInputResolver())
+                                                        .externalValues(Maps.fromProperties(props))
+                                                        .directorySupplier(n -> outputDir)
+                                                        .build();
+            engine.generate();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
+
+import static io.helidon.build.maven.enforcer.GitIgnore.create;
 
 /**
  * Configuration of discovery of files to check.
@@ -70,8 +72,8 @@ public class FileFinder {
         Path gitRepoDir = (repositoryRoot == null ? GitCommands.repositoryRoot(basePath) : repositoryRoot);
 
         List<FileMatcher> excludes = new ArrayList<>();
-        if (useGit && honorGitIgnore) {
-            addGitIgnore(gitRepoDir, excludes);
+        if (honorGitIgnore) {
+            excludes.add(create(gitRepoDir));
         }
 
         Set<FileRequest> foundFiles;
@@ -104,36 +106,6 @@ public class FileFinder {
                 + ", useGit=" + useGit
                 + ", honorGitIgnore=" + honorGitIgnore
                 + '}';
-    }
-
-    private void addGitIgnore(Path gitRepoDir, List<FileMatcher> excludes) {
-        Path gitIgnore = gitRepoDir.resolve(".gitignore");
-
-        excludes.addAll(FileMatcher.create(".git/"));
-
-        List<String> lines = FileSystem.toLines(gitIgnore)
-                .stream()
-                .filter(it -> !it.startsWith("#"))
-                .filter(it -> !it.isBlank())
-                .collect(Collectors.toList());
-
-        for (String line : lines) {
-            if (line.contains("*")) {
-                if (line.startsWith("*.")) {
-                    excludes.addAll(FileMatcher.create(line.substring(1)));
-                } else {
-                    if (line.startsWith("*")) {
-                        excludes.add(new NameEndExclude(line.substring(1)));
-                    } else if (line.endsWith("*")) {
-                        excludes.add(new NameStartExclude(line.substring(line.length() - 1)));
-                    } else {
-                        Log.warn("$(YELLOW .gitignore) matches not supported: " + line);
-                    }
-                }
-            } else {
-                excludes.addAll(FileMatcher.create(line));
-            }
-        }
     }
 
     private Set<FileRequest> findAllFiles(Path gitRepoDir, Path basePath) {
@@ -176,8 +148,7 @@ public class FileFinder {
                 .collect(Collectors.toSet());
     }
 
-    private boolean isValid(FileRequest file,
-                            List<FileMatcher> excludes) {
+    private boolean isValid(FileRequest file, List<FileMatcher> excludes) {
 
         // file may have been deleted from GIT (or locally)
         if (!Files.exists(file.path())) {
@@ -244,32 +215,6 @@ public class FileFinder {
          */
         public FileFinder build() {
             return new FileFinder(this);
-        }
-    }
-
-    private static final class NameEndExclude implements FileMatcher {
-        private final String end;
-
-        private NameEndExclude(String end) {
-            this.end = end;
-        }
-
-        @Override
-        public boolean matches(FileRequest file) {
-            return file.fileName().endsWith(end);
-        }
-    }
-
-    private static final class NameStartExclude implements FileMatcher {
-        private final String start;
-
-        private NameStartExclude(String start) {
-            this.start = start;
-        }
-
-        @Override
-        public boolean matches(FileRequest file) {
-            return file.fileName().startsWith(start);
         }
     }
 }
