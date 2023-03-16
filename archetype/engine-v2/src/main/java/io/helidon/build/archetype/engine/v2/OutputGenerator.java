@@ -22,14 +22,10 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
@@ -48,9 +44,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class OutputGenerator implements Output.Visitor<Context> {
 
-    private static final Pattern CONTEXT_PATH_PATTERN =
-            Pattern.compile("\\{\\{((?<sectionStart>[#^]?)|(?<sectionEnd>/?))(?<path>(((\\.\\.)|~)?\\p{Alpha}[\\p{Alnum}_.-]*))"
-                    + "}}");
     private final Map<String, List<Replace>> transformations = new HashMap<>();
     private final List<String> includes = new LinkedList<>();
     private final List<String> excludes = new LinkedList<>();
@@ -165,34 +158,6 @@ public class OutputGenerator implements Output.Visitor<Context> {
                          .collect(Collectors.toList());
     }
 
-    private void preRenderTemplate(Path templatePath, MergedModel scope, Context context) {
-        try {
-            String template = Files.readString(templatePath);
-            for (String path : contextPath(template)) {
-                if (scope.node().get(path) != null) {
-                    continue;
-                }
-                Optional.ofNullable(context.getValue(path))
-                        .ifPresent(contextValue -> {
-                            var value = new MergedModel.Value(scope.node(), path, 100,
-                                    contextValue.unwrap().toString(), null);
-                            scope.node().add(value);
-                        });
-            }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private List<String> contextPath(String input) {
-        Matcher matcher = CONTEXT_PATH_PATTERN.matcher(input);
-        List<String> result = new ArrayList<>();
-        while (matcher.find()) {
-                result.add(matcher.group("path"));
-        }
-        return result;
-    }
-
     private void render(Path source, Path target, String engine, Template extraScope, Context context) {
         try {
             if (!Files.exists(target)) {
@@ -200,7 +165,6 @@ public class OutputGenerator implements Output.Visitor<Context> {
                 Files.createDirectories(target.getParent());
                 InputStream is = Files.newInputStream(source);
                 OutputStream os = Files.newOutputStream(target);
-                preRenderTemplate(source, model, context);
                 templateSupport.render(is, source.toAbsolutePath().toString(), UTF_8, os, extraScope);
             }
         } catch (IOException ex) {

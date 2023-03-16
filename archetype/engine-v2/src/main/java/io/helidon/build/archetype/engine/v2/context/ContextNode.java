@@ -347,6 +347,10 @@ public final class ContextNode implements ContextScope {
                 node = root;
             } else if (PARENT_REF.equals(segment)) {
                 node = i == 0 ? parent : node.parent;
+                if (node == null) {
+                    //it was a root node
+                    node = root;
+                }
             } else {
                 node = fn.apply(node, segment);
                 if (node == null) {

@@ -56,6 +56,8 @@ class OutputGeneratorTest {
         assertThat(readFile(expected), containsString("test variable 2\n"));
         assertThat(readFile(expected), containsString("test variable 3\n"));
         assertThat(readFile(expected), not(containsString("test variable 4\n")));
+        assertThat(readFile(expected), containsString("test var 5 section\n"));
+        assertThat(readFile(expected), containsString("test var 7 section\n"));
     }
     @Test
     void testFile() throws IOException {

@@ -23,6 +23,7 @@
         <boolean path="metrics">true</boolean>
         <boolean path="section1">false</boolean>
         <boolean path="section2">false</boolean>
+        <boolean path="test.var5">false</boolean>
     </presets>
     <step name="Helidon Flavor" optional="true">
         <variables>
@@ -32,6 +33,11 @@
             <text path="test4">test variable 4</text>
         </variables>
         <inputs>
+            <boolean id="bool1" name="test-bool1" default="true" global="true" optional="true">
+                <inputs>
+                    <boolean id="bool2" name="test-bool2" default="true" global="true" optional="true"/>
+                </inputs>
+            </boolean>
             <enum id="flavor"
                   name="Select a Flavor"
                   default="se"

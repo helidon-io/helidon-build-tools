@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.build.archetype.engine.v2.MergedModel.Value;
 import io.helidon.build.archetype.engine.v2.ast.Block;
@@ -122,7 +123,8 @@ public class MustacheSupport implements TemplateSupport {
             return scopes -> {
                 Object result = builtInModel(name);
                 if (result != null) {
-                    return result;
+                    // treat "false" as the absence of value
+                    return "false".equals(result) ? null : result;
                 }
                 ListIterator<Object> it = scopes.listIterator(scopes.size());
                 while (it.hasPrevious()) {
@@ -165,6 +167,9 @@ public class MustacheSupport implements TemplateSupport {
                 case "current-date":
                     return Date.from(Instant.now()).toString();
                 default:
+                    if (scope.node().get(name) == null) {
+                        return Optional.ofNullable(context.getValue(name)).map(v->v.unwrap().toString()).orElse(null);
+                    }
                     return null;
             }
         }
