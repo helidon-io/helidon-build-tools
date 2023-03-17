@@ -16,10 +16,17 @@
 
 package io.helidon.build.cli.impl;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
+import io.helidon.build.archetype.engine.v2.VersionLoader;
+import io.helidon.build.archetype.engine.v2.ast.Version;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
@@ -86,7 +93,21 @@ public final class InitCommand extends BaseCommand {
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
                 String defaultHelidonVersion = defaultHelidonVersion();
-                helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
+                FileSystem latestArchetype = latestArchetype();
+                List<String> versions = VersionLoader.load(latestArchetype)
+                                                     .stream().map(Version::id).collect(Collectors.toList());
+                if (versions.size() > 0) {
+                    int defaultOption = IntStream.range(0, versions.size())
+                                                 .filter(i->versions.get(i).equals(defaultHelidonVersion))
+                                                 .findFirst()
+                                                 .orElseGet(()->{
+                                                     versions.add(defaultHelidonVersion);
+                                                     return versions.size()-1;
+                                                 });
+                    helidonVersion =  versions.get(prompt("Helidon version", versions, defaultOption));
+                } else {
+                    helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
+                }
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
@@ -117,6 +138,11 @@ public final class InitCommand extends BaseCommand {
                 devCommand.execute(context);
             }
         }
+    }
+
+    private FileSystem latestArchetype() throws Exception {
+        Path latestArchetype = metadata().archetypeV2Of(metadata().latestVersion().toString());
+        return FileSystems.newFileSystem(latestArchetype, this.getClass().getClassLoader());
     }
 
     private Path initProjectDir(String name) {
