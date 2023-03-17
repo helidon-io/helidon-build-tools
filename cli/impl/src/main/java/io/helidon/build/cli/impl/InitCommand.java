@@ -102,7 +102,7 @@ public final class InitCommand extends BaseCommand {
                                                  .findFirst()
                                                  .orElseGet(()->{
                                                      versions.add(defaultHelidonVersion);
-                                                     return versions.size()-1;
+                                                     return versions.size() - 1;
                                                  });
                     helidonVersion =  versions.get(prompt("Helidon version", versions, defaultOption));
                 } else {
