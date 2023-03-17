@@ -145,7 +145,7 @@ class GitIgnore implements FileMatcher {
         Path parent = Path.of(pattern).getParent();
         if (!parent.endsWith("/")) {
             //if Windows path then replace the separator
-            pattern = parent.toString().replaceAll("\\\\","/") + "/";
+            pattern = parent.toString().replaceAll("\\\\", "/") + "/";
         }
         for (Pattern exclude : excludes) {
             if (exclude.matcher(pattern).matches()) {
