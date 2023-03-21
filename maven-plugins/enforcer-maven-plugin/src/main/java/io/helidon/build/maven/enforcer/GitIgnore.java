@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
 
 import io.helidon.build.common.logging.Log;
 
+import static io.helidon.build.common.Strings.normalizePath;
+
 /**
  * Utility class for gitignore parsing.
  */
@@ -142,7 +144,7 @@ class GitIgnore implements FileMatcher {
 
     private boolean isParentExcluded(String pattern) {
         pattern = "/" + pattern;
-        Path parent = Path.of(pattern).getParent();
+        String parent = normalizePath(Path.of(pattern).getParent().toString());
         if (!parent.endsWith("/")) {
             //if Windows path then replace the separator
             pattern = parent.toString().replaceAll("\\\\","/") + "/";
