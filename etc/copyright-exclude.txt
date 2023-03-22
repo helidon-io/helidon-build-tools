@@ -39,5 +39,6 @@ cli/common/src/test/resources/latest-files
 freemarker-implicit.ftl
 expected
 expected-config
+maven-plugins/enforcer-maven-plugin/src/test/resources/utf16.xml
 .helidon
 jvm.config
