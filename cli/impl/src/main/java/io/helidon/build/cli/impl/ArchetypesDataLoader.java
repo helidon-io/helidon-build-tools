@@ -63,7 +63,6 @@ public class ArchetypesDataLoader {
     private static final class ReaderImpl implements Reader {
 
         private ArchetypesData.Builder builder = ArchetypesData.builder();
-        ;
         private final LinkedList<String> nameStack = new LinkedList<>();
 
         private ReaderImpl() {
