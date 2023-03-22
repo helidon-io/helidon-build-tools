@@ -14,41 +14,41 @@
  * limitations under the License.
  */
 
-package io.helidon.build.archetype.engine.v2;
+package io.helidon.build.cli.impl;
 
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import io.helidon.build.archetype.engine.v2.ast.Version;
 import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItems;
 
 /**
- * Tests {@link VersionLoader}.
+ * Tests {@link ArchetypesDataLoader}.
  */
-public class VersionLoaderTest {
+public class ArchetypesDataLoaderTest {
 
     @Test
-    public void testVersions() throws URISyntaxException {
-        List<Version> versions = VersionLoader.load(fileSystem());
+    public void testArchetypesData() throws URISyntaxException {
+        ArchetypesData archetypesData = ArchetypesDataLoader.load(fileSystem());
 
-        assertThat(versions.size(), is(2));
-        assertThat(versions.stream().map(Version::id).collect(Collectors.toList()), contains("3.1.2", "2.6.0"));
-        assertThat(versions.stream().map(v->v.supportedCli().toString())
-                           .collect(Collectors.toList()), contains("(,1.0],[1.2,)", "[2.1,3)"));
+        assertThat(archetypesData.versions().size(), is(28));
+        assertThat(archetypesData.rules().size(), is(3));
+        assertThat(archetypesData.versions(), hasItems("2.0.0", "2.3.4", "3.1.2"));
+        assertThat(archetypesData.rules().get(0).archetypeRange().toString(), is("[2.0.0,3.0.0)"));
+        assertThat(archetypesData.rules().get(0).cliRange().toString(), is("[2.0.0,5.0.0)"));
+        assertThat(archetypesData.rules().get(2).archetypeRange().toString(), is("[4.0.0,5.0.0)"));
+        assertThat(archetypesData.rules().get(2).cliRange().toString(), is("[4.0.0,5.0.0)"));
     }
 
     private FileSystem fileSystem() throws URISyntaxException {
-        Path path = Paths.get(VersionLoaderTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        Path path = Paths.get(ArchetypesDataLoaderTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         Path testPath = path.resolve("loader");
         return VirtualFileSystem.create(testPath);
     }

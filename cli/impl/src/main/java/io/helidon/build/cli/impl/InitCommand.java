@@ -21,12 +21,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
-import io.helidon.build.archetype.engine.v2.VersionLoader;
-import io.helidon.build.archetype.engine.v2.ast.Version;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
@@ -94,16 +90,19 @@ public final class InitCommand extends BaseCommand {
             } else {
                 String defaultHelidonVersion = defaultHelidonVersion();
                 FileSystem latestArchetype = latestArchetype();
-                List<String> versions = VersionLoader.load(latestArchetype)
-                                                     .stream().map(Version::id).collect(Collectors.toList());
+                ArchetypesData archetypesData = ArchetypesDataLoader.load(latestArchetype);
+                List<String> versions = archetypesData.versions();
                 if (versions.size() > 0) {
-                    int defaultOption = IntStream.range(0, versions.size())
-                                                 .filter(i->versions.get(i).equals(defaultHelidonVersion))
-                                                 .findFirst()
-                                                 .orElseGet(()->{
-                                                     versions.add(defaultHelidonVersion);
-                                                     return versions.size() - 1;
-                                                 });
+                    int defaultOption = -1;
+                    for (int x = 0; x < versions.size(); x++) {
+                        if (versions.get(x).equals(defaultHelidonVersion)) {
+                            defaultOption = x;
+                        }
+                    }
+                    if (defaultOption == -1) {
+                        versions.add(defaultHelidonVersion);
+                        defaultOption = versions.size() - 1;
+                    }
                     helidonVersion =  versions.get(prompt("Helidon version", versions, defaultOption));
                 } else {
                     helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
