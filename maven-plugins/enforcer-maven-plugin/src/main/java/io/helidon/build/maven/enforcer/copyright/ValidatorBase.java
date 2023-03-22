@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,14 @@ public abstract class ValidatorBase implements Validator {
 
         try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             copyrightComment = readComment(file, br);
-        } catch (IOException e) {
-            throw new EnforcerException("Failed to read file " + path, e);
+        } catch (IOException e1) {
+            //Fallback to cover at least UTF-16 encoding
+            //Encoding autodetection should be better, but depends on 3rd party library
+            try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_16)) {
+                copyrightComment = readComment(file, br);
+            } catch (IOException e2) {
+                throw new EnforcerException("Failed to read file " + path, e2);
+            }
         }
 
         if (copyrightComment.size() != templateLines.size()) {
