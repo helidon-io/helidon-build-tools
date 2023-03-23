@@ -22,7 +22,6 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static jdk.dynalink.linker.support.Guards.isNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
