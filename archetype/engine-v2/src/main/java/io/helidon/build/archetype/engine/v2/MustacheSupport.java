@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Optional;
 
 import io.helidon.build.archetype.engine.v2.MergedModel.Value;
 import io.helidon.build.archetype.engine.v2.ast.Block;
