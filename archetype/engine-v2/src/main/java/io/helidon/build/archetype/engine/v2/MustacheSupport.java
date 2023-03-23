@@ -37,6 +37,7 @@ import java.util.Optional;
 import io.helidon.build.archetype.engine.v2.MergedModel.Value;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextValue;
 import io.helidon.build.archetype.engine.v2.spi.TemplateSupport;
 
 import com.github.mustachejava.Binding;
@@ -168,7 +169,8 @@ public class MustacheSupport implements TemplateSupport {
                     return Date.from(Instant.now()).toString();
                 default:
                     if (scope.node().get(name) == null) {
-                        return Optional.ofNullable(context.getValue(name)).map(v->v.unwrap().toString()).orElse(null);
+                        ContextValue value = context.getValue(name);
+                        return value != null ? value.unwrap().toString() : null;
                     }
                     return null;
             }
