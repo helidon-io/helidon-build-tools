@@ -19,6 +19,7 @@ package io.helidon.build.maven.enforcer.copyright;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,7 +68,7 @@ public abstract class ValidatorBase implements Validator {
 
         try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             copyrightComment = readComment(file, br);
-        } catch (IOException e1) {
+        } catch (CharacterCodingException e1) {
             //Fallback to cover at least UTF-16 encoding
             //Encoding autodetection should be better, but depends on 3rd party library
             try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_16)) {
@@ -75,6 +76,8 @@ public abstract class ValidatorBase implements Validator {
             } catch (IOException e2) {
                 throw new EnforcerException("Failed to read file " + path, e2);
             }
+        } catch (IOException e1) {
+            throw new EnforcerException("Failed to read file " + path, e1);
         }
 
         if (copyrightComment.size() != templateLines.size()) {
