@@ -18,7 +18,13 @@ package io.helidon.build.cli.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import io.helidon.build.common.Lists;
+import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
 
 /**
@@ -26,15 +32,69 @@ import io.helidon.build.common.maven.VersionRange;
  */
 class ArchetypesData {
 
-    private final List<String> versions;
+    private final static Pattern MAVEN_PATTERN = Pattern.compile("^(?<major>[0-9]+).+$");
+    private final List<Version> versions;
     private final List<Rule> rules;
+    private MavenVersion latestVersion;
 
     private ArchetypesData(Builder builder) {
         this.versions = builder.versions;
         this.rules = builder.rules;
     }
 
-    List<String> versions() {
+    List<MavenVersion> latestMajorVersions(List<String> versions) {
+        Map<String, List<String>> majorVersionsMap = versions.stream().collect(Collectors.groupingBy(this::groupVersions));
+        Map<VersionRange, List<MavenVersion>> versionRangeListMap =
+                majorVersionsMap.entrySet().stream()
+                                .filter(entry -> !entry.getKey().isEmpty())
+                                .collect(Collectors.toMap(
+                                        e -> VersionRange.createFromVersionSpec("[" + e.getKey() + ",)"),
+                                        e -> Lists.map(e.getValue(), MavenVersion::toMavenVersion))
+                                );
+        return versionRangeListMap.entrySet().stream()
+                                  .map(this::latestVersion)
+                                  .collect(Collectors.toList());
+    }
+
+    List<MavenVersion> latestMajorVersions() {
+        List<String> versionsId = Lists.map(versions, Version::id);
+        return latestMajorVersions(versionsId);
+    }
+
+    private MavenVersion latestVersion(Map.Entry<VersionRange, List<MavenVersion>> entry) {
+        MavenVersion mavenVersion = entry.getKey().matchVersion(entry.getValue());
+        if (mavenVersion == null) {
+            return entry.getValue().get(entry.getValue().size() - 1);
+        }
+        return mavenVersion;
+    }
+
+    private String groupVersions(String version) {
+        Matcher matcher = MAVEN_PATTERN.matcher(version);
+        if (matcher.find()) {
+            return matcher.group("major");
+        }
+        return "";
+    }
+
+    MavenVersion latestVersion(List<String> versions) {
+        VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
+        List<MavenVersion> mavenVersions = Lists.map(versions, MavenVersion::toMavenVersion);
+        return versionRange.matchVersion(mavenVersions);
+    }
+
+    MavenVersion latestVersion() {
+        if (latestVersion != null) {
+            return latestVersion;
+        }
+        List<MavenVersion> mavenVersions = versions.stream().map(version -> MavenVersion.toMavenVersion(version.id()))
+                                                   .collect(Collectors.toList());
+        VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
+        latestVersion = versionRange.matchVersion(mavenVersions);
+        return latestVersion;
+    }
+
+    List<Version> versions() {
         return versions;
     }
 
@@ -56,13 +116,13 @@ class ArchetypesData {
      */
     static class Builder {
 
-        private List<String> versions = new ArrayList<>();
+        private List<Version> versions = new ArrayList<>();
         private List<Rule> rules = new ArrayList<>();
 
         private Builder() {
         }
 
-        List<String> versions() {
+        List<Version> versions() {
             return versions;
         }
 
@@ -70,11 +130,11 @@ class ArchetypesData {
             return rules;
         }
 
-        void addVersion(String version) {
+        void addVersion(Version version) {
             versions.add(version);
         }
 
-        void addRule(Rule rule){
+        void addRule(Rule rule) {
             rules.add(rule);
         }
 
@@ -85,6 +145,29 @@ class ArchetypesData {
          */
         ArchetypesData build() {
             return new ArchetypesData(this);
+        }
+    }
+
+    static class Version {
+        private final String id;
+        private final boolean isDefault;
+
+        Version(String id) {
+            this.id = id;
+            this.isDefault = false;
+        }
+
+        Version(String id, boolean isDefault) {
+            this.id = id;
+            this.isDefault = isDefault;
+        }
+
+        String id() {
+            return id;
+        }
+
+        boolean isDefault() {
+            return isDefault;
         }
     }
 

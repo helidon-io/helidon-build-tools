@@ -18,12 +18,10 @@ package io.helidon.build.cli.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 import io.helidon.build.common.maven.VersionRange;
 import io.helidon.build.common.xml.SimpleXMLParser;
@@ -35,25 +33,18 @@ import io.helidon.build.common.xml.SimpleXMLParser.Reader;
  */
 public class ArchetypesDataLoader {
 
-    private static final Map<FileSystem, ArchetypesData> ARCHETYPES_DATA_MAP = new WeakHashMap<>();
-
     private ArchetypesDataLoader() {
     }
 
     /**
-     * Get the data about archetype versions for the given archetype.
+     * Get the data about archetype versions from the given file.
      *
-     * @param archetype archetype
+     * @param versionsFile versionsFile
      * @return data about archetype versions
      */
-    public static ArchetypesData load(FileSystem archetype) {
-        return ARCHETYPES_DATA_MAP.computeIfAbsent(archetype, ArchetypesDataLoader::archetypesData);
-    }
-
-    private static ArchetypesData archetypesData(FileSystem archetype) {
+    public static ArchetypesData load(Path versionsFile) {
         try {
-            Path path = archetype.getPath("versions.xml");
-            InputStream is = Files.newInputStream(path);
+            InputStream is = Files.newInputStream(versionsFile);
             return new ReaderImpl().read(is);
         } catch (IOException ex) {
             return ArchetypesData.builder().build();
@@ -62,8 +53,10 @@ public class ArchetypesDataLoader {
 
     private static final class ReaderImpl implements Reader {
 
-        private ArchetypesData.Builder builder = ArchetypesData.builder();
+        private final ArchetypesData.Builder builder = ArchetypesData.builder();
         private final LinkedList<String> nameStack = new LinkedList<>();
+        private Map<String, String> versionAttributes;
+
 
         private ReaderImpl() {
         }
@@ -86,8 +79,9 @@ public class ArchetypesDataLoader {
                     case "archetypes":
                         checkParent("data", parentName, name);
                         break;
-                    case "versions":
+                    case "version":
                         checkParent("archetypes", parentName, name);
+                        this.versionAttributes = attributes;
                         break;
                     case "rule":
                         checkParent("rules", parentName, name);
@@ -124,7 +118,8 @@ public class ArchetypesDataLoader {
             String name = nameStack.peek();
             if (name != null) {
                 if ("version".equals(name)) {
-                    builder.addVersion(data);
+                    String defaultVersion = versionAttributes.get("default");
+                    builder.addVersion(new ArchetypesData.Version(data, "true".equals(defaultVersion)));
                 }
             }
         }

@@ -57,6 +57,7 @@ class UpdateMetadata extends Plugin {
     private static final String READ_TIMEOUT_ARG = "--readTimeout";
     private static final String MAX_ATTEMPTS_ARG = "--maxAttempts";
     private static final String LATEST_VERSION_FILE_NAME = "latest";
+    private static final String VERSIONS_FILE_NAME = "versions.xml";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
     private static final String USER_AGENT_HEADER = "User-Agent";
@@ -76,6 +77,7 @@ class UpdateMetadata extends Plugin {
     private int readTimeout;
     private int maxAttempts;
     private Path latestVersionFile;
+    private Path versionsFile;
 
     /**
      * Constructor.
@@ -124,6 +126,7 @@ class UpdateMetadata extends Plugin {
             throw new FileNotFoundException(cacheDir.toString());
         }
         latestVersionFile = cacheDir.toAbsolutePath().resolve(LATEST_VERSION_FILE_NAME);
+        versionsFile = cacheDir.toAbsolutePath().resolve(VERSIONS_FILE_NAME);
     }
 
     @Override
@@ -131,9 +134,13 @@ class UpdateMetadata extends Plugin {
         try {
             if (version == null) {
                 updateLatestVersion();
+                //TODO uncomment when version.xml will be implemented and added to the helidon.io
+                //updateVersions();
                 updateVersion(readLatestVersion());
             } else {
                 updateVersion(version);
+                //TODO uncomment when version.xml will be implemented and added to the helidon.io
+                //updateVersions();
                 updateLatestVersion(); // since we're here already, also update the latest
             }
         } catch (UnknownHostException e) {
@@ -172,6 +179,23 @@ class UpdateMetadata extends Plugin {
 
     private URL resolve(String fileName) throws Exception {
         return new URL(baseUrl.toExternalForm() + "/" + fileName);
+    }
+
+    private void updateVersions() throws Exception {
+        // Always update
+        final URL url = resolve(VERSIONS_FILE_NAME);
+        final Map<String, String> headers = commonHeaders();
+        debugDownload(url, headers, false);
+        final URLConnection connection = NetworkConnection.builder()
+                                                          .url(url)
+                                                          .headers(headers)
+                                                          .connectTimeout(connectTimeout)
+                                                          .readTimeout(readTimeout)
+                                                          .connect();
+        Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
+        if (Log.isDebug()) {
+            Log.debug("wrote information about archetype versions to %s", versionsFile);
+        }
     }
 
     private void updateLatestVersion() throws Exception {

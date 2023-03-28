@@ -79,6 +79,7 @@ public class Metadata {
     public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-alpha");
 
     private static final String LATEST_VERSION_FILE_NAME = "latest";
+    private static final String VERSIONS_FILE_NAME = "versions.xml";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
@@ -98,23 +99,29 @@ public class Metadata {
     private final Path rootDir;
     private final String url;
     private final Path latestVersionFile;
+    private final Path versionsFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
     private final PrintStream pluginStdOut;
     private final Map<Path, Long> lastChecked;
     private final AtomicReference<Throwable> latestVersionFailure;
     private final AtomicReference<MavenVersion> latestVersion;
+    private final AtomicReference<Throwable> archetypesDataFailure;
+    private final AtomicReference<ArchetypesData> archetypesData;
 
     private Metadata(Builder builder) {
         rootDir = builder.rootDir;
         url = builder.url;
         latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
+        versionsFile = rootDir.resolve(VERSIONS_FILE_NAME);
         updateFrequencyMillis = builder.updateFrequencyUnits.toMillis(builder.updateFrequency);
         debugPlugin = builder.debugPlugin;
         pluginStdOut = builder.pluginStdOut;
         lastChecked = new HashMap<>();
         latestVersionFailure = new AtomicReference<>();
         latestVersion = new AtomicReference<>();
+        archetypesDataFailure = new AtomicReference<>();
+        archetypesData = new AtomicReference<>();
     }
 
     /**
@@ -146,6 +153,33 @@ public class Metadata {
             return FileTime.fromMillis(0);
         } else {
             return lastModifiedTime(latestVersionFile);
+        }
+    }
+
+    ArchetypesData archetypesData() throws UpdateFailed  {
+        return archetypesData(false);
+    }
+
+    ArchetypesData archetypesData(boolean quiet) throws UpdateFailed {
+        // If we fail, we only want to do so once per command, so we cache any failure
+        Throwable initialFailure = archetypesDataFailure.get();
+        if (initialFailure == null) {
+            try {
+                if (checkForUpdates(null, versionsFile, quiet)) {
+                    archetypesData.set(readArchetypesData());
+                } else if (archetypesData.get() == null) {
+                    archetypesData.set(readArchetypesData());
+                }
+                return archetypesData.get();
+            } catch (UpdateFailed | RuntimeException e) {
+                archetypesDataFailure.set(e);
+                throw e;
+            }
+        } else {
+            if (initialFailure instanceof UpdateFailed) {
+                throw (UpdateFailed) initialFailure;
+            }
+            throw (RuntimeException) initialFailure;
         }
     }
 
@@ -580,6 +614,10 @@ public class Metadata {
         MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
         return LatestVersion.create(latestVersionFile)
                             .latest(cliVersion);
+    }
+
+    private ArchetypesData readArchetypesData() {
+        return ArchetypesDataLoader.load(versionsFile);
     }
 
     /**

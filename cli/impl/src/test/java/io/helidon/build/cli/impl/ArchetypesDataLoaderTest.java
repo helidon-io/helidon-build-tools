@@ -17,14 +17,15 @@
 package io.helidon.build.cli.impl;
 
 import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.cli.impl.ArchetypesData.Version;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -36,20 +37,21 @@ public class ArchetypesDataLoaderTest {
 
     @Test
     public void testArchetypesData() throws URISyntaxException {
-        ArchetypesData archetypesData = ArchetypesDataLoader.load(fileSystem());
+        ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFileFolder().resolve("versions.xml"));
+        Version defaultVersion = archetypesData.versions().stream().filter(Version::isDefault).findFirst().get();
 
         assertThat(archetypesData.versions().size(), is(28));
         assertThat(archetypesData.rules().size(), is(3));
-        assertThat(archetypesData.versions(), hasItems("2.0.0", "2.3.4", "3.1.2"));
+        assertThat(Lists.map(archetypesData.versions(), Version::id), hasItems("2.0.0", "2.3.4", "3.1.2"));
+        assertThat(defaultVersion.id(), is("3.1.2"));
         assertThat(archetypesData.rules().get(0).archetypeRange().toString(), is("[2.0.0,3.0.0)"));
         assertThat(archetypesData.rules().get(0).cliRange().toString(), is("[2.0.0,5.0.0)"));
         assertThat(archetypesData.rules().get(2).archetypeRange().toString(), is("[4.0.0,5.0.0)"));
         assertThat(archetypesData.rules().get(2).cliRange().toString(), is("[4.0.0,5.0.0)"));
     }
 
-    private FileSystem fileSystem() throws URISyntaxException {
+    private Path versionsFileFolder() throws URISyntaxException {
         Path path = Paths.get(ArchetypesDataLoaderTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        Path testPath = path.resolve("loader");
-        return VirtualFileSystem.create(testPath);
+        return path.resolve("versions").resolve("cli-data");
     }
 }

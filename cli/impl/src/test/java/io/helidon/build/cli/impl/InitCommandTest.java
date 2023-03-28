@@ -15,12 +15,16 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
+
 import io.helidon.build.common.ProcessMonitor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
@@ -142,5 +146,75 @@ public class InitCommandTest extends InitCommandTestBase {
                 .flavor("MP")
                 .invokeInit()
                 .validateProject();
+    }
+
+    @Test
+    public void testInteractiveAllHelidonVersions() throws Exception {
+        String helidonProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
+        System.clearProperty(HELIDON_VERSION_PROPERTY);
+        String cliDataUrl = testResourcePath(getClass(), "versions")
+                .resolve("cli-data").toUri().toURL().toString();
+        String projectDir = uniqueProjectDir("quickstart-se").toString();
+
+        String output = TestUtils.execWithDirAndInput(
+                TARGET_DIR.toFile(),
+                new File(getClass().getResource("input-full-version-list.txt").getFile()),
+                "init",
+                "--url", cliDataUrl,
+                "--project", projectDir,
+                projectDir);
+
+        assertThat(output, containsString("Show all available Helidon versions? (if no - only the latest major versions and a "
+                + "default version will be shown) (default: n):"));
+        assertThat(output, containsString("(1) 2.0.0"));
+        assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("Enter selection (default: 29):"));
+
+        CommandInvoker.InvocationResult invocationResult =
+                CommandInvoker.builder()
+                              .userConfig(userConfig())
+                              .workDir(TARGET_DIR)
+                              .metadataUrl(cliDataUrl)
+                              .input(getClass().getResource("input-full-version-list.txt"))
+                              .invokeInit();
+        invocationResult.assertProjectExists();
+
+        System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
+    }
+
+    @Test
+    public void testInteractiveLatestHelidonVersions() throws Exception {
+        String helidonVersionProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
+        System.clearProperty(HELIDON_VERSION_PROPERTY);
+        String cliDataUrl = testResourcePath(getClass(), "versions")
+                .resolve("cli-data").toUri().toURL().toString();
+        String projectDir = uniqueProjectDir("quickstart-se").toString();
+
+        String output = TestUtils.execWithDirAndInput(
+                TARGET_DIR.toFile(),
+                new File(getClass().getResource("input-latest-version-list.txt").getFile()),
+                "init",
+                "--url", cliDataUrl,
+                "--project", projectDir,
+                projectDir);
+
+        assertThat(output, containsString("Show all available Helidon versions? (if no - only the latest major versions and a "
+                + "default version will be shown) (default: n):"));
+        assertThat(output, containsString("(1) 2.6.0"));
+        assertThat(output, containsString("(2) 3.1.2"));
+        assertThat(output, containsString("(3) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("Enter selection (default: 3):"));
+
+
+        CommandInvoker.InvocationResult invocationResult =
+                CommandInvoker.builder()
+                              .userConfig(userConfig())
+                              .workDir(TARGET_DIR)
+                              .metadataUrl(cliDataUrl)
+                              .input(getClass().getResource("input-latest-version-list.txt"))
+                              .invokeInit();
+        invocationResult.assertProjectExists();
+
+        System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
     }
 }
