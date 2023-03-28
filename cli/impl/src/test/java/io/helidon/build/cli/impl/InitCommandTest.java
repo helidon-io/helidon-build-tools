@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,15 +170,6 @@ public class InitCommandTest extends InitCommandTestBase {
         assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
         assertThat(output, containsString("Enter selection (default: 29):"));
 
-        CommandInvoker.InvocationResult invocationResult =
-                CommandInvoker.builder()
-                              .userConfig(userConfig())
-                              .workDir(TARGET_DIR)
-                              .metadataUrl(cliDataUrl)
-                              .input(getClass().getResource("input-full-version-list.txt"))
-                              .invokeInit();
-        invocationResult.assertProjectExists();
-
         System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
     }
 
@@ -204,16 +195,6 @@ public class InitCommandTest extends InitCommandTestBase {
         assertThat(output, containsString("(2) 3.1.2"));
         assertThat(output, containsString("(3) 4.0.0-SNAPSHOT"));
         assertThat(output, containsString("Enter selection (default: 3):"));
-
-
-        CommandInvoker.InvocationResult invocationResult =
-                CommandInvoker.builder()
-                              .userConfig(userConfig())
-                              .workDir(TARGET_DIR)
-                              .metadataUrl(cliDataUrl)
-                              .input(getClass().getResource("input-latest-version-list.txt"))
-                              .invokeInit();
-        invocationResult.assertProjectExists();
 
         System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
     }

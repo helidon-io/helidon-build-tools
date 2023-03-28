@@ -32,7 +32,7 @@ import io.helidon.build.common.maven.VersionRange;
  */
 class ArchetypesData {
 
-    private final static Pattern MAVEN_PATTERN = Pattern.compile("^(?<major>[0-9]+).+$");
+    private static final Pattern MAVEN_PATTERN = Pattern.compile("^(?<major>[0-9]+).+$");
     private final List<Version> versions;
     private final List<Rule> rules;
     private MavenVersion latestVersion;
