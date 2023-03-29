@@ -78,7 +78,7 @@ jobs:
       - name: Archive test results
         uses: actions/upload-artifact@v3.1.2
         #https://github.com/actions/upload-artifact/issues/240
-        if: ${{ matrix.os != 'windows-latest'}}
+        if: ${{ matrix.os != 'windows-latest' && always() }}
         with:
           name: test-results
           path: |
