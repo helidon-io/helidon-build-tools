@@ -160,6 +160,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 TARGET_DIR.toFile(),
                 new File(getClass().getResource("input-full-version-list.txt").getFile()),
                 "init",
+                "--reset",
                 "--url", cliDataUrl,
                 "--project", projectDir,
                 projectDir);
@@ -185,6 +186,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 TARGET_DIR.toFile(),
                 new File(getClass().getResource("input-latest-version-list.txt").getFile()),
                 "init",
+                "--reset",
                 "--url", cliDataUrl,
                 "--project", projectDir,
                 projectDir);

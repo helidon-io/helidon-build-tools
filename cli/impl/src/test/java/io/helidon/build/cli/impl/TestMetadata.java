@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,15 @@ public class TestMetadata {
      */
     static byte[] zipData(TestVersion version) {
         return ZIP_DATA.get(version);
+    }
+
+    /**
+     * Get the content of versions.xml
+     *
+     * @return content of {@code versions.xml}
+     */
+    static byte[] versionsFileContent() {
+        return readCliDataFile("versions.xml");
     }
 
     /**

@@ -134,13 +134,11 @@ class UpdateMetadata extends Plugin {
         try {
             if (version == null) {
                 updateLatestVersion();
-                //TODO uncomment when version.xml will be implemented and added to the helidon.io
-                //updateVersions();
+                updateVersions();
                 updateVersion(readLatestVersion());
             } else {
                 updateVersion(version);
-                //TODO uncomment when version.xml will be implemented and added to the helidon.io
-                //updateVersions();
+                updateVersions();
                 updateLatestVersion(); // since we're here already, also update the latest
             }
         } catch (UnknownHostException e) {
@@ -192,7 +190,12 @@ class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
+        if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
+            //TODO remove it when version.xml will be implemented and added to the helidon.io
+            Files.copy(new ByteArrayInputStream(new byte[]{}), versionsFile, REPLACE_EXISTING);
+        } else {
+            Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
+        }
         if (Log.isDebug()) {
             Log.debug("wrote information about archetype versions to %s", versionsFile);
         }
