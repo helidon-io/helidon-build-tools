@@ -83,6 +83,7 @@ jobs:
           name: test-results
           path: |
             **/target/surefire-reports/*.txt
+            **/target/surefire-reports/*.xml
             **/target/it/**/*.log
             /home/runner/work/helidon-build-tools/helidon-build-tools/cli/impl/target/distribution/helidon.zip
       - name: Archive VSCode extension
