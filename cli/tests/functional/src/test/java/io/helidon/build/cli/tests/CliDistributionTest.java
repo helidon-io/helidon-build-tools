@@ -123,7 +123,7 @@ public class CliDistributionTest {
         String result = String.join("", InputStreams.toLines(process.getInputStream()));
         process.destroy();
 
-        assertThat(result, containsString("Switch directory to"));
+        assertThat(result + " = " + cliExecutable, containsString("Switch directory to"));
         assertThat(list(dir).size(), is(not(0)));
     }
 }
