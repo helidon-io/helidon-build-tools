@@ -16,16 +16,6 @@
 
 package io.helidon.build.cli.tests;
 
-import io.helidon.build.cli.impl.Helidon;
-import io.helidon.build.common.ProcessMonitor;
-import io.helidon.build.common.Strings;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,13 +26,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.build.cli.impl.Helidon;
+import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.Strings;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static io.helidon.build.cli.tests.FunctionalUtils.getProperty;
+import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 public class CliFunctionalV2Test {
 
     private static String expectedOutput;
-
     private static Path workDir;
     private static Path helidonShell;
     private static Path helidonBatch;
@@ -51,9 +52,9 @@ public class CliFunctionalV2Test {
 
     @BeforeAll
     static void setup() throws IOException {
-        FunctionalUtils.setMavenLocalRepoUrl();
+        setMavenLocalRepoUrl();
         Path input = Files.createTempFile("input","txt");
-        Path executableDir = Path.of(FunctionalUtils.getProperty("helidon.executable.directory"));
+        Path executableDir = Path.of(getProperty("helidon.executable.directory"));
         workDir = Files.createTempDirectory("generated");
         inputFile = Files.writeString(input, "\n\n\n").toFile();
         helidonBatch = executableDir.resolve("helidon.bat");
