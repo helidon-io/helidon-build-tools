@@ -33,6 +33,7 @@ import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static io.helidon.build.common.FileUtils.list;
 import static io.helidon.build.common.FileUtils.unzip;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -119,12 +120,10 @@ public class CliDistributionTest {
                 .directory(dir.toFile())
                 .command(cliExecutable, "init", "--batch")
                 .start();
-        boolean isSuccess = InputStreams.toLines(process.getInputStream())
-                .stream()
-                .anyMatch(line -> line.contains("Switch directory to"));
+        String result = String.join("", InputStreams.toLines(process.getInputStream()));
         process.destroy();
 
-        assertThat(isSuccess, is(true));
+        assertThat(result, containsString("Switch directory to"));
         assertThat(list(dir).size(), is(not(0)));
     }
 }
