@@ -123,7 +123,7 @@ public class CliDistributionTest {
         Path dir = Files.createTempDirectory("project");
         Process process = new ProcessBuilder()
                 .directory(dir.toFile())
-                .command(cliExecutable, "init", "--help")
+                .command(cliExecutable, "init", "--batch")
                 .start();
         String result = String.join("", InputStreams.toLines(process.getInputStream()));
         process.destroy();
