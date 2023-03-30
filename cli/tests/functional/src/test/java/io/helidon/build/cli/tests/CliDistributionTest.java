@@ -123,12 +123,12 @@ public class CliDistributionTest {
         Path dir = Files.createTempDirectory("project");
         Process process = new ProcessBuilder()
                 .directory(dir.toFile())
-                .command(cliExecutable, "init", "--batch")
+                .command(cliExecutable, "init", "--help")
                 .start();
         String result = String.join("", InputStreams.toLines(process.getInputStream()));
         process.destroy();
 
-//        assertThat(result, containsString("Switch directory to"));
+        assertThat(result, containsString("Switch directory to"));
         assertThat(list(dir).size(), is(not(0)));
     }
 }
