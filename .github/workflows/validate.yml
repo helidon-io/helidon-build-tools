@@ -84,7 +84,7 @@ jobs:
           path: |
             **/target/surefire-reports/*.txt
             **/target/it/**/*.log
-            /tmp/*
+            /home/runner/work/helidon-build-tools/helidon-build-tools/cli/impl/target/distribution/helidon.zip
       - name: Archive VSCode extension
         uses: actions/upload-artifact@v3.1.2
         with:
