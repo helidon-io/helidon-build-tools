@@ -67,6 +67,14 @@
                                             </files>
                                         </archive>
                                     </archives>
+                                    <templates>
+                                        <template source="cli/versions.xml.mustache"
+                                                  target="cli-data/versions.xml">
+                                            <variables>
+                                                <variable name="archetypeVersion" value="${project.version}"/>
+                                            </variables>
+                                        </template>
+                                    </templates>
                                     <files>
                                         <file target="cli-data/latest">${project.version}</file>
                                     </files>
