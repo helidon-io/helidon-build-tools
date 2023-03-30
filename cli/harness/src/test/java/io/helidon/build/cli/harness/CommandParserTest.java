@@ -20,17 +20,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
-import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
+import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
+import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -310,10 +307,9 @@ public class CommandParserTest {
     }
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS,
-            disabledReason="https://github.com/helidon-io/helidon-build-tools/issues/896")
     public void testPropsFileOptionWithExistingFile() {
-        String argsFilePath = Objects.requireNonNull(getClass().getResource("test-props-file.properties")).getPath();
+        String packagePath = getClass().getPackageName().replaceAll("\\.", "/");
+        String argsFilePath = testResourcePath(getClass(), packagePath + "/test-props-file.properties").toString();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
         CommandParameters cmd = new CommandParameters(propsFileOption);
 

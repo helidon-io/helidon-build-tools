@@ -16,6 +16,17 @@
 
 package io.helidon.build.cli.tests;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.ProcessMonitor;
@@ -29,19 +40,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
 import static io.helidon.build.cli.tests.FunctionalUtils.ARCHETYPE_URL;
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
+import static io.helidon.build.cli.tests.FunctionalUtils.downloadMavenDist;
+import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static io.helidon.build.cli.tests.FunctionalUtils.validateSeProject;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -60,12 +62,11 @@ public class CliMavenTest {
 
     @BeforeAll
     static void setUp() throws IOException {
-        FunctionalUtils.setMavenLocalRepoUrl();
+        setMavenLocalRepoUrl();
         workDir = Files.createTempDirectory("generated");
         mavenDirectory = Files.createTempDirectory("maven");
-
         for (String version : MAVEN_VERSIONS) {
-            FunctionalUtils.downloadMavenDist(mavenDirectory, version);
+            downloadMavenDist(mavenDirectory, version);
         }
     }
 

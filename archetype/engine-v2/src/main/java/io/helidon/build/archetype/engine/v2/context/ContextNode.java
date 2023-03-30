@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -347,6 +347,10 @@ public final class ContextNode implements ContextScope {
                 node = root;
             } else if (PARENT_REF.equals(segment)) {
                 node = i == 0 ? parent : node.parent;
+                if (node == null) {
+                    //it was a root node
+                    node = root;
+                }
             } else {
                 node = fn.apply(node, segment);
                 if (node == null) {

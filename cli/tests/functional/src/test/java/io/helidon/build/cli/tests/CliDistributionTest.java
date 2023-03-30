@@ -44,6 +44,7 @@ public class CliDistributionTest {
 
     private static Path distDir;
     private static final String CLI_VERSION_KEY = "cli.version";
+    private static final String DIST_BASE_DIR = "helidon-" + getProperty(CLI_VERSION_KEY);
 
     @BeforeAll
     static void setup() throws IOException {
@@ -64,38 +65,38 @@ public class CliDistributionTest {
                 .collect(Collectors.toList());
 
         //Ensure main directory are present
-        assertThat(content, hasItems("helidon/bin"));
-        assertThat(content, hasItems("helidon/lib"));
-        assertThat(content, hasItems("helidon/lib/libs"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/bin"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/lib"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/libs"));
         //Ensure main files are present
-        assertThat(content, hasItems("helidon/bin/helidon"));
-        assertThat(content, hasItems("helidon/bin/helidon.bat"));
-        assertThat(content, hasItems("helidon/lib/helidon.jar"));
-        assertThat(content, hasItems("helidon/LICENSE.txt"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon.bat"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/helidon.jar"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/LICENSE.txt"));
     }
 
     @Test
     @EnabledOnOs(value={OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellCreateProject() throws IOException {
-        runCreateProjectTest(distDir.resolve("helidon/bin/helidon").toString());
+        runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
     @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testBatchCreateProject() throws IOException {
-        runCreateProjectTest(distDir.resolve("helidon/bin/helidon.bat").toString());
+        runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
 
     @Test
     @EnabledOnOs(value={OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellVersion() throws IOException {
-        runVersionTest(distDir.resolve("helidon/bin/helidon").toString());
+        runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
     @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testVersion() throws IOException {
-        runVersionTest(distDir.resolve("helidon/bin/helidon.bat").toString());
+        runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
 
     private void runVersionTest(String cliExecutable) throws IOException {
