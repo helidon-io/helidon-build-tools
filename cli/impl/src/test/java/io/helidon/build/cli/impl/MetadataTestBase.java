@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
-import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
+import static io.helidon.build.cli.impl.TestMetadata.VERSIONS_FILE_NAME;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
@@ -60,7 +60,8 @@ public class MetadataTestBase {
 
     protected String baseUrl;
     protected Path cacheDir;
-    protected Path latestFile;
+//    protected Path latestFile;
+    protected Path versionsFile;
     protected Metadata meta;
     protected MavenVersion latestVersion;
     protected MetadataTestServer testServer;
@@ -92,7 +93,8 @@ public class MetadataTestBase {
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
-        latestFile = cacheDir.resolve(LATEST_FILE_NAME);
+//        latestFile = cacheDir.resolve(LATEST_FILE_NAME);
+        versionsFile = cacheDir.resolve(VERSIONS_FILE_NAME);
         LOG_RECORDER.clear();
         LogLevel.set(LogLevel.DEBUG);
     }
@@ -173,17 +175,17 @@ public class MetadataTestBase {
      * @param updateFrequencyUnits update frequency unit of the metadata created
      * @param expectedVersion      expected Helidon version
      * @param expectedEtag         expected ETAG
-     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     * @param versionsFileExists     {@code true} if the versions.xml is expected to exist, {@code false} otherwise
      */
     protected void assertInitialLatestVersionRequestPerformsUpdate(long updateFrequency,
                                                                    TimeUnit updateFrequencyUnits,
                                                                    String expectedVersion,
                                                                    String expectedEtag,
-                                                                   boolean latestFileExists) {
+                                                                   boolean versionsFileExists) {
 
-        final Runnable request = unchecked(() -> firstLatestVersionRequest(expectedVersion, !latestFileExists));
+        final Runnable request = unchecked(() -> firstLatestVersionRequest(expectedVersion, !versionsFileExists));
         assertInitialRequestPerformsUpdate(request, updateFrequency, updateFrequencyUnits,
-                expectedVersion, expectedEtag, latestFileExists);
+                expectedVersion, expectedEtag, versionsFileExists);
     }
 
     /**
@@ -194,14 +196,14 @@ public class MetadataTestBase {
      * @param updateFrequencyUnits update frequency unit of the metadata created
      * @param expectedVersion      expected Helidon version
      * @param expectedEtag         expected ETAG
-     * @param latestFileExists     {@code true} if the latest file is expected to exist, {@code false} otherwise
+     * @param versionsFileExists     {@code true} if the versions.xml is expected to exist, {@code false} otherwise
      */
     protected void assertInitialRequestPerformsUpdate(Runnable request,
                                                       long updateFrequency,
                                                       TimeUnit updateFrequencyUnits,
                                                       String expectedVersion,
                                                       String expectedEtag,
-                                                      boolean latestFileExists) {
+                                                      boolean versionsFileExists) {
         Path versionDir = cacheDir.resolve(expectedVersion);
         Path propertiesFile = versionDir.resolve(TestMetadata.PROPERTIES_FILE_NAME);
         Path catalogFile = versionDir.resolve(TestMetadata.CATALOG_FILE_NAME);
@@ -213,7 +215,7 @@ public class MetadataTestBase {
 
         // Check expected the latest file and version directory existence
 
-        assertThat(Files.exists(latestFile), is(latestFileExists));
+        assertThat(Files.exists(versionsFile), is(versionsFileExists));
         assertThat(Files.exists(versionDir), is(false));
 
         // Make request. Should update both latest file and latest archetype.
@@ -222,16 +224,16 @@ public class MetadataTestBase {
         meta = newInstance(updateFrequency, updateFrequencyUnits);
         request.run();
 
-        requireFile(latestFile);
+        requireFile(versionsFile);
         requireDirectory(versionDir);
         requireFile(propertiesFile);
         requireFile(catalogFile);
         requireFile(seJarFile);
         requireFile(mpJarFile);
 
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connecting", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connecting", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
         assertLinesContainingAll(1, "downloading", zipUriPath);
         assertLinesContainingAll(1, "connecting", zipUriPath);
         assertLinesContainingAll(1, "connected", zipUriPath);
@@ -255,7 +257,7 @@ public class MetadataTestBase {
         if (expectedVersion != null) {
             assertThat(latestVersion, is(toMavenVersion(expectedVersion)));
         }
-        assertLinesContainingAll(1, "stale check", staleType, LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", staleType, VERSIONS_FILE_NAME);
         assertLinesContainingAll("Looking up latest Helidon version");
         assertNoLinesContainingAll("Updating metadata for Helidon version " + expectedVersion);
     }

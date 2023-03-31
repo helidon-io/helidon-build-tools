@@ -105,7 +105,6 @@ public final class InitCommand extends BaseCommand {
                         }
                     }
                     if (defaultOption == -1) {
-                        versions.add(defaultHelidonVersion);
                         defaultOption = versions.size() - 1;
                     }
                     helidonVersion = versions.get(prompt("Helidon version", versions, defaultOption));
@@ -175,22 +174,26 @@ public final class InitCommand extends BaseCommand {
 
     private String defaultHelidonVersion(ArchetypesData archetypesData) {
         // Check the system property first, primarily to support tests
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
-        if (version == null) {
-            try {
-                version = metadata.archetypesData().latestVersion().toString();
-                Log.debug("Latest Helidon version found: %s", version);
-            } catch (Plugins.PluginFailedUnchecked e) {
-                versionLookupFailed(null);
-            } catch (Exception e) {
-                versionLookupFailed(e.getMessage());
-            }
-        }
-        Version defaultArchVersion = archetypesData.versions().stream().filter(Version::isDefault).findFirst().orElse(null);
-        if (defaultArchVersion != null && version != null) {
-            archetypesData.latestVersion(List.of(version, defaultArchVersion.id()));
-        }
-        return version;
+//        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
+//        if (version == null) {
+//            try {
+//                version = metadata.archetypesData().latestVersion().toString();
+//                Log.debug("Latest Helidon version found: %s", version);
+//            } catch (Plugins.PluginFailedUnchecked e) {
+//                versionLookupFailed(null);
+//            } catch (Exception e) {
+//                versionLookupFailed(e.getMessage());
+//            }
+//        }
+//        Version defaultArchVersion = archetypesData.versions().stream().filter(Version::isDefault).findFirst().orElse(null);
+//        if (defaultArchVersion != null && version != null) {
+//            archetypesData.latestVersion(List.of(version, defaultArchVersion.id()));
+//        }
+//        return version;
+        return archetypesData.versions().stream()
+                             .filter(Version::isDefault).findFirst()
+                             .map(Version::id)
+                             .orElse(archetypesData.latestVersion().toString());
     }
 
     private boolean isSupportedVersion(String helidonVersion) {

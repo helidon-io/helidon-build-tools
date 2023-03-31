@@ -19,34 +19,8 @@
 <data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <archetypes>
-        <version>2.0.0</version>
-        <version>2.0.1</version>
-        <version>2.0.2</version>
-        <version>2.1.0</version>
-        <version>2.2.0</version>
-        <version>2.2.1</version>
-        <version>2.2.2</version>
-        <version>2.3.0</version>
-        <version>2.3.1</version>
-        <version>2.3.2</version>
-        <version>2.3.3</version>
-        <version>2.3.4</version>
-        <version>2.4.0</version>
-        <version>2.4.1</version>
-        <version>2.4.2</version>
-        <version>2.5.0</version>
-        <version>2.5.1</version>
-        <version>2.5.2</version>
-        <version>2.5.3</version>
-        <version>2.5.4</version>
-        <version>2.5.5</version>
-        <version>2.6.0</version>
-        <version>3.0.0</version>
-        <version>3.0.1</version>
-        <version>3.0.2</version>
-        <version>3.1.0</version>
-        <version>3.1.1</version>
-        <version>3.1.2</version>
+        <version>2.0.0-RC0</version>
+        <version>2.0.0-RC1</version>
     </archetypes>
     <rules>
         <!-- Helidon version 2.x archetypes are supported by CLI 2.x, 3.x, 4.x -->

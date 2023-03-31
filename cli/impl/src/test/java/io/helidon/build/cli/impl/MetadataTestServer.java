@@ -55,7 +55,7 @@ public class MetadataTestServer {
 
     private static Expectation versionsRequest() {
         return new Expectation(request().withMethod("GET")
-                                        .withPath("/versions.xml"));
+                                        .withPath("/versions.xml")).withId("latest");
     }
 
     private static Expectation zipRequestWithoutEtag(TestVersion version) {
@@ -161,10 +161,10 @@ public class MetadataTestServer {
 
         // Set the response for "/latest"
 
-        latest(latest);
+//        latest(latest);
 
         // Set the response for "/versions.xml"
-        versions();
+        versions(latest);
 
         // Set the responses for the "${version}/cli-data.zip" requests, with and without etags
 
@@ -218,6 +218,16 @@ public class MetadataTestServer {
     public void latest(TestVersion latest) {
         this.latest = latest;
         mockServer.upsert(latestRequest().thenRespond(response().withBody(latest.toString())));
+    }
+
+    /**
+     * Sets the response for the "/versions.xml" request.
+     */
+    public void versions(TestVersion latest) {
+        this.latest = latest;
+        mockServer.upsert(versionsRequest().thenRespond(response().withBody(
+                "<data><archetypes><version>" + latest + "</version></archetypes></data>"
+        )));
     }
 
     /**
