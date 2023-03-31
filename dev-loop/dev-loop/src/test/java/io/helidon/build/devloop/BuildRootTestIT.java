@@ -23,8 +23,6 @@ import java.util.List;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.delete;
@@ -106,8 +104,6 @@ class BuildRootTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    @DisabledOnOs(value = OS.WINDOWS,
-                  disabledReason = "https://github.com/helidon-io/helidon-build-tools/issues/897")
     void testMultipleChangesDetected(String basedir) {
         final BuildRoot sourceDir = sourceDirectory(basedir);
         final List<BuildFile> sources = new ArrayList<>(sourceDir.list());
@@ -115,9 +111,9 @@ class BuildRootTestIT {
         final Path added1 = ensureFile(unique(sourceDir.path(), "NewSource", ".java"));
         final Path newPackageDir = ensureDirectory(sourceDir.path().resolve("foo"));
         final Path added2 = ensureFile(unique(newPackageDir, "FooSource", ".java"));
-        final Path modified1 = touch(sources.get(0).path());
-        final Path modified2 = touch(sources.get(1).path());
-        final Path deleted = delete(sources.get(2).path());
+        final Path deleted = delete(sources.get(0).path());
+        final Path modified1 = touch(sources.get(1).path());
+        final Path modified2 = touch(sources.get(2).path());
 
         BuildRoot.Changes changes = sourceDir.changes();
         assertThat(changes, is(not(nullValue())));
