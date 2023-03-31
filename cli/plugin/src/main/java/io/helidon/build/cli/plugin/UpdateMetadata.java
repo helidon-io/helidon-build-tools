@@ -192,7 +192,7 @@ class UpdateMetadata extends Plugin {
                                                           .connect();
         if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
             //TODO remove it when version.xml will be implemented and added to the helidon.io
-            Files.copy(new ByteArrayInputStream(new byte[]{}), versionsFile, REPLACE_EXISTING);
+            Files.copy(new ByteArrayInputStream("<data><archetypes><version>3.2.0</version></archetypes></data>".getBytes()), versionsFile, REPLACE_EXISTING);
         } else {
             Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         }
