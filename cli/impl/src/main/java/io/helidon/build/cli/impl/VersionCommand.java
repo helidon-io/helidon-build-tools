@@ -63,7 +63,7 @@ final class VersionCommand extends BaseCommand {
         }
 
         try {
-            MavenVersion latest = metadata().latestVersion(true);
+            MavenVersion latest = metadata().archetypesData(true).latestVersion();//latestVersion(true);
             map.put("latest.helidon.version", latest.toString());
         } catch (Exception ignore) {
             // message has already been logged

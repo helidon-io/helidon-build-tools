@@ -189,9 +189,9 @@ public class Metadata {
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion latestVersion() throws UpdateFailed {
-        return latestVersion(false);
-    }
+//    public MavenVersion latestVersion() throws UpdateFailed {
+//        return latestVersion(false);
+//    }
 
     /**
      * Returns the latest Helidon version.
@@ -200,28 +200,28 @@ public class Metadata {
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
-    public MavenVersion latestVersion(boolean quiet) throws UpdateFailed {
-        // If we fail, we only want to do so once per command, so we cache any failure
-        Throwable initialFailure = latestVersionFailure.get();
-        if (initialFailure == null) {
-            try {
-                if (checkForUpdates(null, latestVersionFile, quiet)) {
-                    latestVersion.set(readLatestVersion());
-                } else if (latestVersion.get() == null) {
-                    latestVersion.set(readLatestVersion());
-                }
-                return latestVersion.get();
-            } catch (UpdateFailed | RuntimeException e) {
-                latestVersionFailure.set(e);
-                throw e;
-            }
-        } else {
-            if (initialFailure instanceof UpdateFailed) {
-                throw (UpdateFailed) initialFailure;
-            }
-            throw (RuntimeException) initialFailure;
-        }
-    }
+//    public MavenVersion latestVersion(boolean quiet) throws UpdateFailed {
+//        // If we fail, we only want to do so once per command, so we cache any failure
+//        Throwable initialFailure = latestVersionFailure.get();
+//        if (initialFailure == null) {
+//            try {
+//                if (checkForUpdates(null, latestVersionFile, quiet)) {
+//                    latestVersion.set(readLatestVersion());
+//                } else if (latestVersion.get() == null) {
+//                    latestVersion.set(readLatestVersion());
+//                }
+//                return latestVersion.get();
+//            } catch (UpdateFailed | RuntimeException e) {
+//                latestVersionFailure.set(e);
+//                throw e;
+//            }
+//        } else {
+//            if (initialFailure instanceof UpdateFailed) {
+//                throw (UpdateFailed) initialFailure;
+//            }
+//            throw (RuntimeException) initialFailure;
+//        }
+//    }
 
     /**
      * Asserts that the given Helidon version is available.
@@ -313,7 +313,7 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws UpdateFailed {
-        final MavenVersion latestHelidonVersion = latestVersion(quiet);
+        final MavenVersion latestHelidonVersion = archetypesData(quiet).latestVersion();
         final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion, quiet);
         if (latestCliVersion.isGreaterThan(thisCliVersion)) {
             return Optional.of(latestCliVersion);
@@ -611,9 +611,11 @@ public class Metadata {
     }
 
     private MavenVersion readLatestVersion() {
-        MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
-        return LatestVersion.create(latestVersionFile)
-                            .latest(cliVersion);
+        io.helidon.build.cli.common.ArchetypesData archetypesData = io.helidon.build.cli.common.ArchetypesDataLoader.load(versionsFile);
+        return archetypesData.latestVersion();
+//        MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
+//        return LatestVersion.create(latestVersionFile)
+//                            .latest(cliVersion);
     }
 
     private ArchetypesData readArchetypesData() {

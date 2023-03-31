@@ -131,7 +131,7 @@ public final class InfoCommand extends BaseCommand {
                 String formattedTime = Time.toDateTime(lastUpdateTime);
                 metaProps.put("last.update.time", formattedTime);
 
-                MavenVersion latestVersion = metadata.latestVersion(true);
+                MavenVersion latestVersion = metadata.archetypesData(true).latestVersion();//latestVersion(true);
                 metaProps.put("latest.version", latestVersion.toString());
 
                 ConfigProperties props = metadata.propertiesOf(latestVersion);

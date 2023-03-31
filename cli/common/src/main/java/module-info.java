@@ -21,4 +21,5 @@ module io.helidon.build.cli.common {
     exports io.helidon.build.cli.common;
     requires io.helidon.build.common;
     requires io.helidon.build.common.maven;
+    requires io.helidon.build.common.xml;
 }

@@ -178,7 +178,7 @@ public final class InitCommand extends BaseCommand {
         String version = System.getProperty(HELIDON_VERSION_PROPERTY);
         if (version == null) {
             try {
-                version = metadata.latestVersion().toString();
+                version = metadata.archetypesData().latestVersion().toString();
                 Log.debug("Latest Helidon version found: %s", version);
             } catch (Plugins.PluginFailedUnchecked e) {
                 versionLookupFailed(null);

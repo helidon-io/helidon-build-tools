@@ -250,7 +250,7 @@ public class MetadataTestBase {
      */
     protected void firstLatestVersionRequest(String expectedVersion, boolean expectUpdate) throws UpdateFailed {
         String staleType = expectUpdate ? "(not found)" : "(zero delay)";
-        latestVersion = meta.latestVersion();
+        latestVersion = meta.archetypesData().latestVersion();
         assertThat(latestVersion, is(not(nullValue())));
         if (expectedVersion != null) {
             assertThat(latestVersion, is(toMavenVersion(expectedVersion)));

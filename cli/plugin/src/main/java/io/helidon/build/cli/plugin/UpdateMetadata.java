@@ -37,6 +37,8 @@ import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.SSLException;
 
+import io.helidon.build.cli.common.ArchetypesData;
+import io.helidon.build.cli.common.ArchetypesDataLoader;
 import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.maven.MavenVersion;
 
@@ -133,13 +135,13 @@ class UpdateMetadata extends Plugin {
     void execute() throws Exception {
         try {
             if (version == null) {
-                updateLatestVersion();
+//                updateLatestVersion();
                 updateVersions();
                 updateVersion(readLatestVersion());
             } else {
                 updateVersion(version);
                 updateVersions();
-                updateLatestVersion(); // since we're here already, also update the latest
+//                updateLatestVersion(); // since we're here already, also update the latest
             }
         } catch (UnknownHostException e) {
             throw new Failed("host " + baseUrl.getHost() + " not found when accessing " + baseUrl);
@@ -169,10 +171,12 @@ class UpdateMetadata extends Plugin {
     }
 
     private String readLatestVersion()  {
-        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
-        return LatestVersion.create(latestVersionFile)
-                            .latest(cliVersion)
-                            .toString();
+        ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFile);
+        return archetypesData.latestVersion().toString();
+//        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
+//        return LatestVersion.create(latestVersionFile)
+//                            .latest(cliVersion)
+//                            .toString();
     }
 
     private URL resolve(String fileName) throws Exception {
@@ -192,7 +196,7 @@ class UpdateMetadata extends Plugin {
                                                           .connect();
         if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
             //TODO remove it when version.xml will be implemented and added to the helidon.io
-            Files.copy(new ByteArrayInputStream("<data><archetypes><version>3.2.0</version></archetypes></data>".getBytes()), versionsFile, REPLACE_EXISTING);
+            Files.copy(new ByteArrayInputStream("<data><archetypes><version>3.2.0</version></archetypes></data>".getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
         } else {
             Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         }
@@ -201,7 +205,7 @@ class UpdateMetadata extends Plugin {
         }
     }
 
-    private void updateLatestVersion() throws Exception {
+    private void updateLatestVersion1() throws Exception {
         // Always update
         final URL url = resolve(LATEST_VERSION_FILE_NAME);
         final Map<String, String> headers = commonHeaders();
