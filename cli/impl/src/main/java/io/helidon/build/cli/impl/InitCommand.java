@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
+import io.helidon.build.cli.common.ArchetypesData;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
@@ -32,8 +33,8 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.archetype.engine.v1.Prompter.promptYesNo;
+import static io.helidon.build.cli.common.ArchetypesData.Version;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
-import static io.helidon.build.cli.impl.ArchetypesData.Version;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
 import static io.helidon.build.common.Requirements.require;

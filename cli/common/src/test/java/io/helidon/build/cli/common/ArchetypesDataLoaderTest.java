@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.build.cli.impl;
+package io.helidon.build.cli.common;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import io.helidon.build.common.Lists;
-import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.impl.ArchetypesData.Version;
+import static io.helidon.build.cli.common.ArchetypesData.Version;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -40,10 +39,10 @@ public class ArchetypesDataLoaderTest {
         ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFileFolder().resolve("versions.xml"));
         Version defaultVersion = archetypesData.versions().stream().filter(Version::isDefault).findFirst().get();
 
-        assertThat(archetypesData.versions().size(), is(28));
+        assertThat(archetypesData.versions().size(), is(29));
         assertThat(archetypesData.rules().size(), is(3));
         assertThat(Lists.map(archetypesData.versions(), Version::id), hasItems("2.0.0", "2.3.4", "3.1.2"));
-        assertThat(defaultVersion.id(), is("3.1.2"));
+        assertThat(defaultVersion.id(), is("4.0.0-SNAPSHOT"));
         assertThat(archetypesData.rules().get(0).archetypeRange().toString(), is("[2.0.0,3.0.0)"));
         assertThat(archetypesData.rules().get(0).cliRange().toString(), is("[2.0.0,5.0.0)"));
         assertThat(archetypesData.rules().get(2).archetypeRange().toString(), is("[4.0.0,5.0.0)"));

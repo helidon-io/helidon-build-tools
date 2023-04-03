@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
+import io.helidon.build.cli.common.ArchetypesData;
+import io.helidon.build.cli.common.ArchetypesDataLoader;
 import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;

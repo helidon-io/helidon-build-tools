@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.build.cli.impl;
+package io.helidon.build.cli.common;
 
 import java.util.List;
 
@@ -23,8 +23,6 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.impl.ArchetypesData.Builder;
-import static io.helidon.build.cli.impl.ArchetypesData.Version;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -33,7 +31,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Tests for {@link ArchetypesData}
  */
-public class ArchetypeDataTest {
+public class ArchetypesDataTest {
 
     @Test
     public void testLatestVersion() {
@@ -68,15 +66,15 @@ public class ArchetypeDataTest {
     }
 
     private MavenVersion latest(List<String> versionIds) {
-        Builder builder = ArchetypesData.builder();
-        versionIds.forEach(versionId -> builder.addVersion(new Version(versionId)));
+        ArchetypesData.Builder builder = ArchetypesData.builder();
+        versionIds.forEach(versionId -> builder.addVersion(new ArchetypesData.Version(versionId)));
         ArchetypesData archetypesData = builder.build();
         return archetypesData.latestVersion();
     }
 
     private List<MavenVersion> latestMajorVersions(List<String> versionIds) {
-        Builder builder = ArchetypesData.builder();
-        versionIds.forEach(versionId -> builder.addVersion(new Version(versionId)));
+        ArchetypesData.Builder builder = ArchetypesData.builder();
+        versionIds.forEach(versionId -> builder.addVersion(new ArchetypesData.Version(versionId)));
         ArchetypesData archetypesData = builder.build();
         return archetypesData.latestMajorVersions();
     }

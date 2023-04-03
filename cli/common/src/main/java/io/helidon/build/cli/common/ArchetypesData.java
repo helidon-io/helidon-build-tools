@@ -42,7 +42,7 @@ public class ArchetypesData {
         this.rules = builder.rules;
     }
 
-    List<MavenVersion> latestMajorVersions(List<String> versions) {
+    public List<MavenVersion> latestMajorVersions(List<String> versions) {
         Map<String, List<String>> majorVersionsMap = versions.stream().collect(Collectors.groupingBy(this::groupVersions));
         Map<VersionRange, List<MavenVersion>> versionRangeListMap =
                 majorVersionsMap.entrySet().stream()
@@ -94,7 +94,7 @@ public class ArchetypesData {
         return latestVersion;
     }
 
-    List<Version> versions() {
+    public List<Version> versions() {
         return versions;
     }
 
@@ -148,7 +148,7 @@ public class ArchetypesData {
         }
     }
 
-    static class Version {
+    public static class Version {
         private final String id;
         private final boolean isDefault;
 
@@ -162,11 +162,11 @@ public class ArchetypesData {
             this.isDefault = isDefault;
         }
 
-        String id() {
+        public String id() {
             return id;
         }
 
-        boolean isDefault() {
+        public boolean isDefault() {
             return isDefault;
         }
     }
