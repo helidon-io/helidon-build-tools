@@ -29,15 +29,18 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 # shellcheck disable=SC2086
