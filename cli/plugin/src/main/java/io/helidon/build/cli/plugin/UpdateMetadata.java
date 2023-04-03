@@ -25,8 +25,10 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -127,7 +129,7 @@ class UpdateMetadata extends Plugin {
         if (!Files.exists(cacheDir)) {
             throw new FileNotFoundException(cacheDir.toString());
         }
-        latestVersionFile = cacheDir.toAbsolutePath().resolve(LATEST_VERSION_FILE_NAME);
+//        latestVersionFile = cacheDir.toAbsolutePath().resolve(LATEST_VERSION_FILE_NAME);
         versionsFile = cacheDir.toAbsolutePath().resolve(VERSIONS_FILE_NAME);
     }
 
@@ -196,7 +198,8 @@ class UpdateMetadata extends Plugin {
                                                           .connect();
         if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
             //TODO remove it when version.xml will be implemented and added to the helidon.io
-            Files.copy(new ByteArrayInputStream("<data><archetypes><version>3.2.0</version></archetypes></data>".getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
+            var versions = String.format("<data><archetypes><version>%s</version></archetypes></data>", updateLatest());
+            Files.copy(new ByteArrayInputStream(versions.getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
         } else {
             Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         }
@@ -205,8 +208,8 @@ class UpdateMetadata extends Plugin {
         }
     }
 
-    private void updateLatestVersion1() throws Exception {
-        // Always update
+//    TODO remove it when version.xml will be implemented and added to the helidon.io
+    private String updateLatest() throws Exception {
         final URL url = resolve(LATEST_VERSION_FILE_NAME);
         final Map<String, String> headers = commonHeaders();
         debugDownload(url, headers, false);
@@ -216,10 +219,14 @@ class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
-        if (Log.isDebug()) {
-            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
-        }
+        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
+        return LatestVersion.create(Arrays.asList(new String(connection.getInputStream().readAllBytes(), UTF_8).split("\n")))
+                            .latest(cliVersion)
+                            .toString();
+//        Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
+//        if (Log.isDebug()) {
+//            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
+//        }
     }
 
     private void updateVersion(String version) throws Exception {

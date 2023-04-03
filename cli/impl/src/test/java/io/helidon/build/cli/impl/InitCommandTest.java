@@ -165,8 +165,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 "--project", projectDir,
                 projectDir);
 
-        assertThat(output, containsString("Show all available Helidon versions? (if no - only the latest major versions and a "
-                + "default version will be shown) (default: n):"));
+        assertThat(output, containsString("Helidon versions"));
         assertThat(output, containsString("(1) 2.0.0"));
         assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
         assertThat(output, containsString("Enter selection (default: 29):"));
@@ -191,8 +190,7 @@ public class InitCommandTest extends InitCommandTestBase {
                 "--project", projectDir,
                 projectDir);
 
-        assertThat(output, containsString("Show all available Helidon versions? (if no - only the latest major versions and a "
-                + "default version will be shown) (default: n):"));
+        assertThat(output, containsString("Helidon versions"));
         assertThat(output, containsString("(1) 2.6.0"));
         assertThat(output, containsString("(2) 3.1.2"));
         assertThat(output, containsString("(3) 4.0.0-SNAPSHOT"));

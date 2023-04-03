@@ -51,6 +51,7 @@ public final class InitCommand extends BaseCommand {
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
     private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
+    private static final String SHOW_ALL_VERSIONS_MESSAGE = "Show all versions";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -91,27 +92,37 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = defaultHelidonVersion(archetypesData);
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                String defaultHelidonVersion = defaultHelidonVersion(archetypesData);
-                List<String> versions = Lists.map(archetypesData.versions(), Version::id);
-                if (!versions.isEmpty()) {
-                    boolean isShowAllVersions = promptYesNo("Show all available Helidon versions? (if no - only the latest major "
-                            + "versions and a default version will be shown)", false);
-                    if (!isShowAllVersions) {
-                        versions = Lists.map(archetypesData.latestMajorVersions(versions), MavenVersion::toString);
-                    }
-                    int defaultOption = -1;
-                    for (int x = 0; x < versions.size(); x++) {
-                        if (versions.get(x).equals(defaultHelidonVersion)) {
-                            defaultOption = x;
-                        }
-                    }
-                    if (defaultOption == -1) {
-                        defaultOption = versions.size() - 1;
-                    }
-                    helidonVersion = versions.get(prompt("Helidon version", versions, defaultOption));
-                } else {
-                    helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
-                }
+//                String defaultHelidonVersion = defaultHelidonVersion(archetypesData);
+//                List<String> versions = Lists.map(archetypesData.versions(), Version::id);
+
+//                if (!versions.isEmpty()) {
+//                    boolean isShowAllVersions = promptYesNo("Show all available Helidon versions? (if no - only the latest major "
+//                            + "versions and a default version will be shown)", false);
+//                    if (!isShowAllVersions) {
+//                        versions = Lists.map(archetypesData.latestMajorVersions(versions), MavenVersion::toString);
+//                    }
+//                    int defaultOption = -1;
+//                    for (int x = 0; x < versions.size(); x++) {
+//                        if (versions.get(x).equals(defaultHelidonVersion)) {
+//                            defaultOption = x;
+//                        }
+//                    }
+//                    if (defaultOption == -1) {
+//                        defaultOption = versions.size() - 1;
+//                    }
+//                    helidonVersion = versions.get(prompt("Helidon version", versions, defaultOption));
+//                } else {
+//                    helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
+//                }
+
+//                int defaultOption = -1;
+//                for (int x = 0; x < versions.size(); x++) {
+//                    if (versions.get(x).equals(defaultHelidonVersion)) {
+//                        defaultOption = x;
+//                    }
+//                }
+//                helidonVersion = versions.get(prompt("Helidon version", versions, defaultOption));
+                helidonVersion = promptHelidonVersion(archetypesData, true);
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
@@ -142,6 +153,32 @@ public final class InitCommand extends BaseCommand {
                 devCommand.execute(context);
             }
         }
+    }
+
+    private String promptHelidonVersion(ArchetypesData archetypesData, boolean showLatest) {
+        String defaultHelidonVersion = defaultHelidonVersion(archetypesData);
+        List<String> versions = Lists.map(archetypesData.versions(), Version::id);
+        if (showLatest) {
+            versions = Lists.map(archetypesData.latestMajorVersions(versions), MavenVersion::toString);
+        }
+        int defaultOption = -1;
+        for (int x = 0; x < versions.size(); x++) {
+            if (versions.get(x).equals(defaultHelidonVersion)) {
+                defaultOption = x;
+            }
+        }
+        if (defaultOption == -1) {
+            versions.add(defaultHelidonVersion);
+            defaultOption = versions.size() - 1;
+        }
+        if (showLatest) {
+            versions.add(SHOW_ALL_VERSIONS_MESSAGE);
+        }
+        var result = versions.get(prompt("Helidon versions", versions, defaultOption));
+        if (showLatest && SHOW_ALL_VERSIONS_MESSAGE.equals(result)) {
+            return promptHelidonVersion(archetypesData, false);
+        }
+        return result;
     }
 
     private Path initProjectDir(String name) {
