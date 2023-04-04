@@ -189,11 +189,6 @@ public final class InitCommand extends BaseCommand {
                              .orElse(archetypesData.latestVersion().toString());
     }
 
-    private boolean isSupportedVersion(String helidonVersion) {
-        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
-        return isSupportedVersion(version, false);
-    }
-
     private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {
         try {
             metadata.assertVersionIsAvailable(version);

@@ -119,6 +119,11 @@ public class ArchetypesData {
         return versions;
     }
 
+    /**
+     * Get rules for the available Helidon versions.
+     *
+     * @return rules
+     */
     public List<Rule> rules() {
         return rules;
     }

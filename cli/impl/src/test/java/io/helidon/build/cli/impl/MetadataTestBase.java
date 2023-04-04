@@ -60,7 +60,6 @@ public class MetadataTestBase {
 
     protected String baseUrl;
     protected Path cacheDir;
-//    protected Path latestFile;
     protected Path versionsFile;
     protected Metadata meta;
     protected MavenVersion latestVersion;
@@ -93,7 +92,6 @@ public class MetadataTestBase {
         Plugins.reset(false);
         useBaseUrl(baseUrl);
         cacheDir = userConfig.cacheDir();
-//        latestFile = cacheDir.resolve(LATEST_FILE_NAME);
         versionsFile = cacheDir.resolve(VERSIONS_FILE_NAME);
         LOG_RECORDER.clear();
         LogLevel.set(LogLevel.DEBUG);
