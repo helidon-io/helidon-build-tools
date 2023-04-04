@@ -128,7 +128,7 @@ public class CliDistributionTest {
         String result = String.join("", InputStreams.toLines(process.getInputStream()));
         LOGGER.info("errors - " + InputStreams.toLines(process.getErrorStream()));
         process.destroy();
-        LOGGER.info("exitValue after destroy - " + process.exitValue());
+        LOGGER.info("exitValue - " + process.exitValue());
         LOGGER.info(result);
         assertThat(result, containsString("Switch directory to"));
         assertThat(list(dir).size(), is(not(0)));

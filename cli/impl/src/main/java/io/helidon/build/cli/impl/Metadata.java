@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.common.ArchetypesData;
 import io.helidon.build.cli.common.ArchetypesDataLoader;
-import io.helidon.build.cli.common.LatestVersion;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Requirements;
@@ -106,8 +105,6 @@ public class Metadata {
     private final boolean debugPlugin;
     private final PrintStream pluginStdOut;
     private final Map<Path, Long> lastChecked;
-    private final AtomicReference<Throwable> latestVersionFailure;
-    private final AtomicReference<MavenVersion> latestVersion;
     private final AtomicReference<Throwable> archetypesDataFailure;
     private final AtomicReference<ArchetypesData> archetypesData;
 
@@ -120,8 +117,6 @@ public class Metadata {
         debugPlugin = builder.debugPlugin;
         pluginStdOut = builder.pluginStdOut;
         lastChecked = new HashMap<>();
-        latestVersionFailure = new AtomicReference<>();
-        latestVersion = new AtomicReference<>();
         archetypesDataFailure = new AtomicReference<>();
         archetypesData = new AtomicReference<>();
     }
@@ -158,10 +153,23 @@ public class Metadata {
         }
     }
 
+    /**
+     * Returns information about archetypes versions.
+     *
+     * @return ArchetypesData
+     * @throws UpdateFailed if the metadata update failed
+     */
     ArchetypesData archetypesData() throws UpdateFailed  {
         return archetypesData(false);
     }
 
+    /**
+     * Returns information about archetypes versions.
+     *
+     * @param quiet If info messages should be suppressed
+     * @return information about archetypes versions
+     * @throws UpdateFailed if the metadata update failed
+     */
     ArchetypesData archetypesData(boolean quiet) throws UpdateFailed {
         // If we fail, we only want to do so once per command, so we cache any failure
         Throwable initialFailure = archetypesDataFailure.get();
@@ -184,46 +192,6 @@ public class Metadata {
             throw (RuntimeException) initialFailure;
         }
     }
-
-    /**
-     * Returns the latest Helidon version.
-     *
-     * @return The version.
-     * @throws UpdateFailed if the metadata update failed
-     */
-//    public MavenVersion latestVersion() throws UpdateFailed {
-//        return latestVersion(false);
-//    }
-
-    /**
-     * Returns the latest Helidon version.
-     *
-     * @param quiet If info messages should be suppressed.
-     * @return The version.
-     * @throws UpdateFailed if the metadata update failed
-     */
-//    public MavenVersion latestVersion(boolean quiet) throws UpdateFailed {
-//        // If we fail, we only want to do so once per command, so we cache any failure
-//        Throwable initialFailure = latestVersionFailure.get();
-//        if (initialFailure == null) {
-//            try {
-//                if (checkForUpdates(null, latestVersionFile, quiet)) {
-//                    latestVersion.set(readLatestVersion());
-//                } else if (latestVersion.get() == null) {
-//                    latestVersion.set(readLatestVersion());
-//                }
-//                return latestVersion.get();
-//            } catch (UpdateFailed | RuntimeException e) {
-//                latestVersionFailure.set(e);
-//                throw e;
-//            }
-//        } else {
-//            if (initialFailure instanceof UpdateFailed) {
-//                throw (UpdateFailed) initialFailure;
-//            }
-//            throw (RuntimeException) initialFailure;
-//        }
-//    }
 
     /**
      * Asserts that the given Helidon version is available.
@@ -610,14 +578,6 @@ public class Metadata {
         } catch (Plugins.PluginFailed e) {
             throw new UpdateFailed(e);
         }
-    }
-
-    private MavenVersion readLatestVersion() {
-        io.helidon.build.cli.common.ArchetypesData archetypesData = io.helidon.build.cli.common.ArchetypesDataLoader.load(versionsFile);
-        return archetypesData.latestVersion();
-//        MavenVersion cliVersion = toMavenVersion(Config.buildVersion());
-//        return LatestVersion.create(latestVersionFile)
-//                            .latest(cliVersion);
     }
 
     private ArchetypesData readArchetypesData() {

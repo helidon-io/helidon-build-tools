@@ -159,7 +159,7 @@ final class CommonOptions {
             Optional<MavenVersion> cliUpdate = metadata().checkForCliUpdate(sinceCliVersion, quiet);
             if (cliUpdate.isPresent()) {
                 MavenVersion newCliVersion = cliUpdate.get();
-                MavenVersion latestHelidonVersion = metadata().archetypesData().latestVersion();//latestVersion();
+                MavenVersion latestHelidonVersion = metadata().archetypesData().latestVersion();
                 Map<Object, Object> releaseNotes = releaseNotes(latestHelidonVersion);
                 Log.info();
                 if (releaseNotes.isEmpty()) {

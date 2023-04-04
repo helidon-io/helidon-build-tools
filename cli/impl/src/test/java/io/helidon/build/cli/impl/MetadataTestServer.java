@@ -159,10 +159,6 @@ public class MetadataTestServer {
     public MetadataTestServer start() {
         mockServer = ClientAndServer.startClientAndServer(port);
 
-        // Set the response for "/latest"
-
-//        latest(latest);
-
         // Set the response for "/versions.xml"
         versions(latest);
 
@@ -202,25 +198,6 @@ public class MetadataTestServer {
     }
 
     /**
-     * Returns the version in use for the "/latest" request.
-     *
-     * @return The version.
-     */
-    public TestVersion latest() {
-        return latest;
-    }
-
-    /**
-     * Sets the response for the "/latest" request.
-     *
-     * @param latest The version.
-     */
-    public void latest(TestVersion latest) {
-        this.latest = latest;
-        mockServer.upsert(latestRequest().thenRespond(response().withBody(latest.toString())));
-    }
-
-    /**
      * Sets the response for the "/versions.xml" request.
      */
     public void versions(TestVersion latest) {
@@ -228,13 +205,6 @@ public class MetadataTestServer {
         mockServer.upsert(versionsRequest().thenRespond(response().withBody(
                 "<data><archetypes><version>" + latest + "</version></archetypes></data>"
         )));
-    }
-
-    /**
-     * Sets the response for the "/versions.xml" request.
-     */
-    public void versions() {
-        mockServer.upsert(versionsRequest().thenRespond(response().withBody(versionsFileContent())));
     }
 
     /**

@@ -89,7 +89,6 @@ public class TestMetadata {
 
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
     static final Path TEST_CLI_DATA_PATH = requireDirectory(pathOf(TEST_CLI_DATA_URL));
-//    static final String LATEST_FILE_NAME = "latest";
     static final String VERSIONS_FILE_NAME = "versions.xml";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";

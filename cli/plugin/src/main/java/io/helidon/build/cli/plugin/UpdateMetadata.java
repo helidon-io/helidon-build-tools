@@ -25,7 +25,6 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -80,7 +79,6 @@ class UpdateMetadata extends Plugin {
     private int connectTimeout;
     private int readTimeout;
     private int maxAttempts;
-    private Path latestVersionFile;
     private Path versionsFile;
 
     /**
@@ -129,7 +127,6 @@ class UpdateMetadata extends Plugin {
         if (!Files.exists(cacheDir)) {
             throw new FileNotFoundException(cacheDir.toString());
         }
-//        latestVersionFile = cacheDir.toAbsolutePath().resolve(LATEST_VERSION_FILE_NAME);
         versionsFile = cacheDir.toAbsolutePath().resolve(VERSIONS_FILE_NAME);
     }
 
@@ -137,13 +134,11 @@ class UpdateMetadata extends Plugin {
     void execute() throws Exception {
         try {
             if (version == null) {
-//                updateLatestVersion();
                 updateVersions();
                 updateVersion(readLatestVersion());
             } else {
                 updateVersion(version);
                 updateVersions();
-//                updateLatestVersion(); // since we're here already, also update the latest
             }
         } catch (UnknownHostException e) {
             throw new Failed("host " + baseUrl.getHost() + " not found when accessing " + baseUrl);
@@ -175,10 +170,6 @@ class UpdateMetadata extends Plugin {
     private String readLatestVersion()  {
         ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFile);
         return archetypesData.latestVersion().toString();
-//        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
-//        return LatestVersion.create(latestVersionFile)
-//                            .latest(cliVersion)
-//                            .toString();
     }
 
     private URL resolve(String fileName) throws Exception {
@@ -223,10 +214,6 @@ class UpdateMetadata extends Plugin {
         return LatestVersion.create(Arrays.asList(new String(connection.getInputStream().readAllBytes(), UTF_8).split("\n")))
                             .latest(cliVersion)
                             .toString();
-//        Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
-//        if (Log.isDebug()) {
-//            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
-//        }
     }
 
     private void updateVersion(String version) throws Exception {

@@ -166,11 +166,13 @@ public class InitCommandTest extends InitCommandTestBase {
                 projectDir);
 
         assertThat(output, containsString("Helidon versions"));
-        assertThat(output, containsString("(1) 2.0.0"));
-        assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
-        assertThat(output, containsString("Enter selection (default: 29):"));
+        assertThat(output, containsString("(29) 2.0.0"));
+        assertThat(output, containsString("(1) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("Enter selection (default: 1):"));
 
-        System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
+        if ( helidonProperty != null) {
+            System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
+        }
     }
 
     @Test
@@ -191,11 +193,14 @@ public class InitCommandTest extends InitCommandTestBase {
                 projectDir);
 
         assertThat(output, containsString("Helidon versions"));
-        assertThat(output, containsString("(1) 2.6.0"));
+        assertThat(output, containsString("(3) 2.6.0"));
         assertThat(output, containsString("(2) 3.1.2"));
-        assertThat(output, containsString("(3) 4.0.0-SNAPSHOT"));
-        assertThat(output, containsString("Enter selection (default: 3):"));
+        assertThat(output, containsString("(1) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("(4) Show all versions"));
+        assertThat(output, containsString("Enter selection (default: 1):"));
 
-        System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
+        if ( helidonVersionProperty != null) {
+            System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
+        }
     }
 }

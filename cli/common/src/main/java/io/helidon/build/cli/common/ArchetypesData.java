@@ -42,6 +42,12 @@ public class ArchetypesData {
         this.rules = builder.rules;
     }
 
+    /**
+     * Get the list of the latest major versions in a list of versions.
+     *
+     * @param versions list of versions
+     * @return list of the latest major versions
+     */
     public List<MavenVersion> latestMajorVersions(List<String> versions) {
         Map<String, List<String>> majorVersionsMap = versions.stream().collect(Collectors.groupingBy(this::groupVersions));
         Map<VersionRange, List<MavenVersion>> versionRangeListMap =
@@ -56,6 +62,11 @@ public class ArchetypesData {
                                   .collect(Collectors.toList());
     }
 
+    /**
+     * Get the list of the latest major versions from the current instance of ArchetypesData.
+     *
+     * @return list of the latest major versions
+     */
     public List<MavenVersion> latestMajorVersions() {
         List<String> versionsId = Lists.map(versions, Version::id);
         return latestMajorVersions(versionsId);
@@ -83,6 +94,11 @@ public class ArchetypesData {
         return versionRange.matchVersion(mavenVersions);
     }
 
+    /**
+     * Get the latest version.
+     *
+     * @return latest version
+     */
     public MavenVersion latestVersion() {
         if (latestVersion != null) {
             return latestVersion;
@@ -94,11 +110,16 @@ public class ArchetypesData {
         return latestVersion;
     }
 
+    /**
+     * Get the list of available Helidon versions.
+     *
+     * @return list of available Helidon versions
+     */
     public List<Version> versions() {
         return versions;
     }
 
-    List<Rule> rules() {
+    public List<Rule> rules() {
         return rules;
     }
 
@@ -116,8 +137,8 @@ public class ArchetypesData {
      */
     static class Builder {
 
-        private List<Version> versions = new ArrayList<>();
-        private List<Rule> rules = new ArrayList<>();
+        private final List<Version> versions = new ArrayList<>();
+        private final List<Rule> rules = new ArrayList<>();
 
         private Builder() {
         }
@@ -148,6 +169,9 @@ public class ArchetypesData {
         }
     }
 
+    /**
+     * Helidon version.
+     */
     public static class Version {
         private final String id;
         private final boolean isDefault;
@@ -162,15 +186,28 @@ public class ArchetypesData {
             this.isDefault = isDefault;
         }
 
+        /**
+         * Get Helidon version id.
+         *
+         * @return version id
+         */
         public String id() {
             return id;
         }
 
+        /**
+         * Mark is the current version is default.
+         *
+         * @return true if the version is default and false otherwise
+         */
         public boolean isDefault() {
             return isDefault;
         }
     }
 
+    /**
+     * Rule for compatibility Helidon versions range and a range of Helidon CLI versions.
+     */
     static class Rule {
         private final VersionRange archetypeRange;
         private final VersionRange cliRange;
