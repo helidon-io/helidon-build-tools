@@ -33,6 +33,8 @@ import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
 import static io.helidon.build.common.Requirements.require;
+import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
+import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
 import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
 
@@ -92,6 +94,9 @@ public final class InitCommand extends BaseCommand {
         } else {
             assertSupportedVersion(helidonVersion);
         }
+
+        Prompter.displayLine("");
+        Prompter.displayLine(Bold.apply("Helidon version: ") + BoldBlue.apply(helidonVersion));
 
         ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
                 .builder()
