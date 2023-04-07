@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.build.maven.enforcer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+
+import io.helidon.build.common.Strings;
 
 /**
  * Information about the current file.
@@ -45,11 +47,12 @@ public class FileRequest implements Comparable<FileRequest> {
      * @return a new file request
      */
     public static FileRequest create(Path rootPath, String relativePath, String lastModifiedYear) {
-        Path file = rootPath.resolve(relativePath);
+        String normPath = Strings.normalizePath(relativePath);
+        Path file = rootPath.resolve(normPath);
         String fileName = file.getFileName().toString();
         String fileSuffix = fileSuffix(fileName);
 
-        return new FileRequest(file, relativePath, fileName, fileSuffix, lastModifiedYear);
+        return new FileRequest(file, normPath, fileName, fileSuffix, lastModifiedYear);
     }
 
     /**
@@ -60,11 +63,12 @@ public class FileRequest implements Comparable<FileRequest> {
      * @return a new file request
      */
     public static FileRequest create(String relativePath, String lastModifiedYear) {
-        Path filePath = Paths.get(relativePath);
+        String normPath = Strings.normalizePath(relativePath);
+        Path filePath = Paths.get(normPath);
         String fileName = filePath.getFileName().toString();
         String fileSuffix = fileSuffix(fileName);
 
-        return new FileRequest(filePath, relativePath, fileName, fileSuffix, lastModifiedYear);
+        return new FileRequest(filePath, normPath, fileName, fileSuffix, lastModifiedYear);
     }
 
     // testing only
