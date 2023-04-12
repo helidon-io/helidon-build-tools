@@ -44,14 +44,15 @@ usage() {
 main() {
     local action command
     init "$@"
-    # shellcheck disable=SC2086
+    # shellcheck disable=SC2086,SC2164
     ${action} ${command}
 }
 
 init() {
     local -r scriptName=$(basename "${0}")
     local -r binDir=$(dirname "${0}")
-    local -r homeDir=$(cd "${binDir}/.." || exit; pwd)
+    # shellcheck disable=SC2164,SC2086
+    local -r homeDir=$(cd "${binDir}/.."; pwd)
     local -r jarName="<JAR_NAME>"
     local -r defaultDebug="<DEFAULT_APP_DEBUG>"
     local -r defaultJvm="<DEFAULT_APP_JVM>"
@@ -90,14 +91,15 @@ init() {
 }
 
 appendVar() {
-  # shellcheck disable=SC2140
-    export "${1}"="${!1:+${!1} }${2}"
+  # shellcheck disable=SC2140,SC2086
+    export ${1}="${!1:+${!1} }${2}"
 }
 
 setupCds() {
     appendVar jvmOptions "${cdsOption}${share}"
     pathPrefix=
-    cd "${homeDir}" || exit
+    # shellcheck disable=SC2164
+    cd "${homeDir}"
 }
 
 checkTimeStamps() {
