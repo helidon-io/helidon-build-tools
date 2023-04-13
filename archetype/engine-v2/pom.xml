@@ -50,6 +50,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
         </dependency>
@@ -77,25 +82,34 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/src/main/schema</directory>
+                <targetPath>${project.build.outputDirectory}/schemas</targetPath>
+                <includes>
+                    <include>*.xsd</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-remote-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>attach-artifacts</id>
-                        <phase>package</phase>
+                        <id>bundle-resources</id>
+                        <phase>process-resources</phase>
                         <goals>
-                            <goal>attach-artifact</goal>
+                            <goal>bundle</goal>
                         </goals>
                         <configuration>
-                            <artifacts>
-                                <artifact>
-                                    <file>src/main/schema/archetype.xsd</file>
-                                    <type>xsd</type>
-                                    <classifier>schema-2.0</classifier>
-                                </artifact>
-                            </artifacts>
+                            <resourcesDirectory>${project.build.outputDirectory}</resourcesDirectory>
+                            <includes>
+                                <include>**/schemas/**/*.xsd</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>

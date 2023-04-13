@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +43,8 @@ import java.util.stream.Stream;
 
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.VirtualFileSystem;
+import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.common.maven.VersionRange;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
 
 import org.apache.commons.io.FilenameUtils;
@@ -64,7 +72,6 @@ import static io.helidon.build.common.FileUtils.pathOf;
 import static io.helidon.build.common.FileUtils.toBase64;
 import static io.helidon.build.maven.archetype.MustacheHelper.MUSTACHE_EXT;
 import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemplate;
-import static io.helidon.build.maven.archetype.Schema.RESOURCE_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.regex.Pattern.DOTALL;
@@ -149,15 +156,29 @@ public class JarMojo extends AbstractMojo {
     @Parameter
     private PlexusConfiguration entrypoint;
 
-    private final Schema schema = new Schema(resolveResource(RESOURCE_NAME));
+    private final Map<String, Schema> schemaMap = initiateSchemas();
 
     @Override
     public void execute() throws MojoExecutionException {
         try {
             Path archetypeDir = outputDirectory.toPath().resolve("archetype");
             Files.createDirectories(archetypeDir);
-            processSources(archetypeDir);
-            processEntryPoint(archetypeDir);
+            List<Schema.Info> schemaInfoList = processSources(archetypeDir);
+            MavenVersion maxSchemaVersion = VersionRange.createFromVersionSpec("[1.0,)")
+                                                        .matchVersion(schemaInfoList.stream()
+                                                                                    .map(Schema.Info::version)
+                                                                                    .map(MavenVersion::toMavenVersion)
+                                                                                    .collect(Collectors.toList()));
+            Schema.Info mainSchemaInfo;
+            if (maxSchemaVersion == null) {
+                maxSchemaVersion = MavenVersion.toMavenVersion(Schema.DEFAULT_VERSION);
+                mainSchemaInfo = new Schema.Info(Schema.DEFAULT_VERSION, Schema.DEFAULT_LOCATION, Schema.DEFAULT_NAMESPACE);
+            } else {
+                mainSchemaInfo = schemaInfo(maxSchemaVersion.toString(), schemaInfoList);
+            }
+            processEntryPoint(archetypeDir, mainSchemaInfo);
+            archive.addManifestEntries(Map.of("archetype-schema-version", maxSchemaVersion.toString()));
+            getLog().info("Max archetype schema version is " + maxSchemaVersion);
             validateEntryPoint(archetypeDir);
             if (mavenArchetypeCompatible) {
                 processMavenCompat(archetypeDir);
@@ -167,6 +188,13 @@ public class JarMojo extends AbstractMojo {
         } catch (IOException ioe) {
             throw new MojoExecutionException(ioe.getMessage(), ioe);
         }
+    }
+
+    private Schema.Info schemaInfo(String schemaVersion, List<Schema.Info> schemaInfoList) {
+        return schemaInfoList.stream()
+                                              .filter(i -> i.version().equals(schemaVersion))
+                                              .findFirst()
+                                              .orElse(null);
     }
 
     private void renderPostScript(Path archetypeDir) throws IOException {
@@ -235,14 +263,18 @@ public class JarMojo extends AbstractMojo {
         renderPostScript(archetypeDir);
     }
 
-    private void processEntryPoint(Path outputDir) throws MojoExecutionException, IOException {
+    private void processEntryPoint(Path outputDir, Schema.Info mainSchemaInfo) throws MojoExecutionException, IOException {
         if (entrypoint != null) {
             Path main = outputDir.resolve("main.xml");
             if (Files.exists(main)) {
                 throw new MojoExecutionException("Cannot generate custom entry-point, main.xml already exists");
             }
-            Converter.convert(entrypoint, main);
-            validateSchema(outputDir, "main.xml").ifPresent(getLog()::error);
+            if (mainSchemaInfo == null) {
+                Converter.convert(entrypoint, main);
+            } else {
+                Converter.convert(entrypoint, main, mainSchemaInfo.namespace(), mainSchemaInfo.schemaLocation());
+            }
+            validateSchema(outputDir, "main.xml", new ArrayList<>()).ifPresent(getLog()::error);
         }
     }
 
@@ -286,10 +318,11 @@ public class JarMojo extends AbstractMojo {
         return Map.entry(className, new RawString(toBase64(classFile).replaceAll("(.{100})", "$1\n")));
     }
 
-    private void processSources(Path outputDir) throws MojoExecutionException {
+    private List<Schema.Info> processSources(Path outputDir) throws MojoExecutionException {
         getLog().debug("Scanning source files");
         Path sourceDir = sourceDirectory.toPath();
         List<String> errors = new LinkedList<>();
+        List<Schema.Info> schemaInfoList = new ArrayList<>();
         SourcePath.scan(sourceDir).stream()
                   .map(p -> p.asString(false))
                   .forEach(file -> {
@@ -297,7 +330,7 @@ public class JarMojo extends AbstractMojo {
                           getLog().debug("Found source file: " + file);
                       }
                       if (FilenameUtils.getExtension(file).equalsIgnoreCase("xml")) {
-                          validateSchema(sourceDir, file).ifPresent(errors::add);
+                          validateSchema(sourceDir, file, schemaInfoList).ifPresent(errors::add);
                       }
                       try {
                           Path target = outputDir.resolve(file);
@@ -311,11 +344,15 @@ public class JarMojo extends AbstractMojo {
             errors.forEach(getLog()::error);
             throw new MojoExecutionException("Schema validation failed");
         }
+        return schemaInfoList;
     }
 
-    private Optional<String> validateSchema(Path sourceDir, String filename) {
+    private Optional<String> validateSchema(Path sourceDir, String filename, List<Schema.Info> schemaInfoList) {
         try {
-            schema.validate(sourceDir.resolve(filename));
+            Schema.Info schemaInfo = Validator.validateSchema(schemaMap, sourceDir.resolve(filename));
+            if (schemaInfo != null) {
+                schemaInfoList.add(schemaInfo);
+            }
             return Optional.empty();
         } catch (Schema.ValidationException ex) {
             return Optional.of(
@@ -325,6 +362,39 @@ public class JarMojo extends AbstractMojo {
                             ex.colNo(),
                             ex.getMessage()));
         }
+    }
+
+    private Map<String, Schema> initiateSchemas() {
+        Map<String, Schema> schemaMap = new HashMap<>();
+        try {
+            Enumeration<URL> dirs = this.getClass().getClassLoader().getResources("schemas");
+            while (dirs.hasMoreElements()) {
+                URI uri = dirs.nextElement().toURI();
+                try (FileSystem fileSystem = fileSystem(uri)) {
+                    Path schemas = fileSystem.getPath("schemas");
+                    List<Path> schemaList = Files.walk(schemas, 1)
+                                        .skip(1)
+                                        .collect(Collectors.toList());
+                    for (Path schema : schemaList) {
+                        schemaMap.put(schema.getFileName().toString(), new Schema(Files.newInputStream(schema)));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to resolve resource during the creation of a Schema object", e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return schemaMap;
+    }
+
+    private FileSystem fileSystem(URI uri) throws IOException {
+        try {
+            return FileSystems.newFileSystem(uri, Map.of());
+        } catch (FileSystemAlreadyExistsException ex) {
+            return FileSystems.getFileSystem(uri);
+        }
+
     }
 
     private InputStream resolveResource(String path) {

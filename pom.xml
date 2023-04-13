@@ -200,6 +200,7 @@
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
+        <version.plugin.remote-resources>3.0.0</version.plugin.remote-resources>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.surefire>3.1.2</version.plugin.surefire>
@@ -221,6 +222,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-remote-resources-plugin</artifactId>
+                    <version>${version.plugin.remote-resources}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>

@@ -17,15 +17,21 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.jar.Manifest;
 
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextSerializer;
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.RequirementFailure;
+import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.common.maven.VersionRange;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,6 +43,8 @@ public class ArchetypeEngineV2 {
     private static final String ENTRYPOINT = "main.xml";
     private static final String ARTIFACT_ID = "artifactId";
 
+    private static final VersionRange COMPATIBLE_SCHEMA_RANGE = VersionRange.createFromVersionSpec("[2.0.0,3.0.0)");
+
     private final Path cwd;
     private final InputResolver inputResolver;
     private final Map<String, String> externalValues;
@@ -46,6 +54,7 @@ public class ArchetypeEngineV2 {
     private final File outputPropsFile;
 
     private ArchetypeEngineV2(Builder builder) {
+        checkCompatability(builder.cwd);
         this.cwd = builder.cwd;
         this.inputResolver = builder.inputResolver;
         this.externalValues = builder.externalValues;
@@ -53,6 +62,32 @@ public class ArchetypeEngineV2 {
         this.onResolved = builder.onResolved;
         this.directorySupplier = builder.directorySupplier;
         this.outputPropsFile = builder.outputPropsFile;
+    }
+
+    private void checkCompatability(Path cwd) {
+        Path manifestPath = cwd.resolve("META-INF/MANIFEST.MF");
+        if (!Files.exists(manifestPath)) {
+            //it is not an archetype archive
+            return;
+        }
+        try {
+            Manifest manifest = new Manifest(Files.newInputStream(manifestPath));
+            String maxVersion = manifest.getMainAttributes().getValue("archetype-schema-version");
+            if (maxVersion == null) {
+                //it is a some previous version of archetype archive
+                return;
+            }
+            MavenVersion mavenVersion = MavenVersion.toMavenVersion(maxVersion);
+            if (!COMPATIBLE_SCHEMA_RANGE.containsVersion(mavenVersion)) {
+                throw new RequirementFailure(
+                        String.format("Version of schema %s is not compatible with the current version of "
+                                + "the Archetype engine (v2). The version of schema must be in range %s",
+                        maxVersion,
+                        COMPATIBLE_SCHEMA_RANGE));
+            }
+        } catch (IOException e) {
+            throw new RequirementFailure(e.getMessage());
+        }
     }
 
     /**

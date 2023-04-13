@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,22 +40,42 @@ public final class Converter {
      *
      * @param config plexus config node
      * @param output output file
+     * @param schemaNamespace namespace for the archetype schema
+     * @param schemaLocation location of the archetype schema
      * @return the output file
      * @throws IOException if an IO error occurs
      */
-    static Path convert(PlexusConfiguration config, Path output) throws IOException {
+    static Path convert(PlexusConfiguration config, Path output, String schemaNamespace,
+                        String schemaLocation) throws IOException {
         FileWriter writer = new FileWriter(output.toFile());
-        Xpp3DomWriter.write(writer, convert(config));
+        Xpp3DomWriter.write(writer, convert(config, schemaNamespace, schemaLocation));
         writer.flush();
         writer.close();
         return output;
     }
 
-    private static Xpp3Dom convert(PlexusConfiguration config) {
+    /**
+     * Convert the given plexus config node to a valid archetype v2 description with the default namespace and location for the
+     * archetype schema.
+     *
+     * @param config plexus config node
+     * @param output output file
+     * @return the output file
+     * @throws IOException if an IO error occurs
+     */
+    static Path convert(PlexusConfiguration config, Path output) throws IOException {
+        FileWriter writer = new FileWriter(output.toFile());
+        Xpp3DomWriter.write(writer, convert(config, Schema.DEFAULT_NAMESPACE, Schema.DEFAULT_LOCATION));
+        writer.flush();
+        writer.close();
+        return output;
+    }
+
+    private static Xpp3Dom convert(PlexusConfiguration config, String schemaNamespace, String schemaLocation) {
         Xpp3Dom rootElt = new Xpp3Dom(Schema.ROOT_ELEMENT);
-        rootElt.setAttribute("xmlns", Schema.NAMESPACE);
+        rootElt.setAttribute("xmlns", schemaNamespace);
         rootElt.setAttribute("xmlns:xsi", W3C_XML_SCHEMA_INSTANCE_NS_URI);
-        rootElt.setAttribute("xsi:schemaLocation", Schema.LOCATION);
+        rootElt.setAttribute("xsi:schemaLocation", schemaLocation);
         Deque<Node> stack = new ArrayDeque<>();
         for (PlexusConfiguration child : config.getChildren()) {
             stack.add(new Node(rootElt, child));
