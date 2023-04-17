@@ -194,7 +194,7 @@ class MustacheSupportTest {
     @Test
     void testMapValueOverride() {
         Block block = model(modelMap("data", modelValue("color", "red", 100), modelValue("color", "blue", 100))).build();
-        assertThat(render("{{#data}}{{color}}{{/data}}", block), is("red"));
+        assertThat(render("{{#data}}{{color}}{{/data}}", block), is("blue"));
     }
 
     @Test
