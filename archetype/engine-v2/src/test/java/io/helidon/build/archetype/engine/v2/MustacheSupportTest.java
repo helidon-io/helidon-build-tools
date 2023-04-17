@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,22 @@ package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.List;
 
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheException;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.context.Context;
 import io.helidon.build.archetype.engine.v2.context.ContextValue;
-
-import com.github.mustachejava.MustacheException;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.MergedModel.resolveModel;
@@ -61,6 +69,27 @@ class MustacheSupportTest {
     void testSimpleList() {
         Block block = model(modelList("data", modelValue("bar1"), modelValue("bar2"))).build();
         assertThat(render("{{#data}}{{.}},{{/data}}", block), is("bar1,bar2,"));
+    }
+
+    @Test
+    void testNewLine() {
+        Block block = model(modelList("data", modelValue("bar1"), modelValue("bar2"))).build();
+
+        String templateMustache = "{{#data}}{{.}}\n{{/data}}";
+        String templateMustache1 = "{{#data}}\n{{.}}{{/data}}";
+        String templateMustache2 = "{{#data}}\n{{.}}\n{{/data}}";
+
+        String render = render(templateMustache, block);
+        String render1 = render(templateMustache1, block);
+        String render2 = render(templateMustache2, block);
+
+        assertThat(render, is("bar1bar2"));
+        assertThat(render1, is("bar1bar2"));
+        assertThat(render2, is("bar1\nbar2\n"));
+
+        assertThat(render, is(renderMustache(templateMustache)));
+        assertThat(render1, is(renderMustache(templateMustache1)));
+        assertThat(render2, is(renderMustache(templateMustache2)));
     }
 
     @Test
@@ -285,5 +314,51 @@ class MustacheSupportTest {
         MustacheSupport support = new MustacheSupport(resolveModel(scope, context), context);
         support.render(is, "test", UTF_8, os, extraScope);
         return os.toString(UTF_8);
+    }
+
+    private static String renderMustache(String template) {
+        List<Container> containers = List.of(
+                new Container(new Bar("bar1")),
+                new Container(new Bar("bar2")));
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        HashMap<String, Object> scopes = new HashMap<>();
+        Writer writer = new OutputStreamWriter(os);
+        Mustache mustache = new DefaultMustacheFactory()
+                .compile(new StringReader(template), "test-render-mustache");
+        scopes.put("data", containers);
+        mustache.execute(writer, scopes);
+        try {
+            writer.flush();
+            writer.close();
+            return os.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static class Bar {
+        final String bar;
+
+        Bar(String bar) {
+            this.bar = bar;
+        }
+
+        @Override
+        public String toString() {
+            return bar;
+        }
+    }
+
+    private static class Container {
+        public final Bar bar;
+
+        public Container(final Bar bar) {
+            this.bar = bar;
+        }
+
+        @Override
+        public String toString() {
+            return bar.toString();
+        }
     }
 }
