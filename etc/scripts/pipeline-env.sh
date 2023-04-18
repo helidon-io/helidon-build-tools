@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,10 @@ require_env() {
         return 1
     fi
 }
+if [ -n "${HELIDON_PIPELINES}" ] ; then
+  MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS} -Djdk.toolchain.version=${JAVA_VERSION} "
+  export MAVEN_ARGS
+fi
 if [ -n "${JENKINS_HOME}" ] ; then
     export JAVA_HOME="/tools/jdk11"
     MAVEN_OPTS="${MAVEN_OPTS} -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
