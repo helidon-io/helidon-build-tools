@@ -74,7 +74,6 @@ public final class MergedModel {
     public static MergedModel resolveModel(Block block, Context context) {
         ModelResolver modelResolver = new ModelResolver(block);
         Controller.walk(modelResolver, block, context);
-        context.requireRootScope();
         return modelResolver.model();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import io.helidon.build.archetype.engine.v2.context.ContextValue.ValueKind;
 
 /**
@@ -204,7 +205,11 @@ public final class Controller extends VisitorAdapter<Context> {
                             Context context) {
 
         Objects.requireNonNull(context, "context is null");
+        ContextScope scope = context.scope();
         Controller controller = new Controller(resolver, outputVisitor, modelVisitor);
         Walker.walk(controller, block, context, context::cwd);
+        if (scope != context.scope()) {
+            throw new IllegalStateException("Invalid scope after walking block");
+        }
     }
 }
