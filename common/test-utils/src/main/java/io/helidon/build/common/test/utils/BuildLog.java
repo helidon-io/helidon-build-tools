@@ -19,6 +19,7 @@ package io.helidon.build.common.test.utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -91,6 +92,35 @@ public class BuildLog {
             }
         }
         return diffs;
+    }
+
+    /**
+     * Check that the lines within provided file are contained in this file.
+     *
+     * @param expectedFile  provided file
+     * @param fromIndex     the index to start from
+     * @return  list of errors found
+     * @throws IOException  if an error occurs during reading
+     */
+    public List<String> containsLines(File expectedFile, int fromIndex) throws IOException {
+        List<String> errors = new LinkedList<>();
+        String[] expectedLines = Files.readAllLines(expectedFile.toPath()).toArray(new String[0]);
+        long finalIndex = fromIndex + expectedFile.length();
+        if (finalIndex > actualLines.length) {
+            errors.add(String.format("Trying to read out of file, fromIndex + expectedLine : %d, log lines: %d",
+                    finalIndex,
+                    actualLines.length));
+            return errors;
+        }
+        for (String expectedLine : expectedLines) {
+            if (Arrays.stream(actualLines)
+                    .skip(fromIndex)
+                    .noneMatch(line -> line.endsWith(expectedLine))) {
+                errors.add(String.format("line: %s is not found into log", expectedLine));
+                break;
+            }
+        }
+        return errors;
     }
 
     /**
