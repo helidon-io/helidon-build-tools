@@ -131,7 +131,7 @@ public class Maps {
      * @param <X>    mapped value type
      * @return new map
      */
-    public static <K, V, X> Map<K, X> mapEntryValue(Map<K, V> map, Function<Map.Entry<K,V>, X> mapper) {
+    public static <K, V, X> Map<K, X> mapEntryValue(Map<K, V> map, Function<Map.Entry<K, V>, X> mapper) {
         return map.entrySet()
                   .stream()
                   .collect(toMap(Entry::getKey, mapper));

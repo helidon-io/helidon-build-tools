@@ -35,6 +35,9 @@ final class SemVer {
 
     private static final Pattern MAJOR_PATTERN = Pattern.compile("^(?<major>[0-9]+).+$");
 
+    private SemVer() {
+    }
+
     /**
      * Get the latest major versions of the given versions.
      *
