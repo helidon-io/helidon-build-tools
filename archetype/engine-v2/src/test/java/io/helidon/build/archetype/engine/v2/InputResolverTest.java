@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -283,6 +285,20 @@ public class InputResolverTest {
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(block, context, null));
         assertThat(ex.getCause(), is(instanceOf(ValidationException.class)));
         assertThat(ex.getCause().getMessage(), is("Invalid input: text='my.package.name' with regex: ^[a-z]+$"));
+    }
+
+    @Test
+    void testOverride() {
+        Block block = step("step",
+                output(model(modelValue("foo", "foo1"), modelValue("foo", "foo2"))))
+                .build();
+        MergedModel mergedModel = MergedModel.resolveModel(block, Context.create());
+        MergedModel.Node root = mergedModel.node();
+        MergedModel.Node foo = root.get("foo");
+
+        assertThat(foo, is(not(nullValue())));
+        assertThat(foo, is(instanceOf(MergedModel.Value.class)));
+        assertThat(((MergedModel.Value)foo).value(), is("foo2"));
     }
 
     private static void resolveInputs(Block block, Context context, Model.Visitor<Context> modelVisitor) {

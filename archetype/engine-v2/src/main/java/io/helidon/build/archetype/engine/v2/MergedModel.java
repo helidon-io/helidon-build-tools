@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -313,6 +313,10 @@ public final class MergedModel {
                 if (v instanceof List && node instanceof List) {
                     ((List) v).value.addAll(((List) node).value);
                     return v;
+                }
+                if (v instanceof Value && node instanceof Value) {
+                    value.put(k, node);
+                    return node;
                 }
                 return v.order < node.order ? node : v;
             });
