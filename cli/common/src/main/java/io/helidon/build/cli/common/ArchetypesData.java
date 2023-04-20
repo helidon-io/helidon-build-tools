@@ -18,8 +18,6 @@ package io.helidon.build.cli.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -48,18 +46,8 @@ public class ArchetypesData {
      * @param versions list of versions
      * @return list of the latest major versions
      */
-    public List<MavenVersion> latestMajorVersions(List<String> versions) {
-        Map<String, List<String>> majorVersionsMap = versions.stream().collect(Collectors.groupingBy(this::groupVersions));
-        Map<VersionRange, List<MavenVersion>> versionRangeListMap =
-                majorVersionsMap.entrySet().stream()
-                                .filter(entry -> !entry.getKey().isEmpty())
-                                .collect(Collectors.toMap(
-                                        e -> VersionRange.createFromVersionSpec("[" + e.getKey() + ",)"),
-                                        e -> Lists.map(e.getValue(), MavenVersion::toMavenVersion))
-                                );
-        return versionRangeListMap.entrySet().stream()
-                                  .map(this::latestVersion)
-                                  .collect(Collectors.toList());
+    public List<String> latestMajorVersions(List<String> versions) {
+        return SemVer.latestMajorVersions(versions);
     }
 
     /**
@@ -67,31 +55,9 @@ public class ArchetypesData {
      *
      * @return list of the latest major versions
      */
-    public List<MavenVersion> latestMajorVersions() {
+    public List<String> latestMajorVersions() {
         List<String> versionsId = Lists.map(versions, Version::id);
         return latestMajorVersions(versionsId);
-    }
-
-    private MavenVersion latestVersion(Map.Entry<VersionRange, List<MavenVersion>> entry) {
-        MavenVersion mavenVersion = entry.getKey().matchVersion(entry.getValue());
-        if (mavenVersion == null) {
-            return entry.getValue().get(entry.getValue().size() - 1);
-        }
-        return mavenVersion;
-    }
-
-    private String groupVersions(String version) {
-        Matcher matcher = MAVEN_PATTERN.matcher(version);
-        if (matcher.find()) {
-            return matcher.group("major");
-        }
-        return "";
-    }
-
-    MavenVersion latestVersion(List<String> versions) {
-        VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
-        List<MavenVersion> mavenVersions = Lists.map(versions, MavenVersion::toMavenVersion);
-        return versionRange.matchVersion(mavenVersions);
     }
 
     /**
@@ -115,7 +81,16 @@ public class ArchetypesData {
      *
      * @return list of available Helidon versions
      */
-    public List<Version> versions() {
+    public List<String> versions() {
+        return Lists.map(versions, Version::id);
+    }
+
+    /**
+     * Get the list of available Helidon versions.
+     *
+     * @return list of available Helidon versions
+     */
+    public List<Version> rawVersions() {
         return versions;
     }
 
@@ -126,6 +101,39 @@ public class ArchetypesData {
      */
     public List<Rule> rules() {
         return rules;
+    }
+
+    /**
+     * Get default version or the latest one if default version is not set.
+     *
+     * @return version
+     */
+    public String defaultVersion() {
+        return versions.stream()
+                       .filter(Version::isDefault).findFirst()
+                       .map(Version::id)
+                       .orElse(latestVersion().toString());
+    }
+
+    /**
+     * Get index of default version from the list of versions.
+     *
+     * @param versions list of versions
+     * @return index of default version
+     */
+    public int defaultVersionIndex(List<String> versions) {
+        int defaultOption = -1;
+        var defaultHelidonVersion = defaultVersion();
+        for (int x = 0; x < versions.size(); x++) {
+            if (versions.get(x).equals(defaultHelidonVersion)) {
+                defaultOption = x;
+            }
+        }
+        if (defaultOption == -1) {
+            versions.add(defaultHelidonVersion);
+            defaultOption = versions.size() - 1;
+        }
+        return defaultOption;
     }
 
     /**

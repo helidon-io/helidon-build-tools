@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
@@ -117,6 +119,22 @@ public class Maps {
      */
     public static <K, V, X> Map<K, X> mapValue(Map<K, V> map, Function<V, X> mapper) {
         return mapValue(map, (k, v) -> true, mapper);
+    }
+
+    /**
+     * Map the given map values.
+     *
+     * @param map    input map
+     * @param mapper mapping function that uses as an argument Map.Entry object from the input map
+     * @param <K>    key type
+     * @param <V>    original value type
+     * @param <X>    mapped value type
+     * @return new map
+     */
+    public static <K, V, X> Map<K, X> mapEntryValue(Map<K, V> map, Function<Map.Entry<K,V>, X> mapper) {
+        return map.entrySet()
+                  .stream()
+                  .collect(toMap(Entry::getKey, mapper));
     }
 
     /**
@@ -393,5 +411,30 @@ public class Maps {
     public static <K, V> Map<K, V> computeIfAbsent(Map<K, V> map, Map<K, Function<K, V>> mappings) {
         mappings.forEach(map::computeIfAbsent);
         return map;
+    }
+
+    /**
+     * Map and filter the given map where values are lists.
+     *
+     * @param map         input map
+     * @param keyFilter   filter for keys in input map
+     * @param keyMapper   mapping function for keys in input map
+     * @param valueMapper mapping function for values in lists that represent values in input map
+     * @param <T>         origin key type
+     * @param <U>         origin value type
+     * @param <K>         mapped key type
+     * @param <V>         mapped value type
+     * @return new map
+     */
+    public static <T, U, K, V> Map<K, List<V>> mapEntry(
+            Map<T, List<U>> map,
+            Predicate<T> keyFilter,
+            Function<T, K> keyMapper,
+            Function<U, V> valueMapper) {
+        return map.entrySet().stream()
+                  .filter(entry-> keyFilter.test(entry.getKey()))
+                  .collect(Collectors.toMap(
+                          entry->keyMapper.apply(entry.getKey()),
+                          entry->entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
     }
 }

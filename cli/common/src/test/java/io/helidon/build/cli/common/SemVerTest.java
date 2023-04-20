@@ -18,38 +18,29 @@ package io.helidon.build.cli.common;
 
 import java.util.List;
 
-import io.helidon.build.common.maven.MavenVersion;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Tests for {@link ArchetypesData}
+ * Test SemVer.
  */
-public class ArchetypesDataTest {
+public class SemVerTest {
 
     @Test
-    public void testLatestVersion() {
+    public void testLatestMajorVersions() {
         List<String> versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT");
-        assertThat(latest(versionIds).toString(), is("4.0.1-SNAPSHOT"));
+        assertThat(SemVer.latestMajorVersions(versionIds), contains("2.9", "3.9.8", "4.0.1-SNAPSHOT"));
 
         versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "4.0.1-SNAPSHOT", "3.0.0", "3.9.8", "2.9");
-        assertThat(latest(versionIds).toString(), is("4.0.1-SNAPSHOT"));
+        assertThat(SemVer.latestMajorVersions(versionIds), contains("2.9", "3.9.8", "4.0.1-SNAPSHOT"));
 
         versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9");
-        assertThat(latest(versionIds).toString(), is("3.9.8"));
+        assertThat(SemVer.latestMajorVersions(versionIds), contains("2.9", "3.9.8"));
 
         versionIds = List.of();
-        assertThat(latest(versionIds), is(nullValue()));
-    }
-
-    private MavenVersion latest(List<String> versionIds) {
-        ArchetypesData.Builder builder = ArchetypesData.builder();
-        versionIds.forEach(versionId -> builder.addVersion(new ArchetypesData.Version(versionId)));
-        ArchetypesData archetypesData = builder.build();
-        return archetypesData.latestVersion();
+        assertThat(SemVer.latestMajorVersions(versionIds).size(), is(0));
     }
 }

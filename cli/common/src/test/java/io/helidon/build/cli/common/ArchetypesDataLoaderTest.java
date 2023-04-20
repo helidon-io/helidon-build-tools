@@ -37,11 +37,11 @@ public class ArchetypesDataLoaderTest {
     @Test
     public void testArchetypesData() throws URISyntaxException {
         ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFileFolder().resolve("versions.xml"));
-        Version defaultVersion = archetypesData.versions().stream().filter(Version::isDefault).findFirst().get();
+        Version defaultVersion = archetypesData.rawVersions().stream().filter(Version::isDefault).findFirst().get();
 
-        assertThat(archetypesData.versions().size(), is(29));
+        assertThat(archetypesData.rawVersions().size(), is(29));
         assertThat(archetypesData.rules().size(), is(3));
-        assertThat(Lists.map(archetypesData.versions(), Version::id), hasItems("2.0.0", "2.3.4", "3.1.2"));
+        assertThat(archetypesData.versions(), hasItems("2.0.0", "2.3.4", "3.1.2"));
         assertThat(defaultVersion.id(), is("4.0.0-SNAPSHOT"));
         assertThat(archetypesData.rules().get(0).archetypeRange().toString(), is("[2.0.0,3.0.0)"));
         assertThat(archetypesData.rules().get(0).cliRange().toString(), is("[2.0.0,5.0.0)"));

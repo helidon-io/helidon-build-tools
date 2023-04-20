@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,27 @@ public class VersionRange {
         cached = new VersionRange(version, restrictions);
         CACHE_SPEC.put(spec, cached);
         return cached;
+    }
+
+    /**
+     * Create a "higher or equal" version range. I.e.  <code>[X,)</code>
+     *
+     * @param version version
+     * @return a new {@link VersionRange} object that represents the spec
+     */
+    public static VersionRange higherOrEqual(String version) {
+        return createFromVersionSpec("[" + version + ",)");
+    }
+
+    /**
+     * Resolve the latest of the given versions.
+     *
+     * @param versions versions
+     * @return The resolved version
+     */
+    public MavenVersion resolveLatest(List<MavenVersion> versions) {
+        MavenVersion version = matchVersion(versions);
+        return version != null ? version : versions.get(versions.size() - 1);
     }
 
     /**

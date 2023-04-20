@@ -31,18 +31,34 @@ The site build bundles `metadata.properties` along with the archetype catalog in
 This file is hosted on helidon.io. For example:
 https://helidon.io/cli-data/2.2.2/cli-data.zip
 
-In addition to cli-data, the site release also creates a `versions.xml` file
-containing information about archetypes versions.
+### Before versions 3.x
+
+In addition to cli-data, the site release also creates a `latest` file
+containing the latest Helidon version number:
+https://helidon.io/cli-data/latest
+
+### Since versions 3.x
+The `latest` file was replaced by `versions.xml` file that 
+contains information about archetypes versions.
 https://helidon.io/cli-data/versions.xml
 
 ## CLI's use of `cli-data.zip`
 
-When the cli starts up it determines the version of Helidon to use. The user
-might have passed the version, or the CLI might use the latest by 
-inspecting https://helidon.io/cli-data/versions.xml
-
 If needed the CLI downloads `cli-data.zip` and extracts the data into `~/.helidon/cache`.
 It now has access to the archetype catalog from the local disk.
+
+### Before versions 3.x
+
+When the cli starts up it determines the version of Helidon to use. The user
+might have passed the version, or the CLI might use the latest by
+inspecting https://helidon.io/cli-data/latest.
+
+### Since versions 3.x
+
+When the cli starts up it inspects https://helidon.io/cli-data/versions.xml and 
+gets information about all available versions of Helidon. After that it proposes to the user the latest 
+major versions of Helidon and the default one. User can choose one of them or look at all available 
+versions and choose the required one.
 
 ## CLI Configuration
 

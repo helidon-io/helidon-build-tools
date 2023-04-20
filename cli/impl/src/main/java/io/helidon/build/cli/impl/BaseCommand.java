@@ -152,7 +152,7 @@ public abstract class BaseCommand implements CommandExecution {
             MavenVersion helidonVersion;
             if (helidonVersionProperty == null) {
                 try {
-                    helidonVersion = meta.archetypesData().latestVersion();
+                    helidonVersion = meta.latestVersion();
                     Log.debug("helidon.version missing in %s, using latest: %s", projectConfig.file(), helidonVersion);
                 } catch (Exception e) {
                     helidonVersion = toMavenVersion(buildVersion);

@@ -65,7 +65,7 @@ public class MetadataTestIT extends MetadataTestBase {
         // Check latest version. Should not perform update.
 
         LOG_RECORDER.clear();
-        latestVersion = meta.archetypesData().latestVersion();
+        latestVersion = meta.latestVersion();
         assertThat(LOG_RECORDER.size(), is(1));
         assertLinesContainingAll(1, "stale check", "is false", VERSIONS_FILE_NAME);
 

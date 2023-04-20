@@ -154,6 +154,16 @@ public class Metadata {
     }
 
     /**
+     * Returns the latest Helidon version.
+     *
+     * @return The version.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public MavenVersion latestVersion() throws UpdateFailed {
+        return archetypesData(false).latestVersion();
+    }
+
+    /**
      * Returns information about archetypes versions.
      *
      * @return ArchetypesData

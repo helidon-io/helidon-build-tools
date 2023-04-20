@@ -27,14 +27,12 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
-import io.helidon.build.common.Lists;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.archetype.engine.v1.Prompter.promptYesNo;
-import static io.helidon.build.cli.common.ArchetypesData.Version;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
@@ -90,7 +88,7 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
                 assertSupportedVersion(helidonVersion);
             } else if (batch) {
-                helidonVersion = defaultHelidonVersion(archetypesData);
+                helidonVersion = archetypesData.defaultVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
                 helidonVersion = promptHelidonVersion(archetypesData, true);
@@ -127,22 +125,12 @@ public final class InitCommand extends BaseCommand {
     }
 
     private String promptHelidonVersion(ArchetypesData archetypesData, boolean showLatest) {
-        String defaultHelidonVersion = defaultHelidonVersion(archetypesData);
-        List<String> versions = Lists.map(archetypesData.versions(), Version::id);
+        List<String> versions = archetypesData.versions();
         if (showLatest) {
-            versions = Lists.map(archetypesData.latestMajorVersions(versions), MavenVersion::toString);
+            versions = archetypesData.latestMajorVersions();
         }
         versions.sort(Collections.reverseOrder());
-        int defaultOption = -1;
-        for (int x = 0; x < versions.size(); x++) {
-            if (versions.get(x).equals(defaultHelidonVersion)) {
-                defaultOption = x;
-            }
-        }
-        if (defaultOption == -1) {
-            versions.add(defaultHelidonVersion);
-            defaultOption = versions.size() - 1;
-        }
+        int defaultOption = archetypesData.defaultVersionIndex(versions);
         if (showLatest) {
             versions.add(SHOW_ALL_VERSIONS_MESSAGE);
         }
@@ -180,13 +168,6 @@ public final class InitCommand extends BaseCommand {
             failed("Too many existing directories named %s-NN", projectName);
         }
         return projectDir;
-    }
-
-    private String defaultHelidonVersion(ArchetypesData archetypesData) {
-        return archetypesData.versions().stream()
-                             .filter(Version::isDefault).findFirst()
-                             .map(Version::id)
-                             .orElse(archetypesData.latestVersion().toString());
     }
 
     private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {

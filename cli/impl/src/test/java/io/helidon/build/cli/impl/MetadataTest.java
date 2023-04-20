@@ -124,7 +124,7 @@ public class MetadataTest extends MetadataTestBase {
         // Check that more calls do not update
 
         LOG_RECORDER.clear();
-        assertThat(meta.archetypesData().latestVersion(), is(latestVersion));
+        assertThat(meta.latestVersion(), is(latestVersion));
         assertThat(meta.propertiesOf(latestVersion), is(props));
         assertThat(meta.catalogOf(latestVersion), is(catalog));
 
@@ -265,7 +265,7 @@ public class MetadataTest extends MetadataTestBase {
 
         // Check from the latest version (RC1)
 
-        notes = meta.cliReleaseNotesOf(helidonVersion, meta.archetypesData().latestVersion());
+        notes = meta.cliReleaseNotesOf(helidonVersion, meta.latestVersion());
         assertThat(notes, is(not(nullValue())));
         keys = new ArrayList<>(notes.keySet());
         assertThat(keys.size(), is(1));
@@ -288,7 +288,7 @@ public class MetadataTest extends MetadataTestBase {
         Log.info("sleeping 1.25 seconds before recheck");
         LOG_RECORDER.clear();
         Thread.sleep(1250);
-        assertThat(meta.archetypesData().latestVersion(), is(latestVersion));
+        assertThat(meta.latestVersion(), is(latestVersion));
 
         assertLinesContainingAll(1, "stale check", "is true", VERSIONS_FILE_NAME);
         assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
