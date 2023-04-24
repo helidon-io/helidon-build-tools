@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.context.Context;
+import io.helidon.build.archetype.engine.v2.context.ContextScope;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v2.TestHelper.model;
@@ -27,7 +28,6 @@ import static io.helidon.build.archetype.engine.v2.TestHelper.modelValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link MergedModel}.
@@ -44,9 +44,13 @@ public class MergedModelTest {
         MergedModel mergedModel = MergedModel.resolveModel(model, context);
         MergedModel.Node node = mergedModel.node().get("foo");
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, context::requireRootScope);
-        assertThat(e.getMessage(), is("Invalid scope"));
+        assertThat(isRootScope(context), is(false));
         assertThat(node, is(instanceOf(MergedModel.Value.class)));
         assertThat(((MergedModel.Value) node).value(), is("bar"));
+    }
+
+    private boolean isRootScope(Context context) {
+        ContextScope scope = context.scope();
+        return scope != null && scope.parent() == null;
     }
 }
