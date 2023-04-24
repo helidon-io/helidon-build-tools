@@ -32,7 +32,6 @@ public class ArchetypesData {
 
     private final List<Version> versions;
     private final List<Rule> rules;
-    private MavenVersion latestVersion;
 
     private ArchetypesData(Builder builder) {
         this.versions = builder.versions;
@@ -55,9 +54,6 @@ public class ArchetypesData {
      * @return latest version
      */
     public MavenVersion latestVersion() {
-        if (latestVersion != null) {
-            return latestVersion;
-        }
         List<MavenVersion> mavenVersions = Lists.map(versions, Version::toMavenVersion);
         VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
         return versionRange.resolveLatest(mavenVersions);
