@@ -17,8 +17,8 @@
 package io.helidon.build.cli.common;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.Lists;
@@ -30,7 +30,6 @@ import io.helidon.build.common.maven.VersionRange;
  */
 public class ArchetypesData {
 
-    private static final Pattern MAVEN_PATTERN = Pattern.compile("^(?<major>[0-9]+).+$");
     private final List<Version> versions;
     private final List<Rule> rules;
     private MavenVersion latestVersion;
@@ -41,23 +40,13 @@ public class ArchetypesData {
     }
 
     /**
-     * Get the list of the latest major versions in a list of versions.
-     *
-     * @param versions list of versions
-     * @return list of the latest major versions
-     */
-    public List<String> latestMajorVersions(List<String> versions) {
-        return SemVer.latestMajorVersions(versions);
-    }
-
-    /**
      * Get the list of the latest major versions from the current instance of ArchetypesData.
      *
      * @return list of the latest major versions
      */
     public List<String> latestMajorVersions() {
         List<String> versionsId = Lists.map(versions, Version::id);
-        return latestMajorVersions(versionsId);
+        return SemVer.latestMajorVersions(versionsId);
     }
 
     /**
@@ -69,11 +58,9 @@ public class ArchetypesData {
         if (latestVersion != null) {
             return latestVersion;
         }
-        List<MavenVersion> mavenVersions = versions.stream().map(version -> MavenVersion.toMavenVersion(version.id()))
-                                                   .collect(Collectors.toList());
+        List<MavenVersion> mavenVersions = Lists.map(versions, Version::toMavenVersion);
         VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
-        latestVersion = versionRange.matchVersion(mavenVersions);
-        return latestVersion;
+        return versionRange.resolveLatest(mavenVersions);
     }
 
     /**
@@ -156,20 +143,19 @@ public class ArchetypesData {
         private Builder() {
         }
 
-        List<Version> versions() {
-            return versions;
-        }
-
-        List<Rule> rules() {
-            return rules;
-        }
-
-        void addVersion(Version version) {
+        Builder version(Version version) {
             versions.add(version);
+            return this;
         }
 
-        void addRule(Rule rule) {
+        Builder versions(String... versions) {
+            this.versions.addAll(Arrays.stream(versions).map(ArchetypesData.Version::new).collect(Collectors.toList()));
+            return this;
+        }
+
+        Builder rule(Rule rule) {
             rules.add(rule);
+            return this;
         }
 
         /**
@@ -197,6 +183,10 @@ public class ArchetypesData {
         Version(String id, boolean isDefault) {
             this.id = id;
             this.isDefault = isDefault;
+        }
+
+        MavenVersion toMavenVersion() {
+            return MavenVersion.toMavenVersion(id);
         }
 
         /**

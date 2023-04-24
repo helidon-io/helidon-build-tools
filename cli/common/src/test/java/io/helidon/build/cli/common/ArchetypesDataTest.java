@@ -22,9 +22,9 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Tests for {@link ArchetypesData}
@@ -33,22 +33,30 @@ public class ArchetypesDataTest {
 
     @Test
     public void testLatestVersion() {
-        List<String> versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT");
-        assertThat(latest(versionIds).toString(), is("4.0.1-SNAPSHOT"));
+        assertThat(
+                data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT").latestVersion(),
+                is(toMavenVersion("4.0.1-SNAPSHOT"))
+        );
 
-        versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "4.0.1-SNAPSHOT", "3.0.0", "3.9.8", "2.9");
-        assertThat(latest(versionIds).toString(), is("4.0.1-SNAPSHOT"));
+        assertThat(
+                data("2.1.3", "2.4.5", "2.0.5", "4.0.1-SNAPSHOT", "3.0.0", "3.9.8", "2.9").latestVersion(),
+                is(toMavenVersion("4.0.1-SNAPSHOT"))
+        );
 
-        versionIds = List.of("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9");
-        assertThat(latest(versionIds).toString(), is("3.9.8"));
-
-        versionIds = List.of();
-        assertThat(latest(versionIds), is(nullValue()));
+        assertThat(
+                data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9").latestVersion(),
+                is(toMavenVersion("3.9.8"))
+        );
     }
 
+    private static ArchetypesData data(String... versions) {
+        return ArchetypesData.builder()
+                             .versions(versions)
+                             .build();
+    }
     private MavenVersion latest(List<String> versionIds) {
         ArchetypesData.Builder builder = ArchetypesData.builder();
-        versionIds.forEach(versionId -> builder.addVersion(new ArchetypesData.Version(versionId)));
+        versionIds.forEach(versionId -> builder.version(new ArchetypesData.Version(versionId)));
         ArchetypesData archetypesData = builder.build();
         return archetypesData.latestVersion();
     }

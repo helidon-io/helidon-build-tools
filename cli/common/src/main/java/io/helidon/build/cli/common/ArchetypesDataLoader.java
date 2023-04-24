@@ -97,7 +97,7 @@ public class ArchetypesDataLoader {
         private void processRule(Map<String, String> attributes) {
             var archRule = VersionRange.createFromVersionSpec(attributes.get("archetype"));
             var cliRule = VersionRange.createFromVersionSpec(attributes.get("cli"));
-            builder.addRule(new ArchetypesData.Rule(archRule, cliRule));
+            builder.rule(new ArchetypesData.Rule(archRule, cliRule));
         }
 
         private void checkParent(String expectedParent, String parent, String current) {
@@ -119,7 +119,7 @@ public class ArchetypesDataLoader {
             if (name != null) {
                 if ("version".equals(name)) {
                     String defaultVersion = versionAttributes.get("default");
-                    builder.addVersion(new ArchetypesData.Version(data, "true".equals(defaultVersion)));
+                    builder.version(new ArchetypesData.Version(data, "true".equals(defaultVersion)));
                 }
             }
         }
