@@ -127,6 +127,14 @@ class OutputGeneratorTest {
                 + "\n"));
     }
 
+    @Test
+    void testTemplatesScope() throws IOException {
+        Path outputDir = generate("generator/templates-override.xml");
+        Path expected = outputDir.resolve("template1.txt");
+        assertThat(Files.exists(expected), is(true));
+        assertThat(readFile(expected), is("nested\n"));
+    }
+
     private static Path generate(String path) {
         return generate(path, scope -> {});
     }
