@@ -71,7 +71,6 @@ public class ArchetypeEngineV2 {
 
         // resolve inputs (full traversal)
         Controller.walk(inputResolver, script, context);
-        context.requireRootScope();
         onResolved.run();
 
         // resolve output directory
@@ -85,7 +84,6 @@ public class ArchetypeEngineV2 {
         //  generate output  (full traversal)
         OutputGenerator outputGenerator = new OutputGenerator(model, directory);
         Controller.walk(outputGenerator, script, context);
-        context.requireRootScope();
 
         if (outputPropsFile != null) {
             Map<String, String> userInputsMap = ContextSerializer.serialize(context);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ public final class Context implements ContextRegistry {
 
     private Context(Builder builder) {
         this.scope = builder.scope;
-        requireRootScope();
         builder.externalDefaults.forEach((k, v) -> defaults.put(k, DynamicValue.create(() -> scope.interpolate(v))));
         Function<String, String> externalValueResolver = value -> {
             String result = builder.externalValues.get(value);
@@ -143,17 +142,6 @@ public final class Context implements ContextRegistry {
             throw new NoSuchElementException();
         }
         scope = scope.parent0();
-    }
-
-    /**
-     * Require the current scope to be a root scope.
-     *
-     * @throws IllegalStateException if the current scope is {@code null} or not the root scope.
-     */
-    public void requireRootScope() {
-        if (this.scope == null || this.scope.parent() != null) {
-            throw new IllegalStateException("Invalid scope");
-        }
     }
 
     @Override
