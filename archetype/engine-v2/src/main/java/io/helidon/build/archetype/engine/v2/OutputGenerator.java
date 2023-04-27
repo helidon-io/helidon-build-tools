@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ public class OutputGenerator implements Output.Visitor<Context> {
             Path source = dir.resolve(resource);
             String targetPath = cwd.relativize(cwd.resolve(resource).normalize()).toString();
             Path target = outputDir.resolve(transformations(templates, targetPath, context));
-            render(source, target, templates.engine(), null, context);
+            render(source, target, templates.engine(), templates, context);
         }
         return VisitResult.CONTINUE;
     }
@@ -158,7 +158,7 @@ public class OutputGenerator implements Output.Visitor<Context> {
                          .collect(Collectors.toList());
     }
 
-    private void render(Path source, Path target, String engine, Template extraScope, Context context) {
+    private void render(Path source, Path target, String engine, Output extraScope, Context context) {
         try {
             if (!Files.exists(target)) {
                 TemplateSupport templateSupport = TemplateSupport.get(engine, model, context);
