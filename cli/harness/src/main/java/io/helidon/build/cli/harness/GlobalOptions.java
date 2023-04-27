@@ -15,7 +15,10 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -186,6 +189,21 @@ public class GlobalOptions {
             false,
             false);
 
+    private final Map<String, String> options = new HashMap<>();
+
+    GlobalOptions(Map<String, CommandParser.Parameter> parameters, Properties properties) {
+        Objects.requireNonNull(parameters, "parameters is null");
+        Objects.requireNonNull(properties, "properties is null");
+        Map<String, String> props = parameters.entrySet().stream()
+                .filter(entry -> GLOBAL_OPTIONS_NAME.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue().stringValue()));
+        options.putAll(props);
+        props = properties.entrySet().stream()
+                .filter(entry -> GLOBAL_OPTIONS_NAME.contains(entry.getKey().toString()))
+                .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
+        options.putAll(props);
+    }
+
     /**
      * Tests whether the given argument is a global flag.
      *
@@ -219,6 +237,20 @@ public class GlobalOptions {
             ARGS_FILE_OPTION_INFO
     };
 
+    /**
+     * Global options name.
+     */
+    static final Set<String> GLOBAL_OPTIONS_NAME = Set.of(
+            HELP_FLAG_NAME,
+            VERSION_FLAG_NAME,
+            PROPS_FILE_OPTION_NAME,
+            ARGS_FILE_OPTION_NAME,
+            PLAIN_FLAG_NAME,
+            ERROR_FLAG_NAME,
+            DEBUG_FLAG_NAME,
+            VERBOSE_FLAG_NAME
+    );
+
     private static final Set<String> GLOBAL_OPTION_ARGUMENTS = Stream.of(GLOBAL_OPTIONS_INFO)
                                                                      .map(info -> (CommandModel.NamedOptionInfo<?>) info)
                                                                      .map(info -> "--" + info.name())
@@ -232,6 +264,23 @@ public class GlobalOptions {
                   .map(info -> (CommandModel.NamedOptionInfo<?>) info)
                   .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
-    private GlobalOptions() {
+    /**
+     * Get option value, can be {@code null}.
+     *
+     * @param key option key
+     * @return value
+     */
+    public String get(String key) {
+        return options.get(key);
+    }
+
+    /**
+     * Get option value as {@link Boolean}.
+     *
+     * @param key option key
+     * @return value as Boolean
+     */
+    public boolean getBoolean(String key) {
+        return options.containsKey(key);
     }
 }

@@ -36,14 +36,6 @@ import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_DESCRIPTION;
-import static io.helidon.build.cli.harness.GlobalOptions.DEBUG_FLAG_NAME;
-import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_DESCRIPTION;
-import static io.helidon.build.cli.harness.GlobalOptions.ERROR_FLAG_NAME;
-import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_DESCRIPTION;
-import static io.helidon.build.cli.harness.GlobalOptions.PLAIN_FLAG_NAME;
-import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_DESCRIPTION;
-import static io.helidon.build.cli.harness.GlobalOptions.VERBOSE_FLAG_NAME;
 import static io.helidon.build.common.FileUtils.WORKING_DIR;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
@@ -57,13 +49,8 @@ final class CommonOptions {
      * Where to look for CLI update information.
      */
     private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
-
     private static final String MISMATCHED_PROJECT_DIRS = "Different project directories provided: '--project %s' and '%s'";
 
-    private final boolean verbose;
-    private final boolean debug;
-    private final boolean plain;
-    private final boolean error;
     private final boolean projectDirSpecified;
     private final Path projectDir;
     private final String metadataUrl;
@@ -72,20 +59,12 @@ final class CommonOptions {
     private Metadata metadata;
 
     @Creator
-    CommonOptions(@Flag(name = VERBOSE_FLAG_NAME, description = VERBOSE_FLAG_DESCRIPTION, visible = false) boolean verbose,
-                  @Flag(name = DEBUG_FLAG_NAME, description = DEBUG_FLAG_DESCRIPTION, visible = false) boolean debug,
-                  @Flag(name = PLAIN_FLAG_NAME, description = PLAIN_FLAG_DESCRIPTION, visible = false) boolean plain,
-                  @Flag(name = ERROR_FLAG_NAME, description = ERROR_FLAG_DESCRIPTION, visible = false) boolean error,
-                  @Argument(description = "project_dir") File projectDirArgument,
+    CommonOptions(@Argument(description = "project_dir") File projectDirArgument,
                   @KeyValue(name = "project", description = "Project directory") File projectDirOption,
                   @KeyValue(name = "url", description = "Metadata base URL", visible = false) String metadataUrl,
                   @Flag(name = "reset", description = "Reset metadata cache", visible = false) boolean resetCache,
                   @KeyValue(name = "since", description = "Check for updates since this version",
                           visible = false) String since) {
-        this.verbose = verbose || debug;
-        this.debug = debug;
-        this.error = error;
-        this.plain = plain || Config.userConfig().richTextDisabled();
         this.projectDirSpecified = projectDirOption != null || projectDirArgument != null;
         this.projectDir = projectDir(projectDirOption, projectDirArgument);
         this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
@@ -94,32 +73,12 @@ final class CommonOptions {
     }
 
     CommonOptions(Path projectDir, CommonOptions options) {
-        this.verbose = options.verbose;
-        this.debug = options.debug;
-        this.plain = options.plain;
-        this.error = options.error;
         this.projectDirSpecified = options.projectDirSpecified;
         this.projectDir = projectDir;
         this.metadataUrl = options.metadataUrl;
         this.resetCache = false; // Don't do it again
         this.sinceCliVersion = options.sinceCliVersion;
         this.metadata = options.metadata;
-    }
-
-    boolean verbose() {
-        return verbose;
-    }
-
-    boolean debug() {
-        return debug;
-    }
-
-    boolean plain() {
-        return plain;
-    }
-
-    boolean error() {
-        return error;
     }
 
     boolean projectSpecified() {
@@ -147,7 +106,7 @@ final class CommonOptions {
             }
             metadata = Metadata.builder()
                                .url(metadataUrl)
-                               .debugPlugin(debug)
+                               .debugPlugin(LogLevel.isDebug())
                                .updateFrequency(config.checkForUpdatesIntervalHours())
                                .build();
         }

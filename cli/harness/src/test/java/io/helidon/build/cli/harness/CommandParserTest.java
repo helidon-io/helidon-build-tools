@@ -31,9 +31,11 @@ import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -247,10 +249,16 @@ public class CommandParserTest {
     public void testGlobalOptions() {
         CommandParser parser;
         CommandParser.Resolver resolver;
+        GlobalOptions options;
 
         parser = CommandParser.create("command", "-Dfoo=bar", "--help");
         resolver = parser.parseCommand();
+        options = new GlobalOptions(resolver.params(), resolver.properties());
 
+        assertThat(options.get("foo"), isEmptyOrNullString());
+        assertThat(options.getBoolean("help"), is(true));
+        assertThat(options.get("version"), nullValue());
+        assertThat(options.get(null), nullValue());
         assertThat(parser.globalResolver().params().containsKey("help"), is(true));
         assertThat(resolver.params().containsKey("help"), is(true));
         assertThat(parser.globalResolver().properties().isEmpty(), is(true));

@@ -40,6 +40,7 @@ import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValuesInfo;
 import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.Lists;
 
 /**
  * Command parser.
@@ -482,6 +483,15 @@ public final class CommandParser {
         public String name() {
             return name;
         }
+
+        /**
+         * Get parameter value as a string.
+         *
+         * @return value
+         */
+        protected String stringValue() {
+            return name;
+        }
     }
 
     /**
@@ -514,6 +524,11 @@ public final class CommandParser {
         public String value() {
             return value;
         }
+
+        @Override
+        public String stringValue() {
+            return value;
+        }
     }
 
     /**
@@ -536,6 +551,11 @@ public final class CommandParser {
         public LinkedList<String> values() {
             return values;
         }
+
+        @Override
+        public String stringValue() {
+            return Lists.join(values, v -> v, ",");
+        }
     }
 
     /**
@@ -556,6 +576,12 @@ public final class CommandParser {
          * @return value, never {@code null}
          */
         public String value() {
+            return value;
+        }
+
+
+        @Override
+        public String stringValue() {
             return value;
         }
     }

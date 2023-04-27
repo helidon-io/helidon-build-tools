@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,16 +63,16 @@ public final class InfoCommand extends BaseCommand {
     private static final int VERBOSE_BUILDER_SIZE = 16384;
     private static final String EOL_MARKER = "~@~";
     private static final String PAD = " ";
-    private final boolean verbose;
-    private final boolean plain;
-    private final StringBuilder builder;
+    private boolean verbose;
+    private boolean plain;
+    private StringBuilder builder;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
         super(commonOptions, true);
-        this.verbose = commonOptions.verbose();
-        this.plain = commonOptions.plain();
-        this.builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
+        this.verbose = false;
+        this.plain = false;
+        this.builder = new StringBuilder();
     }
 
     @Override
@@ -81,6 +81,9 @@ public final class InfoCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) {
+        verbose = context.globalOptions().getBoolean("verbose");
+        plain = context.globalOptions().getBoolean("plain");
+        builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
 
         // User config
 
