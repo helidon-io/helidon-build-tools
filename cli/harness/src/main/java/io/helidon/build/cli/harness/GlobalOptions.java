@@ -203,10 +203,13 @@ public class GlobalOptions {
                 .filter(GLOBAL_OPTIONS_NAME::contains)
                 .collect(Collectors.toList());
 
+        CommandParser.Parameter propsFile = parameters.get(PROPS_FILE_OPTION_NAME);
+        CommandParser.Parameter argsFile = parameters.get(ARGS_FILE_OPTION_NAME);
+
         this.help = params.contains(HELP_FLAG_NAME);
         this.version = params.contains(VERSION_FLAG_NAME);
-        this.propsFile = parameters.get(PROPS_FILE_OPTION_NAME).stringValue();
-        this.argsFile = parameters.get(ARGS_FILE_OPTION_NAME).stringValue();
+        this.propsFile = propsFile == null ? null : propsFile.stringValue();
+        this.argsFile = argsFile == null ? null : argsFile.stringValue();
         this.plain = params.contains(PLAIN_FLAG_NAME);
         this.error = params.contains(ERROR_FLAG_NAME);
         this.debug = params.contains(DEBUG_FLAG_ARGUMENT);
