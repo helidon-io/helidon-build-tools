@@ -16,10 +16,6 @@
 
 package io.helidon.build.cli.common;
 
-import java.util.List;
-
-import io.helidon.build.common.maven.MavenVersion;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
@@ -53,11 +49,5 @@ public class ArchetypesDataTest {
         return ArchetypesData.builder()
                              .versions(versions)
                              .build();
-    }
-    private MavenVersion latest(List<String> versionIds) {
-        ArchetypesData.Builder builder = ArchetypesData.builder();
-        versionIds.forEach(versionId -> builder.version(new ArchetypesData.Version(versionId)));
-        ArchetypesData archetypesData = builder.build();
-        return archetypesData.latestVersion();
     }
 }
