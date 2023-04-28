@@ -43,6 +43,7 @@ readonly WS_DIR
 RESULT_FILE=$(mktemp -t XXXcopyright-result)
 readonly RESULT_FILE
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}

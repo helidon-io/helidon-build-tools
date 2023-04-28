@@ -97,6 +97,7 @@ readonly SCRIPT_PATH
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 # get current maven version

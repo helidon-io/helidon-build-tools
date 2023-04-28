@@ -47,6 +47,7 @@ readonly LOG_FILE
 RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 readonly  RESULT_FILE
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}

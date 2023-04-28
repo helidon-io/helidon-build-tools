@@ -96,6 +96,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          check_together: 'yes'
+        run: etc/scripts/shellcheck.sh
