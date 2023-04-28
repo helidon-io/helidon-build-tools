@@ -404,7 +404,7 @@ public final class CommandContext {
         this.parser = Objects.requireNonNull(parser, "parser is null");
         CommandParser.Resolver resolver = parser.globalResolver();
         this.properties.putAll(resolver.properties());
-        this.globalOptions = new GlobalOptions(resolver.params(), resolver.properties());
+        this.globalOptions = new GlobalOptions(resolver.params());
     }
 
     /**

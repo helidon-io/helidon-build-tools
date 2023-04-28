@@ -15,9 +15,11 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
@@ -246,19 +248,20 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testGlobalOptions() {
+    public void testGlobalOptions() throws IOException {
         CommandParser parser;
         CommandParser.Resolver resolver;
         GlobalOptions options;
+        String propsFile = Files.createTempFile("empty", null).toString();
 
-        parser = CommandParser.create("command", "-Dfoo=bar", "--help");
+        parser = CommandParser.create("command", "-Dfoo=bar", "--help", "--props-file", propsFile, "--args-file", propsFile);
         resolver = parser.parseCommand();
-        options = new GlobalOptions(resolver.params(), resolver.properties());
+        options = new GlobalOptions(resolver.params());
 
-        assertThat(options.get("foo"), isEmptyOrNullString());
-        assertThat(options.getBoolean("help"), is(true));
-        assertThat(options.get("version"), nullValue());
-        assertThat(options.get(null), nullValue());
+        assertThat(options.help(), is(true));
+        assertThat(options.version(), is(false));
+        assertThat(options.propsFile(), is(propsFile));
+        assertThat(options.argsFile(), is(propsFile));
         assertThat(parser.globalResolver().params().containsKey("help"), is(true));
         assertThat(resolver.params().containsKey("help"), is(true));
         assertThat(parser.globalResolver().properties().isEmpty(), is(true));

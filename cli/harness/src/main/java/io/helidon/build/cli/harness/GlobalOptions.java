@@ -15,10 +15,9 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -189,19 +188,29 @@ public class GlobalOptions {
             false,
             false);
 
-    private final Map<String, String> options = new HashMap<>();
+    private final boolean help;
+    private final boolean version;
+    private final String propsFile;
+    private final String argsFile;
+    private final boolean plain;
+    private final boolean error;
+    private final boolean debug;
+    private final boolean verbose;
 
-    GlobalOptions(Map<String, CommandParser.Parameter> parameters, Properties properties) {
+    GlobalOptions(Map<String, CommandParser.Parameter> parameters) {
         Objects.requireNonNull(parameters, "parameters is null");
-        Objects.requireNonNull(properties, "properties is null");
-        Map<String, String> props = parameters.entrySet().stream()
-                .filter(entry -> GLOBAL_OPTIONS_NAME.contains(entry.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue().stringValue()));
-        options.putAll(props);
-        props = properties.entrySet().stream()
-                .filter(entry -> GLOBAL_OPTIONS_NAME.contains(entry.getKey().toString()))
-                .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
-        options.putAll(props);
+        List<String> params = parameters.keySet().stream()
+                .filter(GLOBAL_OPTIONS_NAME::contains)
+                .collect(Collectors.toList());
+
+        this.help = params.contains(HELP_FLAG_NAME);
+        this.version = params.contains(VERSION_FLAG_NAME);
+        this.propsFile = parameters.get(PROPS_FILE_OPTION_NAME).stringValue();
+        this.argsFile = parameters.get(ARGS_FILE_OPTION_NAME).stringValue();
+        this.plain = params.contains(PLAIN_FLAG_NAME);
+        this.error = params.contains(ERROR_FLAG_NAME);
+        this.debug = params.contains(DEBUG_FLAG_ARGUMENT);
+        this.verbose = params.contains(VERBOSE_FLAG_NAME);
     }
 
     /**
@@ -265,22 +274,74 @@ public class GlobalOptions {
                   .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
     /**
-     * Get option value, can be {@code null}.
+     * Get help value.
      *
-     * @param key option key
-     * @return value
+     * @return help value
      */
-    public String get(String key) {
-        return options.get(key);
+    public boolean help() {
+        return help;
     }
 
     /**
-     * Get option value as {@link Boolean}.
+     * Get version value.
      *
-     * @param key option key
-     * @return value as Boolean
+     * @return version value
      */
-    public boolean getBoolean(String key) {
-        return options.containsKey(key);
+    public boolean version() {
+        return version;
+    }
+
+    /**
+     * Get props-file value.
+     *
+     * @return props-file value
+     */
+    public String propsFile() {
+        return propsFile;
+    }
+
+    /**
+     * Get args-file value.
+     *
+     * @return args-file value
+     */
+    public String argsFile() {
+        return argsFile;
+    }
+
+    /**
+     * Get plain value.
+     *
+     * @return plain value
+     */
+    public boolean plain() {
+        return plain;
+    }
+
+    /**
+     * Get error value.
+     *
+     * @return error value
+     */
+    public boolean error() {
+        return error;
+    }
+
+    /**
+     * Get debug value.
+     *
+     * @return debug value
+     */
+    public boolean debug() {
+        return debug;
+    }
+
+    /**
+     * Get verbose value.
+     *
+     * @return verbos value
+     */
+    public boolean verbose() {
+        return verbose;
     }
 }

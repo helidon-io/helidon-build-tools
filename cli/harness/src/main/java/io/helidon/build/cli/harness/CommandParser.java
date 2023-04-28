@@ -42,6 +42,9 @@ import io.helidon.build.cli.harness.CommandParameters.ParameterInfo;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Lists;
 
+import static io.helidon.build.cli.harness.GlobalOptions.ARGS_FILE_OPTION_ARGUMENT;
+import static io.helidon.build.cli.harness.GlobalOptions.ARGS_FILE_OPTION_NAME;
+
 /**
  * Command parser.
  */
@@ -83,7 +86,7 @@ public final class CommandParser {
         Properties properties = new Properties();
         Map<String, Parameter> params = new HashMap<>();
         String error = null;
-        String[] processedArgs = preProcessArgs(args);
+        String[] processedArgs = preProcessArgs(params, args);
         List<String> argsList = mapArgs(processedArgs);
         Iterator<String> it = argsList.iterator();
         while (it.hasNext()) {
@@ -121,11 +124,12 @@ public final class CommandParser {
         return new CommandParser(argsList, commandName, new Resolver(params, properties), error);
     }
 
-    static String[] preProcessArgs(String[] args) {
+    static String[] preProcessArgs(Map<String, Parameter> params, String[] args) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
-            if ("--args-file".equals(args[i]) && (i < args.length - 1)) {
+            if (ARGS_FILE_OPTION_ARGUMENT.equals(args[i]) && (i < args.length - 1)) {
                 String argsFile = args[i + 1];
+                params.put(ARGS_FILE_OPTION_NAME, new KeyValueParam(ARGS_FILE_OPTION_NAME, argsFile));
                 result.addAll(readArgsFile(argsFile));
                 i++;
             } else {
