@@ -28,6 +28,7 @@ import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.GlobalOptions;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Strings;
@@ -75,8 +76,9 @@ public final class InfoCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) {
-        boolean verbose = context.globalOptions().verbose();
-        boolean plain = context.globalOptions().plain();
+        GlobalOptions options = context.globalOptions();
+        boolean verbose = options.verbose();
+        boolean plain = options.plain();
         StringBuilder builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
 
         // User config

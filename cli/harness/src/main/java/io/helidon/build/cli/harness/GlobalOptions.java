@@ -208,8 +208,8 @@ public class GlobalOptions {
 
         this.help = params.contains(HELP_FLAG_NAME);
         this.version = params.contains(VERSION_FLAG_NAME);
-        this.propsFile = propsFile == null ? null : propsFile.stringValue();
-        this.argsFile = argsFile == null ? null : argsFile.stringValue();
+        this.propsFile = propsFile == null ? null : ((CommandParser.KeyValueParam) propsFile).value();
+        this.argsFile = argsFile == null ? null : ((CommandParser.KeyValueParam) argsFile).value();
         this.plain = params.contains(PLAIN_FLAG_NAME);
         this.error = params.contains(ERROR_FLAG_NAME);
         this.debug = params.contains(DEBUG_FLAG_ARGUMENT);
@@ -252,7 +252,7 @@ public class GlobalOptions {
     /**
      * Global options name.
      */
-    static final Set<String> GLOBAL_OPTIONS_NAME = Set.of(
+    private static final Set<String> GLOBAL_OPTIONS_NAME = Set.of(
             HELP_FLAG_NAME,
             VERSION_FLAG_NAME,
             PROPS_FILE_OPTION_NAME,
