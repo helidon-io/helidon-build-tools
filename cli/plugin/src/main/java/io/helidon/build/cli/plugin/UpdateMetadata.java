@@ -187,13 +187,14 @@ class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
-            //TODO remove it when version.xml will be implemented and added to the helidon.io
-            var versions = String.format("<data><archetypes><version>%s</version></archetypes></data>", updateLatest());
-            Files.copy(new ByteArrayInputStream(versions.getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
-        } else {
-            Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
-        }
+//        if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
+//            //TODO remove it when version.xml will be implemented and added to the helidon.io
+//            var versions = String.format("<data><archetypes><version>%s</version></archetypes></data>", updateLatest());
+//            Files.copy(new ByteArrayInputStream(versions.getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
+//        } else {
+//            Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
+//        }
+        Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         if (Log.isDebug()) {
             Log.debug("wrote information about archetype versions to %s", versionsFile);
         }
