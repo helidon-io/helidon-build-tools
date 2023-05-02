@@ -27,7 +27,6 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -40,10 +39,7 @@ import javax.net.ssl.SSLException;
 
 import io.helidon.build.cli.common.ArchetypesData;
 import io.helidon.build.cli.common.ArchetypesDataLoader;
-import io.helidon.build.cli.common.LatestVersion;
-import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -187,34 +183,10 @@ class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-//        if (connection instanceof HttpURLConnection && ((HttpURLConnection) connection).getResponseCode() == 404) {
-//            //TODO remove it when version.xml will be implemented and added to the helidon.io
-//            var versions = String.format("<data><archetypes><version>%s</version></archetypes></data>", updateLatest());
-//            Files.copy(new ByteArrayInputStream(versions.getBytes(UTF_8)), versionsFile, REPLACE_EXISTING);
-//        } else {
-//            Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
-//        }
         Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         if (Log.isDebug()) {
             Log.debug("wrote information about archetype versions to %s", versionsFile);
         }
-    }
-
-//    TODO remove it when version.xml will be implemented and added to the helidon.io
-    private String updateLatest() throws Exception {
-        final URL url = resolve(LATEST_VERSION_FILE_NAME);
-        final Map<String, String> headers = commonHeaders();
-        debugDownload(url, headers, false);
-        final URLConnection connection = NetworkConnection.builder()
-                                                          .url(url)
-                                                          .headers(headers)
-                                                          .connectTimeout(connectTimeout)
-                                                          .readTimeout(readTimeout)
-                                                          .connect();
-        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
-        return LatestVersion.create(Arrays.asList(new String(connection.getInputStream().readAllBytes(), UTF_8).split("\n")))
-                            .latest(cliVersion)
-                            .toString();
     }
 
     private void updateVersion(String version) throws Exception {

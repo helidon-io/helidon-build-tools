@@ -79,7 +79,6 @@ public class Metadata {
      */
     public static final MavenVersion HELIDON_3 = toMavenVersion("3.0.0-alpha");
 
-    private static final String LATEST_VERSION_FILE_NAME = "latest";
     private static final String VERSIONS_FILE_NAME = "versions.xml";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
@@ -99,7 +98,6 @@ public class Metadata {
 
     private final Path rootDir;
     private final String url;
-    private final Path latestVersionFile;
     private final Path versionsFile;
     private final long updateFrequencyMillis;
     private final boolean debugPlugin;
@@ -111,7 +109,6 @@ public class Metadata {
     private Metadata(Builder builder) {
         rootDir = builder.rootDir;
         url = builder.url;
-        latestVersionFile = rootDir.resolve(LATEST_VERSION_FILE_NAME);
         versionsFile = rootDir.resolve(VERSIONS_FILE_NAME);
         updateFrequencyMillis = builder.updateFrequencyUnits.toMillis(builder.updateFrequency);
         debugPlugin = builder.debugPlugin;
@@ -146,10 +143,10 @@ public class Metadata {
      * @return The time.
      */
     public FileTime lastUpdateTime() {
-        if (latestVersionFile == null) {
+        if (versionsFile == null) {
             return FileTime.fromMillis(0);
         } else {
-            return lastModifiedTime(latestVersionFile);
+            return lastModifiedTime(versionsFile);
         }
     }
 
