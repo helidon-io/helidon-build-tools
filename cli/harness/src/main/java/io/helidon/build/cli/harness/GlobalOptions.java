@@ -191,7 +191,6 @@ public class GlobalOptions {
     private final boolean help;
     private final boolean version;
     private final String propsFile;
-    private final String argsFile;
     private final boolean plain;
     private final boolean error;
     private final boolean debug;
@@ -204,12 +203,10 @@ public class GlobalOptions {
                 .collect(Collectors.toList());
 
         CommandParser.Parameter propsFile = parameters.get(PROPS_FILE_OPTION_NAME);
-        CommandParser.Parameter argsFile = parameters.get(ARGS_FILE_OPTION_NAME);
 
         this.help = params.contains(HELP_FLAG_NAME);
         this.version = params.contains(VERSION_FLAG_NAME);
         this.propsFile = propsFile == null ? null : ((CommandParser.KeyValueParam) propsFile).value();
-        this.argsFile = argsFile == null ? null : ((CommandParser.KeyValueParam) argsFile).value();
         this.plain = params.contains(PLAIN_FLAG_NAME);
         this.error = params.contains(ERROR_FLAG_NAME);
         this.debug = params.contains(DEBUG_FLAG_ARGUMENT);
@@ -301,15 +298,6 @@ public class GlobalOptions {
      */
     public String propsFile() {
         return propsFile;
-    }
-
-    /**
-     * Get args-file value.
-     *
-     * @return args-file value
-     */
-    public String argsFile() {
-        return argsFile;
     }
 
     /**

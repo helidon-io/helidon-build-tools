@@ -254,14 +254,13 @@ public class CommandParserTest {
         GlobalOptions options;
         String propsFile = Files.createTempFile("empty", null).toString();
 
-        parser = CommandParser.create("command", "-Dfoo=bar", "--help", "--props-file", propsFile, "--args-file", propsFile);
+        parser = CommandParser.create("command", "-Dfoo=bar", "--help", "--props-file", propsFile);
         resolver = parser.parseCommand();
         options = new GlobalOptions(resolver.params());
 
         assertThat(options.help(), is(true));
         assertThat(options.version(), is(false));
         assertThat(options.propsFile(), is(propsFile));
-        assertThat(options.argsFile(), is(propsFile));
         assertThat(parser.globalResolver().params().containsKey("help"), is(true));
         assertThat(resolver.params().containsKey("help"), is(true));
         assertThat(parser.globalResolver().properties().isEmpty(), is(true));
