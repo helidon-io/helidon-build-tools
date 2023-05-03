@@ -24,7 +24,7 @@ declare -a filepaths
 version=0.9.0
 readonly version
 
-cacheDir="/home/runner/work/shellcheck/"
+cacheDir="${HOME}/.shellcheck/"
 readonly cacheDir
 
 shellcheck="${cacheDir}shellcheck"
@@ -38,7 +38,7 @@ if [ ! $(cd "${cacheDir}") ]; then
 
     tar -xf "${cacheDir}shellcheck-v0.9.0.linux.x86_64.tar.xz" -C "${cacheDir}"
 
-    mv "${cacheDir}shellcheck-v${version}/shellcheck" ${shellcheck}
+    mv "${cacheDir}shellcheck-v${version}/shellcheck" "${shellcheck}"
 fi
 
 echo "ShellCheck version"
