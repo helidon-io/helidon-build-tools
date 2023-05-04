@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Copyright (c) 2023 Oracle and/or its affiliates.
 #
@@ -15,48 +15,36 @@
 # limitations under the License.
 #
 
-baseurl="https://github.com/koalaman/shellcheck/releases/download"
-readonly baseurl
+BASE_URL="https://github.com/koalaman/shellcheck/releases/download"
+readonly BASE_URL
 
-statuscode=0
-declare -a filepaths
+status_code=0
 
-version=0.9.0
-readonly version
+VERSION=0.9.0
+readonly VERSION
 
-cacheDir="${HOME}/.shellcheck/"
-readonly cacheDir
-
-shellcheck="${cacheDir}shellcheck"
-readonly shellcheck
+CACHE_DIR="${HOME}/.shellcheck"
+readonly CACHE_DIR
 
 # Caching the shellcheck
-# shellcheck disable=SC2046
-if [ ! $(cd "${cacheDir}") ]; then
-    mkdir "${cacheDir}"
-    wget --no-check-certificate -P "${cacheDir}" "${baseurl}/v${version}/shellcheck-v${version}.linux.x86_64.tar.xz"
+mkdir -p "${CACHE_DIR}"
+if [ ! -e "${CACHE_DIR}/${VERSION}/shellcheck" ] ; then
+    curl -Lso "${CACHE_DIR}/sc.tar.xz" "${BASE_URL}/v${VERSION}/shellcheck-v${VERSION}.linux.x86_64.tar.xz"
 
-    tar -xf "${cacheDir}shellcheck-v0.9.0.linux.x86_64.tar.xz" -C "${cacheDir}"
+    tar -xf "${CACHE_DIR}/sc.tar.xz" -C "${CACHE_DIR}"
 
-    mv "${cacheDir}shellcheck-v${version}/shellcheck" "${shellcheck}"
+    mkdir "${CACHE_DIR}/${VERSION}"
+    mv "${CACHE_DIR}/shellcheck-v${VERSION}/shellcheck" "${CACHE_DIR}/${VERSION}/shellcheck"
+    export PATH="${CACHE_DIR}/${VERSION}:${PATH}"
 fi
 
 echo "ShellCheck version"
-${shellcheck} --version
+shellcheck --version
 
-while IFS= read -r -d '' file; do
-  filepaths+=("$file")
-done < <(find "$(pwd)" -name "*.sh" -print0)
-
-for file in "${filepaths[@]}"; do
-   ${shellcheck} "${file}" || statuscode=$?
+# shellcheck disable=SC2044
+for file in $(find . -name "*.sh") ; do
+    printf "\n-- Checking file:  %s --\n" "${file}"
+    shellcheck "${file}" || status_code=${?}
 done
 
-echo "tested files :"
-for file in "${filepaths[@]}"; do
-   echo "${file}"
-done
-
-if [ "${statuscode}" -ne "0" ]; then
-    exit 4
-fi
+exit ${status_code}
