@@ -72,7 +72,7 @@ final class ModelResolver implements Model.Visitor<Context> {
         String content = evaluate(value, context);
 
         // value is a leaf-node, thus we are not updating the head
-        head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template()));
+        head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template(), value.override()));
         return Node.VisitResult.CONTINUE;
     }
 

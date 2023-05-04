@@ -313,7 +313,7 @@ public final class MergedModel {
                     ((List) v).value.addAll(((List) node).value);
                     return v;
                 }
-                if (v instanceof Value && node instanceof Value) {
+                if (v instanceof Value && node instanceof Value && ((Value) v).override) {
                     value.put(k, node);
                     return node;
                 }
@@ -329,6 +329,7 @@ public final class MergedModel {
 
         private final String value;
         private final String template;
+        private final boolean override;
 
         /**
          * Create a new instance.
@@ -339,10 +340,11 @@ public final class MergedModel {
          * @param value    value
          * @param template template engine
          */
-        Value(Node parent, String key, int order, String value, String template) {
+        Value(Node parent, String key, int order, String value, String template, boolean override) {
             super(parent, key, order);
             this.value = value;
             this.template = template;
+            this.override = override;
         }
 
         /**
@@ -361,6 +363,15 @@ public final class MergedModel {
          */
         public String value() {
             return value;
+        }
+
+        /**
+         * Get override.
+         *
+         * @return true if the value can be overridden
+         */
+        public boolean override() {
+            return override;
         }
     }
 }

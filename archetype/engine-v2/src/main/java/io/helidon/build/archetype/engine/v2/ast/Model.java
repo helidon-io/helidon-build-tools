@@ -224,11 +224,13 @@ public abstract class Model extends Block {
         private final String value;
         private final String file;
         private final String template;
+        private final boolean override;
 
         private Value(Model.Builder builder) {
             super(builder);
             this.template = builder.attribute("template", false).asString();
             this.value = builder.value;
+            this.override = builder.attribute("override", false).asBoolean();
             if (this.value == null) {
                 this.file = builder.attribute("file", true).asString();
             } else {
@@ -262,6 +264,15 @@ public abstract class Model extends Block {
          */
         public String template() {
             return template;
+        }
+
+        /**
+         * Get override.
+         *
+         * @return true if the value can be overridden
+         */
+        public boolean override() {
+            return override;
         }
 
         @Override
