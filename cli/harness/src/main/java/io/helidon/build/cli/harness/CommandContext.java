@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ public final class CommandContext {
     private Verbosity verbosity;
     private ExitAction exitAction;
     private CommandParser parser;
+    private GlobalOptions globalOptions;
 
     @SuppressWarnings("CopyConstructorMissesField")
     CommandContext(CommandContext parent) {
@@ -310,6 +311,15 @@ public final class CommandContext {
     }
 
     /**
+     * Get the global options.
+     *
+     * @return GlobalOptions, never {@code null}
+     */
+    public GlobalOptions globalOptions() {
+        return globalOptions;
+    }
+
+    /**
      * Returns whether rich text should be disabled.
      *
      * @return {@code true} if rich text should not be used
@@ -392,7 +402,9 @@ public final class CommandContext {
      */
     void parser(CommandParser parser) {
         this.parser = Objects.requireNonNull(parser, "parser is null");
-        this.properties.putAll(parser.globalResolver().properties());
+        CommandParser.Resolver resolver = parser.globalResolver();
+        this.properties.putAll(resolver.properties());
+        this.globalOptions = new GlobalOptions(resolver.params());
     }
 
     /**

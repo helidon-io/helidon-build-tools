@@ -15,7 +15,9 @@
  */
 package io.helidon.build.cli.harness;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -186,6 +188,31 @@ public class GlobalOptions {
             false,
             false);
 
+    private final boolean help;
+    private final boolean version;
+    private final String propsFile;
+    private final boolean plain;
+    private final boolean error;
+    private final boolean debug;
+    private final boolean verbose;
+
+    GlobalOptions(Map<String, CommandParser.Parameter> parameters) {
+        Objects.requireNonNull(parameters, "parameters is null");
+        List<String> params = parameters.keySet().stream()
+                .filter(GLOBAL_OPTIONS_NAME::contains)
+                .collect(Collectors.toList());
+
+        CommandParser.Parameter propsFile = parameters.get(PROPS_FILE_OPTION_NAME);
+
+        this.help = params.contains(HELP_FLAG_NAME);
+        this.version = params.contains(VERSION_FLAG_NAME);
+        this.propsFile = propsFile == null ? null : ((CommandParser.KeyValueParam) propsFile).value();
+        this.plain = params.contains(PLAIN_FLAG_NAME);
+        this.error = params.contains(ERROR_FLAG_NAME);
+        this.debug = params.contains(DEBUG_FLAG_ARGUMENT);
+        this.verbose = params.contains(VERBOSE_FLAG_NAME);
+    }
+
     /**
      * Tests whether the given argument is a global flag.
      *
@@ -219,6 +246,20 @@ public class GlobalOptions {
             ARGS_FILE_OPTION_INFO
     };
 
+    /**
+     * Global options name.
+     */
+    private static final Set<String> GLOBAL_OPTIONS_NAME = Set.of(
+            HELP_FLAG_NAME,
+            VERSION_FLAG_NAME,
+            PROPS_FILE_OPTION_NAME,
+            ARGS_FILE_OPTION_NAME,
+            PLAIN_FLAG_NAME,
+            ERROR_FLAG_NAME,
+            DEBUG_FLAG_NAME,
+            VERBOSE_FLAG_NAME
+    );
+
     private static final Set<String> GLOBAL_OPTION_ARGUMENTS = Stream.of(GLOBAL_OPTIONS_INFO)
                                                                      .map(info -> (CommandModel.NamedOptionInfo<?>) info)
                                                                      .map(info -> "--" + info.name())
@@ -232,6 +273,66 @@ public class GlobalOptions {
                   .map(info -> (CommandModel.NamedOptionInfo<?>) info)
                   .collect(Collectors.toMap(CommandModel.NamedOptionInfo::name, Function.identity()));
 
-    private GlobalOptions() {
+    /**
+     * Get help value.
+     *
+     * @return help value
+     */
+    public boolean help() {
+        return help;
+    }
+
+    /**
+     * Get version value.
+     *
+     * @return version value
+     */
+    public boolean version() {
+        return version;
+    }
+
+    /**
+     * Get props-file value.
+     *
+     * @return props-file value
+     */
+    public String propsFile() {
+        return propsFile;
+    }
+
+    /**
+     * Get plain value.
+     *
+     * @return plain value
+     */
+    public boolean plain() {
+        return plain;
+    }
+
+    /**
+     * Get error value.
+     *
+     * @return error value
+     */
+    public boolean error() {
+        return error;
+    }
+
+    /**
+     * Get debug value.
+     *
+     * @return debug value
+     */
+    public boolean debug() {
+        return debug;
+    }
+
+    /**
+     * Get verbose value.
+     *
+     * @return verbos value
+     */
+    public boolean verbose() {
+        return verbose;
     }
 }

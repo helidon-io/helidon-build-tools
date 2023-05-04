@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
+import io.helidon.build.cli.harness.GlobalOptions;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Strings;
@@ -63,16 +64,10 @@ public final class InfoCommand extends BaseCommand {
     private static final int VERBOSE_BUILDER_SIZE = 16384;
     private static final String EOL_MARKER = "~@~";
     private static final String PAD = " ";
-    private final boolean verbose;
-    private final boolean plain;
-    private final StringBuilder builder;
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
         super(commonOptions, true);
-        this.verbose = commonOptions.verbose();
-        this.plain = commonOptions.plain();
-        this.builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
     }
 
     @Override
@@ -81,6 +76,10 @@ public final class InfoCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) {
+        GlobalOptions options = context.globalOptions();
+        boolean verbose = options.verbose();
+        boolean plain = options.plain();
+        StringBuilder builder = new StringBuilder(verbose ? VERBOSE_BUILDER_SIZE : DEFAULT_BUILDER_SIZE);
 
         // User config
 
@@ -173,27 +172,27 @@ public final class InfoCommand extends BaseCommand {
         // Log them all
 
         int maxWidth = Math.max(maxKeyWidth(userConfigProps, buildProps, systemProps, envVars, projectProps), MIN_WIDTH);
-        append("User Config", userConfigProps, maxWidth);
-        append("Project Config", projectProps, maxWidth);
-        append("General", buildProps, maxWidth);
+        append(builder, "User Config", userConfigProps, maxWidth);
+        append(builder, "Project Config", projectProps, maxWidth);
+        append(builder, "General", buildProps, maxWidth);
 
         try {
-            PrintStream stdOut = PrintStreams.delegate(DEVNULL, (p, s) -> append(s.replace(EOL_MARKER, EOL)));
-            Plugins.execute("GetInfo", pluginArgs(maxWidth), 5, stdOut);
+            PrintStream stdOut = PrintStreams.delegate(DEVNULL, (p, s) -> builder.append(s.replace(EOL_MARKER, EOL)));
+            Plugins.execute("GetInfo", pluginArgs(maxWidth, plain), 5, stdOut);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");
         }
-        append("Metadata", metaProps, maxWidth);
-        append("System Properties", systemProps, maxWidth);
-        append("Environment Variables", envVars, maxWidth);
+        append(builder, "Metadata", metaProps, maxWidth);
+        append(builder, "System Properties", systemProps, maxWidth);
+        append(builder, "Environment Variables", envVars, maxWidth);
 
         if (!verbose) {
-            appendLine("%nRun 'helidon info --verbose' for more detail.");
+            appendLine(builder, "%nRun 'helidon info --verbose' for more detail.");
         }
         Log.info(builder.toString());
     }
 
-    private List<String> pluginArgs(int maxWidth) {
+    private List<String> pluginArgs(int maxWidth, boolean plain) {
         List<String> args = new ArrayList<>();
         args.add("--maxWidth");
         args.add(Integer.toString(maxWidth));
@@ -214,29 +213,25 @@ public final class InfoCommand extends BaseCommand {
         return sb.toString();
     }
 
-    private void append(String message) {
-        builder.append(message);
-    }
-
-    private void appendLine(String line, Object... args) {
+    private void appendLine(StringBuilder builder, String line, Object... args) {
         builder.append(String.format(line, args));
-        appendLine();
+        appendLine(builder);
     }
 
-    private void appendLine() {
+    private void appendLine(StringBuilder builder) {
         builder.append(EOL);
     }
 
-    private void append(String header, Map<Object, Object> map, int maxKeyWidth) {
+    private void append(StringBuilder builder, String header, Map<Object, Object> map, int maxKeyWidth) {
         if (!map.isEmpty()) {
-            appendLine();
-            appendLine("$(bold | %s)", header);
-            appendLine();
+            appendLine(builder);
+            appendLine(builder, "$(bold | %s)", header);
+            appendLine(builder);
             map.forEach((key, value) -> {
                 key = key.toString().replace("%", "%%");
                 value = value.toString().replace("%", "%%");
                 String padding = padding(PAD, maxKeyWidth, key.toString());
-                appendLine("%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
+                appendLine(builder, "%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
             });
         }
     }
