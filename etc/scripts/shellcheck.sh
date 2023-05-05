@@ -18,8 +18,6 @@
 BASE_URL="https://github.com/koalaman/shellcheck/releases/download"
 readonly BASE_URL
 
-status_code=0
-
 VERSION=0.9.0
 readonly VERSION
 
@@ -41,6 +39,7 @@ fi
 echo "ShellCheck version"
 shellcheck --version
 
+status_code=0
 # shellcheck disable=SC2044
 for file in $(find . -name "*.sh") ; do
     printf "\n-- Checking file:  %s --\n" "${file}"
