@@ -16,15 +16,12 @@
 
 package io.helidon.build.cli.common;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import io.helidon.build.common.Lists;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.common.ArchetypesData.Version;
+import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -35,8 +32,9 @@ import static org.hamcrest.Matchers.hasItems;
 public class ArchetypesDataLoaderTest {
 
     @Test
-    public void testArchetypesData() throws URISyntaxException {
-        ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFileFolder().resolve("versions.xml"));
+    public void testArchetypesData() {
+        Path versionsFile = testResourcePath(ArchetypesDataLoaderTest.class, "versions/cli-data/versions.xml");
+        ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFile);
         Version defaultVersion = archetypesData.rawVersions().stream().filter(Version::isDefault).findFirst().get();
 
         assertThat(archetypesData.rawVersions().size(), is(29));
@@ -47,10 +45,5 @@ public class ArchetypesDataLoaderTest {
         assertThat(archetypesData.rules().get(0).cliRange().toString(), is("[2.0.0,5.0.0)"));
         assertThat(archetypesData.rules().get(2).archetypeRange().toString(), is("[4.0.0,5.0.0)"));
         assertThat(archetypesData.rules().get(2).cliRange().toString(), is("[4.0.0,5.0.0)"));
-    }
-
-    private Path versionsFileFolder() throws URISyntaxException {
-        Path path = Paths.get(ArchetypesDataLoaderTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        return path.resolve("versions").resolve("cli-data");
     }
 }
