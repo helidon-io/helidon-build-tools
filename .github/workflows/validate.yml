@@ -90,3 +90,10 @@ jobs:
           name: helidon-vscode
           path: |
             ide-support/vscode-extension/target/vscode-helidon.vsix
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ShellCheck
+        run: etc/scripts/shellcheck.sh

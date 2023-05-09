@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,26 +86,30 @@ fi
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 # get current maven version
 # shellcheck disable=SC2086
-readonly MVN_VERSION=$(mvn ${MAVEN_ARGS} \
+MVN_VERSION=$(mvn ${MAVEN_ARGS} \
     -q \
     -f "${WS_DIR}"/pom.xml \
     -Dexec.executable="echo" \
     -Dexec.args="\${project.version}" \
     --non-recursive \
     org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
+readonly MVN_VERSION
 
 # Resolve FULL_VERSION
 if [ -z "${VERSION+x}" ]; then

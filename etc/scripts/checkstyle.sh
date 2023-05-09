@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,19 +29,25 @@ trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    # shellcheck disable=SC155
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
-readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
+LOG_FILE=$(mktemp -t XXXcheckstyle-log)
+readonly LOG_FILE
 
-readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
+RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
+readonly  RESULT_FILE
 
+# shellcheck disable=SC1091
 source "${WS_DIR}"/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}

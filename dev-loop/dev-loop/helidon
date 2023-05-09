@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 main() {
     local action command
     init "$@"
+    # shellcheck disable=SC2086
     ${action} ${command}
 }
 
@@ -31,13 +32,13 @@ init() {
     local -r debug="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
     local jvm
     local args
-    action=exec
+    action="exec"
 
     while (( ${#} > 0 )); do
         case "${1}" in
             --debug) appendVar jvm "${debug}" ;;
             --fork) appendVar jvm "-Ddev.fork=true" ;;
-            --dryRun) action=echo ;;
+            --dryRun) action="echo" ;;
             *) appendVar args "${1}" ;;
         esac
         shift
@@ -47,7 +48,8 @@ init() {
 }
 
 appendVar() {
-    export ${1}="${!1:+${!1} }${2}"
+    # shellcheck disable=SC2140
+    export "${1}"="${!1:+${!1} }${2}"
 }
 
 main "$@"

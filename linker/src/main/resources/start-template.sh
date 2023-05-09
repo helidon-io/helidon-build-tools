@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,12 +44,14 @@ usage() {
 main() {
     local action command
     init "$@"
+    # shellcheck disable=SC2086,SC2164
     ${action} ${command}
 }
 
 init() {
     local -r scriptName=$(basename "${0}")
     local -r binDir=$(dirname "${0}")
+    # shellcheck disable=SC2164,SC2086
     local -r homeDir=$(cd "${binDir}/.."; pwd)
     local -r jarName="<JAR_NAME>"
     local -r defaultDebug="<DEFAULT_APP_DEBUG>"
@@ -63,7 +65,7 @@ init() {
     local args jvm test share=auto
     local useCds=true
     local debug
-    action=exec
+    action="exec"
 
     while (( ${#} > 0 )); do
         case "${1}" in
@@ -71,7 +73,7 @@ init() {
             --noCds) useCds= ;;
             --debug) debug=true ;;
             --test) test=true; share=on ;;
-            --dryRun) action=echo ;;
+            --dryRun) action="echo" ;;
             -h | --help) usage ;;
             *) appendVar args "${1}" ;;
         esac
@@ -89,13 +91,15 @@ init() {
 }
 
 appendVar() {
+  # shellcheck disable=SC2140,SC2086
     export ${1}="${!1:+${!1} }${2}"
 }
 
 setupCds() {
     appendVar jvmOptions "${cdsOption}${share}"
     pathPrefix=
-    cd ${homeDir}
+    # shellcheck disable=SC2164
+    cd "${homeDir}"
 }
 
 checkTimeStamps() {
