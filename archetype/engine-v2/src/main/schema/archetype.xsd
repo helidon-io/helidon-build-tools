@@ -507,7 +507,19 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attributeGroup ref="a:if-group"/>
+    </xs:attributeGroup>
+
+    <xs:attributeGroup name="as-model-value-group">
+        <xs:attribute name="model" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    The value can be used as model value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:simpleType name="required-string">
@@ -821,6 +833,7 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
+        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -850,6 +863,7 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
+        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -891,6 +905,7 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
+        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -932,6 +947,7 @@
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:desc-group"/>
+        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>

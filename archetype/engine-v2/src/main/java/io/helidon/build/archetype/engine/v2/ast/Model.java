@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -267,11 +267,11 @@ public abstract class Model extends Block {
         }
 
         /**
-         * Get override.
+         * Test if this value can be overridden.
          *
-         * @return true if the value can be overridden
+         * @return {@code true} if the value can be overridden
          */
-        public boolean override() {
+        public boolean isOverride() {
             return override;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,14 +190,14 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.scope().putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
+        ctx.scope().putValue(preset.path(), preset.value(), preset.isModel(), ValueKind.LOCAL_VAR);
         presets.add(preset);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitVariable(Variable variable, Context ctx) {
-        ContextValue value = ctx.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        ContextValue value = ctx.putValue(variable.path(), variable.value(), variable.isModel(), ValueKind.LOCAL_VAR);
         allRefs.computeIfAbsent(value.scope().path(), k -> new ArrayList<>()).add(variable);
         return VisitResult.CONTINUE;
     }
@@ -261,7 +261,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         if (input0 instanceof DeclaredInput) {
             DeclaredInput input = (DeclaredInput) input0;
             ContextScope scope = ctx.scope();
-            ContextScope nextScope = ctx.pushScope(input.id(), input.isGlobal());
+            ContextScope nextScope = ctx.pushScope(input.id(), input.isModel(), input.isGlobal());
             inputPath = nextScope.path();
             allRefs.computeIfAbsent(inputPath, k -> new ArrayList<>());
 

@@ -242,7 +242,7 @@ public class InputResolverTest {
         context.scope()
                .putValue("global", Value.create("value1"), ValueKind.EXTERNAL)
                .scope()
-               .getOrCreate("global", true)
+               .getOrCreate("global", false, true)
                .putValue("nested", Value.create("value1"), ValueKind.EXTERNAL);
 
         InvocationException ex = assertThrows(InvocationException.class, () -> resolveInputs(global, context, null));

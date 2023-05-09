@@ -20,29 +20,30 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
     <presets>
-        <boolean path="metrics">true</boolean>
+        <boolean path="metrics" model="true">true</boolean>
         <boolean path="section1">false</boolean>
         <boolean path="section2">false</boolean>
         <boolean path="test.var5">false</boolean>
     </presets>
     <step name="Helidon Flavor" optional="true">
         <variables>
-            <text path="test.var1">test variable 1</text>
-            <text path="test.var2">test variable 2</text>
-            <text path="test.var3">test variable 3</text>
-            <text path="test4">test variable 4</text>
+            <text path="test.var1" model="true">test variable 1</text>
+            <text path="test.var2" model="true">test variable 2</text>
+            <text path="test.var3" model="true">test variable 3</text>
+            <text path="test4" model="true">test variable 4</text>
         </variables>
         <inputs>
             <boolean id="bool1" name="test-bool1" default="true" global="true" optional="true">
                 <inputs>
-                    <boolean id="bool2" name="test-bool2" default="true" global="true" optional="true"/>
+                    <boolean id="bool2" name="test-bool2" default="true" global="true" optional="true" model="true"/>
                 </inputs>
             </boolean>
             <enum id="flavor"
                   name="Select a Flavor"
                   default="se"
                   global="true"
-                  optional="true">
+                  optional="true"
+                  model="true">
                 <option value="se" name="Helidon SE"/>
                 <option value="mp" name="Helidon MP"/>
             </enum>

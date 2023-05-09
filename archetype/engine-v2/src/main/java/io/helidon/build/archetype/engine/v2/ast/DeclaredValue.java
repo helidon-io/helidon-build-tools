@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,12 @@ public abstract class DeclaredValue extends Block {
 
     private final Value value;
     private final String path;
+    private final boolean model;
 
     protected DeclaredValue(Builder builder, List<String> values) {
         super(builder);
         this.path = builder.attribute("path", true).asString();
+        this.model = builder.attribute("model", false).asBoolean();
         Kind kind = builder.kind();
         switch (kind) {
             case BOOLEAN:
@@ -64,6 +66,15 @@ public abstract class DeclaredValue extends Block {
      */
     public Value value() {
         return value;
+    }
+
+    /**
+     * Test if value can be used as model value.
+     *
+     * @return {@code true} if it can be used
+     */
+    public boolean isModel() {
+        return model;
     }
 
     /**

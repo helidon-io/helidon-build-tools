@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -264,12 +264,14 @@ public abstract class Input extends Block {
         private final String id;
         private final boolean optional;
         private final boolean global;
+        private final boolean model;
 
         private DeclaredInput(Input.Builder builder) {
             super(builder);
             this.id = builder.attribute("id", true).asString();
             this.optional = builder.attribute("optional", false).asBoolean();
             this.global = builder.attribute("global", false).asBoolean();
+            this.model = builder.attribute("model", false).asBoolean();
         }
 
         /**
@@ -297,6 +299,15 @@ public abstract class Input extends Block {
          */
         public boolean isGlobal() {
             return global;
+        }
+
+        /**
+         * Test if the input can be used as model value.
+         *
+         * @return {@code true} if it can be used as model value
+         */
+        public boolean isModel() {
+            return model;
         }
 
         /**

@@ -364,14 +364,5 @@ public final class MergedModel {
         public String value() {
             return value;
         }
-
-        /**
-         * Get override.
-         *
-         * @return true if the value can be overridden
-         */
-        public boolean override() {
-            return override;
-        }
     }
 }

@@ -101,11 +101,23 @@ public final class Context implements ContextRegistry {
      * Push a scope.
      *
      * @param id     scope id
+     * @param model  {@code true} if the value should be used as a model value
+     * @param global {@code true} if the scope should be global, {@code false} if local.
+     * @return the new current scope
+     */
+    public ContextScope pushScope(String id, boolean model, boolean global) {
+        return pushScope(scope.getOrCreate(id, model, global));
+    }
+
+    /**
+     * Push a scope.
+     *
+     * @param id     scope id
      * @param global {@code true} if the scope should be global, {@code false} if local.
      * @return the new current scope
      */
     public ContextScope pushScope(String id, boolean global) {
-        return pushScope(scope.getOrCreate(id, global));
+        return pushScope(scope.getOrCreate(id, false, global));
     }
 
     /**
@@ -147,6 +159,11 @@ public final class Context implements ContextRegistry {
     @Override
     public ContextValue putValue(String path, Value value, ValueKind kind) {
         return scope.putValue(path, value, kind);
+    }
+
+    @Override
+    public ContextValue putValue(String path, Value value, boolean model, ValueKind kind) {
+        return scope.putValue(path, value, model, kind);
     }
 
     @Override
