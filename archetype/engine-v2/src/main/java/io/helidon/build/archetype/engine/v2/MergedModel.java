@@ -313,7 +313,7 @@ public final class MergedModel {
                     ((List) v).value.addAll(((List) node).value);
                     return v;
                 }
-                if (v instanceof Value && node instanceof Value && ((Value) v).override) {
+                if (v instanceof Value && node instanceof Value && ((Value) node).override) {
                     value.put(k, node);
                     return node;
                 }
@@ -339,6 +339,7 @@ public final class MergedModel {
          * @param order    order
          * @param value    value
          * @param template template engine
+         * @param override override
          */
         Value(Node parent, String key, int order, String value, String template, boolean override) {
             super(parent, key, order);

@@ -290,7 +290,7 @@ public class InputResolverTest {
     @Test
     void testOverride() {
         Block block = step("step",
-                output(model(modelValue("foo", "foo1").attribute("override", Value.TRUE), modelValue("foo", "foo2"))))
+                output(model(modelValue("foo", "foo1"), modelValue("foo", "foo2").attribute("override", Value.TRUE))))
                 .build();
         MergedModel mergedModel = MergedModel.resolveModel(block, Context.create());
         MergedModel.Node root = mergedModel.node();

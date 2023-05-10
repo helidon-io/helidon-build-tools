@@ -393,6 +393,20 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="model-key-value-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Model value data type.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="a:keyed-value-type">
+                <xs:attribute name="override" type="xs:boolean"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
     <xs:complexType name="map-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -1057,7 +1071,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="value" type="a:keyed-value-type"/>
+            <xs:element name="value" type="a:model-key-value-type"/>
             <xs:element name="list" type="a:keyed-list-type"/>
             <xs:element name="map" type="a:keyed-map-type"/>
         </xs:choice>

@@ -267,7 +267,7 @@ public abstract class Model extends Block {
         }
 
         /**
-         * Test if this value can be overridden.
+         * Test if this value is an override.
          *
          * @return {@code true} if the value can be overridden
          */
