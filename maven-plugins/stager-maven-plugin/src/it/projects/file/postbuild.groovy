@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-import java.nio.file.Files
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.stager.ProjectsTestIT
 
-static void assertExists(file) {
-    if (!Files.exists(file)) {
-        throw new AssertionError((Object) "${file.toString()} does not exist")
-    }
-}
-
-static void assertEqual(expected, actual) {
-    if (actual != expected) {
-        throw new AssertionError((Object) "Expected '${expected}' but got '${actual}'")
-    }
-}
-
-def stageDir = basedir.toPath().resolve("target/stage")
-assertExists(stageDir)
-
-def file1 = stageDir.resolve("cli-data/latest")
-assertExists(file1)
-assertEqual("2.0.0-RC1", Files.readString(file1))
-
-def file2 = stageDir.resolve("CNAME")
-assertExists(file2)
-assertEqual("helidon.io", Files.readString(file2))
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "test5", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("stager-file-it-test5")
+        .suiteDisplayName("Stager File Integration Test")
+        .build()
+        .launch()
