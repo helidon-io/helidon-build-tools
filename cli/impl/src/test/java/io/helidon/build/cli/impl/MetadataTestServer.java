@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.mockserver.netty.MockServer;
 
 import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.etag;
+import static io.helidon.build.cli.impl.TestMetadata.versionsFileContent;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.NottableString.not;
@@ -50,6 +51,11 @@ public class MetadataTestServer {
     private static Expectation latestRequest() {
         return new Expectation(request().withMethod("GET")
                                         .withPath("/latest")).withId("latest");
+    }
+
+    private static Expectation versionsRequest() {
+        return new Expectation(request().withMethod("GET")
+                                        .withPath("/versions.xml")).withId("latest");
     }
 
     private static Expectation zipRequestWithoutEtag(TestVersion version) {
@@ -153,9 +159,8 @@ public class MetadataTestServer {
     public MetadataTestServer start() {
         mockServer = ClientAndServer.startClientAndServer(port);
 
-        // Set the response for "/latest"
-
-        latest(latest);
+        // Set the response for "/versions.xml"
+        versions(latest);
 
         // Set the responses for the "${version}/cli-data.zip" requests, with and without etags
 
@@ -193,22 +198,13 @@ public class MetadataTestServer {
     }
 
     /**
-     * Returns the version in use for the "/latest" request.
-     *
-     * @return The version.
+     * Sets the response for the "/versions.xml" request.
      */
-    public TestVersion latest() {
-        return latest;
-    }
-
-    /**
-     * Sets the response for the "/latest" request.
-     *
-     * @param latest The version.
-     */
-    public void latest(TestVersion latest) {
+    public void versions(TestVersion latest) {
         this.latest = latest;
-        mockServer.upsert(latestRequest().thenRespond(response().withBody(latest.toString())));
+        mockServer.upsert(versionsRequest().thenRespond(response().withBody(
+                "<data><archetypes><version>" + latest + "</version></archetypes></data>"
+        )));
     }
 
     /**

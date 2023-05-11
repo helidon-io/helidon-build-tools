@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ public class TestMetadata {
 
     static final URL TEST_CLI_DATA_URL = requireNonNull(MetadataTest.class.getClassLoader().getResource("cli-data"));
     static final Path TEST_CLI_DATA_PATH = requireDirectory(pathOf(TEST_CLI_DATA_URL));
-    static final String LATEST_FILE_NAME = "latest";
+    static final String VERSIONS_FILE_NAME = "versions.xml";
     static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     static final String CLI_DATA_FILE_NAME = "cli-data.zip";
     static final String PROPERTIES_FILE_NAME = "metadata.properties";
@@ -129,6 +129,15 @@ public class TestMetadata {
      */
     static byte[] zipData(TestVersion version) {
         return ZIP_DATA.get(version);
+    }
+
+    /**
+     * Get the content of versions.xml
+     *
+     * @return content of {@code versions.xml}
+     */
+    static byte[] versionsFileContent() {
+        return readCliDataFile("versions.xml");
     }
 
     /**

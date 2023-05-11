@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
-import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.MAVEN_VERSION_RC2;
 import static io.helidon.build.cli.impl.TestMetadata.NO_ETAG;
@@ -48,6 +47,7 @@ import static io.helidon.build.cli.impl.TestMetadata.RC2_ETAG;
 import static io.helidon.build.cli.impl.TestMetadata.TEST_CLI_DATA_URL;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
+import static io.helidon.build.cli.impl.TestMetadata.VERSIONS_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static io.helidon.build.common.Unchecked.unchecked;
@@ -129,7 +129,7 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(meta.catalogOf(latestVersion), is(catalog));
 
         assertThat(LOG_RECORDER.size(), is(3));
-        assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is false", VERSIONS_FILE_NAME);
         assertLinesContainingAll(2, "stale check", "is false", RC1_LAST_UPDATE);
 
         // Check the CLI plugin and CLI versions; the plugin should be the current build
@@ -290,13 +290,13 @@ public class MetadataTest extends MetadataTestBase {
         Thread.sleep(1250);
         assertThat(meta.latestVersion(), is(latestVersion));
 
-        assertLinesContainingAll(1, "stale check", "is true", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is true", VERSIONS_FILE_NAME);
         assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         assertLinesContainingAll("Looking up latest Helidon version");
         assertNoLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", VERSIONS_FILE_NAME);
     }
 
     @Test
@@ -314,9 +314,9 @@ public class MetadataTest extends MetadataTestBase {
         assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         assertNoLinesContainingAll("Looking up latest Helidon version");
         assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", VERSIONS_FILE_NAME);
     }
 
     @Test
@@ -334,9 +334,9 @@ public class MetadataTest extends MetadataTestBase {
         assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + NO_ETAG);
         assertNoLinesContainingAll("Looking up latest Helidon version");
         assertLinesContainingAll("Updating metadata for Helidon version " + VERSION_RC1);
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", VERSIONS_FILE_NAME);
     }
 
     @Test
@@ -354,9 +354,9 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
         assertLinesContainingAll(1, "not modified", RC1 + "/" + CLI_DATA_FILE_NAME);
         assertLinesContainingAll(1, "updated", RC1_LAST_UPDATE, "etag " + RC1_ETAG);
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", VERSIONS_FILE_NAME);
     }
 
     @Test
@@ -377,15 +377,15 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(meta.propertiesOf(latestVersion), is(not(nullValue())));
         assertLinesContainingAll(1, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
         assertLinesContainingAll(1, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
-        assertLinesContainingAll(1, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(1, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(1, "wrote", VERSIONS_FILE_NAME);
 
         // Now change the result of /latest and validate the result
 
         LOG_RECORDER.clear();
         Plugins.reset(true);
-        testServer.latest(TestVersion.RC1);
+        testServer.versions(TestVersion.RC1);
         assertInitialLatestVersionRequestPerformsUpdate(0, NANOSECONDS, VERSION_RC1, RC1_ETAG, true);
     }
 
@@ -405,8 +405,8 @@ public class MetadataTest extends MetadataTestBase {
         assertThat(meta.propertiesOf(VERSION_RC2), is(not(nullValue())));
         assertLinesContainingAll(0, "not modified", RC2 + "/" + CLI_DATA_FILE_NAME);
         assertLinesContainingAll(0, "updated", RC2_LAST_UPDATE, "etag " + RC2_ETAG);
-        assertLinesContainingAll(0, "downloading", LATEST_FILE_NAME);
-        assertLinesContainingAll(0, "connected", LATEST_FILE_NAME);
-        assertLinesContainingAll(0, "wrote", LATEST_FILE_NAME);
+        assertLinesContainingAll(0, "downloading", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(0, "connected", VERSIONS_FILE_NAME);
+        assertLinesContainingAll(0, "wrote", VERSIONS_FILE_NAME);
     }
 }

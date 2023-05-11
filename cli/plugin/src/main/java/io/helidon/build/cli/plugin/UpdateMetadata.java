@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,10 +37,9 @@ import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.SSLException;
 
-import io.helidon.build.cli.common.LatestVersion;
-import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.cli.common.ArchetypesData;
+import io.helidon.build.cli.common.ArchetypesDataLoader;
 
-import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -57,6 +56,7 @@ class UpdateMetadata extends Plugin {
     private static final String READ_TIMEOUT_ARG = "--readTimeout";
     private static final String MAX_ATTEMPTS_ARG = "--maxAttempts";
     private static final String LATEST_VERSION_FILE_NAME = "latest";
+    private static final String VERSIONS_FILE_NAME = "versions.xml";
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String ETAG_HEADER = "Etag";
     private static final String USER_AGENT_HEADER = "User-Agent";
@@ -75,7 +75,7 @@ class UpdateMetadata extends Plugin {
     private int connectTimeout;
     private int readTimeout;
     private int maxAttempts;
-    private Path latestVersionFile;
+    private Path versionsFile;
 
     /**
      * Constructor.
@@ -123,18 +123,18 @@ class UpdateMetadata extends Plugin {
         if (!Files.exists(cacheDir)) {
             throw new FileNotFoundException(cacheDir.toString());
         }
-        latestVersionFile = cacheDir.toAbsolutePath().resolve(LATEST_VERSION_FILE_NAME);
+        versionsFile = cacheDir.toAbsolutePath().resolve(VERSIONS_FILE_NAME);
     }
 
     @Override
     void execute() throws Exception {
         try {
             if (version == null) {
-                updateLatestVersion();
+                updateVersions();
                 updateVersion(readLatestVersion());
             } else {
                 updateVersion(version);
-                updateLatestVersion(); // since we're here already, also update the latest
+                updateVersions();
             }
         } catch (UnknownHostException e) {
             throw new Failed("host " + baseUrl.getHost() + " not found when accessing " + baseUrl);
@@ -164,19 +164,17 @@ class UpdateMetadata extends Plugin {
     }
 
     private String readLatestVersion()  {
-        MavenVersion cliVersion = toMavenVersion(this.cliVersion);
-        return LatestVersion.create(latestVersionFile)
-                            .latest(cliVersion)
-                            .toString();
+        ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFile);
+        return archetypesData.latestVersion().toString();
     }
 
     private URL resolve(String fileName) throws Exception {
         return new URL(baseUrl.toExternalForm() + "/" + fileName);
     }
 
-    private void updateLatestVersion() throws Exception {
+    private void updateVersions() throws Exception {
         // Always update
-        final URL url = resolve(LATEST_VERSION_FILE_NAME);
+        final URL url = resolve(VERSIONS_FILE_NAME);
         final Map<String, String> headers = commonHeaders();
         debugDownload(url, headers, false);
         final URLConnection connection = NetworkConnection.builder()
@@ -185,9 +183,9 @@ class UpdateMetadata extends Plugin {
                                                           .connectTimeout(connectTimeout)
                                                           .readTimeout(readTimeout)
                                                           .connect();
-        Files.copy(connection.getInputStream(), latestVersionFile, REPLACE_EXISTING);
+        Files.copy(connection.getInputStream(), versionsFile, REPLACE_EXISTING);
         if (Log.isDebug()) {
-            Log.debug("wrote %s to %s", readLatestVersion(), latestVersionFile);
+            Log.debug("wrote information about archetype versions to %s", versionsFile);
         }
     }
 

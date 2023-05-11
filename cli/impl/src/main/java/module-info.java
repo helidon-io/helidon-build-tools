@@ -28,6 +28,7 @@ module io.helidon.build.cli.impl {
     requires io.helidon.build.cli.common;
     requires io.helidon.build.devloop.common;
     requires jdk.unsupported;
+    requires io.helidon.build.common.xml;
     provides io.helidon.build.cli.harness.CommandRegistry
             with io.helidon.build.cli.impl.HelidonRegistry;
 }

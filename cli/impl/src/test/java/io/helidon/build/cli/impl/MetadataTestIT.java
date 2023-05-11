@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.TestInfo;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_MP;
 import static io.helidon.build.cli.impl.TestMetadata.HELIDON_BARE_SE;
 import static io.helidon.build.cli.impl.TestMetadata.LAST_UPDATE_FILE_NAME;
-import static io.helidon.build.cli.impl.TestMetadata.LATEST_FILE_NAME;
+import static io.helidon.build.cli.impl.TestMetadata.VERSIONS_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static io.helidon.build.common.Unchecked.unchecked;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -67,7 +67,7 @@ public class MetadataTestIT extends MetadataTestBase {
         LOG_RECORDER.clear();
         latestVersion = meta.latestVersion();
         assertThat(LOG_RECORDER.size(), is(1));
-        assertLinesContainingAll(1, "stale check", "is false", LATEST_FILE_NAME);
+        assertLinesContainingAll(1, "stale check", "is false", VERSIONS_FILE_NAME);
 
         // Check properties. Should not perform update.
 

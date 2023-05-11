@@ -18,8 +18,11 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
+import io.helidon.build.cli.common.ArchetypesData;
 import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
@@ -29,6 +32,7 @@ import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
+import static io.helidon.build.archetype.engine.v1.Prompter.promptYesNo;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
@@ -48,6 +52,7 @@ public final class InitCommand extends BaseCommand {
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
     private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
     private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
+    private static final String SHOW_ALL_VERSIONS_MESSAGE = "Show all versions";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -80,15 +85,15 @@ public final class InitCommand extends BaseCommand {
         // Make sure we have a valid Helidon version
         String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
+            ArchetypesData archetypesData = metadata.archetypesData();
             if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
                 assertSupportedVersion(helidonVersion);
             } else if (batch) {
-                helidonVersion = defaultHelidonVersion();
+                helidonVersion = archetypesData.defaultVersion();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                String defaultHelidonVersion = defaultHelidonVersion();
-                helidonVersion = prompt("Helidon version", defaultHelidonVersion, this::isSupportedVersion);
+                helidonVersion = promptHelidonVersion(archetypesData, true);
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
@@ -115,13 +120,30 @@ public final class InitCommand extends BaseCommand {
 
         if (!batch) {
             Prompter.displayLine("");
-            boolean startDev = Prompter.promptYesNo("Start development loop?", false);
+            boolean startDev = promptYesNo("Start development loop?", false);
             if (startDev) {
                 CommonOptions commonOptions = new CommonOptions(projectDir, this.commonOptions);
                 DevCommand devCommand = new DevCommand(commonOptions);
                 devCommand.execute(context);
             }
         }
+    }
+
+    private String promptHelidonVersion(ArchetypesData archetypesData, boolean showLatest) {
+        List<String> versions = archetypesData.versions();
+        if (showLatest) {
+            versions = archetypesData.latestMajorVersions();
+        }
+        versions.sort(Collections.reverseOrder());
+        int defaultOption = archetypesData.defaultVersionIndex(versions);
+        if (showLatest) {
+            versions.add(SHOW_ALL_VERSIONS_MESSAGE);
+        }
+        var result = versions.get(prompt("Helidon versions", versions, defaultOption));
+        if (showLatest && SHOW_ALL_VERSIONS_MESSAGE.equals(result)) {
+            return promptHelidonVersion(archetypesData, false);
+        }
+        return result;
     }
 
     private Path initProjectDir(String name) {
@@ -151,27 +173,6 @@ public final class InitCommand extends BaseCommand {
             failed("Too many existing directories named %s-NN", projectName);
         }
         return projectDir;
-    }
-
-    private String defaultHelidonVersion() {
-        // Check the system property first, primarily to support tests
-        String version = System.getProperty(HELIDON_VERSION_PROPERTY);
-        if (version == null) {
-            try {
-                version = metadata.latestVersion().toString();
-                Log.debug("Latest Helidon version found: %s", version);
-            } catch (Plugins.PluginFailedUnchecked e) {
-                versionLookupFailed(null);
-            } catch (Exception e) {
-                versionLookupFailed(e.getMessage());
-            }
-        }
-        return version;
-    }
-
-    private boolean isSupportedVersion(String helidonVersion) {
-        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
-        return isSupportedVersion(version, false);
     }
 
     private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {

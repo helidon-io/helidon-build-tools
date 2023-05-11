@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,16 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.File;
+
 import io.helidon.build.common.ProcessMonitor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
@@ -142,5 +146,61 @@ public class InitCommandTest extends InitCommandTestBase {
                 .flavor("MP")
                 .invokeInit()
                 .validateProject();
+    }
+
+    @Test
+    public void testInteractiveAllHelidonVersions() throws Exception {
+        String helidonProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
+        System.clearProperty(HELIDON_VERSION_PROPERTY);
+        String cliDataUrl = testResourcePath(getClass(), "versions")
+                .resolve("cli-data").toUri().toURL().toString();
+        String projectDir = uniqueProjectDir("quickstart-se").toString();
+
+        String output = TestUtils.execWithDirAndInput(
+                TARGET_DIR.toFile(),
+                new File(getClass().getResource("input-full-version-list.txt").getFile()),
+                "init",
+                "--reset",
+                "--url", cliDataUrl,
+                "--project", projectDir,
+                projectDir);
+
+        assertThat(output, containsString("Helidon versions"));
+        assertThat(output, containsString("(29) 2.0.0"));
+        assertThat(output, containsString("(1) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("Enter selection (default: 1):"));
+
+        if ( helidonProperty != null) {
+            System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
+        }
+    }
+
+    @Test
+    public void testInteractiveLatestHelidonVersions() throws Exception {
+        String helidonVersionProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
+        System.clearProperty(HELIDON_VERSION_PROPERTY);
+        String cliDataUrl = testResourcePath(getClass(), "versions")
+                .resolve("cli-data").toUri().toURL().toString();
+        String projectDir = uniqueProjectDir("quickstart-se").toString();
+
+        String output = TestUtils.execWithDirAndInput(
+                TARGET_DIR.toFile(),
+                new File(getClass().getResource("input-latest-version-list.txt").getFile()),
+                "init",
+                "--reset",
+                "--url", cliDataUrl,
+                "--project", projectDir,
+                projectDir);
+
+        assertThat(output, containsString("Helidon versions"));
+        assertThat(output, containsString("(3) 2.6.0"));
+        assertThat(output, containsString("(2) 3.1.2"));
+        assertThat(output, containsString("(1) 4.0.0-SNAPSHOT"));
+        assertThat(output, containsString("(4) Show all versions"));
+        assertThat(output, containsString("Enter selection (default: 1):"));
+
+        if ( helidonVersionProperty != null) {
+            System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
+        }
     }
 }
