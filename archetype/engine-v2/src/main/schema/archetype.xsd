@@ -393,50 +393,6 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="model-keyed-value-type">
-        <xs:annotation>
-            <xs:documentation source="version">2.0</xs:documentation>
-            <xs:documentation source="description">
-                Model value data type.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleContent>
-            <xs:extension base="a:keyed-value-type">
-                <xs:attribute name="override" type="xs:boolean"/>
-            </xs:extension>
-        </xs:simpleContent>
-    </xs:complexType>
-
-    <xs:complexType name="model-map-type">
-        <xs:annotation>
-            <xs:documentation source="version">2.0</xs:documentation>
-            <xs:documentation source="description">
-                Model map data type.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="value" type="a:model-keyed-value-type" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="list" type="a:keyed-list-type" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="map" type="a:model-keyed-map-type" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attributeGroup ref="a:if-group"/>
-        <xs:attributeGroup ref="a:order-group"/>
-    </xs:complexType>
-
-    <xs:complexType name="model-keyed-map-type">
-        <xs:annotation>
-            <xs:documentation source="version">2.0</xs:documentation>
-            <xs:documentation source="description">
-                Model keyed map data type.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="a:model-map-type">
-                <xs:attributeGroup ref="a:key-group"/>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
     <xs:complexType name="map-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
@@ -551,19 +507,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attributeGroup ref="a:if-group"/>
-    </xs:attributeGroup>
-
-    <xs:attributeGroup name="as-model-value-group">
-        <xs:attribute name="model" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    The value can be used as model value.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:simpleType name="required-string">
@@ -877,7 +821,6 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
-        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -907,7 +850,6 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
-        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -949,7 +891,6 @@
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
-        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -991,7 +932,6 @@
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:desc-group"/>
-        <xs:attributeGroup ref="a:as-model-value-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
@@ -1101,9 +1041,9 @@
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="value" type="a:model-keyed-value-type"/>
+            <xs:element name="value" type="a:keyed-value-type"/>
             <xs:element name="list" type="a:keyed-list-type"/>
-            <xs:element name="map" type="a:model-keyed-map-type"/>
+            <xs:element name="map" type="a:keyed-map-type"/>
         </xs:choice>
         <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
