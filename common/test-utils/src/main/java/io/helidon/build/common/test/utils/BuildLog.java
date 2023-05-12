@@ -93,19 +93,37 @@ public class BuildLog {
         }
         return diffs;
     }
-
     /**
      * Check that the lines within provided file are contained in this file.
      *
      * @param expectedFile  provided file
-     * @param fromIndex     the index to start from
      * @return  list of errors found
      * @throws IOException  if an error occurs during reading
      */
-    public List<String> containsLines(File expectedFile, int fromIndex) throws IOException {
+    public List<String> containsLines(File expectedFile) throws IOException {
+        return containsLines(Files.readAllLines(expectedFile.toPath()), 0);
+    }
+
+    /**
+     * Check that the provided lines are contained in this file.
+     *
+     * @param expectedFile  provided file
+     * @return  list of errors found
+     */
+    public List<String> containsLines(List<String> expectedFile) {
+        return containsLines(expectedFile, 0);
+    }
+
+    /**
+     * Check that the provided lines are contained in this file.
+     *
+     * @param expectedLines provided lines
+     * @param fromIndex     the index to start from
+     * @return  list of errors found
+     */
+    public List<String> containsLines(List<String> expectedLines, int fromIndex) {
         List<String> errors = new LinkedList<>();
-        String[] expectedLines = Files.readAllLines(expectedFile.toPath()).toArray(new String[0]);
-        long finalIndex = fromIndex + expectedFile.length();
+        long finalIndex = fromIndex + expectedLines.size();
         if (finalIndex > actualLines.length) {
             errors.add(String.format("Trying to read out of file, fromIndex + expectedLine : %d, log lines: %d",
                     finalIndex,
@@ -121,6 +139,29 @@ public class BuildLog {
             }
         }
         return errors;
+    }
+
+    /**
+     * Skip maven invocations from logs.
+     *
+     * @param skip number of invocation
+     */
+    public void skipInvocations(int skip) {
+        int counter = 0;
+        int actualIndex = 0;
+        while (actualIndex < actualLines.length && counter < skip) {
+            if (actualLines[actualIndex].contains("BUILD SUCCESS")
+                    || actualLines[actualIndex].contains("BUILD FAILURE")) {
+                counter++;
+            }
+            actualIndex++;
+            if (actualIndex == actualLines.length && counter < skip) {
+                break;
+            }
+        }
+        if (counter != skip) {
+            throw new IllegalStateException(String.format("Unable the skip %s times", skip));
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,51 +14,16 @@
  * limitations under the License.
  */
 
-def actualIndex = 0
-def actualLines = new File(basedir, "build.log").readLines()
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.archetype.ProjectsTestIT
 
-// skip the first five invocations
-def skipIx = 0
-for (; actualIndex < actualLines.size() && skipIx < 5; actualIndex++ ) {
-    if (actualLines[actualIndex].contains("BUILD SUCCESS")
-        || actualLines[actualIndex].contains("BUILD FAILURE")) {
-        skipIx++
-    }
-}
-
-if (skipIx != 5) {
-    throw new AssertionError("Unable to skip the first five invocations")
-}
-
-def findElementsInLine(actualIndex, actualLines, fname) {
-    def expectedLines = new File(basedir, fname).readLines()
-    def found = false
-    def errors = ["build.log does not contain ${fname}"]
-    while (!found && actualIndex < actualLines.size() - 1) {
-        // seek
-        for (; actualIndex < actualLines.size(); actualIndex++) {
-            if (actualLines[actualIndex].contains("Validation failed")
-                    && actualLines[actualIndex].contains(expectedLines[0])) {
-                found = true
-                break
-            }
-        }
-    }
-    assertTrue(found, errors)
-}
-
-def assertTrue(found, errors) {
-    if (!found) {
-        throw new AssertionError("""
-
-------------------------------------------------------------------------
-${errors.join('\n')}
-------------------------------------------------------------------------
-
-""")
-    }
-}
-
-findElementsInLine(actualIndex, actualLines, "expected1.log")
-findElementsInLine(actualIndex, actualLines, "expected2.log")
-findElementsInLine(actualIndex, actualLines, "expected3.log")
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "test6", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("archetype-it-test6")
+        .suiteDisplayName("Archetype Maven Plugin Integration Test 6")
+        .build()
+        .launch()

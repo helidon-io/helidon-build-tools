@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,19 @@
  */
 package io.helidon.build.maven.archetype;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 
 import org.junit.jupiter.params.ParameterizedTest;
 
+import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
@@ -79,6 +82,28 @@ final class ProjectsTestIT {
         projectDir = projectsDir(basedir, "module3");
         assertProjectCount(projectDir, 1);
         assertProjectShape(projectDir, "rectangle");
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test5(String basedir) throws IOException {
+        BuildLog log = new BuildLog(new File(basedir, "build.log"));
+        List<String> diffs = log.containsLines(
+                List.of("[ERROR] Regular expression 'foo' at validation 'dummyregex' is not JavaScript compatible"));
+        assertDiffs(diffs);
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test6(String basedir) throws IOException {
+        BuildLog log = new BuildLog(new File(basedir, "build.log"));
+        log.skipInvocations(5);
+        List<String> diffs = log.containsLines(new File(basedir, "expected1.log"));
+        assertDiffs(diffs);
+        diffs = log.containsLines(new File(basedir, "expected2.log"));
+        assertDiffs(diffs);
+        diffs = log.containsLines(new File(basedir, "expected3.log"));
+        assertDiffs(diffs);
     }
 
     private static Path projectsDir(String baseDir) {

@@ -16,6 +16,7 @@
 package io.helidon.build.maven.stager;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,6 +87,86 @@ public class ProjectsTestIT {
                 "    ],\n" +
                 "    \"latest\": \"4.0.0-SNAPSHOT\"\n" +
                 "}\n");
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test3(String basedir) {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertExist(stageDir);
+        assertExist(stageDir.resolve("helidon-bare-mp-2.0.0-RC1.jar"));
+        assertExist(stageDir.resolve("helidon-bare-se-2.0.0-RC1.jar"));
+        assertExist(stageDir.resolve("archetype-catalog.xml"));
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test4(String basedir) {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertExist(stageDir);
+        assertExist(stageDir.resolve("cli/2.0.0-RC1/darwin/helidon"));
+        assertExist(stageDir.resolve("cli/2.0.0-M4/linux/helidon"));
+        assertExist(stageDir.resolve("cli/2.0.0-M4/darwin/helidon"));
+        assertExist(stageDir.resolve("cli/2.0.0-RC1/linux/helidon"));
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test5(String basedir) throws IOException {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertExist(stageDir);
+
+        Path file1 = stageDir.resolve("cli-data/latest");
+        assertExist(file1);
+        assertEquals("2.0.0-RC1", Files.readString(file1));
+
+        Path file2 = stageDir.resolve("CNAME");
+        assertExist(file2);
+        assertEquals("helidon.io", Files.readString(file2));
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test6(String basedir) {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertExist(stageDir);
+
+        Path file1 = stageDir.resolve("cli/latest");
+        assertEquals(symlinkTarget(file1), "2.0.0-RC1");
+
+        Path file2 = stageDir.resolve("docs/latest");
+        assertEquals(symlinkTarget(file2), "1.4.4");
+
+        Path file3 = stageDir.resolve("docs/v1");
+        assertEquals(symlinkTarget(file3), "1.4.4");
+
+        Path file4 = stageDir.resolve("docs/v2");
+        assertEquals(symlinkTarget(file4), "2.0.0-RC1");
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test7(String basedir) {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertExist(stageDir);
+
+        Path docsDir = stageDir.resolve("docs");
+        assertExist(docsDir);
+        assertExist(docsDir.resolve("1.4.0"));
+        assertExist(docsDir.resolve("1.4.1"));
+        assertExist(docsDir.resolve("1.4.2"));
+        assertExist(docsDir.resolve("1.4.3"));
+        assertExist(docsDir.resolve("1.4.4"));
+        assertExist(docsDir.resolve("2.0.0-RC1"));
+    }
+
+    private String symlinkTarget(Path file) {
+        try {
+            assertThat(file + " is not a symbolic link", Files.isSymbolicLink(file), is(true));
+            return Files.readSymbolicLink(file).toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void assertExist(Path path) {

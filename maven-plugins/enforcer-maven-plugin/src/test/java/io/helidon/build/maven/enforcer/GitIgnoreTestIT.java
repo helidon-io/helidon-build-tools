@@ -36,7 +36,7 @@ public class GitIgnoreTestIT {
         BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
         int index = buildLog.indexOf("BUILD SUCCESS", 0);
         assertThat(index > 0, is(true));
-        List<String> diffs = buildLog.containsLines(new File(basedir, "expected.log"), 0);
+        List<String> diffs = buildLog.containsLines(new File(basedir, "expected.log"));
         assertDiffs(diffs);
     }
 }

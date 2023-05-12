@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import java.nio.file.Files
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.stager.ProjectsTestIT
 
-static void assertExists(file) {
-    if (!Files.exists(file)) {
-        throw new AssertionError((Object) "${file.toString()} does not exist")
-    }
-}
-
-def stageDir = basedir.toPath().resolve("target/stage")
-assertExists(stageDir)
-
-assertExists(stageDir.resolve("helidon-bare-mp-2.0.0-RC1.jar"))
-assertExists(stageDir.resolve("helidon-bare-se-2.0.0-RC1.jar"))
-assertExists(stageDir.resolve("archetype-catalog.xml"))
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "test3", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("stager-copy-artifact-it-test")
+        .suiteDisplayName("Stager Copy Artifact Integration Test")
+        .build()
+        .launch()
