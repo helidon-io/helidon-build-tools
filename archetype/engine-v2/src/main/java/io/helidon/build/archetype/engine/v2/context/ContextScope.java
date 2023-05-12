@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,12 +142,33 @@ public interface ContextScope extends ContextRegistry {
      * Get or create a scope.
      *
      * @param path   context path, see {@link ContextPath}
+     * @param model  {@code true} if the value should be used as model value
      * @param global {@code true} if the scope should be global, {@code false} if local.
      * @return scope
      */
-    default ContextScope getOrCreate(String path, boolean global) {
-        return getOrCreate(path, global ? Visibility.GLOBAL : Visibility.LOCAL);
+    default ContextScope getOrCreate(String path, boolean model, boolean global) {
+        return getOrCreate(path, model, global ? Visibility.GLOBAL : Visibility.LOCAL);
     }
+
+    /**
+     * Get or create a scope.
+     *
+     * @param path   context path, see {@link ContextPath}
+     * @param global {@code true} if the scope should be global, {@code false} if local.
+     */
+    default void getOrCreate(String path, boolean global) {
+        getOrCreate(path, false, global ? Visibility.GLOBAL : Visibility.LOCAL);
+    }
+
+    /**
+     * Get or create a scope.
+     *
+     * @param path       context path, see {@link ContextPath}
+     * @param model can be used as a model value
+     * @param visibility visibility
+     * @return scope
+     */
+    ContextScope getOrCreate(String path, boolean model, Visibility visibility);
 
     /**
      * Get or create a scope.
@@ -158,11 +179,17 @@ public interface ContextScope extends ContextRegistry {
      */
     ContextScope getOrCreate(String path, Visibility visibility);
 
-
     /**
      * Clear the scope.
      */
     void clear();
+
+    /**
+     * Test if this node should be used as model value.
+     *
+     * @return {@code true} if this node should be used as a model value
+     */
+    boolean isModel();
 
     /**
      * Visit the edges.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ final class ModelResolver implements Model.Visitor<Context> {
         String content = evaluate(value, context);
 
         // value is a leaf-node, thus we are not updating the head
-        head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template()));
+        head.add(new MergedModel.Value(head, value.key(), value.order(), content, value.template(), value.isOverride()));
         return Node.VisitResult.CONTINUE;
     }
 

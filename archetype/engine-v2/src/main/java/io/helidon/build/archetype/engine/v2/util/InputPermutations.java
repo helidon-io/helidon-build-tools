@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -301,7 +301,7 @@ public class InputPermutations {
         }
 
         private VisitResult visit(DeclaredInput input, Context context) {
-            ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
+            ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isModel(), input.isGlobal());
             VisitResult result = onVisitInput(input, nextScope, context);
             if (result == null) {
                 String path = nextScope.path();
@@ -362,13 +362,13 @@ public class InputPermutations {
         @Override
         public VisitResult visitPreset(Preset preset, Void arg) {
             // Use local var instead of preset to allow overrides
-            context.putValue(preset.path(), preset.value(), ValueKind.LOCAL_VAR);
+            context.putValue(preset.path(), preset.value(), preset.isModel(), ValueKind.LOCAL_VAR);
             return VisitResult.CONTINUE;
         }
 
         @Override
         public VisitResult visitVariable(Variable variable, Void arg) {
-            context.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+            context.putValue(variable.path(), variable.value(), variable.isModel(), ValueKind.LOCAL_VAR);
             return VisitResult.CONTINUE;
         }
 
@@ -438,7 +438,7 @@ public class InputPermutations {
             stack.push(Lists.of());
             if (input0 instanceof DeclaredInput) {
                 DeclaredInput input = (DeclaredInput) input0;
-                context.pushScope(input.id(), input.isGlobal());
+                context.pushScope(input.id(), input.isModel(), input.isGlobal());
                 if (input instanceof Input.Enum) {
                     Input.Enum enumInput = (Input.Enum) input;
                     List<Input.Option> options = enumInput.options();

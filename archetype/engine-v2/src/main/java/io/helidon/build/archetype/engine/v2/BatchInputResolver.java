@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class BatchInputResolver extends InputResolver {
     }
 
     private VisitResult visit(DeclaredInput input, Context context) {
-        ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isGlobal());
+        ContextScope nextScope = context.scope().getOrCreate(input.id(), input.isModel(), input.isGlobal());
         VisitResult result = onVisitInput(input, nextScope, context);
         if (result == null) {
             Value defaultValue = defaultValue(input, nextScope, context);

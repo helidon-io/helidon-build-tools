@@ -169,7 +169,9 @@ public class MustacheSupport implements TemplateSupport {
                 default:
                     if (scope.node().get(name) == null) {
                         ContextValue value = context.getValue(name);
-                        return value != null ? value.unwrap().toString() : null;
+                        if (value != null && value.scope().isModel()) {
+                            return value.unwrap().toString();
+                        }
                     }
                     return null;
             }

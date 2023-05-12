@@ -62,13 +62,13 @@ public final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitPreset(Preset preset, Context ctx) {
-        ctx.putValue(preset.path(), preset.value(), ValueKind.PRESET);
+        ctx.putValue(preset.path(), preset.value(), preset.isModel(), ValueKind.PRESET);
         return VisitResult.CONTINUE;
     }
 
     @Override
     public VisitResult visitVariable(Variable variable, Context ctx) {
-        ctx.putValue(variable.path(), variable.value(), ValueKind.LOCAL_VAR);
+        ctx.putValue(variable.path(), variable.value(), variable.isModel(), ValueKind.LOCAL_VAR);
         return VisitResult.CONTINUE;
     }
 
