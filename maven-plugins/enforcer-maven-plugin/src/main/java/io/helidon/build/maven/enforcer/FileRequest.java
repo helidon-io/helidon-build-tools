@@ -32,6 +32,17 @@ public class FileRequest implements Comparable<FileRequest> {
     private final String suffix;
     private final String lastModifiedYear;
 
+    @Override
+    public String toString() {
+        return "FileRequest{" +
+                "path=" + path +
+                ", relativePath='" + relativePath + '\'' +
+                ", fileName='" + fileName + '\'' +
+                ", suffix='" + suffix + '\'' +
+                ", lastModifiedYear='" + lastModifiedYear + '\'' +
+                '}';
+    }
+
     private FileRequest(Path path, String relativePath, String fileName, String suffix, String lastModifiedYear) {
         this.path = path;
         this.relativePath = relativePath;

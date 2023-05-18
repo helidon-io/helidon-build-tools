@@ -79,10 +79,13 @@ public class FileFinder {
         Set<FileRequest> foundFiles;
         Set<FileRequest> locallyModified;
 
-        if (useGit) {
-            locallyModified = GitCommands.locallyModified(gitRepoDir, basePath, currentYear);
-            foundFiles = new HashSet<>(locallyModified);
+        // Tracks list of files that have been renamed but not yet committed. This
+        // ensures we can reliably ignore the old file name. See issue 661
+        List<Path> renamed = new ArrayList<>();
 
+        if (useGit) {
+            locallyModified = GitCommands.locallyModified(gitRepoDir, basePath, currentYear, renamed);
+            foundFiles = new HashSet<>(locallyModified);
             foundFiles.addAll(GitCommands.gitTracked(gitRepoDir, basePath));
         } else {
             foundFiles = findAllFiles(gitRepoDir, basePath);
@@ -90,7 +93,7 @@ public class FileFinder {
         }
 
         List<FileRequest> fileRequests = foundFiles.stream()
-                .filter(file -> isValid(file, excludes))
+                .filter(file -> isValid(file, excludes, renamed))
                 .collect(Collectors.toList());
 
         Set<String> filteredLocallyModified = exclude(excludes, locallyModified);
@@ -148,7 +151,7 @@ public class FileFinder {
                 .collect(Collectors.toSet());
     }
 
-    private boolean isValid(FileRequest file, List<FileMatcher> excludes) {
+    private boolean isValid(FileRequest file, List<FileMatcher> excludes, List<Path> renamedPaths) {
 
         // file may have been deleted from GIT (or locally)
         if (!Files.exists(file.path())) {
@@ -161,6 +164,11 @@ public class FileFinder {
                 Log.debug("Excluding " + file.relativePath());
                 return false;
             }
+        }
+
+        if (renamedPaths.contains(file.path())) {
+            Log.debug("File " + file.relativePath() + " has been renamed, ignoring.");
+            return false;
         }
 
         return true;

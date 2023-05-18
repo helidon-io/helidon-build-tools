@@ -30,6 +30,16 @@ public class FoundFiles {
     private final Set<String> locallyModified;
     private final boolean useGit;
 
+    @Override
+    public String toString() {
+        return "FoundFiles{" +
+                "gitRepoDir=" + gitRepoDir +
+                ", locallyModified=" + locallyModified +
+                ", useGit=" + useGit +
+                ", fileRequests=" + fileRequests +
+                '}';
+    }
+
     private FoundFiles(Path gitRepoDir, List<FileRequest> fileRequests, Set<String> locallyModified, boolean useGit) {
         this.gitRepoDir = gitRepoDir;
         this.fileRequests = fileRequests;
