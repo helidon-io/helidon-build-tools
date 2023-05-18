@@ -88,6 +88,7 @@
   },
   "scripts": {
     "vscode:prepublish": "gulp build && webpack --mode production",
+    "preinstall": "npx npm-force-resolutions",
     "package": "vsce package -o target/vscode-helidon.vsix",
     "webpack": "webpack --mode development",
     "webpack-dev": "webpack --mode development --watch",
@@ -135,5 +136,8 @@
     "vscode-uri": "^3.0.1",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1"
+  },
+  "resolutions": {
+    "xml2js": ">=0.5.0"
   }
 }
