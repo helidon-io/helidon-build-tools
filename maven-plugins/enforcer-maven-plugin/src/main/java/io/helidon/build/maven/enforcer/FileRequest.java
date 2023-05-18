@@ -34,13 +34,13 @@ public class FileRequest implements Comparable<FileRequest> {
 
     @Override
     public String toString() {
-        return "FileRequest{" +
-                "path=" + path +
-                ", relativePath='" + relativePath + '\'' +
-                ", fileName='" + fileName + '\'' +
-                ", suffix='" + suffix + '\'' +
-                ", lastModifiedYear='" + lastModifiedYear + '\'' +
-                '}';
+        return "FileRequest{"
+                + "path=" + path
+                + ", relativePath='" + relativePath + '\''
+                + ", fileName='" + fileName + '\''
+                + ", suffix='" + suffix + '\''
+                + ", lastModifiedYear='" + lastModifiedYear + '\''
+                + '}';
     }
 
     private FileRequest(Path path, String relativePath, String fileName, String suffix, String lastModifiedYear) {

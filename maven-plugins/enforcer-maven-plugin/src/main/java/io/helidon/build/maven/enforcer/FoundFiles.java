@@ -32,12 +32,12 @@ public class FoundFiles {
 
     @Override
     public String toString() {
-        return "FoundFiles{" +
-                "gitRepoDir=" + gitRepoDir +
-                ", locallyModified=" + locallyModified +
-                ", useGit=" + useGit +
-                ", fileRequests=" + fileRequests +
-                '}';
+        return "FoundFiles{"
+                + "gitRepoDir=" + gitRepoDir
+                + ", locallyModified=" + locallyModified
+                + ", useGit=" + useGit
+                + ", fileRequests=" + fileRequests
+                + '}';
     }
 
     private FoundFiles(Path gitRepoDir, List<FileRequest> fileRequests, Set<String> locallyModified, boolean useGit) {
