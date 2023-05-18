@@ -17,6 +17,7 @@
 package io.helidon.build.maven.enforcer;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -145,8 +146,21 @@ public class EnforcerMojo extends AbstractMojo {
             return;
         }
 
-        Path path = baseDirectory.toPath().toAbsolutePath();
-        Path rootDir = Paths.get(session.getExecutionRootDirectory());
+        Path path;
+        Path rootDir;
+        try {
+            // We need  to canonicalize to ensure that on MacOS case insensitive filesystems
+            // we don't end up with the same file path having different (and therefore mismatching)
+            // cases. See issue 661
+            if (repositoryRoot != null) {
+                repositoryRoot = repositoryRoot.getCanonicalFile();
+            }
+            baseDirectory = baseDirectory.getCanonicalFile();
+            path = baseDirectory.toPath().toRealPath();
+            rootDir = Paths.get(session.getExecutionRootDirectory()).toRealPath();
+        } catch (IOException ex) {
+            throw new MojoExecutionException("Could not canonicalize base directories ", ex);
+        }
 
         if (!path.equals(rootDir) && path.startsWith(rootDir)) {
             // this is not the root dir, and the root dir is my parent

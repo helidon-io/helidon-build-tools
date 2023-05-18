@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,9 +140,10 @@ public final class GitCommands {
      * @param root the root directory
      * @param checkPath directory of interest
      * @param currentYear current year
+     * @param renamed a list to which this method adds the original paths of files that were renamed
      * @return set of files in the directory of interest that were locally modified
      */
-    static Set<FileRequest> locallyModified(Path root, Path checkPath, String currentYear) {
+    static Set<FileRequest> locallyModified(Path root, Path checkPath, String currentYear, List<Path> renamed) {
 
         Set<String> changedFiles = multiLine(root,
                                              "get locally modified files",
@@ -161,6 +162,11 @@ public final class GitCommands {
                                                      if (arrow < 0) {
                                                          throw new EnforcerException("Cannot parse renamed status line. " + s);
                                                      }
+
+                                                     // We keep track of old names so we can reliably ignore them
+                                                     String oldName = fileLocation.substring(0, arrow).trim();
+                                                     renamed.add(Path.of(root.toString(), oldName));
+
                                                      fileLocation = fileLocation.substring(arrow + 4).trim();
                                                  }
                                                  return fileLocation;
