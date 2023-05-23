@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ pipeline {
       stages {
         stage('build') {
           environment {
+            NPM_CONFIG_REGISTRY = credentials('npm-registry')
             GITHUB_SSH_KEY = credentials('helidonrobot-github-ssh-private-key')
             MAVEN_SETTINGS_FILE = credentials('helidonrobot-maven-settings-ossrh')
             GPG_PUBLIC_KEY = credentials('helidon-gpg-public-key')
