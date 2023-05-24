@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@
 
     <properties>
         <!-- npm/node -->
-        <version.nodejs>v14.16.1</version.nodejs>
-        <version.npm>6.14.12</version.npm>
+        <version.nodejs>v16.20.0</version.nodejs>
+        <version.npm>8.19.4</version.npm>
         <npm.download.root>https://registry.npmjs.org/npm/-/</npm.download.root>
         <npm.proxy.auto>false</npm.proxy.auto>
     </properties>
