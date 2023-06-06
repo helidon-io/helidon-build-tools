@@ -20,6 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -120,17 +123,23 @@ public class CliDistributionTest {
     }
 
     private void runCreateProjectTest(String cliExecutable) throws IOException {
-        Path dir = Files.createTempDirectory("project");
-        Process process = new ProcessBuilder()
-                .directory(dir.toFile())
-                .command(cliExecutable, "init", "--batch")
-                .start();
-        String result = String.join("", InputStreams.toLines(process.getInputStream()));
-        LOGGER.info("errors - " + InputStreams.toLines(process.getErrorStream()));
-        process.destroy();
-        LOGGER.info("exitValue - " + process.exitValue());
-        LOGGER.info(result);
-        assertThat(result, containsString("Switch directory to"));
-        assertThat(list(dir).size(), is(not(0)));
+        try {
+            Path dir = Files.createTempDirectory("project");
+            Process process = new ProcessBuilder()
+                    .directory(dir.toFile())
+                    .command(cliExecutable, "init", "--batch")
+                    .start()
+                    .onExit()
+                    .get(5, TimeUnit.MINUTES);
+            String result = String.join("", InputStreams.toLines(process.getInputStream()));
+            LOGGER.info("errors - " + InputStreams.toLines(process.getErrorStream()));
+            process.destroy();
+            LOGGER.info("exitValue - " + process.exitValue());
+            LOGGER.info(result);
+            assertThat(result, containsString("Switch directory to"));
+            assertThat(list(dir).size(), is(not(0)));
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
