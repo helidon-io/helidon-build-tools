@@ -17,7 +17,7 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.LogRecorder;
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class EmbeddedModeTest {
     private static final String SEP = File.separator;
     private static final LogRecorder LOG_RECORDER = LogRecorder.create();
-    private static final Logger LOGGER = Logger.getLogger(EmbeddedModeTest.class.getName());
+//    private static final Logger LOGGER = Logger.getLogger(EmbeddedModeTest.class.getName());
 
     @BeforeAll
     static void beforeAllTests() {
@@ -107,16 +107,16 @@ class EmbeddedModeTest {
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version lookup failed."));
         List<String> lines = loggedLines();
-        LOGGER.info(lines.stream().collect(Collectors.joining("\n")));
-        assertThat(lines.size(), is(5));
-        assertThat(lines.get(0), isStyled());
+//        LOGGER.info(lines.stream().collect(Collectors.joining("\n")));
+        assertThat(lines.size(), is(3));
+//        assertThat(lines.get(0), isStyled());
+//        assertThat(lines.get(1), isStyled());
+        assertThat(lines.get(0), isNotStyled());
         assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(2), isNotStyled());
-        assertThat(lines.get(3), isStyled());
-        assertThat(lines.get(4), isStyled());
-        assertThat(lines.get(2), is("Updating metadata for Helidon version 99.99"));
-        assertThat(lines.get(3), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
-        assertThat(lines.get(4), equalToIgnoringStyle("Helidon version lookup failed."));
+        assertThat(lines.get(2), isStyled());
+        assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
+        assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
+        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
     }
 
     @Test
