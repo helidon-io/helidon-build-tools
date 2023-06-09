@@ -109,11 +109,11 @@ class EmbeddedModeTest {
         List<String> lines = loggedLines();
 //        LOGGER.info(lines.stream().collect(Collectors.joining("\n")));
         assertThat(lines.size(), is(3));
-//        assertThat(lines.get(0), isStyled());
-//        assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(0), isNotStyled());
+        assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(2), isStyled());
+        assertThat(lines.get(2), isStyled());//isNotStyled()
+//        assertThat(lines.get(3), isStyled());
+//        assertThat(lines.get(4), isStyled());
         assertThat(lines.get(0), is("Updating metadata for Helidon version 99.99"));
         assertThat(lines.get(1), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
         assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
