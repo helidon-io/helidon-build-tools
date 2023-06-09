@@ -205,8 +205,15 @@ public final class InitCommand extends BaseCommand {
         return false;
     }
 
-    private void assertSupportedVersion(String helidonVersion) {
-        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
+    private void assertSupportedVersion(String helidonVersion) throws Metadata.UpdateFailed {
+        HelidonVersion providedVersion = HelidonVersion.of(helidonVersion);
+        if (providedVersion.equals(HelidonVersion.INVALID_VERSION)) {
+            failed(VERSION_NOT_FOUND_MESSAGE, helidonVersion);
+        }
+        MavenVersion version = providedVersion.mavenVersionFromList(metadata().archetypesData().versions());
+        if (version == null) {
+            failed(VERSION_LOOKUP_FAILED, helidonVersion);
+        }
         require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
     }
 
