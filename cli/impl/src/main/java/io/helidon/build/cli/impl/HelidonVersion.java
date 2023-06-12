@@ -32,13 +32,14 @@ class HelidonVersion {
     private static final Pattern MAVEN_PATTERN =
             Pattern.compile("^(?<major>[0-9]+)(?<minor>\\.[0-9]+)?(?<micro>\\.[0-9]+(-[0-9a-z]+)*)?(?<latest>-LATEST)?$",
                     Pattern.CASE_INSENSITIVE);
-    private static final VersionRange versionRange = VersionRange.createFromVersionSpec("[0,)");
+    private static final VersionRange VERSION_RANGE = VersionRange.createFromVersionSpec("[0,)");
     private final Integer major;
     private final Integer minor;
     private final String micro;
     private final boolean latest;
 
-    static HelidonVersion INVALID_VERSION = new HelidonVersion(null, null, null, false);
+    //CHECKSTYLE:OFF
+    static final HelidonVersion INVALID_VERSION = new HelidonVersion(null, null, null, false);
 
     HelidonVersion(Integer major, Integer minor, String micro, boolean latest) {
         this.major = major;
@@ -86,13 +87,13 @@ class HelidonVersion {
                 .filter(version -> pattern.matcher(version).matches())
                 .map(MavenVersion::toMavenVersion)
                 .collect(Collectors.toList());
-        return versionRange.matchVersion(mavenVersions);
+        return VERSION_RANGE.matchVersion(mavenVersions);
     }
 
     private Pattern pattern() {
-        String patternBuilder = major.toString() + "\\." +
-                (minor != null ? minor.toString() : ".+\\.") +
-                (micro != null ? "\\." + micro : ".+");
+        String patternBuilder = major.toString() + "\\."
+                + (minor != null ? minor.toString() : ".+\\.")
+                + (micro != null ? "\\." + micro : ".+");
         return Pattern.compile(patternBuilder, Pattern.CASE_INSENSITIVE);
     }
 
