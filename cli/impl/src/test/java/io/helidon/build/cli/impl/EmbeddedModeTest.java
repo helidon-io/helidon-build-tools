@@ -100,13 +100,13 @@ class EmbeddedModeTest {
     void testStyledExceptionThrown() {
         Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), is("Helidon version lookup failed."));
+        assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
         List<String> lines = loggedLines();
         assertThat(lines.size(), is(3));
         assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
         assertThat(lines.get(2), isStyled());
-        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version lookup failed."));
+        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version 99.99 not found."));
     }
 
     @Test

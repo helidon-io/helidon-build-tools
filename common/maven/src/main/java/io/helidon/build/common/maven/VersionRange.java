@@ -134,6 +134,20 @@ public class VersionRange {
     }
 
     /**
+     * Create a version range from a string representation of maven version (wildcard "LATEST" can be used in the version).
+     *
+     * @param version version
+     * @return version range
+     */
+    public static VersionRange wildcard(String version) {
+        if (version.endsWith("-latest") || version.endsWith("-LATEST")) {
+            return createFromVersionSpec("[" + version.substring(0, version.length() - 7) + ",)");
+        } else {
+            return createFromVersionSpec("[" + version + "]");
+        }
+    }
+
+    /**
      * Resolve the latest of the given versions.
      *
      * @param versions versions
