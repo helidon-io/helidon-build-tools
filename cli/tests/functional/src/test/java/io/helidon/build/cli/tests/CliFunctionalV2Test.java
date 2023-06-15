@@ -216,7 +216,7 @@ public class CliFunctionalV2Test {
                     .init()
                     .start(5, TimeUnit.MINUTES);
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("Helidon version lookup failed."));
+            assertThat(e.getMessage(), containsString("Helidon version 0.0.0 not found."));
             return;
         }
         assertThat("Exception should have been thrown because of wrong helidon version.", false);
