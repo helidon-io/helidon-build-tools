@@ -27,20 +27,19 @@ import io.helidon.build.cli.harness.Command;
 import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.logging.Log;
-import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
+import io.helidon.build.common.maven.VersionRange;
 
 import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.archetype.engine.v1.Prompter.promptYesNo;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
-import static io.helidon.build.common.Requirements.require;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
-import static io.helidon.build.common.ansi.AnsiTextStyles.ItalicRed;
 
 /**
  * The {@code init} command.
@@ -88,7 +87,7 @@ public final class InitCommand extends BaseCommand {
             ArchetypesData archetypesData = metadata.archetypesData();
             if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
                 helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
-                assertSupportedVersion(helidonVersion);
+                resolveHelidonVersion(helidonVersion);
             } else if (batch) {
                 helidonVersion = archetypesData.defaultVersion();
                 Log.info("Using Helidon version " + helidonVersion);
@@ -97,7 +96,7 @@ public final class InitCommand extends BaseCommand {
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
-            assertSupportedVersion(helidonVersion);
+            resolveHelidonVersion(helidonVersion);
         }
 
         Prompter.displayLine("");
@@ -175,45 +174,14 @@ public final class InitCommand extends BaseCommand {
         return projectDir;
     }
 
-    private boolean isSupportedVersion(MavenVersion version, boolean notFoundWillFail) {
-        try {
-            metadata.assertVersionIsAvailable(version);
-            return true;
-        } catch (IllegalArgumentException | Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
-            String message = e.getMessage();
-            boolean messageLogged = LogLevel.isDebug() && e instanceof Plugins.PluginFailedUnchecked;
-            if (!message.contains(NOT_FOUND_STATUS_MESSAGE)) {
-                versionLookupFailed(messageLogged ? null : message);
-            }
-            if (!messageLogged) {
-                Log.debug(message);
-            }
-            if (notFoundWillFail) {
-                Log.info(VERSION_NOT_FOUND_MESSAGE, version);
-            } else {
-                Log.info();
-                Log.info(VERSION_NOT_FOUND_MESSAGE, version);
-                Log.info(AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
-                Log.info();
-            }
-            return false;
-        } catch (Exception e) {
-            Log.info(ItalicRed.apply(e.getMessage()));
-            failed(VERSION_LOOKUP_FAILED);
+    private String resolveHelidonVersion(String helidonVersion) throws Metadata.UpdateFailed {
+        ArchetypesData data = metadata().archetypesData();
+        MavenVersion resolved = VersionRange.wildcard(helidonVersion)
+                .matchVersion(Lists.map(data.versions(), MavenVersion::toMavenVersion));
+        if (resolved != null) {
+            return resolved.toString();
         }
-
-        return false;
-    }
-
-    private void assertSupportedVersion(String helidonVersion) {
-        MavenVersion version = MavenVersion.toMavenVersion(helidonVersion);
-        require(isSupportedVersion(version, true), AVAILABLE_VERSIONS_MESSAGE, HELIDON_RELEASES_URL);
-    }
-
-    private void versionLookupFailed(String errorMessage) {
-        if (errorMessage != null) {
-            Log.info(ItalicRed.apply(errorMessage));
-        }
-        failed(VERSION_LOOKUP_FAILED);
+        failed(VERSION_NOT_FOUND_MESSAGE, helidonVersion);
+        return null;
     }
 }

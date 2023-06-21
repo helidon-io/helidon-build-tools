@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.impl.TestUtils.containsStringIgnoringStyle;
 import static io.helidon.build.cli.impl.TestUtils.equalToIgnoringStyle;
 import static io.helidon.build.cli.impl.TestUtils.isNotStyled;
 import static io.helidon.build.cli.impl.TestUtils.isStyled;
@@ -42,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for embedded mode.
  */
 class EmbeddedModeTest {
-    private static final String SEP = File.separator;
     private static final LogRecorder LOG_RECORDER = LogRecorder.create();
 
     @BeforeAll
@@ -103,17 +100,13 @@ class EmbeddedModeTest {
     void testStyledExceptionThrown() {
         Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), is("Helidon version lookup failed."));
+        assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
         List<String> lines = loggedLines();
-        assertThat(lines.size(), is(5));
+        assertThat(lines.size(), is(3));
         assertThat(lines.get(0), isStyled());
         assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(2), isNotStyled());
-        assertThat(lines.get(3), isStyled());
-        assertThat(lines.get(4), isStyled());
-        assertThat(lines.get(2), is("Updating metadata for Helidon version 99.99"));
-        assertThat(lines.get(3), containsStringIgnoringStyle("jabberwocky" + SEP + "99.99" + SEP + "cli-data.zip"));
-        assertThat(lines.get(4), equalToIgnoringStyle("Helidon version lookup failed."));
+        assertThat(lines.get(2), isStyled());
+        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version 99.99 not found."));
     }
 
     @Test
