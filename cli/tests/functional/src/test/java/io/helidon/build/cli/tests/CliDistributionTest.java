@@ -76,11 +76,10 @@ public class CliDistributionTest {
         //Ensure main directory are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/lib"));
-        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/libs"));
         //Ensure main files are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon.bat"));
-        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/helidon.jar"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/helidon-cli.jar"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/LICENSE.txt"));
     }
 

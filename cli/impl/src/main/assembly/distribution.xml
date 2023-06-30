@@ -28,7 +28,7 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/libs</directory>
-            <outputDirectory>/lib/libs</outputDirectory>
+            <outputDirectory>/lib</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
@@ -36,7 +36,7 @@
     </fileSets>
     <files>
         <file>
-            <source>${project.build.directory}/helidon.jar</source>
+            <source>${project.build.directory}/helidon-cli.jar</source>
             <outputDirectory>/lib</outputDirectory>
         </file>
         <file>

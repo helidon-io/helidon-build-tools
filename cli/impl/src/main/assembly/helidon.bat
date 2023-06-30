@@ -23,7 +23,7 @@ if "%JAVACMD%"=="" set JAVACMD=java
 @REM Find script base directory
 for %%i in ("%~dp0..") do set "BASEDIR=%%~fi"
 
-set JARFILE=%BASEDIR%\lib\helidon.jar
+set JARFILE=%BASEDIR%\lib\helidon-cli.jar
 set ARGS=
 
 for %%x in (%*) do (
