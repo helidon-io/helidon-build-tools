@@ -168,7 +168,7 @@ public class InitCommandTest extends InitCommandTestBase {
         assertThat(output, containsString("Helidon versions"));
         assertThat(output, containsString("(28) 2.0.0"));
         assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
-        assertThat(output, containsString("Enter selection (default: 1):"));
+        assertThat(output, containsString("Enter selection (default: 29):"));
 
         if ( helidonProperty != null) {
             System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);

@@ -119,7 +119,11 @@ public class ArchetypesDataLoader {
             if (name != null) {
                 if ("version".equals(name)) {
                     String defaultVersion = versionAttributes.get("default");
-                    builder.version(new ArchetypesData.Version(data, "true".equals(defaultVersion)));
+                    builder.version(ArchetypesData.Version.builder()
+                                    .id(data)
+                                    .order(versionAttributes.get("order"))
+                                    .isDefault("true".equals(defaultVersion))
+                                    .build());
                 }
             }
         }
