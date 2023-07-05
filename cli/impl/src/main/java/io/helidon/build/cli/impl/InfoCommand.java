@@ -133,6 +133,9 @@ public final class InfoCommand extends BaseCommand {
                 MavenVersion latestVersion = metadata.latestVersion(true);
                 metaProps.put("latest.version", latestVersion.toString());
 
+                MavenVersion defaultVersion = metadata.defaultVersion(true);
+                metaProps.put("default.version", defaultVersion.toString());
+
                 ConfigProperties props = metadata.propertiesOf(latestVersion);
                 props.keySet().stream().sorted().forEach(key -> metaProps.put(key, props.property(key)));
 

@@ -131,7 +131,7 @@ class UpdateMetadata extends Plugin {
         try {
             if (version == null) {
                 updateVersions();
-                updateVersion(readLatestVersion());
+                updateVersion(readDefaultVersion());
             } else {
                 updateVersion(version);
                 updateVersions();
@@ -163,9 +163,9 @@ class UpdateMetadata extends Plugin {
         return result;
     }
 
-    private String readLatestVersion()  {
+    private String readDefaultVersion()  {
         ArchetypesData archetypesData = ArchetypesDataLoader.load(versionsFile);
-        return archetypesData.latestVersion().toString();
+        return archetypesData.defaultVersion();
     }
 
     private URL resolve(String fileName) throws Exception {

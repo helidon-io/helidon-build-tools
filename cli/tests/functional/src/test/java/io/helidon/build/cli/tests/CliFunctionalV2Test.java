@@ -25,9 +25,14 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+import io.helidon.build.cli.common.ArchetypesData;
+import io.helidon.build.cli.common.ArchetypesDataLoader;
+import io.helidon.build.cli.impl.Config;
 import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +45,8 @@ import static io.helidon.build.cli.tests.FunctionalUtils.getProperty;
 import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 
 public class CliFunctionalV2Test {
 
@@ -225,7 +232,23 @@ public class CliFunctionalV2Test {
     @Test
     public void testVersionCommand() {
         String output = cliProcessBuilder().version().start(5, TimeUnit.MINUTES);
+
         assertThat(output, containsString(FunctionalUtils.CLI_VERSION));
+        assertThat(output, containsString("default.helidon.version"));
+    }
+
+    @Test
+    public void testCacheContent() {
+        cliProcessBuilder().info().addOption("reset").start(5, TimeUnit.MINUTES);
+        Path cacheDir = Config.userConfig().cacheDir();
+        List<String> content = SourcePath.scan(cacheDir).stream()
+                .map(SourcePath::asString)
+                .collect(Collectors.toList());
+        ArchetypesData data = ArchetypesDataLoader.load(cacheDir.resolve("versions.xml"));
+        String defaultVersion = data.defaultVersion();
+
+        assertThat(content, hasItem("/versions.xml"));
+        assertThat(content, hasItem("/" + defaultVersion + "/.lastUpdate"));
     }
 
     private Builder buildArchetype(String artifactId) {
