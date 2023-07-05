@@ -25,6 +25,8 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
 
+import static io.helidon.build.cli.common.SemVer.sortVersions;
+
 /**
  * Information about archetypes versions.
  */
@@ -44,8 +46,7 @@ public class ArchetypesData {
      * @return list of the latest major versions
      */
     public List<String> latestMajorVersions() {
-        List<String> versionsId = Lists.map(versions, Version::id);
-        return SemVer.latestMajorVersions(versionsId);
+        return SemVer.latestMajorVersions(versions);
     }
 
     /**
@@ -144,8 +145,8 @@ public class ArchetypesData {
             return this;
         }
 
-        Builder versions(String... versions) {
-            this.versions.addAll(Arrays.stream(versions).map(ArchetypesData.Version::new).collect(Collectors.toList()));
+        Builder versions(Version... versions) {
+            this.versions.addAll(Arrays.stream(versions).collect(Collectors.toList()));
             return this;
         }
 
@@ -160,6 +161,7 @@ public class ArchetypesData {
          * @return version
          */
         ArchetypesData build() {
+            sortVersions(versions);
             return new ArchetypesData(this);
         }
     }
@@ -170,15 +172,12 @@ public class ArchetypesData {
     public static class Version {
         private final String id;
         private final boolean isDefault;
+        private final int order;
 
-        Version(String id) {
-            this.id = id;
-            this.isDefault = false;
-        }
-
-        Version(String id, boolean isDefault) {
-            this.id = id;
-            this.isDefault = isDefault;
+        Version(Builder builder) {
+            this.id = builder.id;
+            this.isDefault = builder.isDefault;
+            this.order = builder.order;
         }
 
         MavenVersion toMavenVersion() {
@@ -201,6 +200,60 @@ public class ArchetypesData {
          */
         public boolean isDefault() {
             return isDefault;
+        }
+
+        /**
+         * Get version order.
+         *
+         * @return order
+         */
+        public int order() {
+            return order;
+        }
+
+        /**
+         * Create a {@link Version} builder.
+         *
+         * @return builder instance
+         */
+        static Builder builder() {
+            return new Builder();
+        }
+
+        /**
+         * Version builder.
+         */
+        static class Builder {
+            private static final int DEFAULT_ORDER = 100;
+            private String id;
+            private boolean isDefault;
+            private int order = DEFAULT_ORDER;
+
+            Builder order(String order) {
+                if (order != null) {
+                    this.order = Integer.parseInt(order);
+                }
+                return this;
+            }
+
+            Builder order(int order) {
+                this.order = order;
+                return this;
+            }
+
+            Builder id(String id) {
+                this.id = id;
+                return this;
+            }
+
+            Builder isDefault(boolean isDefault) {
+                this.isDefault = isDefault;
+                return this;
+            }
+
+            Version build() {
+                return new Version(this);
+            }
         }
     }
 

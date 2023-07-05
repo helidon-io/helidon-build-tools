@@ -16,6 +16,10 @@
 
 package io.helidon.build.cli.common;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
@@ -45,9 +49,56 @@ public class ArchetypesDataTest {
         );
     }
 
+    @Test
+    public void testLatestMajorVersions() {
+        ArchetypesData data = data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT");
+        assertThat(data.latestMajorVersions(), Matchers.contains("4.0.1-SNAPSHOT", "3.9.8", "2.9"));
+
+        data = data("2.1.3", "2.4.5", "2.0.5", "4.0.1-SNAPSHOT", "3.0.0", "3.9.8", "2.9");
+        assertThat(data.latestMajorVersions(), Matchers.contains("4.0.1-SNAPSHOT", "3.9.8", "2.9"));
+
+        data = data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9");
+        assertThat(data.latestMajorVersions(), Matchers.contains("3.9.8", "2.9"));
+
+        data = ArchetypesData.builder().build();
+        assertThat(data.latestMajorVersions().size(), Matchers.is(0));
+    }
+
+    @Test
+    public void testLatestMajorVersionsOrdering() {
+        ArchetypesData data = data(version("2.0.0", 100),
+                version("3.0.0", 100),
+                version("4.0.1-SNAPSHOT", 200));
+        assertThat(data.latestMajorVersions(), Matchers.contains("3.0.0", "2.0.0", "4.0.1-SNAPSHOT"));
+
+        data = data(version("3.0.0", 100),
+                version("3.0.1", 100),
+                version("2.0.0", 100),
+                version("4.0.0", 200),
+                version("4.0.1", 200));
+        assertThat(data.latestMajorVersions(), Matchers.contains("3.0.1", "2.0.0", "4.0.1"));
+    }
+
+    @Test
+    public void testVersionOrdering() {
+        assertThat(data(version("1.0.0", 100),
+                version("1.0.1", 100),
+                version("2.0.0", 100),
+                version("4.0.0", 200)).latestMajorVersions(),
+                Matchers.is(List.of("2.0.0", "1.0.1", "4.0.0")));
+    }
+
+    private static ArchetypesData data(ArchetypesData.Version... versions) {
+        return ArchetypesData.builder().versions(versions).build();
+    }
+
     private static ArchetypesData data(String... versions) {
-        return ArchetypesData.builder()
-                             .versions(versions)
-                             .build();
+        return data(Arrays.stream(versions)
+                .map(version -> ArchetypesData.Version.builder().id(version).build())
+                .toArray(ArchetypesData.Version[]::new));
+    }
+
+    private static ArchetypesData.Version version(String id, int order) {
+        return ArchetypesData.Version.builder().id(id).order(order).build();
     }
 }

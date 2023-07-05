@@ -17,10 +17,12 @@
 package io.helidon.build.cli.common;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
@@ -44,9 +46,10 @@ final class SemVer {
      * @param versions versions
      * @return latest major versions
      */
-    static List<String> latestMajorVersions(List<String> versions) {
+    static List<String> latestMajorVersions(List<ArchetypesData.Version> versions) {
+        List<String> ids = versions.stream().map(ArchetypesData.Version::id).collect(Collectors.toList());
         // versions grouped by major digit
-        Map<String, List<String>> groups = Lists.mappedBy(versions, SemVer::majorDigit);
+        Map<String, List<String>> groups = Lists.mappedBy(ids, SemVer::majorDigit);
 
         // Maven versions grouped by version range
         Map<VersionRange, List<MavenVersion>> ranges =
@@ -55,9 +58,18 @@ final class SemVer {
         // the latest of each group
         Collection<MavenVersion> latest = Maps.mapEntryValue(ranges, entry->entry.getKey().resolveLatest(entry.getValue()))
                                               .values();
+        List<ArchetypesData.Version> latestVersions = versions.stream()
+                .filter(version -> latest.contains(version.toMavenVersion()))
+                .collect(Collectors.toList());
 
         // return String based versions
-        return Lists.map(latest, MavenVersion::toString);
+        return Lists.map(sortVersions(latestVersions), ArchetypesData.Version::id);
+    }
+
+    static List<ArchetypesData.Version> sortVersions(List<ArchetypesData.Version> versions) {
+        versions.sort(Comparator.comparingInt(ArchetypesData.Version::order)
+                .thenComparing((v1, v2) -> v2.id().compareTo(v1.id())));
+        return versions;
     }
 
     private static String majorDigit(String version) {

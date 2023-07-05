@@ -18,7 +18,6 @@ package io.helidon.build.cli.impl;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 
 import io.helidon.build.archetype.engine.v1.Prompter;
@@ -133,7 +132,6 @@ public final class InitCommand extends BaseCommand {
         if (showLatest) {
             versions = archetypesData.latestMajorVersions();
         }
-        versions.sort(Collections.reverseOrder());
         int defaultOption = archetypesData.defaultVersionIndex(versions);
         if (showLatest) {
             versions.add(SHOW_ALL_VERSIONS_MESSAGE);
