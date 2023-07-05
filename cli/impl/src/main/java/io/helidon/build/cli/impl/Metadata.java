@@ -172,6 +172,17 @@ public class Metadata {
     }
 
     /**
+     * Returns the default Helidon version.
+     *
+     * @param quiet If info messages should be suppressed.
+     * @return The version.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public MavenVersion defaultVersion(boolean quiet) throws UpdateFailed {
+        return MavenVersion.toMavenVersion(archetypesData(quiet).defaultVersion());
+    }
+
+    /**
      * Returns information about archetypes versions.
      *
      * @return ArchetypesData

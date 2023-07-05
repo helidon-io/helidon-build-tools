@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,9 @@ final class VersionCommand extends BaseCommand {
 
         try {
             MavenVersion latest = metadata().latestVersion(true);
+            MavenVersion defaultVersion = metadata().defaultVersion(true);
             map.put("latest.helidon.version", latest.toString());
+            map.put("default.helidon.version", defaultVersion.toString());
         } catch (Exception ignore) {
             // message has already been logged
         }

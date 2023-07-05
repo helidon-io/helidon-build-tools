@@ -88,4 +88,11 @@
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
 
+    <Match>
+        <!-- Ignored exception as logging already happened -->
+        <Class name="io.helidon.build.cli.impl.VersionCommand" />
+        <Method name="invoke" />
+        <Bug pattern="DE_MIGHT_IGNORE" />
+    </Match>
+
 </FindBugsFilter>
