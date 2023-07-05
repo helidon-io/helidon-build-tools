@@ -83,7 +83,8 @@ public class Metadata {
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
     private static final String METADATA_FILE_NAME = "metadata.properties";
     private static final String CATALOG_FILE_NAME = "archetype-catalog.xml";
-    private static final String PLUGIN_NAME = "UpdateMetadata";
+    private static final String UPDATE_VERSIONS_PLUGIN = "UpdateVersions";
+    private static final String UPDATE_VERSION_PLUGIN = "UpdateVersion";
     private static final String JAR_SUFFIX = ".jar";
     private static final int PLUGIN_MAX_WAIT_SECONDS = 30;
     private static final int PLUGIN_MAX_ATTEMPTS = 3;
@@ -151,13 +152,34 @@ public class Metadata {
     }
 
     /**
+     * Returns the default Helidon version.
+     *
+     * @return The version.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public MavenVersion defaultVersion() throws UpdateFailed {
+        return defaultVersion(false);
+    }
+
+    /**
+     * Returns the default Helidon version.
+     *
+     * @param quiet If info messages should be suppressed.
+     * @return The version.
+     * @throws UpdateFailed if the metadata update failed
+     */
+    public MavenVersion defaultVersion(boolean quiet) throws UpdateFailed {
+        return archetypesData(quiet).defaultVersion();
+    }
+
+    /**
      * Returns the latest Helidon version.
      *
      * @return The version.
      * @throws UpdateFailed if the metadata update failed
      */
     public MavenVersion latestVersion() throws UpdateFailed {
-        return archetypesData(false).latestVersion();
+        return latestVersion(false);
     }
 
     /**
@@ -169,17 +191,6 @@ public class Metadata {
      */
     public MavenVersion latestVersion(boolean quiet) throws UpdateFailed {
         return archetypesData(quiet).latestVersion();
-    }
-
-    /**
-     * Returns the default Helidon version.
-     *
-     * @param quiet If info messages should be suppressed.
-     * @return The version.
-     * @throws UpdateFailed if the metadata update failed
-     */
-    public MavenVersion defaultVersion(boolean quiet) throws UpdateFailed {
-        return MavenVersion.toMavenVersion(archetypesData(quiet).defaultVersion());
     }
 
     /**
@@ -204,10 +215,9 @@ public class Metadata {
         Throwable initialFailure = archetypesDataFailure.get();
         if (initialFailure == null) {
             try {
-                if (checkForUpdates(null, versionsFile, quiet)) {
-                    archetypesData.set(readArchetypesData());
-                } else if (archetypesData.get() == null) {
-                    archetypesData.set(readArchetypesData());
+                update(null, versionsFile, quiet);
+                if (archetypesData.get() == null) {
+                    archetypesData.set(ArchetypesDataLoader.load(versionsFile));
                 }
                 return archetypesData.get();
             } catch (UpdateFailed | RuntimeException e) {
@@ -219,21 +229,6 @@ public class Metadata {
                 throw (UpdateFailed) initialFailure;
             }
             throw (RuntimeException) initialFailure;
-        }
-    }
-
-    /**
-     * Asserts that the given Helidon version is available.
-     *
-     * @param helidonVersion The version.
-     * @throws UpdateFailed if the metadata update failed.
-     * @throws IllegalArgumentException if the version is not available.
-     */
-    public void assertVersionIsAvailable(MavenVersion helidonVersion) throws UpdateFailed {
-        if (helidonVersion.isLessThan(HELIDON_3)) {
-            versionedFile(helidonVersion, CATALOG_FILE_NAME, true);
-        } else {
-            archetypeV2Of(helidonVersion);
         }
     }
 
@@ -263,31 +258,27 @@ public class Metadata {
                                          boolean quiet) throws UpdateFailed {
 
         // Create a map from CLI version to CLI plugin versions, including latest
-
-        final Map<MavenVersion, MavenVersion> cliToPluginVersions = new HashMap<>();
-        final ConfigProperties properties = propertiesOf(helidonVersion, quiet);
-        final MavenVersion latestPluginVersion = latestPluginVersion(helidonVersion, thisCliVersion, properties);
+        Map<MavenVersion, MavenVersion> cliToPluginVersions = new HashMap<>();
+        ConfigProperties properties = propertiesOf(helidonVersion, quiet);
+        MavenVersion latestPluginVersion = latestPluginVersion(helidonVersion, thisCliVersion, properties);
         cliToPluginVersions.put(latestPluginVersion, latestPluginVersion);
         properties.entrySet()
-                  .stream()
-                  .filter(e -> isCliPluginVersionKey(e.getKey()))
-                  .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
+                .stream()
+                .filter(e -> isCliPluginVersionKey(e.getKey()))
+                .forEach(e -> cliToPluginVersions.put(toCliPluginVersion(e.getKey()), toMavenVersion(e.getValue())));
 
         // Short circuit if there is only one
-
         if (cliToPluginVersions.size() == 1) {
             return latestPluginVersion;
         }
 
         // Find the maximum CLI version that is <= thisCliVersion
-
-        final Optional<MavenVersion> maxCliVersion = cliToPluginVersions.keySet()
-                                                                        .stream()
-                                                                        .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
-                                                                        .max(Comparator.naturalOrder());
+        Optional<MavenVersion> maxCliVersion = cliToPluginVersions.keySet()
+                .stream()
+                .filter(v -> v.isLessThanOrEqualTo(thisCliVersion))
+                .max(Comparator.naturalOrder());
 
         // Return the corresponding plugin version
-
         return cliToPluginVersions.get(maxCliVersion.orElseThrow());
     }
 
@@ -312,8 +303,8 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public Optional<MavenVersion> checkForCliUpdate(MavenVersion thisCliVersion, boolean quiet) throws UpdateFailed {
-        final MavenVersion latestHelidonVersion = archetypesData(quiet).latestVersion();
-        final MavenVersion latestCliVersion = cliVersionOf(latestHelidonVersion, quiet);
+        MavenVersion defaultHelidonVersion = archetypesData(quiet).defaultVersion();
+        MavenVersion latestCliVersion = cliVersionOf(defaultHelidonVersion, quiet);
         if (latestCliVersion.isGreaterThan(thisCliVersion)) {
             return Optional.of(latestCliVersion);
         } else {
@@ -322,28 +313,28 @@ public class Metadata {
     }
 
     /**
-     * Returns the release notes for the latest Helidon version that are more recent than the given CLI version.
+     * Returns the release notes that are more recent than the given CLI version.
      *
-     * @param latestHelidonVersion The latest Helidon version.
+     * @param helidonVersion The Helidon version.
      * @param sinceCliVersion The CLI version to start with.
      * @return The notes, in sorted order.
      * @throws UpdateFailed if the metadata update failed
      */
-    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion latestHelidonVersion,
+    public Map<MavenVersion, String> cliReleaseNotesOf(MavenVersion helidonVersion,
                                                        MavenVersion sinceCliVersion) throws UpdateFailed {
 
-        requireNonNull(latestHelidonVersion, "latestHelidonVersion must not be null");
+        requireNonNull(helidonVersion, "helidonVersion must not be null");
         requireNonNull(sinceCliVersion, "sinceCliVersion must not be null");
-        final ConfigProperties props = propertiesOf(latestHelidonVersion, true);
-        final List<MavenVersion> versions = props.keySet()
-                                                 .stream()
-                                                 .filter(Metadata::isCliMessageKey)
-                                                 .map(Metadata::versionOfCliMessageKey)
-                                                 .map(MavenVersion::toMavenVersion)
-                                                 .filter(v -> v.isGreaterThan(sinceCliVersion))
-                                                 .sorted(Comparator.reverseOrder())
-                                                 .collect(Collectors.toList());
-        final Map<MavenVersion, String> result = new LinkedHashMap<>();
+        ConfigProperties props = propertiesOf(helidonVersion, true);
+        List<MavenVersion> versions = props.keySet()
+                .stream()
+                .filter(Metadata::isCliMessageKey)
+                .map(Metadata::versionOfCliMessageKey)
+                .map(MavenVersion::toMavenVersion)
+                .filter(v -> v.isGreaterThan(sinceCliVersion))
+                .sorted(Comparator.reverseOrder())
+                .collect(Collectors.toList());
+        Map<MavenVersion, String> result = new LinkedHashMap<>();
         versions.forEach(v -> result.put(v, props.property(toCliMessageKey(v))));
         return result;
     }
@@ -416,8 +407,8 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public Path archetypeV1Of(ArchetypeCatalog.ArchetypeEntry catalogEntry) throws UpdateFailed {
-        final MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
-        final String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
+        MavenVersion helidonVersion = toMavenVersion(catalogEntry.version());
+        String fileName = catalogEntry.artifactId() + "-" + helidonVersion + JAR_SUFFIX;
         return versionedFile(helidonVersion, fileName, false);
     }
 
@@ -440,7 +431,7 @@ public class Metadata {
      * @throws UpdateFailed if the metadata update failed
      */
     public Path archetypeV2Of(MavenVersion version) throws UpdateFailed {
-        final String fileName = "helidon-" + version + JAR_SUFFIX;
+        String fileName = "helidon-" + version + JAR_SUFFIX;
         return versionedFile(version, fileName, false);
     }
 
@@ -453,65 +444,35 @@ public class Metadata {
         return Requirements.requireNonNull(properties.property(propertyName), "missing " + propertyName);
     }
 
-    private static MavenVersion latestPluginVersion(MavenVersion helidonVersion,
-                                                    MavenVersion thisCliVersion,
-                                                    ConfigProperties properties) {
-        final String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
-        if (latest == null) {
-            Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
-                      LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
-            return thisCliVersion;
-        } else {
-            return toMavenVersion(latest);
-        }
-    }
-
-    private static boolean isCliPluginVersionKey(String key) {
-        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
-               && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
-               && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
-    }
-
-    private static MavenVersion toCliPluginVersion(String key) {
-        final int start = CLI_PLUGIN_VERSION_PROPERTY_PREFIX.length();
-        final int end = key.length() - CLI_PLUGIN_VERSION_PROPERTY_SUFFIX.length();
-        return toMavenVersion(key.substring(start, end));
-    }
-
-    private static boolean isCliMessageKey(String key) {
-        return key.startsWith(CLI_MESSAGE_PREFIX) && key.endsWith(CLI_MESSAGE_SUFFIX);
-    }
-
-    private static String versionOfCliMessageKey(String key) {
-        return key.substring(CLI_MESSAGE_PREFIX.length(), key.length() - CLI_MESSAGE_SUFFIX.length());
-    }
-
-    private static String toCliMessageKey(MavenVersion version) {
-        return CLI_MESSAGE_PREFIX + version.toString() + CLI_MESSAGE_SUFFIX;
-    }
-
-    @SuppressWarnings("ConstantConditions")
     private Path versionedFile(MavenVersion helidonVersion, String fileName, boolean quiet) throws UpdateFailed {
-        final Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
-        final Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
-        checkForUpdates(helidonVersion, checkFile, quiet);
+        Path versionDir = rootDir.resolve(requireNonNull(helidonVersion).toString());
+        Path checkFile = versionDir.resolve(LAST_UPDATE_FILE_NAME);
+        update(helidonVersion, checkFile, quiet);
         return requireFile(requireHelidonVersionDir(versionDir).resolve(fileName));
     }
 
-    private boolean checkForUpdates(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed {
-        return checkForUpdates(helidonVersion, checkFile, System.currentTimeMillis(), quiet);
-    }
+    private void update(MavenVersion helidonVersion, Path checkFile, boolean quiet) throws UpdateFailed {
+        if (isStale(checkFile, System.currentTimeMillis())) {
+            if (helidonVersion == null) {
+                Log.info("Looking up default Helidon version");
 
-    boolean checkForUpdates(MavenVersion helidonVersion,
-                            Path checkFile,
-                            long currentTimeMillis,
-                            boolean quiet) throws UpdateFailed {
+                // update versions.xml
+                execPlugin(updateArgs(null, quiet), UPDATE_VERSIONS_PLUGIN);
+                ArchetypesData data = ArchetypesDataLoader.load(versionsFile);
+                archetypesData.set(data);
+                helidonVersion = data.defaultVersion();
 
-        if (isStale(checkFile, currentTimeMillis)) {
-            update(helidonVersion, quiet);
-            return true;
-        } else {
-            return false;
+                // fetch cli-data
+                execPlugin(updateArgs(helidonVersion.toString(), quiet), UPDATE_VERSION_PLUGIN);
+            } else {
+                Log.info("Updating metadata for Helidon version %s", helidonVersion);
+
+                // fetch cli-data
+                execPlugin(updateArgs(helidonVersion.toString(), quiet), UPDATE_VERSION_PLUGIN);
+
+                // update versions.xml
+                execPlugin(updateArgs(null, quiet), UPDATE_VERSIONS_PLUGIN);
+            }
         }
     }
 
@@ -521,7 +482,7 @@ public class Metadata {
         // file within a few milliseconds; if so, we just assume it is not stale to avoid hitting
         // the disk again
 
-        final long sinceLast = currentTimeMillis - lastChecked.getOrDefault(file, 0L);
+        long sinceLast = currentTimeMillis - lastChecked.getOrDefault(file, 0L);
         if (sinceLast > STALE_RETRY_THRESHOLD) {
             lastChecked.put(file, currentTimeMillis);
             if (Files.exists(file)) {
@@ -529,23 +490,23 @@ public class Metadata {
                     Log.debug("stale check is false (disabled) for %s", file);
                     return false;
                 } else if (updateFrequencyMillis > 0) {
-                    final long lastModifiedMillis = lastModifiedTime(file).to(MILLISECONDS);
-                    final long elapsedMillis = currentTimeMillis - lastModifiedMillis;
-                    final long remainingMillis = updateFrequencyMillis - elapsedMillis;
-                    final boolean stale = remainingMillis <= 0;
+                    long lastModifiedMillis = lastModifiedTime(file).to(MILLISECONDS);
+                    long elapsedMillis = currentTimeMillis - lastModifiedMillis;
+                    long remainingMillis = updateFrequencyMillis - elapsedMillis;
+                    boolean stale = remainingMillis <= 0;
                     if (LogLevel.isDebug()) {
-                        final String lastModifiedTime = Time.toDateTime(lastModifiedMillis);
-                        final String currentTime = Time.currentDateTime();
-                        final Duration elapsed = Duration.ofMillis(elapsedMillis);
-                        final String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
+                        String lastModifiedTime = Time.toDateTime(lastModifiedMillis);
+                        String currentTime = Time.currentDateTime();
+                        Duration elapsed = Duration.ofMillis(elapsedMillis);
+                        String elapsedDays = elapsed.toDaysPart() == 1 ? "day" : "days";
                         if (stale) {
                             Log.debug("stale check is true for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d)",
                                       file, lastModifiedTime, currentTime,
                                       elapsed.toDaysPart(), elapsedDays, elapsed.toHoursPart(), elapsed.toMinutesPart(),
                                       elapsed.toSecondsPart());
                         } else {
-                            final Duration remain = Duration.ofMillis(remainingMillis);
-                            final String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
+                            Duration remain = Duration.ofMillis(remainingMillis);
+                            String remainDays = remain.toDaysPart() == 1 ? "day" : "days";
                             Log.debug("stale check is false for %s (last: %s, now: %s, elapsed: %d %s %02d:%02d:%02d, "
                                       + "remain: %d %s %02d:%02d:%02d)",
                                       file, lastModifiedTime, currentTime,
@@ -570,29 +531,24 @@ public class Metadata {
         }
     }
 
-    private void update(MavenVersion helidonVersion, boolean quiet) throws UpdateFailed {
-        final boolean logInfo = LogLevel.isDebug() || !quiet;
-        final int maxAttempts = quiet ? 1 : PLUGIN_MAX_ATTEMPTS;
-        final List<String> args = new ArrayList<>();
+    private List<String> updateArgs(String helidonVersion, boolean quiet) {
+        List<String> args = new ArrayList<>();
         args.add("--baseUrl");
         args.add(url);
         args.add("--cacheDir");
         args.add(rootDir.toAbsolutePath().toString());
-        if (helidonVersion == null) {
-            if (logInfo) {
-                Log.info("Looking up latest Helidon version");
-            }
-        } else {
-            if (logInfo) {
-                Log.info("Updating metadata for Helidon version %s", helidonVersion);
-            }
+        if (helidonVersion != null) {
             args.add("--version");
-            args.add(helidonVersion.toString());
+            args.add(helidonVersion);
         }
         args.add("--cliVersion");
         args.add(Config.buildVersion());
         args.add("--maxAttempts");
-        args.add(Integer.toString(maxAttempts));
+        args.add(Integer.toString(quiet ? 1 : PLUGIN_MAX_ATTEMPTS));
+        return args;
+    }
+
+    private void execPlugin(List<String> args, String pluginName) throws UpdateFailed {
         PrintStream stdOut = pluginStdOut;
         if (debugPlugin) {
             args.add("--debug");
@@ -603,14 +559,48 @@ public class Metadata {
             stdOut = DEVNULL;
         }
         try {
-            Plugins.execute(PLUGIN_NAME, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
+            Plugins.execute(pluginName, args, PLUGIN_MAX_WAIT_SECONDS, stdOut);
         } catch (Plugins.PluginFailed e) {
             throw new UpdateFailed(e);
         }
     }
 
-    private ArchetypesData readArchetypesData() {
-        return ArchetypesDataLoader.load(versionsFile);
+    private static MavenVersion latestPluginVersion(MavenVersion helidonVersion,
+                                                    MavenVersion thisCliVersion,
+                                                    ConfigProperties properties) {
+
+        String latest = properties.property(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+        if (latest == null) {
+            Log.debug("Helidon version %s does not contain %s, using current CLI version %s", helidonVersion,
+                    LATEST_CLI_PLUGIN_VERSION_PROPERTY, thisCliVersion);
+            return thisCliVersion;
+        } else {
+            return toMavenVersion(latest);
+        }
+    }
+
+    private static boolean isCliPluginVersionKey(String key) {
+        return key.startsWith(CLI_PLUGIN_VERSION_PROPERTY_PREFIX)
+                && key.endsWith(CLI_PLUGIN_VERSION_PROPERTY_SUFFIX)
+                && !key.equals(LATEST_CLI_PLUGIN_VERSION_PROPERTY);
+    }
+
+    private static MavenVersion toCliPluginVersion(String key) {
+        int start = CLI_PLUGIN_VERSION_PROPERTY_PREFIX.length();
+        int end = key.length() - CLI_PLUGIN_VERSION_PROPERTY_SUFFIX.length();
+        return toMavenVersion(key.substring(start, end));
+    }
+
+    private static boolean isCliMessageKey(String key) {
+        return key.startsWith(CLI_MESSAGE_PREFIX) && key.endsWith(CLI_MESSAGE_SUFFIX);
+    }
+
+    private static String versionOfCliMessageKey(String key) {
+        return key.substring(CLI_MESSAGE_PREFIX.length(), key.length() - CLI_MESSAGE_SUFFIX.length());
+    }
+
+    private static String toCliMessageKey(MavenVersion version) {
+        return CLI_MESSAGE_PREFIX + version.toString() + CLI_MESSAGE_SUFFIX;
     }
 
     /**
