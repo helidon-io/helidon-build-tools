@@ -33,7 +33,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
- * A plugin that fetches the latest metadata and updates the cache.
+ * A plugin that updates the cli data for a given version.
  */
 class UpdateVersion extends UpdateBase {
     private static final String LAST_UPDATE_FILE_NAME = ".lastUpdate";
@@ -50,6 +50,12 @@ class UpdateVersion extends UpdateBase {
      */
     UpdateVersion() {
         super();
+    }
+
+    @Override
+    void validateArgs() throws Exception {
+        super.validateArgs();
+        assertRequiredArg(VERSION_ARG, version());
     }
 
     @Override

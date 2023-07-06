@@ -25,7 +25,7 @@ import java.util.Map;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
- * A plugin that fetches the latest metadata and updates the cache.
+ * A plugin that updates {@code versions.xml}.
  */
 class UpdateVersions extends UpdateBase {
     private static final String VERSIONS_FILE_NAME = "versions.xml";

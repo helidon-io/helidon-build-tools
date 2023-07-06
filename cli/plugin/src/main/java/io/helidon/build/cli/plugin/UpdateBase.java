@@ -35,7 +35,6 @@ import javax.net.ssl.SSLException;
  */
 abstract class UpdateBase extends Plugin {
     private static final int DEFAULT_TIMEOUT_MILLIS = 500;
-    private static final String VERSION_ARG = "--version";
     private static final String CLI_VERSION_ARG = "--cliVersion";
     private static final String BASE_URL_ARG = "--baseUrl";
     private static final String CACHE_DIR_ARG = "--cacheDir";
@@ -46,6 +45,11 @@ abstract class UpdateBase extends Plugin {
     private static final String USER_AGENT_HEADER = "User-Agent";
     private static final int STATUS_OK = 200;
     private static final String USER_AGENT_PREFIX = "Helidon-CLI/";
+
+    /**
+     * {@code --version}.
+     */
+    static final String VERSION_ARG = "--version";
 
     private String version;
     private String cliVersion;
@@ -93,7 +97,7 @@ abstract class UpdateBase extends Plugin {
     }
 
     @Override
-    final int parseArg(String arg, int argIndex, String[] allArgs) throws Exception {
+    int parseArg(String arg, int argIndex, String[] allArgs) throws Exception {
         switch (arg) {
             case VERSION_ARG:
                 version = nextArg(argIndex, allArgs);
@@ -122,7 +126,7 @@ abstract class UpdateBase extends Plugin {
     }
 
     @Override
-    final void validateArgs() throws Exception {
+    void validateArgs() throws Exception {
         assertRequiredArg(BASE_URL_ARG, baseUrl);
         assertRequiredArg(CACHE_DIR_ARG, cacheDir);
         assertRequiredArg(CLI_VERSION_ARG, cliVersion);
@@ -133,7 +137,7 @@ abstract class UpdateBase extends Plugin {
     }
 
     @Override
-    final void execute() throws Exception {
+    void execute() throws Exception {
         try {
             doExecute();
         } catch (UnknownHostException e) {
