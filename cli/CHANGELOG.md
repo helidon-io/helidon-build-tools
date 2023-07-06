@@ -7,6 +7,15 @@ All notable changes to the Helidon CLI will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.6]
+
+### Fixes
+
+- NoClassDefFoundError: io/helidon/build/cli/common/ArchetypesDataLoader [944](https://github.com/helidon-io/helidon-build-tools/issues/944)
+- CLI: 3.0.5 does not handle latest vs default version correctly [945](https://github.com/helidon-io/helidon-build-tools/issues/945)
+- CLI: 3.0.5 latest version listed first, but maybe it shouldn't be [946](https://github.com/helidon-io/helidon-build-tools/issues/946)
+- Improve layout of helidon.zip [942](https://github.com/helidon-io/helidon-build-tools/issues/942)
+
 ## [3.0.5]
 
 ### Fixes
@@ -293,6 +302,7 @@ This release of helidon-build-tools does not contain changes related to the Heli
 
 Initial release of the Helidon CLI.
 
+[3.0.6]:      https://github.com/oracle/helidon-build-tools/compare/3.0.5...3.0.6
 [3.0.5]:      https://github.com/oracle/helidon-build-tools/compare/3.0.4...3.0.5
 [3.0.4]:      https://github.com/oracle/helidon-build-tools/compare/3.0.2...3.0.4
 [3.0.2]:      https://github.com/oracle/helidon-build-tools/compare/3.0.0...3.0.2
