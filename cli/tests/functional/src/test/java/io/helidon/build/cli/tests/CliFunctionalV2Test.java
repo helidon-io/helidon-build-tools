@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +31,6 @@ import io.helidon.build.cli.common.ArchetypesData;
 import io.helidon.build.cli.common.ArchetypesDataLoader;
 import io.helidon.build.cli.impl.Config;
 import io.helidon.build.cli.impl.Helidon;
-import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
@@ -71,8 +71,12 @@ public class CliFunctionalV2Test {
     }
 
     @AfterEach
-    public void cleanUp() {
-        FileUtils.deleteDirectory(workDir);
+    public void cleanUp() throws IOException {
+        Files.walk(workDir)
+                .sorted(Comparator.reverseOrder())
+                .filter(it -> !it.equals(workDir))
+                .map(Path::toFile)
+                .forEach(File::delete);
     }
 
     @Test
