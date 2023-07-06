@@ -92,11 +92,12 @@ public class ArchetypesData {
      *
      * @return version
      */
-    public String defaultVersion() {
+    public MavenVersion defaultVersion() {
         return versions.stream()
-                       .filter(Version::isDefault).findFirst()
-                       .map(Version::id)
-                       .orElse(latestVersion().toString());
+                .filter(Version::isDefault)
+                .findFirst()
+                .map(Version::toMavenVersion)
+                .orElse(latestVersion());
     }
 
     /**
@@ -107,7 +108,7 @@ public class ArchetypesData {
      */
     public int defaultVersionIndex(List<String> versions) {
         int defaultOption = -1;
-        var defaultHelidonVersion = defaultVersion();
+        var defaultHelidonVersion = defaultVersion().toString();
         for (int x = 0; x < versions.size(); x++) {
             if (versions.get(x).equals(defaultHelidonVersion)) {
                 defaultOption = x;
@@ -132,6 +133,7 @@ public class ArchetypesData {
     /**
      * ArchetypesData builder.
      */
+    @SuppressWarnings("UnusedReturnValue")
     static class Builder {
 
         private final List<Version> versions = new ArrayList<>();
@@ -260,7 +262,7 @@ public class ArchetypesData {
     /**
      * Rule for compatibility Helidon versions range and a range of Helidon CLI versions.
      */
-    static class Rule {
+    public static class Rule {
         private final VersionRange archetypeRange;
         private final VersionRange cliRange;
 

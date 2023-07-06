@@ -19,7 +19,6 @@ import io.helidon.build.common.maven.MavenVersion;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +29,7 @@ import java.util.Map;
 
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC1;
 import static io.helidon.build.cli.impl.TestMetadata.TestVersion.RC2;
+import static io.helidon.build.common.FileUtils.pathOf;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 import static java.util.Objects.requireNonNull;
@@ -103,15 +103,6 @@ public class TestMetadata {
     static final Map<TestVersion, byte[]> ZIP_DATA = zipData();
     static final String RC1_ETAG = etag(RC1, ZIP_DATA.get(RC1));
     static final String RC2_ETAG = etag(RC2, ZIP_DATA.get(RC2));
-    static final String NO_ETAG = "<no-etag>";
-
-    private static Path pathOf(URL u) {
-        try {
-            return Path.of(u.toURI());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 
     private static Map<TestVersion, byte[]> zipData() {
         Map<TestVersion, byte[]> result = new HashMap<>();
@@ -129,15 +120,6 @@ public class TestMetadata {
      */
     static byte[] zipData(TestVersion version) {
         return ZIP_DATA.get(version);
-    }
-
-    /**
-     * Get the content of versions.xml
-     *
-     * @return content of {@code versions.xml}
-     */
-    static byte[] versionsFileContent() {
-        return readCliDataFile("versions.xml");
     }
 
     /**

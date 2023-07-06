@@ -18,7 +18,6 @@
 -->
 <project>
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.helidon.build-tools.cli</groupId>
         <artifactId>helidon-cli-project</artifactId>

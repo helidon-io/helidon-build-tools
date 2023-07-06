@@ -868,6 +868,35 @@ public final class FileUtils {
         return fileSystem.getPath(spec.substring(index + 1));
     }
 
+    /**
+     * Get the path for the given URL.
+     *
+     * @param url         url
+     * @return Path
+     */
+    public static Path pathOf(URL url) {
+        try {
+            return pathOf(url.toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Get the path for the given URL.
+     *
+     * @param url         url
+     * @param classLoader class-loader
+     * @return Path
+     */
+    public static Path pathOf(URL url, ClassLoader classLoader) {
+        try {
+            return pathOf(url.toURI(), classLoader);
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private FileUtils() {
     }
 

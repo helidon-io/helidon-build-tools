@@ -118,8 +118,8 @@ final class CommonOptions {
             Optional<MavenVersion> cliUpdate = metadata().checkForCliUpdate(sinceCliVersion, quiet);
             if (cliUpdate.isPresent()) {
                 MavenVersion newCliVersion = cliUpdate.get();
-                MavenVersion latestHelidonVersion = metadata().latestVersion();
-                Map<Object, Object> releaseNotes = releaseNotes(latestHelidonVersion);
+                MavenVersion helidonVersion = metadata().defaultVersion();
+                Map<Object, Object> releaseNotes = releaseNotes(helidonVersion);
                 Log.info();
                 if (releaseNotes.isEmpty()) {
                     Log.info("$(bold Version %s of this CLI is now available.)", newCliVersion);
@@ -141,15 +141,15 @@ final class CommonOptions {
         }
     }
 
-    private Map<Object, Object> releaseNotes(MavenVersion latestHelidonVersion) {
+    private Map<Object, Object> releaseNotes(MavenVersion helidonVersion) {
         try {
             Map<Object, Object> notes = new LinkedHashMap<>();
-            metadata().cliReleaseNotesOf(latestHelidonVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
+            metadata().cliReleaseNotesOf(helidonVersion, sinceCliVersion).forEach((v, m) -> notes.put("    " + v, m));
             return notes;
         } catch (Plugins.PluginFailedUnchecked e) {
-            Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.getMessage());
+            Log.debug("accessing release notes for %s failed: %s", helidonVersion, e.getMessage());
         } catch (Exception e) {
-            Log.debug("accessing release notes for %s failed: %s", latestHelidonVersion, e.toString());
+            Log.debug("accessing release notes for %s failed: %s", helidonVersion, e.toString());
         }
         return Collections.emptyMap();
     }

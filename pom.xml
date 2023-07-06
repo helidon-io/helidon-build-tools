@@ -207,8 +207,6 @@
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.tycho>2.5.0</version.plugin.tycho>
-        <version.plugin.shade>3.2.4</version.plugin.shade>
-        <version.plugin.moditect>1.0.0.Beta2</version.plugin.moditect>
     </properties>
 
     <modules>
@@ -543,16 +541,6 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${version.plugin.frontend}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${version.plugin.shade}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.moditect</groupId>
-                    <artifactId>moditect-maven-plugin</artifactId>
-                    <version>${version.plugin.moditect}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

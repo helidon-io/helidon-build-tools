@@ -27,6 +27,7 @@ import io.helidon.build.cli.harness.CommandContext;
 import io.helidon.build.cli.harness.Creator;
 import io.helidon.build.cli.impl.InitOptions.BuildSystem;
 import io.helidon.build.common.Lists;
+import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
@@ -45,11 +46,7 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
  */
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand {
-    private static final String HELIDON_RELEASES_URL = "https://github.com/oracle/helidon/releases";
-    private static final String VERSION_LOOKUP_FAILED = "$(italic,red Helidon version lookup failed.)";
     private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
-    private static final String AVAILABLE_VERSIONS_MESSAGE = "Please see $(blue %s) for available versions.";
-    private static final String NOT_FOUND_STATUS_MESSAGE = "connection failed with 404";
     private static final String SHOW_ALL_VERSIONS_MESSAGE = "Show all versions";
 
     private final CommonOptions commonOptions;
@@ -84,11 +81,11 @@ public final class InitCommand extends BaseCommand {
         String helidonVersion = initOptions.helidonVersion();
         if (helidonVersion == null) {
             ArchetypesData archetypesData = metadata.archetypesData();
-            if (context.properties().containsKey(HELIDON_VERSION_PROPERTY)) {
-                helidonVersion = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
-                resolveHelidonVersion(helidonVersion);
+            String helidonVersionPropValue = context.properties().getProperty(HELIDON_VERSION_PROPERTY);
+            if (helidonVersionPropValue != null) {
+                helidonVersion = resolveHelidonVersion(helidonVersionPropValue);
             } else if (batch) {
-                helidonVersion = archetypesData.defaultVersion();
+                helidonVersion = archetypesData.defaultVersion().toString();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
                 helidonVersion = promptHelidonVersion(archetypesData, true);
@@ -179,7 +176,6 @@ public final class InitCommand extends BaseCommand {
         if (resolved != null) {
             return resolved.toString();
         }
-        failed(VERSION_NOT_FOUND_MESSAGE, helidonVersion);
-        return null;
+        throw new RequirementFailure(VERSION_NOT_FOUND_MESSAGE, helidonVersion);
     }
 }

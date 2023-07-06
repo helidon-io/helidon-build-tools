@@ -18,6 +18,9 @@ package io.helidon.build.cli.impl;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 
@@ -31,7 +34,6 @@ import org.mockserver.netty.MockServer;
 
 import static io.helidon.build.cli.impl.TestMetadata.CLI_DATA_FILE_NAME;
 import static io.helidon.build.cli.impl.TestMetadata.etag;
-import static io.helidon.build.cli.impl.TestMetadata.versionsFileContent;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.NottableString.not;
@@ -48,40 +50,35 @@ public class MetadataTestServer {
     private static final String ETAG_HEADER = "Etag";
     private static final String IF_NONE_MATCH_HEADER = "If-None-Match";
 
-    private static Expectation latestRequest() {
-        return new Expectation(request().withMethod("GET")
-                                        .withPath("/latest")).withId("latest");
-    }
-
     private static Expectation versionsRequest() {
         return new Expectation(request().withMethod("GET")
-                                        .withPath("/versions.xml")).withId("latest");
+                .withPath("/versions.xml")).withId("latest");
     }
 
     private static Expectation zipRequestWithoutEtag(TestVersion version) {
         return new Expectation(request().withMethod("GET")
-                                        .withHeader(not(IF_NONE_MATCH_HEADER))
-                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                .withHeader(not(IF_NONE_MATCH_HEADER))
+                .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
                 .withId(version + "-zip-without-etag");
     }
 
     private static Expectation zipRequestWithoutMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
-                                        .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
-                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                .withHeader(NottableString.string(IF_NONE_MATCH_HEADER), not(etag(version, data)))
+                .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
                 .withId(version + "-zip-without-matching-etag");
     }
 
     private static Expectation zipRequestWithMatchingEtag(TestVersion version, byte[] data) {
         return new Expectation(request().withMethod("GET")
-                                        .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
-                                        .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
+                .withHeader(IF_NONE_MATCH_HEADER, etag(version, data))
+                .withPath("/" + version + "/" + CLI_DATA_FILE_NAME))
                 .withId(version + "-zip-with-matching-etag");
     }
 
     private final int port;
     private final String url;
-    private TestVersion latest;
+    private TestVersion defaultVersion;
     private ClientAndServer mockServer;
 
     /**
@@ -91,7 +88,7 @@ public class MetadataTestServer {
      */
     public static void main(String[] args) {
         int port = DEFAULT_MAIN_PORT;
-        TestVersion latest = TestVersion.RC1;
+        TestVersion defaultVersion = TestVersion.RC1;
         boolean verbose = true;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -100,10 +97,10 @@ public class MetadataTestServer {
                     port = Integer.parseInt(nextArg(i++, args));
                     break;
                 case "--rc1":
-                    latest = TestVersion.RC1;
+                    defaultVersion = TestVersion.RC1;
                     break;
                 case "--rc2":
-                    latest = TestVersion.RC2;
+                    defaultVersion = TestVersion.RC2;
                     break;
                 case "--quiet":
                     verbose = false;
@@ -116,29 +113,28 @@ public class MetadataTestServer {
                     break;
             }
         }
-
-        new MetadataTestServer(port, latest, verbose).start();
+        new MetadataTestServer(port, defaultVersion, verbose).start();
     }
 
     /**
      * Constructor.
      *
-     * @param latest  The version to return for the "/latest" request.
-     * @param verbose Whether or not to do verbose logging.
+     * @param defaultVersion default version
+     * @param verbose Whether to do verbose logging.
      */
-    public MetadataTestServer(TestVersion latest, boolean verbose) {
-        this(freePort(), latest, verbose);
+    public MetadataTestServer(TestVersion defaultVersion, boolean verbose) {
+        this(freePort(), defaultVersion, verbose);
     }
 
     /**
      * Constructor.
      *
      * @param port    The port to listen on.
-     * @param latest  The version to return for the "/latest" request.
-     * @param verbose Whether or not to do verbose logging.
+     * @param verbose Whether to do verbose logging.
+     * @param defaultVersion default version
      */
     @SuppressWarnings("ConstantConditions")
-    public MetadataTestServer(int port, TestVersion latest, boolean verbose) {
+    public MetadataTestServer(int port, TestVersion defaultVersion, boolean verbose) {
         if (MockServer.class.getClassLoader() != ClassLoader.getSystemClassLoader()) {
             final String reason = "MockServer must be in system class loader";
             Log.info("$(italic,yellow Skipping: %s)", reason);
@@ -147,7 +143,7 @@ public class MetadataTestServer {
         ConfigurationProperties.logLevel(verbose ? VERBOSE_LEVEL : NORMAL_LEVEL);
         this.port = port;
         this.url = URL_PREFIX + port;
-        this.latest = latest;
+        this.defaultVersion = defaultVersion;
     }
 
     /**
@@ -160,12 +156,12 @@ public class MetadataTestServer {
         mockServer = ClientAndServer.startClientAndServer(port);
 
         // Set the response for "/versions.xml"
-        versions(latest);
+        setupVersions();
 
         // Set the responses for the "${version}/cli-data.zip" requests, with and without etags
 
         for (TestVersion version : TestVersion.values()) {
-            zipData(version, TestMetadata.zipData(version));
+            setupCliData(version, TestMetadata.zipData(version));
         }
 
         // Ensure started
@@ -184,7 +180,7 @@ public class MetadataTestServer {
                 throw new IllegalStateException("Metadata test server did not start.");
             }
         }
-        Log.info("Started metadata test server with latest=%s at %s", latest, url);
+        Log.info("Started metadata test server with defaultVersion=%s at %s", defaultVersion, url);
         return this;
     }
 
@@ -198,12 +194,28 @@ public class MetadataTestServer {
     }
 
     /**
-     * Sets the response for the "/versions.xml" request.
+     * Set the versions.
+     *
+     * @param defaultVersion defaultVersion
      */
-    public void versions(TestVersion latest) {
-        this.latest = latest;
-        mockServer.upsert(versionsRequest().thenRespond(response().withBody(
-                "<data><archetypes><version>" + latest + "</version></archetypes></data>"
+    public void defaultVersion(TestVersion defaultVersion) {
+        this.defaultVersion = defaultVersion;
+    }
+
+    /**
+     * Set up the {@code /versions.xml} request.
+     */
+    public void setupVersions() {
+        String versionElements = Stream.concat(Stream.ofNullable(defaultVersion), Arrays.stream(TestVersion.values()))
+                .distinct()
+                .map(v -> "        <version" + (defaultVersion == v ? " default=\"true\"" : "") + ">" + v + "</version>")
+                .collect(Collectors.joining("\n", "", "\n"));
+        mockServer.upsert(versionsRequest().thenRespond(response().withBody("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<data>\n"
+                + "    <archetypes>\n"
+                + versionElements
+                + "    </archetypes>\n"
+                + "</data>\n"
         )));
     }
 
@@ -214,14 +226,14 @@ public class MetadataTestServer {
      * @param version The version.
      * @param data    The zip data.
      */
-    public void zipData(TestVersion version, byte[] data) {
+    public void setupCliData(TestVersion version, byte[] data) {
         final String etag = etag(version, data);
         mockServer.upsert(zipRequestWithoutEtag(version).thenRespond(response().withHeader(ETAG_HEADER, etag)
-                                                                               .withBody(data)));
+                .withBody(data)));
         mockServer.upsert(zipRequestWithoutMatchingEtag(version, data).thenRespond(response().withHeader(ETAG_HEADER, etag)
-                                                                                             .withBody(data)));
+                .withBody(data)));
         mockServer.upsert(zipRequestWithMatchingEtag(version, data).thenRespond(response().withHeader(ETAG_HEADER, etag)
-                                                                                          .withStatusCode(304)));
+                .withStatusCode(304)));
     }
 
     /**

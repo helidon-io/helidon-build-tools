@@ -46,7 +46,7 @@ import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CliFunctionalV2Test {
 
@@ -211,7 +211,7 @@ public class CliFunctionalV2Test {
             assertThat(e.getMessage(), containsString("Invalid choice: wrongFlavor"));
             return;
         }
-        assertThat("Exception should have been thrown due to wrong flavor input.", false);
+        fail("Exception should have been thrown due to wrong flavor input.");
     }
 
     @Test
@@ -226,7 +226,7 @@ public class CliFunctionalV2Test {
             assertThat(e.getMessage(), containsString("Helidon version 0.0.0 not found."));
             return;
         }
-        assertThat("Exception should have been thrown because of wrong helidon version.", false);
+        fail("Exception should have been thrown because of wrong helidon version.");
     }
 
     @Test
@@ -245,7 +245,7 @@ public class CliFunctionalV2Test {
                 .map(SourcePath::asString)
                 .collect(Collectors.toList());
         ArchetypesData data = ArchetypesDataLoader.load(cacheDir.resolve("versions.xml"));
-        String defaultVersion = data.defaultVersion();
+        String defaultVersion = data.defaultVersion().toString();
 
         assertThat(content, hasItem("/versions.xml"));
         assertThat(content, hasItem("/" + defaultVersion + "/.lastUpdate"));
