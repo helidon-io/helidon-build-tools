@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,9 +277,6 @@ public class ScriptLoader {
                 case VALIDATION:
                     processValidation();
                     break;
-                case REGEX:
-                    processRegex();
-                    break;
                 default:
                     throw new XMLReaderException(String.format(
                             "Invalid state: %s. { element=%s }", ctx.state, qName));
@@ -330,22 +327,15 @@ public class ScriptLoader {
 
         void processValidation() {
             Block.Kind kind = blockKind();
-            if (kind == Block.Kind.VALIDATION) {
-                addChild(State.REGEX, Validation.builder(info, blockKind()));
-                return;
+            switch (kind) {
+                case VALIDATION:
+                case REGEX:
+                    addChild(ctx.state, Validation.builder(info, blockKind()));
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid validation block: %s. { element=%s }", kind, qName));
             }
-            throw new XMLReaderException(String.format(
-                    "Invalid validation block: %s. { element=%s }", kind, qName));
-        }
-
-        void processRegex() {
-            Block.Kind kind = blockKind();
-            if (kind == Block.Kind.REGEX) {
-                addChild(State.VALIDATION, Validation.builder(info, blockKind()));
-                return;
-            }
-            throw new XMLReaderException(String.format(
-                    "Invalid regex block: %s. { element=%s }", kind, qName));
         }
 
         void processPreset() {
