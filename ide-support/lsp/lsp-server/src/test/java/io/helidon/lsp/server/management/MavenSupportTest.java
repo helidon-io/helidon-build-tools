@@ -18,7 +18,6 @@ package io.helidon.lsp.server.management;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -30,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MavenSupportTest {
 
     @Test
-    public void ignoreFakePomFileTest() throws IOException, URISyntaxException {
-        String pomForFile = getPomForCurrentClass();
+    public void ignoreFakePomFileTest() throws URISyntaxException {
+        String pomForFile = getCurrentPom();
         String testFile = Paths.get("src", "test", "resources", "pomTests", "withoutMain", "src", "test.txt")
                                .toAbsolutePath()
                                .toString();
@@ -40,7 +39,7 @@ class MavenSupportTest {
     }
 
     @Test
-    public void getPomFileForCorrectMavenStructureFolderTest() throws IOException {
+    public void getPomFileForCorrectMavenStructureFolderTest() {
         String pomForFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "pom.xml")
                                  .toAbsolutePath()
                                  .toString();
@@ -50,20 +49,21 @@ class MavenSupportTest {
         String resolvedPom = MavenSupport.instance().resolvePom(testFile);
         assertEquals(pomForFile, resolvedPom);
     }
+
     @Test
-    public void getPomForFileTest() throws URISyntaxException, IOException {
-        String pomForFile = getPomForCurrentClass();
+    public void getPomForFileTest() throws URISyntaxException {
+        String pomForFile = getCurrentPom();
         assertTrue(pomForFile.endsWith("pom.xml"));
     }
 
     @Test
-    public void getDependenciesTest() throws URISyntaxException, IOException {
-        String pomForFile = getPomForCurrentClass();
+    public void getDependenciesTest() throws URISyntaxException {
+        String pomForFile = getCurrentPom();
         Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.instance().dependencies(pomForFile, 10000);
         assertTrue(dependencies.size() > 0);
     }
 
-    private String getPomForCurrentClass() throws IOException, URISyntaxException {
+    private String getCurrentPom() throws URISyntaxException {
         URI uri = MavenSupportTest.class.getProtectionDomain().getCodeSource().getLocation().toURI();
         return MavenSupport.instance().resolvePom(uri.getPath());
     }
