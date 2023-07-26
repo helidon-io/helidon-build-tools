@@ -156,7 +156,7 @@
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.mustache>0.9.6</version.lib.mustache>
         <version.lib.mockito>3.10.0</version.lib.mockito>
-        <version.lib.plexus-archiver>4.1.0</version.lib.plexus-archiver>
+        <version.lib.plexus-archiver>4.8.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
         <version.lib.plexus-component>2.0.0</version.lib.plexus-component>
         <version.lib.plexus-java>1.1.1</version.lib.plexus-java>
