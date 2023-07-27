@@ -58,7 +58,7 @@ public class MavenSupport {
     private static final String MAIN_FOLDER = "main";
     private static final int DEFAULT_TIMEOUT = 10000;
     private static final Gson GSON = new Gson();
-    private static final String PLUGIN_GA = "io.helidon.ide-support.lsp:helidon-lsp-maven-plugin";
+    private static final String PLUGIN_GA = "io.helidon.build-tools.ide-support.lsp:helidon-lsp-maven-plugin";
     private static final String PLUGIN_GOAL = "list-dependencies";
     private static final MavenSupport INSTANCE = new MavenSupport();
 
