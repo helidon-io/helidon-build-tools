@@ -105,6 +105,7 @@
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
         <surefire.coverage.argLine/>
+        <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
 
         <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
         <failsafe.coverage.argLine/>
@@ -182,7 +183,6 @@
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
-        <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -204,7 +204,7 @@
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
         <version.plugin.surefire>3.1.2</version.plugin.surefire>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
-        <version.plugin.toolchains>1.1</version.plugin.toolchains>
+        <version.plugin.toolchains>3.1.0</version.plugin.toolchains>
     </properties>
 
     <modules>
@@ -215,6 +215,7 @@
         <module>linker</module>
         <module>licensing</module>
         <module>dev-loop</module>
+        <module>ide-support</module>
     </modules>
 
     <build>
@@ -274,7 +275,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argLine}</argLine>
                         <trimStackTrace>false</trimStackTrace>
@@ -315,11 +316,6 @@
                             <version>${version.lib.junit}</version>
                         </dependency>
                     </dependencies>
-                </plugin>
-                <plugin>
-                    <groupId>org.commonjava.maven.plugins</groupId>
-                    <artifactId>directory-maven-plugin</artifactId>
-                    <version>${version.plugin.directory}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -531,22 +527,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-top-parent-basedir</id>
-                        <goals>
-                            <goal>highest-basedir</goal>
-                        </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <property>top.parent.basedir</property>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
@@ -561,7 +541,7 @@
                             <resources>
                                 <resource>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <directory>${top.parent.basedir}</directory>
+                                    <directory>${maven.multiModuleProjectDirectory}</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <includes>
                                         <include>LICENSE.txt</include>
@@ -916,12 +896,6 @@
 
     <profiles>
         <profile>
-            <id>ide-support</id>
-            <modules>
-                <module>ide-support</module>
-            </modules>
-        </profile>
-        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
@@ -973,9 +947,10 @@
                                 <phase>validate</phase>
                                 <configuration>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
+                                    <suppressionsLocation>
+                                        ${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml
                                     </suppressionsLocation>
                                 </configuration>
                             </execution>
@@ -989,34 +964,28 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.glassfish.copyright</groupId>
-                        <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-enforcer-plugin</artifactId>
+                        <version>3.0.5</version>
+                        <configuration>
+                            <rules>
+                                <rule>copyright</rule>
+                            </rules>
+                            <copyrightConfig>
+                                <failOnError>true</failOnError>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <templateFile>${maven.multiModuleProjectDirectory}/etc/copyright.txt</templateFile>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <excludeFile>${maven.multiModuleProjectDirectory}/etc/copyright-exclude.txt</excludeFile>
+                            </copyrightConfig>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>print-copyright</id>
-                                <goals>
-                                    <goal>copyright</goal>
-                                </goals>
+                                <id>helidon-enforcer</id>
                                 <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>check-copyright</id>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -1037,6 +1006,7 @@
                         <artifactId>maven-invoker-plugin</artifactId>
                         <configuration>
                             <environmentVariables>
+                                <!--suppress LongLine -->
                                 <MAVEN_DEBUG_OPTS>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8001</MAVEN_DEBUG_OPTS>
                             </environmentVariables>
                         </configuration>
@@ -1110,6 +1080,26 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>build-cache</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-build-cache-maven-plugin</artifactId>
+                        <version>3.0.5</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <projectFilesExcludes>
+                                <exclude>.*/**</exclude>
+                                <exclude>etc/**</exclude>
+                                <exclude>**/vscode-extension/**</exclude>
+                            </projectFilesExcludes>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

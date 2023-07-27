@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package io.helidon.lsp.server.service.config.yaml;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URLDecoder;
+import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.helidon.build.common.FileUtils;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -82,15 +83,13 @@ class YamlParserTest {
     }
 
     private List<String> readFile(String path) throws IOException {
-        String path1 = URLDecoder.decode(
-                this.getClass().getClassLoader().getResource(path).getPath(),
-                "UTF-8"
-        );
-        List<String> result = null;
-        try (Stream<String> lines = Files.lines(Paths.get(path1))) {
-            result = lines.collect(Collectors.toList());
+        URL resource = getClass().getClassLoader().getResource(path);
+        if (resource == null) {
+            throw new IllegalArgumentException("Resource not found: " + path);
         }
-        return result;
+        try (Stream<String> lines = Files.lines(FileUtils.pathOf(resource))) {
+            return lines.collect(Collectors.toList());
+        }
     }
 
     private LineResult getKey(String value, Map<LineResult, String> map) {

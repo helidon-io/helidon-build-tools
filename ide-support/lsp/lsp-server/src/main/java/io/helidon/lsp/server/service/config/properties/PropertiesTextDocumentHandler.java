@@ -16,15 +16,9 @@
 
 package io.helidon.lsp.server.service.config.properties;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -103,14 +97,12 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
 
             Map<String, ConfigMetadata> proposedMetadata =
                     configMetadata.entrySet().stream()
-                                  .filter(entry -> entry.getKey().startsWith(filter)
-                                          && !entry.getKey().equals(filter)
-                                          && entry.getValue().content() == null
-                                  )
-                                  .collect(Collectors.toMap(
-                                          Map.Entry::getKey,
-                                          Map.Entry::getValue
-                                  ));
+                            .filter(entry -> entry.getKey().startsWith(filter)
+                                    && !entry.getKey().equals(filter)
+                                    && entry.getValue().content() == null)
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue));
 
             if (currentKey == null) {
                 return completionItemsForKey(proposedMetadata, baseForCompletion);
@@ -136,15 +128,15 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         }
         List<CompletionItem> result = new ArrayList<>();
         proposedMetadata.forEach((key, value) -> {
-                    CompletionItem item = new CompletionItem();
-                    item.setKind(CompletionItemKind.Snippet);
-                    item.setLabel(key);
-                    item.setInsertText(Strings.difference(baseForCompletion, key) + SEPARATOR);
-                    item.setDocumentation(prepareInfoForKey(value));
-                    item.setDetail(value.description());
-                    item.setInsertTextFormat(InsertTextFormat.Snippet);
-                    result.add(item);
-                }
+                                     CompletionItem item = new CompletionItem();
+                                     item.setKind(CompletionItemKind.Snippet);
+                                     item.setLabel(key);
+                                     item.setInsertText(Strings.difference(baseForCompletion, key) + SEPARATOR);
+                                     item.setDocumentation(prepareInfoForKey(value));
+                                     item.setDetail(value.description());
+                                     item.setInsertTextFormat(InsertTextFormat.Snippet);
+                                     result.add(item);
+                                 }
         );
         return result;
     }
@@ -156,13 +148,4 @@ public class PropertiesTextDocumentHandler implements TextDocumentHandler {
         }
         return null;
     }
-
-    private Properties loadPropertiesFile(String fileUri) throws IOException, URISyntaxException {
-        InputStream input = new FileInputStream(new URI(fileUri).getPath());
-        Properties properties = new Properties();
-        properties.load(input);
-        input.close();
-        return properties;
-    }
-
 }

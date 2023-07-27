@@ -20,52 +20,56 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.helidon.build.common.FileUtils;
+import io.helidon.lsp.common.Dependency;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 class MavenSupportTest {
 
+    private static final String LOCAL_REPO_ARG;
+
+    static {
+        String localRepository = System.getProperty("localRepository");
+        LOCAL_REPO_ARG = localRepository != null ? "-Dmaven.repo.local=" + localRepository : null;
+    }
+
     @Test
     public void ignoreFakePomFileTest() throws URISyntaxException {
-        String pomForFile = getCurrentPom();
-        String testFile = Paths.get("src", "test", "resources", "pomTests", "withoutMain", "src", "test.txt")
-                               .toAbsolutePath()
-                               .toString();
-        String resolvedPom = MavenSupport.instance().resolvePom(testFile);
-        assertEquals(pomForFile, resolvedPom);
+        Path pom = getCurrentPom();
+        Path testFile = Paths.get("src/test/resources/pomTests/withoutMain/src/test.txt");
+        Path resolvedPom = MavenSupport.resolvePom(testFile);
+        assertThat(pom, is(resolvedPom));
     }
 
     @Test
     public void getPomFileForCorrectMavenStructureFolderTest() {
-        String pomForFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "pom.xml")
-                                 .toAbsolutePath()
-                                 .toString();
-        String testFile = Paths.get("src", "test", "resources", "pomTests", "withMain", "src", "main", "test.txt")
-                               .toAbsolutePath()
-                               .toString();
-        String resolvedPom = MavenSupport.instance().resolvePom(testFile);
-        assertEquals(pomForFile, resolvedPom);
+        Path pom = Paths.get("src/test/resources/pomTests/withMain/pom.xml");
+        Path testFile = Paths.get("src/test/resources/pomTests/withMain/src/main/test.txt");
+        Path resolvedPom = MavenSupport.resolvePom(testFile);
+        assertThat(pom.toAbsolutePath(), is(resolvedPom));
     }
 
     @Test
     public void getPomForFileTest() throws URISyntaxException {
-        String pomForFile = getCurrentPom();
-        assertTrue(pomForFile.endsWith("pom.xml"));
+        Path pom = getCurrentPom();
+        assertThat(pom.getFileName().toString(), is("pom.xml"));
     }
 
     @Test
     public void getDependenciesTest() throws URISyntaxException {
-        String pomForFile = getCurrentPom();
-        Set<io.helidon.lsp.common.Dependency> dependencies = MavenSupport.instance().dependencies(pomForFile, 10000);
-        assertTrue(dependencies.size() > 0);
+        Path pom = getCurrentPom();
+        Set<Dependency> dependencies = MavenSupport.instance().dependencies(pom, 10000,  LOCAL_REPO_ARG);
+        assertThat(dependencies.isEmpty(), is(false));
     }
 
-    private String getCurrentPom() throws URISyntaxException {
+    private Path getCurrentPom() throws URISyntaxException {
         URI uri = MavenSupportTest.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-        return MavenSupport.instance().resolvePom(uri.getPath());
+        return MavenSupport.resolvePom(FileUtils.pathOf(uri));
     }
-
 }

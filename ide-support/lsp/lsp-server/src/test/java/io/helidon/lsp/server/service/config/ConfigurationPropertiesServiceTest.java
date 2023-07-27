@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,25 @@
 
 package io.helidon.lsp.server.service.config;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.json.Json;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.lsp.common.Dependency;
 import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
@@ -47,7 +52,7 @@ import org.mockito.quality.Strictness;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -63,8 +68,8 @@ class ConfigurationPropertiesServiceTest {
         ConfigurationPropertiesService service = ConfigurationPropertiesService.instance();
         service.mavenSupport(mavenSupport);
         service.metadataProvider(provider);
-        Set<Dependency> dependencies = getDependencies();
-        Mockito.when(mavenSupport.dependencies(anyString())).thenReturn(dependencies);
+        Set<Dependency> dependencies = dependencies();
+        Mockito.when(mavenSupport.dependencies(any(Path.class))).thenReturn(dependencies);
         JsonReaderFactory readerFactory = Json.createReaderFactory(Map.of());
         for (Dependency dependency : dependencies) {
             InputStream is = new FileInputStream(dependency.path());
@@ -73,24 +78,21 @@ class ConfigurationPropertiesServiceTest {
             Mockito.doReturn(configuredTypes).when(provider).readMetadata(dependency.path());
         }
 
-        Map<String, ConfigMetadata> stringConfigMetadataMap = service.metadataForPom("pom.xml");
-
+        Map<String, ConfigMetadata> stringConfigMetadataMap = service.metadataForPom(Path.of("pom.xml"));
         assertThat(stringConfigMetadataMap.size(), is(438));
     }
 
-        private Set<Dependency> getDependencies() {
-            ClassLoader classLoader = getClass().getClassLoader();
-            File metadataDirectory = new File(classLoader.getResource("metadata").getFile());
-            File[] files = metadataDirectory.listFiles();
-            Set<Dependency> dependencies = new HashSet<>();
-
-            for (File file : files) {
-                if (file.getName().endsWith("json")) {
-                    Dependency dependency = new Dependency(null, null, null, null, null, file.getPath());
-                    dependencies.add(dependency);
-                }
-            }
-
-            return dependencies;
+    private Set<Dependency> dependencies() {
+        URL resource = getClass().getClassLoader().getResource("metadata");
+        if (resource == null) {
+            throw new IllegalStateException("Resource not found: metadata");
         }
+        try (Stream<Path> paths = Files.list(FileUtils.pathOf(resource))) {
+            return paths.filter(file -> file.getFileName().toString().endsWith(".json"))
+                    .map(file -> new Dependency(null, null, null, null, null, file.toString()))
+                    .collect(Collectors.toSet());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }

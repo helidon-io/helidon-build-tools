@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.lsp.server.service.config.properties;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,13 +35,13 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     private final PropertiesTextDocumentHandler handler = PropertiesTextDocumentHandler.instance();
 
     @BeforeEach
-    public void before() throws URISyntaxException, IOException {
+    public void before() {
         super.before();
         handler.propertiesService(propertiesService);
     }
 
     @Test
-    void testCompletionLabels() throws URISyntaxException {
+    void testCompletionLabels() {
         List<CompletionItem> completion = completionItems(new Position(17, 3), "test-config.properties");
         int expectedAmount = 121;
         assertThat(completion.size(), is(expectedAmount));
@@ -72,7 +71,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionForAllowedValues() throws URISyntaxException {
+    public void testCompletionForAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(25, 31), "test-config.properties");
         assertThat(completion.size(), is(3));
         assertThat(completion.stream()
@@ -89,7 +88,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testInsertText() throws URISyntaxException {
+    public void testInsertText() {
         List<CompletionItem> completion = completionItems(new Position(21, 37), "test-config.properties");
         CompletionItem completionItem =
                 completion.stream()
@@ -106,7 +105,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testDefaultValues() throws URISyntaxException {
+    public void testDefaultValues() {
         List<CompletionItem> completion = completionItems(new Position(24, 14), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.private-key.pem.key.resource.content-plain",
                 completion);
@@ -118,7 +117,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testAllowedValues() throws URISyntaxException {
+    public void testAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(25, 26), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.client-auth", completion);
         assertThat(completion.size(), is(1));
@@ -128,7 +127,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
         assertThat(completionItem.getDocumentation().getLeft().contains("NONE (Authentication is not required.)"), is(true));
     }
 
-    private List<CompletionItem> completionItems(Position position, String fileName) throws URISyntaxException {
+    private List<CompletionItem> completionItems(Position position, String fileName) {
         return completionItems(position, fileName, handler);
     }
 

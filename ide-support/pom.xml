@@ -38,6 +38,14 @@
 
     <modules>
         <module>lsp</module>
-        <module>vscode-extension</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>vscode</id>
+            <modules>
+                <module>vscode-extension</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

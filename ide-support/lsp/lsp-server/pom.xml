@@ -29,6 +29,7 @@
     <name>Helidon language server</name>
 
     <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
         <maven.compiler.release>17</maven.compiler.release>
         <version.test.lib>3.0.2</version.test.lib>
         <mainClass>io.helidon.lsp.server.HelidonLSPLauncher</mainClass>

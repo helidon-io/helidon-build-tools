@@ -1,12 +1,32 @@
+#
+# Copyright (c) 2023 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: "Validate PR"
 
-on: [pull_request, push, workflow_dispatch]
+on: [ pull_request, push, workflow_dispatch ]
 
 env:
-  JAVA_VERSION: '17'
-  JAVA_DISTRO: 'temurin'
-  HELIDON_PIPELINES: 'true'
-  MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  JAVA_VERSION: 17
+  JAVA_DISTRO: oracle
+  GRAALVM_VERSION: 21.3.0
+  MAVEN_ARGS: |
+    -B -fae -e
+    -Dmaven.test.failure.ignore=false
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,86 +34,165 @@ concurrency:
 
 jobs:
   copyright:
-    timeout-minutes: 10
+    timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3.6.0
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Copyright
-        run: etc/scripts/copyright.sh
+          run: etc/scripts/copyright.sh
   checkstyle:
-    timeout-minutes: 10
+    timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3.6.0
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Checkstyle
-        run: etc/scripts/checkstyle.sh
-  spotbugs:
-    timeout-minutes: 30
+          run: etc/scripts/checkstyle.sh
+  shellcheck:
+    timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3.6.0
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Spotbugs
-        run: etc/scripts/spotbugs.sh
+          run: etc/scripts/shellcheck.sh
   build:
-    timeout-minutes: 60
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    outputs:
+      test-matrix: ${{ steps.build.outputs.test-matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: build
+        uses: ./.github/actions/common
+        with:
+          build-cache: read-write
+          maven-cache: read-write
+          artifact-name: helidon-cli
+          artifact-path: cli/impl/target/helidon.zip
+          run: |
+            mvn ${MAVEN_ARGS} -T 8 \
+              -DskipTests \
+              -Pbuild-cache \
+              install
+          test-matrix: |
+            {
+              "os": [ "ubuntu-20.04", "windows-2022" ],
+              "group": [ "cli", "cli-functional", "archetype", "linker", "misc" ],
+              "include": [
+                { "os": "ubuntu-20.04", "platform": "linux" },
+                { "os": "windows-2022", "platform": "windows" }
+              ],
+              "groups": {
+                "cli": [ "cli/**!(test)", "maven-plugins/*cli*" ],
+                "cli-functional": [ "cli/tests/**" ],
+                "archetype": [ "archetype/**", "maven-plugins/*archetype*" ],
+                "linker": [ "linker/**" ]
+              }
+            }
+  tests:
+    needs: build
+    timeout-minutes: 15
+    strategy:
+      matrix: ${{ fromJSON(needs.build.outputs.test-matrix) }}
+    runs-on: ${{ matrix.os }}
+    name: tests/${{ matrix.group }}-${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          archive-test-results: true
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -pl ${{ matrix.modules }} \
+              -Pbuild-cache \
+              -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
+              verify
+  spotbugs:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} -T 8 \
+              -DskipTests \
+              -Pspotbugs,build-cache \
+              verify
+  javadoc:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} -T 8 \
+              -DskipTests \
+              -Pjavadoc,build-cache \
+              package
+  vscode-extension:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -pl ide-support/vscode-extension \
+              -DskipTests \
+              -Pvscode \
+              install
+  cli:
+    needs: build
+    timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-latest ]
         include:
           - os: ubuntu-20.04
-            build_script: etc/scripts/github-build.sh
-          - os: windows-latest
-            build_script: etc/scripts/build.bat
+            platform: linux-amd64
+          - os: windows-2022
+            platform: windows-amd64
+          - os: macos-12
+            platform: darwin-amd64
     runs-on: ${{ matrix.os }}
+    name: cli/${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3.6.0
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Maven build
-        run: ${{ matrix.build_script }}
-      - name: Archive test results
-        uses: actions/upload-artifact@v3.1.2
-        #https://github.com/actions/upload-artifact/issues/240
-        if: ${{ matrix.os != 'windows-latest' && always() }}
-        with:
-          name: test-results
-          path: |
-            **/target/surefire-reports/*.txt
-            **/target/it/**/*.log
-      - name: Archive VSCode extension
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: helidon-vscode
-          path: |
-            ide-support/vscode-extension/target/vscode-helidon.vsix
-  shellcheck:
-    name: shellcheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        run: etc/scripts/shellcheck.sh
+          build-cache: read-only
+          native-image: true
+          archive-test-results: true
+          artifact-name: helidon-cli
+          artifact-path: cli/impl/target/helidon-${{ matrix.platform }}*
+          run: |
+            # build the executable
+            mvn ${MAVEN_ARGS} \
+              -pl cli/impl \
+              -DskipTests \
+              -Pnative-image,!toolchain \
+              -Dnative.image.name=helidon-${{ matrix.platform }} \
+              package
+
+            # smoke test
+            # TODO make it a separate job to make it re-runnable
+            mvn ${MAVEN_ARGS} \
+              -pl cli/tests/functional \
+              -Pnative-image \
+              -Dnative.image.name=helidon-${{ matrix.platform }} \
+              -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
+              -Dtest=CliFunctionalV2Test#*Native* \
+              test

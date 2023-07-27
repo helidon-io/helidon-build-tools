@@ -122,6 +122,9 @@
     <profiles>
         <profile>
             <id>native-image</id>
+            <properties>
+                <native.image.name>helidon</native.image.name>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -129,6 +132,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+                                <native.image.name>${native.image.name}</native.image.name>
                                 <native.image>true</native.image>
                             </systemPropertyVariables>
                         </configuration>

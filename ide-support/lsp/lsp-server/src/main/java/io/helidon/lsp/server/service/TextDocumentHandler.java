@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,12 +49,11 @@ public interface TextDocumentHandler {
      */
     default String prepareInfoForKey(ConfigMetadata value) {
         StringBuilder details = new StringBuilder(value.type());
-        if (value instanceof ValueConfigMetadata) {
-            ValueConfigMetadata vValue = (ValueConfigMetadata) value;
+        if (value instanceof ValueConfigMetadata vValue) {
             if (vValue.defaultValue() != null && !vValue.defaultValue().isBlank()) {
                 details.append("\nDefault value: ").append(vValue.defaultValue());
             }
-            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
+            if (vValue.allowedValues() != null && !vValue.allowedValues().isEmpty()) {
                 details.append("\nAllowed values: ");
                 for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
                     details.append("\n  ").append(allowedValue.value());
@@ -78,9 +77,8 @@ public interface TextDocumentHandler {
             return List.of();
         }
         List<CompletionItem> result = new ArrayList<>();
-        if (proposedMetadata instanceof ValueConfigMetadata) {
-            ValueConfigMetadata vValue = (ValueConfigMetadata) proposedMetadata;
-            if (vValue.allowedValues() != null && vValue.allowedValues().size() > 0) {
+        if (proposedMetadata instanceof ValueConfigMetadata vValue) {
+            if (vValue.allowedValues() != null && !vValue.allowedValues().isEmpty()) {
                 for (ConfiguredType.AllowedValue allowedValue : vValue.allowedValues()) {
                     CompletionItem item = new CompletionItem();
                     item.setKind(CompletionItemKind.Snippet);

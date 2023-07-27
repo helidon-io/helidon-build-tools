@@ -47,9 +47,6 @@ readonly LOG_FILE
 RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 readonly  RESULT_FILE
 
-# shellcheck disable=SC1091
-source "${WS_DIR}"/etc/scripts/pipeline-env.sh
-
 die(){ echo "${1}" ; exit 1 ;}
 
 # shellcheck disable=SC2086
@@ -57,7 +54,7 @@ mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f "${WS_DIR}"/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
-    -Pide-support > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+    > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
 grep "^\[ERROR\]" "${RESULT_FILE}" \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,13 +35,13 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     private final YamlTextDocumentHandler handler = YamlTextDocumentHandler.instance();
 
     @BeforeEach
-    public void before() throws URISyntaxException, IOException {
+    public void before() {
         super.before();
         handler.propertiesService(propertiesService);
     }
 
     @Test
-    void testCompletionLabels() throws URISyntaxException {
+    void testCompletionLabels() {
         List<CompletionItem> completion = completionItems(new Position(19, 4), "test-config.yaml");
         assertThat(completion.size(), is(6));
         assertThat(completion.stream().anyMatch(item -> item.getLabel().equals("virtual-enforced")), is(true));
@@ -75,7 +74,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionForAllowedValues() throws URISyntaxException {
+    public void testCompletionForAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(34, 19), "test-config.yaml");
         assertThat(completion.size(), is(3));
         assertThat(completion.stream()
@@ -85,7 +84,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testInsertText() throws URISyntaxException {
+    public void testInsertText() {
         List<CompletionItem> completion = completionItems(new Position(25, 4), "test-config.yaml");
         CompletionItem completionItem = completion.stream().filter(item -> item.getLabel().equals("host")).findFirst()
                                                   .orElse(null);
@@ -101,7 +100,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testDefaultValues() throws URISyntaxException {
+    public void testDefaultValues() {
         List<CompletionItem> completion = completionItems(new Position(19, 2), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("default-authorization-provider", completion);
         assertThat(completionItem.getDocumentation().getLeft().contains("Default value"), is(false));
@@ -116,7 +115,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testAllowedValues() throws URISyntaxException {
+    public void testAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(44, 6), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("client-auth", completion);
         assertThat(completion.size(), is(6));//7-1
@@ -127,7 +126,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionIncorrectConfig() throws URISyntaxException, IOException {
+    public void testCompletionIncorrectConfig() {
         List<CompletionItem> completion = completionItems(new Position(19, 0), "test-incorrect-config.yaml");
         assertThat(completion.size(), is(2));
 
@@ -135,7 +134,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
         assertThat(completion.size(), is(0));
     }
 
-    private List<CompletionItem> completionItems(Position position, String fileName) throws URISyntaxException {
+    private List<CompletionItem> completionItems(Position position, String fileName) {
         return completionItems(position, fileName, handler);
     }
 }

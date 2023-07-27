@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class TemplateLineTest {
 
         shouldFail(templateLine,
                    file,
-                   "Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.");
+                   "Copyright (c) 2017, 2023 Oracle and/or its affiliates.");
     }
 
     @Test

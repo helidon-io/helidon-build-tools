@@ -59,7 +59,7 @@ public class CliDistributionTest {
         distDir = Files.createTempDirectory("dist");
         Path targetDir = Path.of(getProperty("helidon.executable.directory"));
         LOGGER.info("targetDir - " + targetDir.toRealPath());
-        Path cliZip = targetDir.resolve("target/distribution/helidon.zip");
+        Path cliZip = targetDir.resolve("target/helidon.zip");
         LOGGER.info("cliZip - " + cliZip.toRealPath());
         unzip(cliZip, distDir);
     }
@@ -84,25 +84,25 @@ public class CliDistributionTest {
     }
 
     @Test
-    @EnabledOnOs(value={OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
+    @EnabledOnOs(value = {OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellCreateProject() throws IOException {
         runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
-    @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
+    @EnabledOnOs(value = {OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testBatchCreateProject() throws IOException {
         runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
 
     @Test
-    @EnabledOnOs(value={OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
+    @EnabledOnOs(value = {OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellVersion() throws IOException {
         runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
-    @EnabledOnOs(value={OS.WINDOWS}, disabledReason = "Run only on Windows")
+    @EnabledOnOs(value = {OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testVersion() throws IOException {
         runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
