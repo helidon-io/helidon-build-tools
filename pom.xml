@@ -202,11 +202,9 @@
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
-        <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
-        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
+        <version.plugin.surefire>3.1.2</version.plugin.surefire>
+        <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
-        <version.plugin.tycho>2.5.0</version.plugin.tycho>
     </properties>
 
     <modules>
@@ -506,36 +504,6 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${version.plugin.jacoco}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-maven-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>target-platform-configuration</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-compiler-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-source-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-surefire-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.eclipse.tycho</groupId>
-                    <artifactId>tycho-packaging-plugin</artifactId>
-                    <version>${version.plugin.tycho}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.github.eirslett</groupId>

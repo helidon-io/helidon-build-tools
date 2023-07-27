@@ -19,17 +19,17 @@ package io.helidon.lsp.server.util;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import io.helidon.build.common.logging.Log;
 import io.helidon.lsp.server.core.LanguageServerContext;
 
 import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.services.LanguageClient;
 
 /**
  * Util class for logs.
  */
 public class LanguageClientLogUtil {
-
-    private static final LanguageClient CLIENT = LanguageServerContext.instance().client();
 
     private LanguageClientLogUtil() {
     }
@@ -41,12 +41,19 @@ public class LanguageClientLogUtil {
      * @param exception exception
      */
     public static void logMessage(String message, Exception exception) {
-        StringWriter sw = new StringWriter();
-        exception.printStackTrace(new PrintWriter(sw));
-        MessageParams messageParams = new MessageParams();
-        String messageBegin = message != null && !message.trim().isEmpty() ? message + " :" + System.lineSeparator() : "";
-        messageParams.setMessage(messageBegin + sw);
-        CLIENT.logMessage(messageParams);
+        LanguageClient languageClient = LanguageServerContext.instance().client();
+        if (languageClient == null) {
+            Log.error(exception, message);
+        } else {
+            StringWriter sw = new StringWriter();
+            if (message != null && !message.trim().isEmpty()) {
+                sw.append(message)
+                        .append(" :")
+                        .append(System.lineSeparator());
+            }
+            exception.printStackTrace(new PrintWriter(sw));
+            languageClient.logMessage(new MessageParams(MessageType.Error, sw.toString()));
+        }
     }
 
     /**
@@ -55,8 +62,11 @@ public class LanguageClientLogUtil {
      * @param message message
      */
     public static void logMessage(String message) {
-        MessageParams messageParams = new MessageParams();
-        messageParams.setMessage(message);
-        CLIENT.logMessage(messageParams);
+        LanguageClient languageClient = LanguageServerContext.instance().client();
+        if (languageClient == null) {
+            Log.info(message);
+        } else {
+            languageClient.logMessage(new MessageParams(MessageType.Info, message));
+        }
     }
 }

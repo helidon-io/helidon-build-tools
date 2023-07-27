@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ gulp.task('build', (done) => {
     gulp.src('../../cli/impl/target/libs/**/*').pipe(gulp.dest('./target/cli/libs'));
     gulp.src('../../cli/impl/target/helidon.jar').pipe(gulp.dest('./target/cli'));
     gulp.src('../lsp/lsp-server/target/helidon-lsp-server.jar').pipe(gulp.dest('./target/server'));
-    gulp.src('../lsp/lsp-server/target/logging.properties').pipe(gulp.dest('./target/server'));
+    gulp.src('../lsp/lsp-server/target/libs/*').pipe(gulp.dest('./target/server/libs'));
+    gulp.src('../lsp/lsp-server/etc/logging.properties').pipe(gulp.dest('./target/server'));
     done();
 });
