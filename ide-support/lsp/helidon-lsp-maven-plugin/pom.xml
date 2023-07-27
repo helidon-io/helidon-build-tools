@@ -16,22 +16,23 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.ide-support.lsp</groupId>
+        <groupId>io.helidon.build-tools.ide-support.lsp</groupId>
         <artifactId>helidon-lsp-project</artifactId>
         <version>3.0.0-SNAPSHOT</version>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-lsp-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <name>Helidon LSP Maven Plugin</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.ide-support.lsp</groupId>
+            <groupId>io.helidon.build-tools.ide-support.lsp</groupId>
             <artifactId>helidon-lsp-common</artifactId>
             <version>${project.version}</version>
         </dependency>
