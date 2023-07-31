@@ -81,7 +81,7 @@ jobs:
           test-matrix: |
             {
               "os": [ "ubuntu-20.04", "windows-2022" ],
-              "group": [ "cli", "cli-functional", "archetype", "linker", "misc" ],
+              "group": [ "cli", "cli-functional", "archetype", "linker" ],
               "include": [
                 { "os": "ubuntu-20.04", "platform": "linux" },
                 { "os": "windows-2022", "platform": "windows" }
@@ -160,6 +160,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
+        os: [ ubuntu-20.04, windows-2022, macos-12 ]
         include:
           - os: ubuntu-20.04
             platform: linux-amd64
@@ -188,7 +189,6 @@ jobs:
               package
 
             # smoke test
-            # TODO make it a separate job to make it re-runnable
             mvn ${MAVEN_ARGS} \
               -pl cli/tests/functional \
               -Pnative-image \

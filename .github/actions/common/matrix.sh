@@ -97,7 +97,7 @@ list_modules() {
     return 1
   fi
   IFS=","
-  printf "## Resolved modules for expressions: %s\n" "${*}" "${files[*]}" >&2
+  printf "## Resolved expressions: %s, modules: %s\n" "${*}" "${files[*]}" >&2
   echo "${files[*]}"
 }
 
@@ -106,7 +106,7 @@ list_modules() {
 #
 # args: group prefix expr...
 #
-print_group() {
+resolve_group() {
   local group
   group="${1}"
   shift
@@ -123,19 +123,19 @@ print_group() {
 #
 # arg1: JSON object E.g. '{ "group1": [ "dir1/**", "dir2/**" ], "group2": [ "dir3/**" ] }'
 #
-print_groups() {
+resolve_groups() {
   local groups modules all_modules
   all_modules=()
   groups="$(jq '.groups // []' <<< "${1}")"
   for group in $(json_keys "${groups}") ; do
     readarray -t modules <<< "$(json_map_get "${group}" "${groups}")"
     printf "## Resolving group: %s, expressions: %s\n" "${group}" "${modules[*]}" >&2
-    print_group "${group}" "" "${modules[@]}"
+    resolve_group "${group}" "" "${modules[@]}"
     all_modules+=("${modules[@]}")
   done
   if [ ${#all_modules[@]} -gt 0 ] ; then
       printf "## Resolving group: misc, expressions: %s\n" "${all_modules[2]}" >&2
-      print_group "misc" "!" "${all_modules[@]}"
+      resolve_group "misc" "!" "${all_modules[@]}"
   fi
 }
 
@@ -145,10 +145,10 @@ print_groups() {
 # arg1: JSON object E.g. '{ "group1": [ "dir1/**", "dir2/**" ], "group2": [ "dir3/**" ] }'
 #
 main() {
-  local groups extra_include merged_include include matrix errors
+  local groups resolved_include extra_include merged_include resolved_matrix matrix errors
 
   printf "## Processing JSON: \n%s\n" "$(jq <<< "${1}")" >&2
-  groups="$(print_groups "${1}" | jq -s)"
+  resolved_include="$(resolve_groups "${1}" | jq -s)"
 
   readarray -t errors < "${ERROR_FILE}"
   if [ ${#errors[*]} -ne 0 ] ; then
@@ -156,16 +156,26 @@ main() {
     exit 1
   fi
 
-  printf "## Resolved groups JSON: \n%s\n" "$(jq <<< "${groups}")" >&2
+  printf "## Resolved include JSON: \n%s\n" "$(jq <<< "${resolved_include}")" >&2
 
   extra_include="$(jq '.include // []' <<< "${1}")"
-  extra_matrix="$(jq 'del(.groups, .include)' <<< "${1}")"
+  extra_matrix="$(jq 'del(.groups, .group, .include)' <<< "${1}")"
   printf "## Additional include JSON: \n%s\n" "${extra_include}" >&2
   printf "## Additional matrix JSON: \n%s\n" "${extra_matrix}" >&2
 
-  merged_include="$(json_merge_arrays "${groups}" "${extra_include}")"
-  include="$(jq <<< '{ "include": '"${merged_include}"' }')"
-  matrix="$(json_merge_objects "${include}" "${extra_matrix}")"
+  groups="$(jq '.group // []' <<< "${1}")"
+  if [ "${groups}" != "[]" ] ; then
+    merged_groups="$(json_merge_arrays "${groups}" '[ "misc" ]')"
+  else
+    merged_groups="[]"
+  fi
+
+  merged_include="$(json_merge_arrays "${resolved_include}" "${extra_include}")"
+  resolved_matrix="$(jq <<< '{
+    "group": '"${merged_groups}"',
+    "include": '"${merged_include}"'
+  }')"
+  matrix="$(json_merge_objects "${resolved_matrix}" "${extra_matrix}")"
   printf "## Final matrix JSON: \n%s\n" "${matrix}" >&2
 
   echo "matrix=$(jq -c <<< "${matrix}")"
