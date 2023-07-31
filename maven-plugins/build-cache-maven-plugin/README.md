@@ -69,7 +69,7 @@ This plugin does not provide any goal at the moment.
 | includeAllChecksums  | Boolean | `false`           | Enables individual checksums for all project files |
 | archiveFile          | File    | `null`            | Path a `.tar` file                                 |
 | loadArchive          | Boolean | `false`           | Loads the cache from the archive file              |
-| saveArchive          | Boolean | `false`           | Saves the cache to the archive file                |
+| createArchive        | Boolean | `false`           | Saves the cache to the archive file                |
 | executionsExcludes   | List    | `[]`              | Execution exclude patterns                         |
 | executionsIncludes   | List    | `[*]`             | Execution include patterns                         |
 

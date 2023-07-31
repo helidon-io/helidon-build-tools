@@ -55,6 +55,12 @@ public class CliMavenTest {
 
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
+    private static final String LOCAL_REPO_ARG;
+
+    static {
+        String localRepository = System.getProperty("localRepository");
+        LOCAL_REPO_ARG = localRepository != null ? "-Dmaven.repo.local=" + localRepository : null;
+    }
 
     private static Path workDir;
     private static Path mavenDirectory;
@@ -109,6 +115,7 @@ public class CliMavenTest {
                 .directory(workDir)
                 .stdOut(new PrintStream(stream))
                 .stdErr(new PrintStream(stream))
+                .addOptionalArgument(LOCAL_REPO_ARG)
                 .addArguments(mavenArgs)
                 .build()
                 .execute());
@@ -159,6 +166,7 @@ public class CliMavenTest {
                 .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("bare-se"))
                 .stdOut(new PrintStream(stream))
+                .addOptionalArgument(LOCAL_REPO_ARG)
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
                 .build()
@@ -174,12 +182,13 @@ public class CliMavenTest {
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
         generateBareSe(workDir, "runCliMavenPluginJansiIssue" + pluginVersion);
         try {
-             ProcessMonitor monitor = MavenCommand.builder()
+            ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("bare-se"))
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
-                     .addArgument("-B")
+                    .addArgument("-B")
+                    .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                     .build()
@@ -202,24 +211,26 @@ public class CliMavenTest {
                     .directory(workDir.resolve("bare-se"))
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
+                    .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                     .build()
                     .start();
             FunctionalUtils.waitForApplication(port, stream);
 
-            Files.walk(workDir)
-                    .filter(p -> p.toString().endsWith("Main.java"))
-                    .findAny()
-                    .ifPresent(path -> {
-                        try {
-                            String content = Files.readString(path);
-                            content = content.replaceAll("\"World\"", "\"John\"");
-                            Files.write(path, content.getBytes(StandardCharsets.UTF_8));
-                        } catch (IOException ioException) {
-                            throw new UncheckedIOException(ioException);
-                        }
-                    });
+            try (Stream<Path> paths = Files.walk(workDir)) {
+                paths.filter(p -> p.toString().endsWith("Main.java"))
+                        .findAny()
+                        .ifPresent(path -> {
+                            try {
+                                String content = Files.readString(path);
+                                content = content.replaceAll("\"World\"", "\"John\"");
+                                Files.write(path, content.getBytes(StandardCharsets.UTF_8));
+                            } catch (IOException ioException) {
+                                throw new UncheckedIOException(ioException);
+                            }
+                        });
+            }
 
             FunctionalUtils.waitForApplication(port, stream);
 
@@ -245,6 +256,7 @@ public class CliMavenTest {
                     .directory(workDir)
                     .stdOut(new PrintStream(stream))
                     .stdErr(new PrintStream(stream))
+                    .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArguments(args)
                     .build()
                     .start()
@@ -304,7 +316,7 @@ public class CliMavenTest {
         assertThat(e.getMessage(), containsString("BUILD FAILURE"));
     }
 
-    void generateBareSe(Path wd,  String artifactId) {
+    void generateBareSe(Path wd, String artifactId) {
         FileUtils.requireDirectory(wd);
         assertThat(FileUtils.list(wd).size(), is(1));
         Helidon.execute(

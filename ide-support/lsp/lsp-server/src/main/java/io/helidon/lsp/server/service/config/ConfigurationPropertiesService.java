@@ -16,10 +16,10 @@
 
 package io.helidon.lsp.server.service.config;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -30,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.lsp.common.Dependency;
 import io.helidon.lsp.server.management.MavenSupport;
 import io.helidon.lsp.server.service.metadata.ConfigMetadata;
@@ -54,8 +55,7 @@ public class ConfigurationPropertiesService {
             "java.lang.String",
             "java.net.URI",
             "java.lang.Class",
-            "java.time.ZoneId"
-    );
+            "java.time.ZoneId");
 
     private final Map<String, WeakReference<Map<String, ConfigMetadata>>> cache;
     private MetadataProvider metadataProvider;
@@ -109,37 +109,35 @@ public class ConfigurationPropertiesService {
     /**
      * Obtain Helidon configuration properties for the pom file.
      *
-     * @param pom the pom file.
+     * @param pom {@code pom.xml}
      * @return Helidon configuration properties.
-     * @throws IOException IOException.
      */
-    public Map<String, ConfigMetadata> metadataForPom(String pom) throws IOException {
-        if (cache.get(pom) != null) {
-            Map<String, ConfigMetadata> result = cache.get(pom).get();
+    public Map<String, ConfigMetadata> metadataForPom(Path pom) {
+        String pomPath = pom.toAbsolutePath().toString();
+        if (cache.get(pomPath) != null) {
+            Map<String, ConfigMetadata> result = cache.get(pomPath).get();
             if (result != null) {
                 return result;
             }
         }
 
         long startTime = System.currentTimeMillis();
-        Set<Dependency> dependenciesSet = mavenSupport.dependencies(pom);
-        if (dependenciesSet == null) {
-            return Map.of();
-        }
-        List<String> dependencies = dependenciesSet.stream()
-                                            .map(Dependency::path)
-                                            .collect(Collectors.toList());
-        dependencies = dependencies.stream().filter(d -> d.contains("helidon")).collect(Collectors.toList());
+
         List<ConfiguredType> configuredTypes = new LinkedList<>();
         Map<String, ConfiguredType> typesMap = new HashMap<>();
         Map<String, ConfigMetadata> configProperties = new LinkedHashMap<>();
-        for (String dependency : dependencies) {
-            List<ConfiguredType> types = metadataProvider.readMetadata(dependency);
-            types.forEach(type -> {
-                typesMap.put(type.targetClass(), type);
-                configuredTypes.add(type);
-            });
-        }
+
+        mavenSupport.dependencies(pom)
+                .stream()
+                .map(Dependency::path)
+                .filter(d -> d.contains("helidon"))
+                .forEach(dependency -> {
+                    List<ConfiguredType> types = metadataProvider.readMetadata(dependency);
+                    types.forEach(type -> {
+                        typesMap.put(type.targetClass(), type);
+                        configuredTypes.add(type);
+                    });
+                });
 
         for (ConfiguredType configuredType : configuredTypes) {
             if (configuredType.standalone()) {
@@ -147,20 +145,34 @@ public class ConfigurationPropertiesService {
             }
         }
 
-        cache.put(pom, new WeakReference<>(configProperties));
-        LOGGER.log(
-                Level.FINEST,
-                "metadataForPom() for pom file {0} took {1} seconds",
-                new Object[]{pom, (double) (System.currentTimeMillis() - startTime) / 1000}
-        );
+        cache.put(pomPath, new WeakReference<>(configProperties));
+
+        LOGGER.log(Level.FINEST,
+                   "metadataForPom() for pom file {0} took {1} seconds",
+                   new Object[] {pom, (double) (System.currentTimeMillis() - startTime) / 1000});
+
         return configProperties;
     }
 
-    private void processType(
-            ConfiguredType configuredType,
-            Map<String, ConfiguredType> typesMap,
-            Map<String, ConfigMetadata> result
-    ) {
+    /**
+     * Obtain Helidon configuration properties for the file from the Helidon project.
+     *
+     * @param uri project file
+     * @return Helidon configuration properties
+     */
+    public Map<String, ConfigMetadata> metadataForFile(String uri) {
+        try {
+            Path pom = MavenSupport.resolvePom(FileUtils.pathOf(new URI(uri)));
+            return pom != null ? metadataForPom(pom) : Map.of();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void processType(ConfiguredType configuredType,
+                             Map<String, ConfiguredType> typesMap,
+                             Map<String, ConfigMetadata> result) {
+
         ConfigMetadata data = new ContainerConfigMetadata(
                 configuredType.prefix(),
                 configuredType.targetClass(),
@@ -168,28 +180,26 @@ public class ConfigurationPropertiesService {
                 prepareDocs(configuredType.description(), true),
                 0,
                 configuredType.properties().stream()
-                              .map(prop -> new ValueConfigMetadata(
-                                      prop.key(),
-                                      prop.defaultValue(),
-                                      prop.type(),
-                                      prepareDocs(prop.description(), prop.optional()),
-                                      1,
-                                      null,
-                                      prop.kind(),
-                                      prop.allowedValues()))
-                              .collect(Collectors.toSet()));
+                        .map(prop -> new ValueConfigMetadata(
+                                prop.key(),
+                                prop.defaultValue(),
+                                prop.type(),
+                                prepareDocs(prop.description(), prop.optional()),
+                                1,
+                                null,
+                                prop.kind(),
+                                prop.allowedValues()))
+                        .collect(Collectors.toSet()));
         result.put(getPath(data, result), data);
         processType(configuredType, typesMap, 1, result);
     }
 
-    private void processType(
-            ConfiguredType configuredType,
-            Map<String, ConfiguredType> typesMap,
-            int level,
-            Map<String, ConfigMetadata> result
-    ) {
-        Set<ConfiguredType.ConfiguredProperty> properties = configuredType.properties();
+    private void processType(ConfiguredType configuredType,
+                             Map<String, ConfiguredType> typesMap,
+                             int level,
+                             Map<String, ConfigMetadata> result) {
 
+        Set<ConfiguredType.ConfiguredProperty> properties = configuredType.properties();
         for (ConfiguredType.ConfiguredProperty property : properties) {
             if (property.key() != null && property.key().contains(".*.")) {
                 // this is a nested key, must be resolved by the parent list node
@@ -208,13 +218,12 @@ public class ConfigurationPropertiesService {
         }
     }
 
-    private void processProperty(
-            ConfiguredType.ConfiguredProperty property,
-            Set<ConfiguredType.ConfiguredProperty> properties,
-            Map<String, ConfiguredType> typesMap,
-            int level,
-            Map<String, ConfigMetadata> result
-    ) {
+    private void processProperty(ConfiguredType.ConfiguredProperty property,
+                                 Set<ConfiguredType.ConfiguredProperty> properties,
+                                 Map<String, ConfiguredType> typesMap,
+                                 int level,
+                                 Map<String, ConfigMetadata> result) {
+
         if (property.kind() == ConfiguredOptionKind.LIST) {
             processListProperty(property, properties, typesMap, level, result);
             return;
@@ -237,25 +246,7 @@ public class ConfigurationPropertiesService {
                 if (property.merge()) {
                     processType(nestedType, typesMap, level, result);
                 } else {
-                    ConfigMetadata metadata = new ContainerConfigMetadata(
-                            property.outputKey(),
-                            property.type(),
-                            property.kind(),
-                            prepareDocs(property.description(), property.optional()),
-                            level,
-                            nestedType.properties().stream()
-                                      .map(prop -> new ValueConfigMetadata(
-                                              prop.key(),
-                                              prop.defaultValue(),
-                                              prop.type(),
-                                              prepareDocs(prop.description(), prop.optional()),
-                                              level + 1,
-                                              null,
-                                              prop.kind(),
-                                              prop.allowedValues()))
-                                      .collect(Collectors.toSet()));
-                    result.put(getPath(metadata, result), metadata);
-                    processType(nestedType, typesMap, level + 1, result);
+                    processList(property, typesMap, level, result, nestedType);
                 }
             }
         } else {
@@ -268,8 +259,7 @@ public class ConfigurationPropertiesService {
                     level,
                     null,
                     property.kind(),
-                    property.allowedValues()
-            );
+                    property.allowedValues());
             result.put(getPath(metadata, result), metadata);
         }
     }
@@ -277,6 +267,7 @@ public class ConfigurationPropertiesService {
     private void processAllowedValuesOrMissing(ConfiguredType.ConfiguredProperty property,
                                                Map<String, ConfiguredType> typesMap,
                                                int level, Map<String, ConfigMetadata> result) {
+
         if (property.provider()) {
             processFromProvider(property, typesMap, level, result);
             return;
@@ -290,8 +281,7 @@ public class ConfigurationPropertiesService {
                 level,
                 null,
                 property.kind(),
-                property.allowedValues()
-        );
+                property.allowedValues());
         result.put(getPath(metadata, result), metadata);
     }
 
@@ -299,6 +289,7 @@ public class ConfigurationPropertiesService {
                                          Map<String, ConfiguredType> typesMap,
                                          int level,
                                          Map<String, ConfigMetadata> result) {
+
         // let's find all supported providers
         List<ConfiguredType> providers = new LinkedList<>();
         for (ConfiguredType value : typesMap.values()) {
@@ -317,8 +308,7 @@ public class ConfigurationPropertiesService {
                     level,
                     null,
                     property.kind(),
-                    property.allowedValues()
-            );
+                    property.allowedValues());
             result.put(getPath(metadata, result), metadata);
             return;
         }
@@ -330,17 +320,16 @@ public class ConfigurationPropertiesService {
                 prepareDocs(property.description(), property.optional()),
                 level,
                 providers.stream()
-                         .map(provider -> new ContainerConfigMetadata(
-                                 provider.prefix(),
-                                 provider.targetClass(),
-                                 null,
-                                 prepareDocs(provider.description(), true),
-                                 level + 1,
-                                 null))
-                         .collect(Collectors.toSet()),
+                        .map(provider -> new ContainerConfigMetadata(
+                                provider.prefix(),
+                                provider.targetClass(),
+                                null,
+                                prepareDocs(provider.description(), true),
+                                level + 1,
+                                null))
+                        .collect(Collectors.toSet()),
                 property.kind(),
-                property.allowedValues()
-        );
+                property.allowedValues());
         result.put(getPath(metadata, result), metadata);
 
         for (ConfiguredType provider : providers) {
@@ -351,7 +340,8 @@ public class ConfigurationPropertiesService {
                         null,
                         prepareDocs(provider.description(), true),
                         level + 1,
-                        provider.properties().stream()
+                        provider.properties()
+                                .stream()
                                 .map(prop -> new ValueConfigMetadata(
                                         prop.key(),
                                         prop.defaultValue(),
@@ -375,6 +365,7 @@ public class ConfigurationPropertiesService {
                                       Map<String, ConfiguredType> typesMap,
                                       int level,
                                       Map<String, ConfigMetadata> result) {
+
         // this may be a list defined in configuration itself (*)
         String prefix = property.outputKey() + ".*.";
         Map<String, ConfiguredType.ConfiguredProperty> children = new HashMap<>();
@@ -393,8 +384,7 @@ public class ConfigurationPropertiesService {
                     level,
                     null,
                     property.kind(),
-                    property.allowedValues()
-            );
+                    property.allowedValues());
             result.put(getPath(metadata, result), metadata);
         } else {
             ConfigMetadata metadata = new ValueConfigMetadata(
@@ -403,7 +393,8 @@ public class ConfigurationPropertiesService {
                     property.type(),
                     prepareDocs(property.description(), property.optional()),
                     level,
-                    children.entrySet().stream()
+                    children.entrySet()
+                            .stream()
                             .map(entry -> new ValueConfigMetadata(
                                     entry.getKey(),
                                     entry.getValue().defaultValue(),
@@ -415,8 +406,7 @@ public class ConfigurationPropertiesService {
                                     entry.getValue().allowedValues()))
                             .collect(Collectors.toSet()),
                     property.kind(),
-                    property.allowedValues()
-            );
+                    property.allowedValues());
             result.put(getPath(metadata, result), metadata);
 
             for (var entry : children.entrySet()) {
@@ -430,7 +420,9 @@ public class ConfigurationPropertiesService {
 
     private void processFromProvider(ConfiguredType.ConfiguredProperty property,
                                      Map<String, ConfiguredType> typesMap,
-                                     int level, Map<String, ConfigMetadata> result) {
+                                     int level,
+                                     Map<String, ConfigMetadata> result) {
+
         // let's find all supported providers
         List<ConfiguredType> providers = new LinkedList<>();
         for (ConfiguredType value : typesMap.values()) {
@@ -449,8 +441,7 @@ public class ConfigurationPropertiesService {
                     level,
                     null,
                     property.kind(),
-                    property.allowedValues()
-            );
+                    property.allowedValues());
             result.put(getPath(metadata, result), metadata);
             return;
         }
@@ -469,6 +460,7 @@ public class ConfigurationPropertiesService {
                                      Map<String, ConfiguredType> typesMap,
                                      int level,
                                      Map<String, ConfigMetadata> result) {
+
         ConfiguredType listType = typesMap.get(property.type());
 
         if (listType == null) {
@@ -478,31 +470,42 @@ public class ConfigurationPropertiesService {
                 processListFromTypes(property, properties, typesMap, level, result);
             }
         } else {
-            ConfigMetadata data = new ContainerConfigMetadata(
-                    property.outputKey(),
-                    property.type(),
-                    property.kind(),
-                    prepareDocs(property.description(), property.optional()),
-                    level,
-                    listType.properties().stream()
-                            .map(prop -> new ValueConfigMetadata(
-                                    prop.key(),
-                                    prop.defaultValue(),
-                                    prop.type(),
-                                    prepareDocs(prop.description(), prop.optional()),
-                                    level + 1,
-                                    null,
-                                    prop.kind(),
-                                    prop.allowedValues()))
-                            .collect(Collectors.toSet()));
-            result.put(getPath(data, result), data);
-            processType(listType, typesMap, level + 1, result);
+            processList(property, typesMap, level, result, listType);
         }
+    }
+
+    private void processList(ConfiguredType.ConfiguredProperty property,
+                             Map<String, ConfiguredType> typesMap,
+                             int level,
+                             Map<String, ConfigMetadata> result,
+                             ConfiguredType listType) {
+
+        ConfigMetadata data = new ContainerConfigMetadata(
+                property.outputKey(),
+                property.type(),
+                property.kind(),
+                prepareDocs(property.description(), property.optional()),
+                level,
+                listType.properties()
+                        .stream()
+                        .map(prop -> new ValueConfigMetadata(
+                                prop.key(),
+                                prop.defaultValue(),
+                                prop.type(),
+                                prepareDocs(prop.description(), prop.optional()),
+                                level + 1,
+                                null,
+                                prop.kind(),
+                                prop.allowedValues()))
+                        .collect(Collectors.toSet()));
+        result.put(getPath(data, result), data);
+        processType(listType, typesMap, level + 1, result);
     }
 
     private void processMapProperty(ConfiguredType.ConfiguredProperty property,
                                     int level,
                                     Map<String, ConfigMetadata> result) {
+
         ConfigMetadata metadata = new ValueConfigMetadata(
                 property.outputKey(),
                 property.defaultValue(),
@@ -511,8 +514,7 @@ public class ConfigurationPropertiesService {
                 level,
                 null,
                 property.kind(),
-                property.allowedValues()
-        );
+                property.allowedValues());
         result.put(getPath(metadata, result), metadata);
     }
 
@@ -520,20 +522,16 @@ public class ConfigurationPropertiesService {
         String description = (docs == null || docs.isBlank()) ? "" : docs;
         StringBuilder result = new StringBuilder();
         String spaces = "";
-
         if (!optional) {
             result.append("Required.");
             spaces = " ";
         }
-
         if (!description.isBlank()) {
             result.append(spaces).append(description.replace('\n', ' ').replaceAll("<.*>", ""));
         }
-
-        if (result.length() > 0) {
+        if (!result.isEmpty()) {
             result.insert(0, "(").append(")");
         }
-
         return result.toString();
     }
 
@@ -544,19 +542,5 @@ public class ConfigurationPropertiesService {
         parents.entrySet().removeIf(e -> e.getKey() >= data.level());
         parents.values().forEach(parent -> path.append(parent).append("."));
         return path.append(data.key()).toString();
-    }
-
-    /**
-     * Obtain Helidon configuration properties for the file from the Helidon project.
-     *
-     * @param fileUri the file from the Helidon project.
-     * @return Helidon configuration properties.
-     * @throws URISyntaxException URISyntaxException.
-     * @throws IOException        IOException.
-     */
-    public Map<String, ConfigMetadata> metadataForFile(String fileUri) throws IOException, URISyntaxException {
-        URI uri = new URI(fileUri);
-        String pomForFile = MavenSupport.instance().resolvePom(uri.getPath());
-        return metadataForPom(pomForFile);
     }
 }

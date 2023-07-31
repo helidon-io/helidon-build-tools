@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import org.apache.maven.lifecycle.LifecycleExecutionException;
 import org.apache.maven.lifecycle.internal.LifecycleDependencyResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -52,6 +51,8 @@ import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Get information about dependencies of the project.
@@ -84,7 +85,7 @@ public class DependencyMojo extends AbstractMojo {
      * Path to the pom file of the project.
      */
     @Parameter(property = "pomPath")
-    private String pomPath;
+    private File pomPath;
 
     /**
      * The current Maven session.
@@ -105,14 +106,14 @@ public class DependencyMojo extends AbstractMojo {
     private LifecycleDependencyResolver lifeCycleDependencyResolver;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
 
         MavenExecutionRequest request = session.getRequest();
         request.getProjectBuildingRequest().setRepositorySession(session.getRepositorySession());
         ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
         try {
             if (pomPath != null) {
-                ProjectBuildingResult build = projectBuilder.build(new File(pomPath), buildingRequest);
+                ProjectBuildingResult build = projectBuilder.build(pomPath, buildingRequest);
                 project = build.getProject();
             }
             session.setCurrentProject(project);
@@ -141,7 +142,7 @@ public class DependencyMojo extends AbstractMojo {
 
         try (
                 Socket clientSocket = new Socket(HOST, port);
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true, UTF_8)
         ) {
             JsonArrayBuilder arrayBuilder = JSON_FACTORY.createArrayBuilder();
             for (Dependency dependency : dependencies) {

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -34,15 +33,19 @@ import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.ansi.AnsiTextStyle;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.getProperty;
 import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
+import static io.helidon.build.common.FileUtils.deleteDirectoryContent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -60,23 +63,19 @@ public class CliFunctionalV2Test {
     @BeforeAll
     static void setup() throws IOException {
         setMavenLocalRepoUrl();
-        Path input = Files.createTempFile("input","txt");
+        Path input = Files.createTempFile("input", "txt");
         Path executableDir = Path.of(getProperty("helidon.executable.directory"));
-        workDir = Files.createTempDirectory("generated");
+        workDir = Files.createTempDirectory("generated").toRealPath();
         inputFile = Files.writeString(input, "\n\n\n").toFile();
         helidonBatch = executableDir.resolve("helidon.bat");
         helidonShell = executableDir.resolve("helidon.sh");
-        helidonNativeImage = executableDir.resolve("target/helidon");
+        helidonNativeImage = executableDir.resolve("target").resolve(System.getProperty("native.image.name", "helidon"));
         expectedOutput = String.format("Switch directory to %s to use CLI", workDir.resolve("bare-se"));
     }
 
     @AfterEach
     public void cleanUp() throws IOException {
-        Files.walk(workDir)
-                .sorted(Comparator.reverseOrder())
-                .filter(it -> !it.equals(workDir))
-                .map(Path::toFile)
-                .forEach(File::delete);
+        deleteDirectoryContent(workDir);
     }
 
     @Test
@@ -89,7 +88,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    @EnabledOnOs(OS.LINUX)
+    @DisabledOnOs(OS.WINDOWS)
     void batchTestShellScript() {
         String output = buildArchetype("batchTestShellScript")
                 .executable(helidonShell)
@@ -139,9 +138,9 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    @EnabledOnOs(OS.LINUX)
+    @DisabledOnOs(OS.WINDOWS)
     void interactiveTestShellScript() {
-        String output =  cliProcessBuilder()
+        String output = cliProcessBuilder()
                 .workDirectory(workDir)
                 .input(inputFile)
                 .executable(helidonShell)
@@ -154,7 +153,7 @@ public class CliFunctionalV2Test {
     @Test
     @EnabledOnOs(OS.WINDOWS)
     void interactiveTestBatScript() {
-        String output =  cliProcessBuilder()
+        String output = cliProcessBuilder()
                 .workDirectory(workDir)
                 .input(inputFile)
                 .executable(helidonBatch)
@@ -357,7 +356,8 @@ public class CliFunctionalV2Test {
 
         public String start(long timeout, TimeUnit unit) {
             try {
-                return start().waitForCompletion(timeout, unit).output();
+                String output = start().waitForCompletion(timeout, unit).output();
+                return AnsiTextStyle.strip(output);
             } catch (ProcessMonitor.ProcessTimeoutException toe) {
                 throw new RuntimeException("Execution timeout", toe);
             } catch (ProcessMonitor.ProcessFailedException | InterruptedException e) {

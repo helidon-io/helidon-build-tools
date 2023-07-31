@@ -27,14 +27,15 @@ readonly CACHE_DIR
 # Caching the shellcheck
 mkdir -p "${CACHE_DIR}"
 if [ ! -e "${CACHE_DIR}/${VERSION}/shellcheck" ] ; then
-    curl -Lso "${CACHE_DIR}/sc.tar.xz" "${BASE_URL}/v${VERSION}/shellcheck-v${VERSION}.linux.x86_64.tar.xz"
-
+    ARCH=$(uname -m | tr "[:upper:]" "[:lower:]")
+    PLATFORM=$(uname -s | tr "[:upper:]" "[:lower:]")
+    curl -Lso "${CACHE_DIR}/sc.tar.xz" "${BASE_URL}/v${VERSION}/shellcheck-v${VERSION}.${PLATFORM}.${ARCH}.tar.xz"
     tar -xf "${CACHE_DIR}/sc.tar.xz" -C "${CACHE_DIR}"
-
     mkdir "${CACHE_DIR}/${VERSION}"
     mv "${CACHE_DIR}/shellcheck-v${VERSION}/shellcheck" "${CACHE_DIR}/${VERSION}/shellcheck"
-    export PATH="${CACHE_DIR}/${VERSION}:${PATH}"
+    rm -rf "${CACHE_DIR}/shellcheck-v${VERSION}" "${CACHE_DIR}/sc.tar.xz"
 fi
+export PATH="${CACHE_DIR}/${VERSION}:${PATH}"
 
 echo "ShellCheck version"
 shellcheck --version
@@ -42,8 +43,11 @@ shellcheck --version
 status_code=0
 # shellcheck disable=SC2044
 for file in $(find . -name "*.sh") ; do
-    printf "\n-- Checking file:  %s --\n" "${file}"
-    shellcheck "${file}" || status_code=${?}
+    # only check tracked files
+    if git ls-files --error-unmatch "${file}" > /dev/null 2>&1 ; then
+      printf "\n-- Checking file:  %s --\n" "${file}"
+      shellcheck "${file}" || status_code=${?}
+    fi
 done
 
 exit ${status_code}

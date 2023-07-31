@@ -999,7 +999,7 @@ public final class FileUtils {
      * @throws URISyntaxException URISyntaxException
      */
     public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
-        Path path = Paths.get(fileUri.getPath());
+        Path path = pathOf(fileUri);
         return Files.readAllLines(path);
     }
 

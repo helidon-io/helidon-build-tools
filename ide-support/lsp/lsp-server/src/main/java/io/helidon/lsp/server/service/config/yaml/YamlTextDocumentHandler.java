@@ -98,9 +98,9 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
             CompletionDetails completionDetails = proposeCompletionDetails(completionParams, configMetadataForFile);
             String metadataKind = Optional.ofNullable(completionDetails.parentConfig)
-                                          .map(ConfigMetadata::kind)
-                                          .map(Enum::toString)
-                                          .orElse("default");
+                    .map(ConfigMetadata::kind)
+                    .map(Enum::toString)
+                    .orElse("default");
             if (metadataKind.equals("LIST")) {
                 processListMetadata(completionDetails);
             } else {
@@ -120,8 +120,8 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         String currentKey = currentKey(completionDetails);
         if (currentKey != null) {
             ConfigMetadata configMetadata = completionDetails.proposedMetadata.values().stream()
-                                                                              .findFirst()
-                                                                              .orElse(null);
+                    .findFirst()
+                    .orElse(null);
             return prepareCompletionItemsForValue(configMetadata);
         } else {
             return prepareCompletionItemsForKey(completionDetails.proposedMetadata);
@@ -134,16 +134,15 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         }
         List<CompletionItem> result = new ArrayList<>();
         proposedMetadata.forEach((key, value) -> {
-                    CompletionItem item = new CompletionItem();
-                    item.setKind(CompletionItemKind.Snippet);
-                    item.setLabel(value.key());
-                    item.setInsertText(value.key() + SEPARATOR + suffixForInsertText(value));
-                    item.setDocumentation(prepareInfoForKey(value));
-                    item.setDetail(value.description());
-                    item.setInsertTextFormat(InsertTextFormat.Snippet);
-                    result.add(item);
-                }
-        );
+            CompletionItem item = new CompletionItem();
+            item.setKind(CompletionItemKind.Snippet);
+            item.setLabel(value.key());
+            item.setInsertText(value.key() + SEPARATOR + suffixForInsertText(value));
+            item.setDocumentation(prepareInfoForKey(value));
+            item.setDetail(value.description());
+            item.setInsertTextFormat(InsertTextFormat.Snippet);
+            result.add(item);
+        });
         return result;
     }
 
@@ -156,7 +155,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                 return "\n" + indent + "- ";
             }
             if (value.kind() == ConfiguredOptionKind.VALUE) {
-                if (value.content() == null || value.content().size() == 0) {
+                if (value.content() == null || value.content().isEmpty()) {
                     return " ";
                 }
             }
@@ -169,7 +168,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     }
 
     private String currentKey(CompletionDetails completionDetails) {
-        if (completionDetails.fileContent.size() == 0) {
+        if (completionDetails.fileContent.isEmpty()) {
             return null;
         } else if (completionDetails.position.getLine() == completionDetails.fileContent.size()
                 && completionDetails.position.getCharacter() == 0) {
@@ -188,8 +187,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                     e.getClass(),
                     currentLine,
                     completionDetails.position.getCharacter(),
-                    completionDetails.position.getLine()
-            );
+                    completionDetails.position.getLine());
             LOGGER.log(Level.WARNING, message);
             LanguageClientLogUtil.logMessage(message, e);
             throw e;
@@ -201,9 +199,9 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         Collection<String> siblings = details.parentLineResultEntry != null
                 ? childNodes(details.parentLineResultEntry, details.yamlFileResult).values()
                 : details.yamlFileResult.entrySet().stream()
-                                        .filter(entry -> entry.getKey().indent() == 0)
-                                        .map(Map.Entry::getValue)
-                                        .collect(Collectors.toSet());
+                        .filter(entry -> entry.getKey().indent() == 0)
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toSet());
         details.proposedMetadata = details.proposedMetadata
                 .entrySet()
                 .stream()
@@ -225,20 +223,23 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
                 .collect(Collectors.toSet());
         completionDetails.proposedMetadata =
                 completionDetails.proposedMetadata.entrySet()
-                                                  .stream()
-                                                  .filter((entry) -> !yamlResultsToExclusion.contains(entry.getKey()))
-                                                  .collect(Collectors.toMap(Map.Entry::getKey,
-                                                          Map.Entry::getValue));
+                        .stream()
+                        .filter((entry) -> !yamlResultsToExclusion.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                                  Map.Entry::getValue));
     }
 
     private int startListElementLine(CompletionDetails completionDetails) {
-        int parentLine =
-                completionDetails.parentLineResultEntry == null ? -1 : completionDetails.parentLineResultEntry.getKey().line();
+        String pattern = null;
+        int parentLine = -1;
         int currentLine = completionDetails.position.getLine();
         int startListElementLine = -1;
-        String pattern = String.format("^\\s{%s,}-.*", completionDetails.parentLineResultEntry.getKey().indent());
+        if (completionDetails.parentLineResultEntry != null) {
+            parentLine = completionDetails.parentLineResultEntry.getKey().line();
+            pattern = String.format("^\\s{%s,}-.*", completionDetails.parentLineResultEntry.getKey().indent());
+        }
         for (int i = currentLine; i > parentLine; i--) {
-            if (completionDetails.fileContent.get(i).matches(pattern)) {
+            if (pattern != null && completionDetails.fileContent.get(i).matches(pattern)) {
                 startListElementLine = i;
                 break;
             }
@@ -248,9 +249,10 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
 
     private int endListElementLine(CompletionDetails completionDetails) {
         int currentLine = completionDetails.position.getLine();
-        String pattern = String.format("^\\s{%s,}-.*", completionDetails.parentLineResultEntry.getKey().indent());
+        String pattern = null;
         LineResult nextElement = null;
         if (completionDetails.parentLineResultEntry != null) {
+            pattern = String.format("^\\s{%s,}-.*", completionDetails.parentLineResultEntry.getKey().indent());
             Iterator<LineResult> keyIterator = completionDetails.yamlFileResult.keySet().iterator();
             while (keyIterator.hasNext()) {
                 LineResult current = keyIterator.next();
@@ -267,7 +269,7 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         }
         int endListElementLine = currentLine;
         for (int i = currentLine + 1; i < completionDetails.fileContent.size(); i++) {
-            if (completionDetails.fileContent.get(i).matches(pattern)) {
+            if (pattern != null && completionDetails.fileContent.get(i).matches(pattern)) {
                 endListElementLine = i;
                 break;
             }
@@ -289,10 +291,10 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
      * @throws IOException        IOException
      * @throws URISyntaxException URISyntaxException
      */
-    private CompletionDetails proposeCompletionDetails(
-            CompletionParams completionParams,
-            Map<String, ConfigMetadata> configMetadataForFile
-    ) throws IOException, URISyntaxException {
+    private CompletionDetails proposeCompletionDetails(CompletionParams completionParams,
+                                                       Map<String, ConfigMetadata> configMetadataForFile)
+            throws IOException, URISyntaxException {
+
         CompletionDetails result = new CompletionDetails();
         String fileUri = completionParams.getTextDocument().getUri();
         Position position = completionParams.getPosition();
@@ -314,18 +316,14 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         result.parentLineResultEntry = parentLineResultEntry;
         result.parentConfig = configMetadataForFile.get(parentLineResultEntry.getValue());
         if (currentKey(result) != null) {
-            String path = yamlFileResult.entrySet().stream()
-                                        .filter(entry -> entry.getKey().line() == position.getLine())
-                                        .map(Map.Entry::getValue)
-                                        .findFirst()
-                                        .orElse(null);
-            if (path != null) {
-                result.proposedMetadata = configMetadataForFile
-                        .entrySet()
-                        .stream()
-                        .filter((entry) -> entry.getKey().equals(path))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            }
+            yamlFileResult.entrySet().stream()
+                    .filter(entry -> entry.getKey().line() == position.getLine())
+                    .map(Map.Entry::getValue)
+                    .findFirst().ifPresent(path -> result.proposedMetadata = configMetadataForFile
+                            .entrySet()
+                            .stream()
+                            .filter((entry) -> entry.getKey().equals(path))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         } else {
             result.proposedMetadata = configMetadataForFile
                     .entrySet()
@@ -338,19 +336,21 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     }
 
     private Map<String, ConfigMetadata> configMetadataByLevel(int level, Map<String, ConfigMetadata> configMetadata) {
-        return configMetadata.entrySet().stream()
-                             .filter(value -> value.getValue().level() == level)
-                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return configMetadata.entrySet()
+                .stream()
+                .filter(value -> value.getValue().level() == level)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private Map.Entry<LineResult, String> parentNode(CompletionDetails details) {
         Map.Entry<LineResult, String> parent = null;
         int currentLineResultIndent =
-                details.yamlFileResult.entrySet().stream()
-                                      .filter(entry -> entry.getKey().line() == details.position.getLine())
-                                      .findFirst()
-                                      .map(entry -> entry.getKey().indent())
-                                      .orElse(details.position.getCharacter());
+                details.yamlFileResult.entrySet()
+                        .stream()
+                        .filter(entry -> entry.getKey().line() == details.position.getLine())
+                        .findFirst()
+                        .map(entry -> entry.getKey().indent())
+                        .orElse(details.position.getCharacter());
         int currentLineIndent = currentKey(details) != null ? currentLineResultIndent : details.position.getCharacter();
         for (Map.Entry<LineResult, String> entry : details.yamlFileResult.entrySet()) {
             LineResult value = entry.getKey();
@@ -368,9 +368,9 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
         return parent;
     }
 
-    private LinkedHashMap<LineResult, String> childNodes(
-            Map.Entry<LineResult, String> parent, Map<LineResult, String> yamlFileResult
-    ) {
+    private LinkedHashMap<LineResult, String> childNodes(Map.Entry<LineResult, String> parent,
+                                                         Map<LineResult, String> yamlFileResult) {
+
         LinkedHashMap<LineResult, String> result = new LinkedHashMap<>();
         if (parent == null) {
             return result;
@@ -401,7 +401,6 @@ public class YamlTextDocumentHandler implements TextDocumentHandler {
     }
 
     private static class CompletionDetails {
-
         private Map<String, ConfigMetadata> proposedMetadata;
         private Position position;
         private List<String> fileContent;

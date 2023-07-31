@@ -36,10 +36,6 @@
     </fileSets>
     <files>
         <file>
-            <source>${project.build.directory}/helidon-cli.jar</source>
-            <outputDirectory>/lib</outputDirectory>
-        </file>
-        <file>
             <source>${project.basedir}/src/main/assembly/helidon.bat</source>
             <outputDirectory>/bin</outputDirectory>
             <fileMode>0755</fileMode>
@@ -54,5 +50,4 @@
             <outputDirectory>/</outputDirectory>
         </file>
     </files>
-
 </assembly>

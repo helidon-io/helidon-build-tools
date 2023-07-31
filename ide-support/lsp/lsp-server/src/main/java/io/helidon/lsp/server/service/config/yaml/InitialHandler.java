@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,12 @@ class InitialHandler implements Handler {
     private static YamlParser parser;
     private static InitialHandler instance;
 
-    private InitialHandler(YamlParser yamlParser) {
-        parser = yamlParser;
-    }
-
     static InitialHandler instance(YamlParser yamlParser) {
         if (instance != null && parser != null && parser.equals(yamlParser)) {
             return instance;
         }
-        instance = new InitialHandler(yamlParser);
+        instance = new InitialHandler();
+        parser = yamlParser;
         return instance;
     }
 

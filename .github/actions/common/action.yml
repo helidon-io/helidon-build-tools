@@ -1,0 +1,190 @@
+#
+# Copyright (c) 2023 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: 'Common Job Steps'
+description: A composite action that abstracts the common steps needed to implement a job
+inputs:
+  native-image:
+    description: Wether to setup GraalVM native-image
+    required: false
+    default: 'false'
+  maven-cache:
+    description: Wether to cache the Maven local repository (read-only or read-write)
+    required: false
+    default: 'read-only'
+  build-cache:
+    description:  Wether to cache the Maven build (read-only or read-write)
+    required: false
+    default: ''
+  run:
+    description: The bash command to run
+    required: true
+  artifact-name:
+    description: Name of the artifact to create
+    required: false
+    default: ''
+  artifact-path:
+    description: Path of the files to include in the artifact
+    required: false
+    default: ''
+  archive-test-results:
+    description: Wether to archive test results (excluded on windows)
+    required: false
+    default: 'false'
+  test-matrix:
+    description: |
+      A JSON matrix with a "group" dimension, and a "groups" object to resolve Maven modules
+      from glob expressions.
+
+      The resolved modules are added in the include objects with a param "module".
+      A 'misc' group is always added to represent everything else by negating all the resolved modules (E.g. '!dir1,!dir2').
+
+      E.g.
+      {
+        "os": [ "ubuntu-20.04", "windows-2022" ],
+        "group": [ "group1", "group2", "misc" ],
+        "include": [
+          { "os": "ubuntu-20.04", "platform": "linux" },
+          { "os": "windows-2022", "platform": "windows" }
+        ]
+        "groups":  {
+          "group1": [ "dir1/**", "dir2/**" ],
+          "group2": [ "dir3/**" ]
+        }
+      }
+    required: false
+    default: ''
+outputs:
+  test-matrix:
+    value: ${{ steps.test-matrix.outputs.matrix }}
+    description: |
+      E.g.
+      groups: [ group1, group2 ]
+      includes:
+        - group: group1
+          modules: dir1,dir2,dir2a
+        - group: group2
+          modules: dir3,dir3a
+        - group: misc
+          modules: !dir1,!dir2,!dir2a,!dir3,!dir3a
+runs:
+  using: "composite"
+  steps:
+    - if: ${{ runner.os == 'Windows' }}
+      name: Use GNU tar
+      shell: cmd
+      run: |
+        echo "Adding GNU tar to PATH"
+        echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+    - name: Set up GraalVM
+      if: ${{ inputs.native-image == 'true' }}
+      uses: graalvm/setup-graalvm@v1
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        version: ${{ env.GRAALVM_VERSION }}
+        distribution: 'graalvm'
+        components: 'native-image'
+        check-for-updates: 'false'
+        set-java-home: 'false'
+    - name: Set up JDK
+      uses: actions/setup-java@v3.11.0
+      with:
+        distribution: ${{ env.JAVA_DISTRO }}
+        java-version: ${{ env.JAVA_VERSION }}
+    - name: Cache local Maven repository (read-write)
+      if: ${{ inputs.maven-cache == 'read-write' }}
+      uses: actions/cache@v3.3.1
+      with:
+        path: |
+          .m2/repository/**
+          !.m2/repository/io/helidon/build-tools
+        enableCrossOsArchive: true
+        key: local-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          local-maven-
+    - name: Cache local Maven repository (read-only)
+      if: ${{ inputs.maven-cache == 'read-only' }}
+      uses: actions/cache/restore@v3.3.1
+      with:
+        path: |
+          .m2/repository/**
+          !.m2/repository/io/helidon/build-tools
+        enableCrossOsArchive: true
+        key: local-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          local-maven-
+    - name: Build cache (read-write)
+      if: ${{ inputs.build-cache == 'read-write' }}
+      uses: actions/cache@v3.3.1
+      with:
+        path: |
+          ./**/target/**
+          .m2/repository/io/helidon/build-tools/**
+        enableCrossOsArchive: true
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          build-cache-${{ github.run_id }}-
+    - name: Build cache (read-only)
+      if: ${{ inputs.build-cache == 'read-only' }}
+      uses: actions/cache/restore@v3.3.1
+      with:
+        path: |
+          ./**/target/**
+          .m2/repository/io/helidon/build-tools/**
+        enableCrossOsArchive: true
+        fail-on-cache-miss: true
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          build-cache-${{ github.run_id }}-
+    - name: Populate Maven cache
+      if: ${{ inputs.maven-cache == 'read-write' }}
+      run: |
+        mvn ${MAVEN_ARGS} -T 8 \
+          -Dmaven.repo.local=${{ github.workspace }}/.m2/repository \
+          dependency:go-offline
+      shell: bash
+    - name: Exec
+      env:
+        # Use a local repository in the workspace to get portable caches
+        MAVEN_ARGS: |
+          ${{ env.MAVEN_ARGS }}
+          -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
+      run: ${{ inputs.run }}
+      shell: bash
+    - id: test-matrix
+      if: ${{ inputs.test-matrix != '' }}
+      run: ./.github/actions/common/matrix.sh '${{ inputs.test-matrix }}' >> "${GITHUB_OUTPUT}"
+      shell: bash
+    - name: Archive test results
+      # https://github.com/actions/upload-artifact/issues/240
+      if: ${{ inputs.archive-test-results == 'true' && runner.os != 'Windows' && always() }}
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        if-no-files-found: 'ignore'
+        name: test-results
+        path: |
+          **/target/surefire-reports/*.txt
+          **/target/failsafe-reports/*.txt
+          **/target/it/**/*.log
+    - name: Archive artifacts
+      if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        if-no-files-found: 'ignore'
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.artifact-path }}

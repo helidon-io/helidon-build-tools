@@ -97,9 +97,6 @@ readonly SCRIPT_PATH
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
-# shellcheck disable=SC1091
-source "${WS_DIR}"/etc/scripts/pipeline-env.sh
-
 # get current maven version
 # shellcheck disable=SC2086
 MVN_VERSION=$(mvn ${MAVEN_ARGS} \
@@ -123,25 +120,6 @@ fi
 export FULL_VERSION
 printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
 
-major_minor_micro() {
-  # shellcheck disable=SC2001
-  echo "${1}" | sed 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\(.*\)/\1.\2.\3/g'
-}
-
-osgi_mvn_version(){
-  # shellcheck disable=SC2001
-  local major_minor_micro
-  major_minor_micro=$(major_minor_micro "${1}")
-  if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}-SNAPSHOT" ; else echo "${major_minor_micro}" ; fi
-}
-
-osgi_bundle_version() {
-  # shellcheck disable=SC2001
-  local major_minor_micro
-  major_minor_micro=$(major_minor_micro "${1}")
-  if [[ "${1}" =~ -SNAPSHOT$ ]] ; then echo "${major_minor_micro}.qualifier" ; else echo "${major_minor_micro}" ; fi
-}
-
 update_version(){
     # Update version
     # shellcheck disable=SC2086
@@ -151,32 +129,6 @@ update_version(){
         -Dproperty="helidon.version" \
         -DprocessFromLocalAggregationRoot="false" \
         -DupdateMatchingVersions="false"
-
-    local osgi_mvn_v
-    osgi_mvn_v="$(osgi_mvn_version "${MVN_VERSION}")"
-    local new_osgi_mvn_v
-    new_osgi_mvn_v="$(osgi_mvn_version "${FULL_VERSION}")"
-
-    # shellcheck disable=SC2044
-    for pom in $(find ide-support -name "pom.xml") ; do
-      # shellcheck disable=SC2002
-      # shellcheck disable=SC2140
-      cat "${pom}" | sed s@"<version>${osgi_mvn_v}</version>"@"<version>${new_osgi_mvn_v}</version>"@g > "${pom}.tmp"
-      mv "${pom}".tmp "${pom}"
-    done
-
-    local osgi_bundle_v
-    osgi_bundle_v="$(osgi_bundle_version "${MVN_VERSION}")"
-    local new_osgi_bundle_v
-    new_osgi_bundle_v="$(osgi_bundle_version "${FULL_VERSION}")"
-
-    # shellcheck disable=SC2044
-    for manifest in $(find ide-support/lsp -name "MANIFEST.MF") ; do
-      # shellcheck disable=SC2002
-      # shellcheck disable=SC2140
-      cat "${manifest}" | sed s@"Bundle-Version: ${osgi_bundle_v}"@"Bundle-Version: ${new_osgi_bundle_v}"@g > "${manifest}.tmp"
-      mv "${manifest}".tmp "${manifest}"
-    done
 }
 
 release_build(){
@@ -196,10 +148,35 @@ release_build(){
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
+    # Bootstrap credentials from environment
+    if [ -n "${MAVEN_SETTINGS}" ] ; then
+        MAVEN_SETTINGS_FILE=$(mktemp /tmp/XXXXXXsettings.xml)
+        echo "${MAVEN_SETTINGS}" > "${MAVEN_SETTINGS_FILE}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
+    fi
+    if [ -n "${GPG_PUBLIC_KEY}" ] ; then
+        tmpfile=$(mktemp /tmp/XXXXXX.pub)
+        echo "${GPG_PUBLIC_KEY}" > "${tmpfile}"
+        gpg --import --no-tty --batch "${tmpfile}"
+        rm "$tmpfile"
+    fi
+    if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+        tmpfile=$(mktemp /tmp/XXXXXX.key)
+        echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+        gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+        rm "$tmpfile"
+    fi
+    if [ -n "${GPG_PASSPHRASE}" ] ; then
+        echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+        gpg-connect-agent reloadagent /bye
+        GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+    fi
+
     # Perform local deployment
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} clean deploy \
-        -Prelease,ide-support \
+        -Prelease \
         -DskipTests \
         -DskipRemoteStaging=true
 

@@ -175,6 +175,7 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration combine.self="override">
+                            <outputDirectory>${project.build.directory}/libs</outputDirectory>
                             <classifier>cli</classifier>
                             <archive>
                                 <manifest>
@@ -227,7 +228,6 @@
                         </goals>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>${project.build.directory}/distribution</outputDirectory>
                             <descriptors>
                                 <descriptor>src/main/assembly/distribution.xml</descriptor>
                             </descriptors>
@@ -243,7 +243,7 @@
             <id>native-image</id>
             <properties>
                 <build.dir>${project.build.directory}</build.dir>
-                <finalName>${project.build.finalName}</finalName>
+                <native.image.name>${project.build.finalName}</native.image.name>
             </properties>
             <build>
                 <plugins>
@@ -286,12 +286,14 @@
                                     <executable>native-image</executable>
                                     <arguments>
                                         <argument>-H:Path=${build.dir}</argument>
-                                        <argument>-H:Name=${finalName}</argument>
+                                        <argument>-H:Name=${native.image.name}</argument>
                                         <argument>-H:+PrintAnalysisCallTree</argument>
                                         <argument>--install-exit-handlers</argument>
                                         <argument>--no-fallback</argument>
                                         <argument>-cp</argument>
-                                        <argument>${build.dir}${file.separator}${finalName}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native</argument>
+                                        <argument>
+                                            ${build.dir}${file.separator}${native.image.name}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native
+                                        </argument>
                                         <argument>${mainClass}</argument>
                                     </arguments>
                                 </configuration>

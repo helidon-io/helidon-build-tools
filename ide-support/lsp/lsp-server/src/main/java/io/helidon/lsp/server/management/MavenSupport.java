@@ -18,26 +18,23 @@ package io.helidon.lsp.server.management;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.maven.MavenCommand;
@@ -47,20 +44,21 @@ import io.helidon.lsp.server.util.LanguageClientLogUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
+
 /**
  * Support operations with maven.
  */
 public class MavenSupport {
 
     private static final Logger LOGGER = Logger.getLogger(MavenSupport.class.getName());
-    private static final String POM_FILE_NAME = "pom.xml";
-    private static final String SRC_FOLDER = "src";
-    private static final String MAIN_FOLDER = "main";
     private static final int DEFAULT_TIMEOUT = 10000;
     private static final Gson GSON = new Gson();
     private static final String PLUGIN_GA = "io.helidon.build-tools.ide-support.lsp:helidon-lsp-maven-plugin";
     private static final String PLUGIN_GOAL = "list-dependencies";
     private static final MavenSupport INSTANCE = new MavenSupport();
+    private static final Type DEPENDENCIES_TYPE = new TypeToken<Set<Dependency>>() { }.getType();
 
     private String goal;
     private boolean isMavenInstalled;
@@ -91,11 +89,12 @@ public class MavenSupport {
     /**
      * Get information about all dependencies for the given pom file.
      *
-     * @param pomPath Path to the pom file.
+     * @param pom {@code pom.xml}
      * @param timeout time in milliseconds to wait for maven command execution.
+     * @param argument optional argument to pass to the maven command, may be {@code null}
      * @return Set that contains information about the dependencies.
      */
-    public Set<Dependency> dependencies(String pomPath, int timeout) {
+    public Set<Dependency> dependencies(Path pom, int timeout, String argument) {
         if (!isMavenInstalled) {
             LOGGER.log(Level.WARNING, "It is not possible to get Helidon dependencies from the maven repository. Maven is not "
                     + "installed.");
@@ -106,42 +105,81 @@ public class MavenSupport {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             MavenCommand.builder()
                     .addArgument(goal)
+                    .addOptionalArgument(argument)
                     .addArgument("-Dport=" + serverSocket.getLocalPort())
-                    .directory(new File(pomPath).getParentFile())
+                    .directory(pom.getParent())
                     .verbose(false)
                     .stdOut(output)
                     .stdErr(output)
                     .build()
                     .execute();
 
-            return CompletableFuture.supplyAsync(() -> {
-                Set<Dependency> result;
-                try (
-                        Socket clientSocket = serverSocket.accept();
-                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-                    result = GSON.fromJson(in, new TypeToken<Set<Dependency>>() {}.getType());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                LOGGER.log(Level.FINEST, "getDependencies() for pom file {0} took {1} seconds",
-                           new Object[] {
-                                   pomPath,
-                                   (double) (System.currentTimeMillis() - startTime) / 1000
-                           });
-                return result;
-            }).get(timeout, TimeUnit.MILLISECONDS);
+            Set<Dependency> dependencies = supplyAsync(() -> recv(serverSocket)).get(timeout, TimeUnit.MILLISECONDS);
+
+            LOGGER.log(Level.FINEST, "getDependencies() for pom file {0} took {1} seconds",
+                       new Object[] {
+                               pom,
+                               (double) (System.currentTimeMillis() - startTime) / 1000
+                       });
+
+            return dependencies;
         } catch (Exception e) {
             String message = "Error when executing the maven command - " + goal
                     + System.lineSeparator()
-                    + output.content().stream().collect(Collectors.joining());
+                    + String.join("", output.content());
             LanguageClientLogUtil.logMessage(message, e);
+            return Set.of();
         }
-        LOGGER.log(Level.FINEST, "getDependencies() for pom file {0} took {1} seconds",
-                   new Object[] {
-                           pomPath,
-                           (double) (System.currentTimeMillis() - startTime) / 1000
-                   });
-        return Set.of();
+    }
+
+    private static Set<Dependency> recv(ServerSocket serverSocket) {
+        try (Socket clientSocket = serverSocket.accept();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), UTF_8))) {
+            return GSON.fromJson(reader, DEPENDENCIES_TYPE);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Get information about all dependencies for the given pom file.
+     *
+     * @param pom {@code pom.xml}
+     * @return Set that contains information about the dependencies.
+     */
+    public Set<Dependency> dependencies(Path pom) {
+        return dependencies(pom, DEFAULT_TIMEOUT, null);
+    }
+
+    /**
+     * Get the {@code pom.xml} for a project file.
+     *
+     * @param path project file
+     * @return {@code pom.xml} or {@code null} if not found
+     */
+    public static Path resolvePom(Path path) {
+        Path absolute = path.toAbsolutePath();
+        Path directory = Files.isDirectory(path) ? absolute : absolute.getParent();
+        while (directory != null) {
+            Path pom = findPomForDir(directory);
+            if (pom != null) {
+                return pom.toAbsolutePath();
+            }
+            directory = directory.getParent();
+        }
+        return null;
+    }
+
+    private static Path findPomForDir(Path directory) {
+        try (Stream<Path> paths = Files.list(directory)) {
+            return paths.filter(Files::isRegularFile)
+                    .filter(file -> file.getFileName().toString().equals("pom.xml"))
+                    .filter(file -> Files.isDirectory(file.getParent().resolve("src/main")))
+                    .findFirst()
+                    .orElse(null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static String getVersion() {
@@ -165,72 +203,12 @@ public class MavenSupport {
         }
     }
 
-    /**
-     * Get information about all dependencies for the given pom file.
-     *
-     * @param pomPath Path to the pom file.
-     * @return Set that contains information about the dependencies.
-     */
-    public Set<Dependency> dependencies(String pomPath) {
-        return dependencies(pomPath, DEFAULT_TIMEOUT);
-    }
-
-    /**
-     * Get pom file for the file from the maven project.
-     *
-     * @param fileName File name.
-     * @return Get pom file for the given file or null if pom.xml is not found.
-     */
-    public String resolvePom(String fileName) {
-        Path currentPath = Paths.get(fileName);
-        Path currentDirPath;
-        if (currentPath.toFile().isDirectory()) {
-            currentDirPath = currentPath;
-        } else {
-            currentDirPath = currentPath.getParent();
-        }
-        String pomForDir = findPomForDir(currentDirPath);
-        while (pomForDir == null && currentDirPath != null) {
-            currentDirPath = currentDirPath.getParent();
-            pomForDir = findPomForDir(currentDirPath);
-        }
-        return pomForDir;
-    }
-
-    private String findPomForDir(Path directoryPath) {
-        if (directoryPath == null) {
-            return null;
-        }
-        File[] listFiles = directoryPath.toFile().listFiles();
-        if (listFiles == null) {
-            return null;
-        }
-        String pomFile = Arrays.stream(listFiles)
-                .filter(file -> file.isFile() && file.getName().equals(POM_FILE_NAME))
-                .findFirst()
-                .map(File::getAbsolutePath).orElse(null);
-        if (pomFile != null) {
-            Boolean mavenSrcFolder = Arrays.stream(listFiles)
-                    .filter(file -> file.isDirectory() && file.getName().equals(SRC_FOLDER))
-                    .findFirst()
-                    .map(File::listFiles)
-                    .map(files -> Stream.of(files)
-                            .anyMatch(file -> file.isDirectory() && file.getName()
-                                    .equals(MAIN_FOLDER)))
-                    .orElse(false);
-            if (!mavenSrcFolder) {
-                pomFile = null;
-            }
-        }
-        return pomFile;
-    }
-
     private static class MavenPrintStream extends PrintStream {
 
         private final List<String> content = new ArrayList<>();
 
         MavenPrintStream() {
-            super(new ByteArrayOutputStream());
+            super(new ByteArrayOutputStream(), false, UTF_8);
         }
 
         @Override

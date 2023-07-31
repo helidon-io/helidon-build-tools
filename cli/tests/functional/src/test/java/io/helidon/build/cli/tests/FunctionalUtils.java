@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,7 +55,6 @@ public class FunctionalUtils {
     }
 
     static void downloadMavenDist(Path destination, String version) throws IOException {
-
         Path zipPath = destination.resolve("maven-" + version + ".zip");
         URL mavenUrl = new URL(String.format(MAVEN_DIST_URL, version, version));
 
@@ -69,19 +69,23 @@ public class FunctionalUtils {
 
         LOGGER.info("Unzip Maven done.");
 
-        Files.walk(destination)
-                .map(Path::toFile)
-                .filter(File::isFile)
-                .forEach(file -> file.setExecutable(true));
-
+        try (Stream<Path> files = Files.walk(destination)) {
+            files.map(Path::toFile)
+                    .filter(File::isFile)
+                    .forEach(file -> {
+                        if (!file.setExecutable(true)) {
+                            LOGGER.warning(String.format("Unable to make %s executable", file));
+                        }
+                    });
+        }
         FileUtils.delete(zipPath);
     }
 
     static void downloadFileFromUrl(Path destination, URL url) {
         try (InputStream is = NetworkConnection.builder()
                 .url(url)
-                .connectTimeout(100*60*1000)
-                .readTimeout(100*60*1000)
+                .connectTimeout(100 * 60 * 1000)
+                .readTimeout(100 * 60 * 1000)
                 .open();
              OutputStream os = Files.newOutputStream(destination)) {
             is.transferTo(os);
@@ -150,7 +154,7 @@ public class FunctionalUtils {
         if (version != null) {
             return version;
         } else {
-            throw new IllegalStateException(String.format("System property %s is not set",  key));
+            throw new IllegalStateException(String.format("System property %s is not set", key));
         }
     }
 
