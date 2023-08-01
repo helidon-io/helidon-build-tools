@@ -15,7 +15,16 @@
 
 name: "Validate"
 
-on: [ pull_request, push, workflow_call ]
+on:
+  pull_request:
+  push:
+  workflow_call:
+    inputs:
+      ref:
+        description: The branch, tag or SHA to checkout
+        required: false
+        type: string
+        default: ''
 
 env:
   JAVA_VERSION: 17
@@ -38,6 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
       - uses: ./.github/actions/common
         with:
@@ -47,6 +57,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           run: etc/scripts/checkstyle.sh
@@ -55,6 +67,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           run: etc/scripts/shellcheck.sh
@@ -65,6 +79,8 @@ jobs:
       test-matrix: ${{ steps.build.outputs.test-matrix }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - id: build
         uses: ./.github/actions/common
         with:
@@ -101,6 +117,8 @@ jobs:
     name: tests/${{ matrix.group }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
@@ -117,6 +135,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
@@ -131,6 +151,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
@@ -145,6 +167,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
@@ -171,6 +195,8 @@ jobs:
     name: cli/${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
