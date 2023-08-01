@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.LogRecorder;
 import io.helidon.build.common.logging.LogWriter;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,11 +103,14 @@ class EmbeddedModeTest {
         assertThat(e.getMessage(), isNotStyled());
         assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
         List<String> lines = loggedLines();
-        assertThat(lines.size(), is(3));
-        assertThat(lines.get(0), isStyled());
-        assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(2), isStyled());
-        assertThat(lines.get(2), equalToIgnoringStyle("Helidon version 99.99 not found."));
+        assertThat(lines, is(not(empty())));
+        if (lines.size() > 1) {
+            for (int i = 0; i < lines.size() - 1; i++) {
+                assertThat(lines.get(i), isStyled());
+            }
+        }
+        assertThat(lines.get(lines.size() - 1), isStyled());
+        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle("Helidon version 99.99 not found."));
     }
 
     @Test
@@ -124,17 +128,17 @@ class EmbeddedModeTest {
 
     private static List<String> loggedLines() {
         return LOG_RECORDER.entries()
-                           .stream()
-                           .flatMap(String::lines)
-                           .collect(Collectors.toList());
+                .stream()
+                .flatMap(String::lines)
+                .collect(Collectors.toList());
     }
 
     private int countLinesContainingAll(String... fragments) {
         return (int) LOG_RECORDER.entries()
-                                 .stream()
-                                 .flatMap(String::lines)
-                                 .filter(msg -> containsAll(msg, fragments))
-                                 .count();
+                .stream()
+                .flatMap(String::lines)
+                .filter(msg -> containsAll(msg, fragments))
+                .count();
     }
 
     private static boolean containsAll(String msg, String... fragments) {

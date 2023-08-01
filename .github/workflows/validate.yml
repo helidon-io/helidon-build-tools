@@ -15,7 +15,7 @@
 
 name: "Validate"
 
-on: [ pull_request, push, workflow_dispatch ]
+on: [ pull_request, push, workflow_call ]
 
 env:
   JAVA_VERSION: 17
@@ -23,7 +23,6 @@ env:
   GRAALVM_VERSION: 21.3.0
   MAVEN_ARGS: |
     -B -fae -e
-    -Dmaven.test.failure.ignore=false
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
     -Djdk.toolchain.version=${JAVA_VERSION}

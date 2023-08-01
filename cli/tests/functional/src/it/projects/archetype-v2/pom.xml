@@ -23,7 +23,7 @@
 
     <groupId>io.helidon.build-tools.cli.tests.functional</groupId>
     <artifactId>helidon-tests-functional</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>@project.version@</version>
     <description>Generate Archetype Locally</description>
     <packaging>helidon-archetype</packaging>
 
@@ -71,7 +71,7 @@
                                         <template source="cli/versions.xml.mustache"
                                                   target="cli-data/versions.xml">
                                             <variables>
-                                                <variable name="archetypeVersion" value="${project.version}"/>
+                                                <variable name="projectVersion" value="${project.version}"/>
                                             </variables>
                                         </template>
                                     </templates>

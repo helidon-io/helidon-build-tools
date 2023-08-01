@@ -1,0 +1,53 @@
+#
+# Copyright (c) 2023 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Release"
+
+on:
+  push:
+    branches:
+      - 'release-*'
+
+env:
+  JAVA_VERSION: 17
+  JAVA_DISTRO: oracle
+  MAVEN_ARGS: |
+    -B -fae -e
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+  release:
+    needs: validate
+    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+    environment: release
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - uses: ./.github/actions/common
+        with:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
+          run: etc/scripts/release.sh release_build

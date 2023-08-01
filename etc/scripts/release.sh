@@ -133,10 +133,10 @@ update_version(){
 
 release_build(){
     # Do the release work in a branch
-    local GIT_BRANCH
-    GIT_BRANCH="release/${FULL_VERSION}"
-    git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
-    git checkout -b "${GIT_BRANCH}"
+    local git_branch tmpfile
+    git_branch="release/${FULL_VERSION}"
+    git branch -D "${git_branch}" > /dev/null 2>&1 || true
+    git checkout -b "${git_branch}"
 
     # Invoke update_version
     update_version
@@ -150,21 +150,15 @@ release_build(){
 
     # Bootstrap credentials from environment
     if [ -n "${MAVEN_SETTINGS}" ] ; then
-        MAVEN_SETTINGS_FILE=$(mktemp /tmp/XXXXXXsettings.xml)
-        echo "${MAVEN_SETTINGS}" > "${MAVEN_SETTINGS_FILE}"
-        MAVEN_ARGS="${MAVEN_ARGS} -s ${MAVEN_SETTINGS_FILE}"
-    fi
-    if [ -n "${GPG_PUBLIC_KEY}" ] ; then
-        tmpfile=$(mktemp /tmp/XXXXXX.pub)
-        echo "${GPG_PUBLIC_KEY}" > "${tmpfile}"
-        gpg --import --no-tty --batch "${tmpfile}"
-        rm "$tmpfile"
+        tmpfile=$(mktemp XXXXXXsettings.xml)
+        echo "${MAVEN_SETTINGS}" > "${tmpfile}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${tmpfile}"
     fi
     if [ -n "${GPG_PRIVATE_KEY}" ] ; then
-        tmpfile=$(mktemp /tmp/XXXXXX.key)
+        tmpfile=$(mktemp XXXXXX.key)
         echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
         gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
-        rm "$tmpfile"
+        rm "${tmpfile}"
     fi
     if [ -n "${GPG_PASSPHRASE}" ] ; then
         echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
@@ -186,15 +180,8 @@ release_build(){
         -DstagingDescription="Helidon Build Tools v${FULL_VERSION}"
 
     # Create and push a git tag
-    local GIT_REMOTE
-    GIT_REMOTE=$(git config --get remote.origin.url | \
-        sed "s,https://\([^/]*\)/,git@\1:,")
-
-    git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-    git remote set-url release "${GIT_REMOTE}"
-
     git tag -f "${FULL_VERSION}"
-    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command
