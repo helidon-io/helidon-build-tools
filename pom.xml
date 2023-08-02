@@ -184,12 +184,12 @@
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
-        <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.frontend>1.11.3</version.plugin.frontend>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.gpg>1.6</version.plugin.gpg>
+        <version.plugin.graalvm>0.9.23</version.plugin.graalvm>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
@@ -316,11 +316,6 @@
                             <version>${version.lib.junit}</version>
                         </dependency>
                     </dependencies>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>${version.plugin.exec}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -505,6 +500,11 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${version.plugin.frontend}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <version>${version.plugin.graalvm}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

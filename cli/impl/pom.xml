@@ -123,7 +123,7 @@
     </dependencies>
 
     <build>
-        <finalName>helidon</finalName>
+        <finalName>helidon-cli</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -167,26 +167,6 @@
                         </manifest>
                     </archive>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>cli-distribution</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration combine.self="override">
-                            <outputDirectory>${project.build.directory}/libs</outputDirectory>
-                            <classifier>cli</classifier>
-                            <archive>
-                                <manifest>
-                                    <addClasspath>true</addClasspath>
-                                    <mainClass>${mainClass}</mainClass>
-                                    <useUniqueVersions>false</useUniqueVersions>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -242,7 +222,6 @@
         <profile>
             <id>native-image</id>
             <properties>
-                <build.dir>${project.build.directory}</build.dir>
                 <native.image.name>${project.build.finalName}</native.image.name>
             </properties>
             <build>
@@ -267,35 +246,32 @@
                                             <destFileName>cli-plugins-${buildNumber}.jar</destFileName>
                                         </artifactItem>
                                     </artifactItems>
-                                    <outputDirectory>${build.dir}/native/plugins</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/native/plugins</outputDirectory>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>package</phase>
                                 <id>native-image</id>
+                                <phase>package</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>compile-no-fork</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>native-image</executable>
-                                    <arguments>
-                                        <argument>-H:Path=${build.dir}</argument>
-                                        <argument>-H:Name=${native.image.name}</argument>
-                                        <argument>-H:+PrintAnalysisCallTree</argument>
-                                        <argument>--install-exit-handlers</argument>
-                                        <argument>--no-fallback</argument>
-                                        <argument>-cp</argument>
-                                        <argument>
-                                            ${build.dir}${file.separator}${native.image.name}.jar${path.separator}${build.dir}${file.separator}libs${file.separator}*${path.separator}${build.dir}${file.separator}native
-                                        </argument>
-                                        <argument>${mainClass}</argument>
-                                    </arguments>
+                                    <imageName>${native.image.name}</imageName>
+                                    <fallback>false</fallback>
+                                    <classpath>
+                                        <entry>${project.build.directory}/helidon-cli.jar</entry>
+                                        <entry>${project.build.directory}/libs</entry>
+                                        <entry>${project.build.directory}/native</entry>
+                                    </classpath>
+                                    <buildArgs>
+                                        <arg>--install-exit-handlers</arg>
+                                    </buildArgs>
                                 </configuration>
                             </execution>
                         </executions>

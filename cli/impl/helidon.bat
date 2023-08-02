@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2022 Oracle and/or its affiliates.
+@REM Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 set projectDir=%~dp0
 set targetDir=%projectDir%target
-set jarFile=%targetDir%\helidon.jar
+set jarFile=%targetDir%\helidon-cli.jar
 set attach="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005"
 set attachMvn="-Dmvn.debug.port=5006"
 set attachMvnChild="-Dmvn.child.debug.port=5007"

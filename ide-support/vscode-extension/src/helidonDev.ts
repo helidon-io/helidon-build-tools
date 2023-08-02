@@ -164,7 +164,7 @@ function configEnvPath(configPath: string, binPath: string, pathDelimiter: strin
 
 function obtainNewServerProcess(helidonProjectDir: string, extensionPath: string): ChildProcess {
     const cmdSpan = "java";
-    const args = ['-jar', `${extensionPath}/target/cli/helidon.jar`, 'dev'];
+    const args = ['-jar', `${extensionPath}/target/cli/helidon-cli.jar`, 'dev'];
 
     const pathDelimiter = path.delimiter;
 

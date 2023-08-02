@@ -29,6 +29,10 @@ inputs:
     description:  Wether to cache the Maven build (read-only or read-write)
     required: false
     default: ''
+  build-cache-id:
+    description:  Build cache id
+    required: false
+    default: 'default'
   GPG_PASSPHRASE:
     description: Value of the GPG_PASSPHRASE environment variable
     required: false
@@ -105,11 +109,10 @@ runs:
         git config --global core.eol lf
     - name: Set up GraalVM
       if: ${{ inputs.native-image == 'true' }}
-      uses: graalvm/setup-graalvm@v1
+      uses: graalvm/setup-graalvm@v1.1.2.1
       with:
         java-version: ${{ env.JAVA_VERSION }}
         version: ${{ env.GRAALVM_VERSION }}
-        distribution: 'graalvm'
         components: 'native-image'
         check-for-updates: 'false'
         set-java-home: 'false'
@@ -148,8 +151,9 @@ runs:
           ./**/target/**
           .m2/repository/io/helidon/build-tools/**
         enableCrossOsArchive: true
-        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
         restore-keys: |
+          build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
@@ -160,8 +164,9 @@ runs:
           .m2/repository/io/helidon/build-tools/**
         enableCrossOsArchive: true
         fail-on-cache-miss: true
-        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
         restore-keys: |
+          build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
     - name: Populate Maven cache
       if: ${{ inputs.maven-cache == 'read-write' }}

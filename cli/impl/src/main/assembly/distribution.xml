@@ -28,13 +28,18 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}/libs</directory>
-            <outputDirectory>/lib</outputDirectory>
+            <outputDirectory>/libs</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
         </fileSet>
     </fileSets>
     <files>
+        <file>
+            <source>${project.build.directory}/helidon-cli.jar</source>
+            <outputDirectory>/</outputDirectory>
+            <fileMode>0555</fileMode>
+        </file>
         <file>
             <source>${project.basedir}/src/main/assembly/helidon.bat</source>
             <outputDirectory>/bin</outputDirectory>
