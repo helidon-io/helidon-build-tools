@@ -24,7 +24,7 @@ env:
   JAVA_VERSION: 17
   JAVA_DISTRO: oracle
   MAVEN_ARGS: |
-    -B -fae -e
+    -B -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
     -Djdk.toolchain.version=${JAVA_VERSION}
@@ -34,20 +34,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    uses: ./.github/workflows/validate.yml
-  release:
-    needs: validate
-    timeout-minutes: 30
+  create-tag:
     runs-on: ubuntu-20.04
     environment: release
+    outputs:
+      tag: ${{ steps.create-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - name: Set up JDK
+        uses: actions/setup-java@v3.11.0
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+      - id: create-tag
+        run: ./etc/scripts/release.sh create_tag >> "${GITHUB_OUTPUT}"
+  validate:
+    needs: create-tag
+    uses: ./.github/workflows/validate.yml
+    with:
+      ref: ${{ needs.create-tag.outputs.tag }}
+  release:
+    needs: [ create-tag, validate ]
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    environment: release
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create-tag.outputs.tag }}
       - uses: ./.github/actions/common
         with:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
+          build-cache: read-only
           run: etc/scripts/release.sh release_build

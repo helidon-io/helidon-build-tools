@@ -48,9 +48,11 @@ $(basename "${0}") [ --build-number=N ] CMD
     update_version
         Update the version in the workspace
 
+    create_tag
+        Create and and push a release tag
+
     release_build
         Perform a release build
-        This will create a local branch, deploy artifacts and push a tag
 
 EOF
 }
@@ -69,12 +71,15 @@ for ((i=0;i<${#ARGS[@]};i++))
         exit 0
         ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
-            readonly COMMAND="${ARG}"
-        else
-            echo "ERROR: unknown argument: ${ARG}"
-            exit 1
-        fi
+        case ${ARG} in
+        "update_version"|"create_tag"|"release_build")
+          readonly COMMAND="${ARG}"
+          ;;
+        *)
+          echo "ERROR: unknown argument: ${ARG}"
+          exit 1
+          ;;
+        esac
         ;;
     esac
 }
@@ -96,6 +101,10 @@ readonly SCRIPT_PATH
 # shellcheck disable=SC2046
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
+
+# copy stdout as fd 6 and redirect stdout to stderr
+# this allows us to use fd 6 for returning data
+exec 6>&1 1>&2
 
 # get current maven version
 # shellcheck disable=SC2086
@@ -131,9 +140,9 @@ update_version(){
         -DupdateMatchingVersions="false"
 }
 
-release_build(){
+create_tag() {
     # Do the release work in a branch
-    local git_branch tmpfile
+    local git_branch
     git_branch="release/${FULL_VERSION}"
     git branch -D "${git_branch}" > /dev/null 2>&1 || true
     git checkout -b "${git_branch}"
@@ -146,7 +155,18 @@ release_build(){
     git config user.name || git config --global user.name "Helidon Robot"
 
     # Commit version changes
-    git commit -a -m "Release ${FULL_VERSION} [ci skip]"
+    git commit -a -m "Release ${FULL_VERSION}"
+
+    # Create and push a git tag
+    git tag -f "${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+
+    echo "tag=refs/tags/${FULL_VERSION}" >&6
+}
+
+release_build(){
+    # Do the release work in a branch
+    local tmpfile
 
     # Bootstrap credentials from environment
     if [ -n "${MAVEN_SETTINGS}" ] ; then
@@ -178,10 +198,6 @@ release_build(){
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
         -DstagingDescription="Helidon Build Tools v${FULL_VERSION}"
-
-    # Create and push a git tag
-    git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command
