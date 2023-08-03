@@ -73,7 +73,7 @@ build_command() {
         shift
     done
 
-    command="${JAVA_EXEC} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/lib/helidon-cli.jar ${args}"
+    command="${JAVA_EXEC} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/helidon-cli.jar ${args}"
 }
 
 #Append variable value

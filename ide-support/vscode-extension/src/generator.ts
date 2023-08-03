@@ -61,7 +61,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         VSCodeAPI.showInformationMessage('Your Helidon project is being created...');
 
         const archetypeValues = prepareProperties(projectData);
-        const cmd = `java -jar ${extensionPath}/target/cli/helidon.jar init --batch \
+        const cmd = `java -jar ${extensionPath}/target/cli/helidon-cli.jar init --batch \
             ${archetypeValues}`;
 
         channel.appendLine(cmd);

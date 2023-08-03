@@ -159,7 +159,7 @@ public class FunctionalUtils {
     }
 
     static List<String> buildJavaCommand() {
-        Path jar = Path.of(getProperty("helidon.executable.directory")).resolve("target/helidon.jar");
+        Path jar = Path.of(getProperty("helidon.executable.directory")).resolve("target/helidon-cli.jar");
         return new ArrayList<>(List.of(javaPath(), "-Xmx128M", "-jar", jar.toString()));
     }
 

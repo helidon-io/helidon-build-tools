@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
@@ -48,6 +48,9 @@ $(basename "${0}") [ --build-number=N ] CMD
     update_version
         Update the version in the workspace
 
+    release_version
+        Print the release version
+
     create_tag
         Create and and push a release tag
 
@@ -58,33 +61,31 @@ EOF
 }
 
 # parse command line args
-ARGS=( "${@}" )
-for ((i=0;i<${#ARGS[@]};i++))
-{
-    ARG=${ARGS[${i}]}
-    case ${ARG} in
+ARGS=( )
+while (( ${#} > 0 )); do
+    case ${1} in
     "--version="*)
-        VERSION=${ARG#*=}
+        VERSION=${1#*=}
+        shift
         ;;
     "--help")
         usage
         exit 0
         ;;
+    "update_version"|"release_version"|"create_tag"|"release_build")
+        COMMAND="${1}"
+        shift
+        ;;
     *)
-        case ${ARG} in
-        "update_version"|"create_tag"|"release_build")
-          readonly COMMAND="${ARG}"
-          ;;
-        *)
-          echo "ERROR: unknown argument: ${ARG}"
-          exit 1
-          ;;
-        esac
+        ARGS+=( "${1}" )
+        shift
         ;;
     esac
-}
+done
+readonly ARGS
+readonly COMMAND
 
-if [ -z "${COMMAND}" ] ; then
+if [ -z "${COMMAND+x}" ] ; then
   echo "ERROR: no command provided"
   exit 1
 fi
@@ -106,67 +107,70 @@ readonly WS_DIR
 # this allows us to use fd 6 for returning data
 exec 6>&1 1>&2
 
-# get current maven version
-# shellcheck disable=SC2086
-MVN_VERSION=$(mvn ${MAVEN_ARGS} \
-    -q \
-    -f "${WS_DIR}"/pom.xml \
-    -Dexec.executable="echo" \
-    -Dexec.args="\${project.version}" \
-    --non-recursive \
-    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
-readonly MVN_VERSION
+current_version() {
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -q \
+        -f "${WS_DIR}"/pom.xml \
+        -Dexec.executable="echo" \
+        -Dexec.args="\${project.version}" \
+        --non-recursive \
+        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
+}
 
-# Resolve FULL_VERSION
-if [ -z "${VERSION+x}" ]; then
-    # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    readonly FULL_VERSION="${VERSION}"
-else
-    readonly FULL_VERSION="${VERSION}"
-fi
-
-export FULL_VERSION
-printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
+release_version() {
+    local current_version
+    current_version=$(current_version)
+    echo "${current_version%-*}"
+}
 
 update_version(){
-    # Update version
+    local version
+    version=${1-${VERSION}}
+    if [ -z "${version+x}" ] ; then
+        echo "ERROR: version required"
+        usage
+        exit 1
+    fi
+
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -f "${WS_DIR}"/pom.xml versions:set versions:set-property \
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        -f "${WS_DIR}"/pom.xml versions:set versions:set-property \
         -DgenerateBackupPoms="false" \
-        -DnewVersion="${FULL_VERSION}" \
+        -DnewVersion="${version}" \
         -Dproperty="helidon.version" \
         -DprocessFromLocalAggregationRoot="false" \
         -DupdateMatchingVersions="false"
 }
 
 create_tag() {
-    # Do the release work in a branch
-    local git_branch
-    git_branch="release/${FULL_VERSION}"
+    local git_branch version
+
+    version=$(release_version)
+    git_branch="release/${version}"
+
+    # Use a separate branch
     git branch -D "${git_branch}" > /dev/null 2>&1 || true
     git checkout -b "${git_branch}"
 
     # Invoke update_version
-    update_version
+    update_version "${version}"
 
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
 
     # Commit version changes
-    git commit -a -m "Release ${FULL_VERSION}"
+    git commit -a -m "Release ${version}"
 
     # Create and push a git tag
-    git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    git tag -f "${version}"
+    git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 
-    echo "tag=refs/tags/${FULL_VERSION}" >&6
+    echo "tag=refs/tags/${version}" >&6
 }
 
 release_build(){
-    # Do the release work in a branch
-    local tmpfile
+    local tmpfile version
 
     # Bootstrap credentials from environment
     if [ -n "${MAVEN_SETTINGS}" ] ; then
@@ -189,15 +193,17 @@ release_build(){
 
     # Perform local deployment
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} clean deploy \
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        deploy \
         -Prelease \
         -DskipTests \
         -DskipRemoteStaging=true
 
     # Upload all artifacts to nexus
+    version=$(release_version)
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
-        -DstagingDescription="Helidon Build Tools v${FULL_VERSION}"
+        -DstagingDescription="Helidon Build Tools v${version}"
 }
 
 # Invoke command

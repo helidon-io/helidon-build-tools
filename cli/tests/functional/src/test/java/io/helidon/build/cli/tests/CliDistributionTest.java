@@ -59,7 +59,7 @@ public class CliDistributionTest {
         distDir = Files.createTempDirectory("dist");
         Path targetDir = Path.of(getProperty("helidon.executable.directory"));
         LOGGER.info("targetDir - " + targetDir.toRealPath());
-        Path cliZip = targetDir.resolve("target/helidon.zip");
+        Path cliZip = targetDir.resolve("target/helidon-cli.zip");
         LOGGER.info("cliZip - " + cliZip.toRealPath());
         unzip(cliZip, distDir);
     }
@@ -75,11 +75,11 @@ public class CliDistributionTest {
 
         //Ensure main directory are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin"));
-        assertThat(content, hasItems(DIST_BASE_DIR + "/lib"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/libs"));
         //Ensure main files are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon.bat"));
-        assertThat(content, hasItems(DIST_BASE_DIR + "/lib/helidon-cli.jar"));
+        assertThat(content, hasItems(DIST_BASE_DIR + "/helidon-cli.jar"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/LICENSE.txt"));
     }
 

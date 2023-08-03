@@ -29,7 +29,7 @@ on:
 env:
   JAVA_VERSION: 17
   JAVA_DISTRO: oracle
-  GRAALVM_VERSION: 21.3.0
+  GRAALVM_VERSION: 21.3.3.1
   MAVEN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
@@ -87,7 +87,7 @@ jobs:
           build-cache: read-write
           maven-cache: read-write
           artifact-name: helidon-cli
-          artifact-path: cli/impl/target/helidon.zip
+          artifact-path: cli/impl/target/helidon-cli.zip
           run: |
             mvn ${MAVEN_ARGS} -T 8 \
               -DskipTests \
@@ -171,7 +171,7 @@ jobs:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
-          build-cache: read-only
+          build-cache: read-write
           run: |
             mvn ${MAVEN_ARGS} \
               -pl ide-support/vscode-extension \
@@ -189,6 +189,7 @@ jobs:
             platform: linux-amd64
           - os: windows-2022
             platform: windows-amd64
+            file-ext: .exe
           - os: macos-12
             platform: darwin-amd64
     runs-on: ${{ matrix.os }}
@@ -203,21 +204,21 @@ jobs:
           native-image: true
           archive-test-results: true
           artifact-name: helidon-cli
-          artifact-path: cli/impl/target/helidon-${{ matrix.platform }}*
+          artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
             mvn ${MAVEN_ARGS} \
               -pl cli/impl \
               -DskipTests \
               -Pnative-image,!toolchain \
-              -Dnative.image.name=helidon-${{ matrix.platform }} \
+              -Dnative.image.name=helidon-cli-${{ matrix.platform }} \
               package
 
             # smoke test
             mvn ${MAVEN_ARGS} \
               -pl cli/tests/functional \
               -Pnative-image \
-              -Dnative.image.name=helidon-${{ matrix.platform }} \
+              -Dnative.image.name=helidon-cli-${{ matrix.platform }} \
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
               -Dtest=CliFunctionalV2Test#*Native* \
               test
