@@ -15,17 +15,17 @@ Generates the site files.
 
 ### Required Parameters
 
-| Property | Type | User Property | Description |
-| --- | --- | --- | --- |
+| Property       | Type | User Property                  | Description             |
+|----------------|------|--------------------------------|-------------------------|
 | siteConfigFile | File | helidon.sitegen.siteConfigFile | Site configuration file |
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| siteOutputDirectory | File | `${project.build.directory}/site` | Directory containing the generated site files |
-| siteSourceDirectory | File | `${project.basedir}/src/main/site` | Directory containing the site sources |
-| siteGenerateSkip | Boolean | `false` | Skip this goal execution |
+| Property            | Type    | Default<br/>Value                  | Description                                   |
+|---------------------|---------|------------------------------------|-----------------------------------------------|
+| siteOutputDirectory | File    | `${project.build.directory}/site`  | Directory containing the generated site files |
+| siteSourceDirectory | File    | `${project.basedir}/src/main/site` | Directory containing the site sources         |
+| siteGenerateSkip    | Boolean | `false`                            | Skip this goal execution                      |
 
 All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
@@ -35,14 +35,14 @@ Creates the site archive.
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| siteArchiveOutputDirectory | File | `${project.build.directory}` | Directory containing the generated JAR |
-| siteOutputDirectory | File | `${project.build.directory}/site` | Directory containing the generate site files to archive. |
-| siteArchiveFinalName | String | `${project.build.finalName}` | Name of the generated JAR |
-| siteArchiveIncludes | List | [] | List of files to include |
-| siteArchiveExcludes | List | [] |List of files to exclude |
-| siteArchiveSkip | Boolean | `false` | Skip this goal execution |
+| Property                   | Type    | Default<br/>Value                 | Description                                              |
+|----------------------------|---------|-----------------------------------|----------------------------------------------------------|
+| siteArchiveOutputDirectory | File    | `${project.build.directory}`      | Directory containing the generated JAR                   |
+| siteOutputDirectory        | File    | `${project.build.directory}/site` | Directory containing the generate site files to archive. |
+| siteArchiveFinalName       | String  | `${project.build.finalName}`      | Name of the generated JAR                                |
+| siteArchiveIncludes        | List    | []                                | List of files to include                                 |
+| siteArchiveExcludes        | List    | []                                | List of files to exclude                                 |
+| siteArchiveSkip            | Boolean | `false`                           | Skip this goal execution                                 |
 
 The parameter `siteArchiveSkip` is mapped to a user property:
  `sitegen.siteArchiveSkip`.
@@ -55,13 +55,13 @@ Pre-includes included text specified by AsciiDoc `include::` directives into
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| inputDirectory | File | `${project.basedir}` | Directory containing the files to be processed |
-| outputDirectory| File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
-| checkPreprocess | Boolean | `false` | Check that the input and output files are the same |
-| includes | List | [] | List of files to include |
-| exclude | List | [] | List of files to exclude |
+| Property        | Type    | Default<br/>Value    | Description                                                    |
+|-----------------|---------|----------------------|----------------------------------------------------------------|
+| inputDirectory  | File    | `${project.basedir}` | Directory containing the files to be processed                 |
+| outputDirectory | File    | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
+| checkPreprocess | Boolean | `false`              | Check that the input and output files are the same             |
+| includes        | List    | []                   | List of files to include                                       |
+| exclude         | List    | []                   | List of files to exclude                                       |
 
 All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
@@ -72,12 +72,12 @@ Converts a preprocessed `.adoc` file back into natural form with conventional
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| inputDirectory | File | `${project.basedir}` | Directory containing the files to be processed |
-| outputDirectory| File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
-| includes | List | [] | List of files to include |
-| exclude | List | [] | List of files to exclude |
+| Property        | Type | Default<br/>Value    | Description                                                    |
+|-----------------|------|----------------------|----------------------------------------------------------------|
+| inputDirectory  | File | `${project.basedir}` | Directory containing the files to be processed                 |
+| outputDirectory | File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
+| includes        | List | []                   | List of files to include                                       |
+| exclude         | List | []                   | List of files to exclude                                       |
 
 All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 
@@ -137,7 +137,7 @@ backend:
 
 ### Match Patterns
 
-A match pattern is a string representing file path segments that may contains
+A match pattern is a string representing file path segments that may contain
  wildcard `*` to match multiple files at once. 
 
 `*` matches zero or more characters within a path segment, `**` matches zero or
@@ -224,6 +224,6 @@ You need to declare the plugin as an extension in order to use it:
                 <extensions>true</extensions>
             </plugin>
         </plugins>
-    <build>
+    </build>
 </project>
 ```

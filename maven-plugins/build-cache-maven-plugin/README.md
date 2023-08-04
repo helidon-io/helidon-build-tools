@@ -1,4 +1,4 @@
-# Helidon Build Cache Plugin
+# Helidon Build Cache Maven Plugin
 
 This plugin provides "fast-forward" features for Maven builds.
 
