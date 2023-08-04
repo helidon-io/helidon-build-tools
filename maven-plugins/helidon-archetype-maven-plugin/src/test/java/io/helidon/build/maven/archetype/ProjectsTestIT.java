@@ -106,6 +106,15 @@ final class ProjectsTestIT {
         assertDiffs(diffs);
     }
 
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test7(String basedir) throws IOException {
+        BuildLog log = new BuildLog(new File(basedir, "build.log"));
+        List<String> diffs = log.containsLines(new File(basedir, "expected.log"));
+        assertDiffs(diffs);
+    }
+
+
     private static Path projectsDir(String baseDir) {
         return projectsDir(baseDir, null);
     }
