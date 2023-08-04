@@ -11,7 +11,7 @@ This plugin provides Maven goals specific to Helidon archetypes.
 
 Maven goal to package archetypes.
 
-This plugin binds to the `package` phase by default.
+This goal binds to the `package` phase by default.
 
 ### Optional Parameters
 

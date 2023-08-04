@@ -91,13 +91,13 @@ public class EnforcerMojo extends AbstractMojo {
     /**
      * Use git. When configured to {@code false}, all files will be checked and their last modification timestamp used.
      */
-    @Parameter(property = "helidon.enforcer.use-git", defaultValue = "true")
+    @Parameter(property = "helidon.enforcer.useGit", defaultValue = "true")
     private boolean useGit;
 
     /**
      * Whether to use git ignore to match files.
      */
-    @Parameter(property = "helidon.enforcer.honor-gitignore", defaultValue = "true")
+    @Parameter(property = "helidon.enforcer.honorGitignore", defaultValue = "true")
     private boolean honorGitIgnore;
 
     /**

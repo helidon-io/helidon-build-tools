@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,12 +133,18 @@ public class StagerMojo extends AbstractMojo {
     @Parameter(defaultValue = "5", property = StagingContext.MAX_RETRIES)
     private int maxRetries;
 
+    /**
+     * Skip this goal execution.
+     */
+    @Parameter(property = "stager.skip", defaultValue = "false")
+    private boolean skip;
+
     @Parameter
     private ExecutorConfig executor = new ExecutorConfig();
 
     @Override
     public void execute() {
-        if (directories == null) {
+        if (skip || directories == null) {
             return;
         }
         ExecutorService executorService = executor.select();

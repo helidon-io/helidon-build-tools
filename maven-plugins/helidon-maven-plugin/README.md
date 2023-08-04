@@ -17,24 +17,24 @@ This plugin provides Maven goals specific to Helidon applications as well as goa
 
 Maven goal to invoke GraalVM `native-image` command.
 
-This plugin binds to the `package` phase by default.
+This goal binds to the `package` phase by default.
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| graalVMHome | File | `${env.GRAALVM_HOME}` | GraalVM home |
-| reportExceptionStackTraces | boolean | `true` | Show exception stack traces for exceptions during image building |
-| buildShared | boolean | `false` | Build shared library |
-| buildStatic | boolean | `false` | Build statically linked executable (requires static `libc` and `zlib` |
-| addProjectResources | boolean | `true` | Indicates if project build resources should be added to the image |
-| includeResources | List | [] | List of regexp matching names of resources to be included in the image |
-| additionalArgs | List | [] | Additional command line arguments |
-| skipNativeImage | boolean | `false` | Skip this goal execution |
-| execMode | enum | `jar` | Execution mode - `jar`, `jar-cp`, `module`, `none` or `main` |
-| mainClass | String | `${mainClass}` | Main class to use when execMode is set to `main` | 
-| finalName | String  | `${project.build.finalName}` | Name of the output file to be generated |
-| jarFile | File | `target/${finalName}.jar` | Project JAR file |
+| Property                   | Type    | Default<br/>Value            | Description                                                            |
+|----------------------------|---------|------------------------------|------------------------------------------------------------------------|
+| graalVMHome                | File    | `${env.GRAALVM_HOME}`        | GraalVM home                                                           |
+| reportExceptionStackTraces | boolean | `true`                       | Show exception stack traces for exceptions during image building       |
+| buildShared                | boolean | `false`                      | Build shared library                                                   |
+| buildStatic                | boolean | `false`                      | Build statically linked executable (requires static `libc` and `zlib`  |
+| addProjectResources        | boolean | `true`                       | Indicates if project build resources should be added to the image      |
+| includeResources           | List    | []                           | List of regexp matching names of resources to be included in the image |
+| additionalArgs             | List    | []                           | Additional command line arguments                                      |
+| skipNativeImage            | boolean | `false`                      | Skip this goal execution                                               |
+| execMode                   | enum    | `jar`                        | Execution mode - `jar`, `jar-cp`, `module`, `none` or `main`           |
+| mainClass                  | String  | `${mainClass}`               | Main class to use when execMode is set to `main`                       | 
+| finalName                  | String  | `${project.build.finalName}` | Name of the output file to be generated                                |
+| jarFile                    | File    | `target/${finalName}.jar`    | Project JAR file                                                       |
 
 Except for `skipNativeImage`, the above parameters are mapped to user properties of the form `native.image.PROPERTY`; 
 `skipNativeImage` is mapped to `native.image.skip`. Multiple values for the `native.image.additonalArgs` and 
@@ -54,7 +54,7 @@ If the plugin fails to determine the path to `native-image`, the build will
 ### Adding build resources
 
 When `addProjectResources` is `true` (the default), the plugin will automatically
- add the processed project resources to the image. I.e the files from
+ add the processed project resources to the image. I.e. the files from
  `src/main/resources` processed under the `target/classes` directory.
 
 You can manually include additional files with the `includeResources` parameter.
@@ -93,7 +93,7 @@ You then build your native image with the following command:
 mvn package -Pnative-image
 ```
 
-You can also execute this plugin outside of a configured life-cycle, however
+You can also execute this plugin outside a configured life-cycle, however
  it requires the project jar to be present:
 
 ```bash
@@ -128,22 +128,22 @@ on which they depend. In addition, it:
 * Generates a custom `start` script to simplify CDS usage and support debug and test modes. 
 
 
-This plugin binds to the `package` phase by default.
+This goal binds to the `package` phase by default.
 
 ### Optional Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| defaultJvmOptions | List | [] | JVM options to use if none are passed to the `start` script |
-| defaultArgs | List | [] | Application arguments to use if none are passed to the `start` script |
-| defaultDebugOptions | List | [] | JVM debug options to use if the `--debug` flag is passed to the `start` script |
-| additionalModules | Set | [] | Add any modules that may not be found automatically |
-| addClassDataSharingArchive | boolean | `true` | Add a Class Data Sharing archive to reduce startup time |
-| testImage | boolean | `true` | Start the application after the image is built |
-| stripDebug | boolean | `false` | Remove all debug support from the image, including within `.class` files |
-| skipJavaImage | boolean | `false` | Skip this goal execution |
-| additionalJlinkArgs | List | [] | Additional arguments to use when invoking `jlink` |
-| maxAppStartSeconds | int | `60` | Maximum seconds to wait for application startup |
+| Property                   | Type    | Default<br/>Value | Description                                                                    |
+|----------------------------|---------|-------------------|--------------------------------------------------------------------------------|
+| defaultJvmOptions          | List    | []                | JVM options to use if none are passed to the `start` script                    |
+| defaultArgs                | List    | []                | Application arguments to use if none are passed to the `start` script          |
+| defaultDebugOptions        | List    | []                | JVM debug options to use if the `--debug` flag is passed to the `start` script |
+| additionalModules          | Set     | []                | Add any modules that may not be found automatically                            |
+| addClassDataSharingArchive | boolean | `true`            | Add a Class Data Sharing archive to reduce startup time                        |
+| testImage                  | boolean | `true`            | Start the application after the image is built                                 |
+| stripDebug                 | boolean | `false`           | Remove all debug support from the image, including within `.class` files       |
+| skipJavaImage              | boolean | `false`           | Skip this goal execution                                                       |
+| additionalJlinkArgs        | List    | []                | Additional arguments to use when invoking `jlink`                              |
+| maxAppStartSeconds         | int     | `60`              | Maximum seconds to wait for application startup                                |
 
 
 The above parameters are mapped to user properties of the form `jlink.image.PROPERTY`, e.g.
@@ -184,7 +184,7 @@ You then build your image with the following command:
 mvn package -Pjlink-image
 ```
 
-You can also execute this plugin outside of a configured life-cycle, however
+You can also execute this plugin outside a configured life-cycle, however
  it requires the project jar to be present and will use only _default_ configuration:
 
 ```bash
@@ -196,7 +196,7 @@ mvn helidon:jlink-image
 
 Maven goal to find the top level root directory of the project and store it in a property.
 
-This plugin binds to the `validate` phase by default.
+This goal binds to the `validate` phase by default.
 
 The root directory is stored in a property `top.parent.basedir`.
 
@@ -398,7 +398,7 @@ they don't work and use them only as _additional_ emphasis.
 
 #### Color Examples
 
-The following tables provide examples on dark and light backgrounds within iTerm2 on MacOS.
+The following tables provide examples on dark and light backgrounds within iTerm2 on macOS.
 See [here](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit) for examples on other terminals.
 
 ##### Text Colors: Dark Theme 
@@ -423,7 +423,7 @@ See [here](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit) for examples 
 Maven goal to generate a third party license attribution report for a set of
 Helidon dependencies.
 
-By default the goal will scan your application for all Helidon dependencies
+By default, the goal will scan your application for all Helidon dependencies
 (gid `io.helidon`) and generate `target/HELIDON_THIRD_PARTY_LICENSES.txt`
 that contains attributions for the third party technologies used by those
 dependencies.
@@ -432,19 +432,19 @@ To generate the report the plugin needs an XML data file containing the
 third party attributions. This data file is available as part of every
 Helidon release. See
 [etc/HELIDON_THIRD_PARTY_LICENSES.xml](https://github.com/oracle/helidon/blob/master/etc/HELIDON_THIRD_PARTY_LICENSES.xml)
-for an example. By default this file is loaded as a resource from the
+for an example. By default, this file is loaded as a resource from the
 plugin's classpath.
 
 
 ### Parameters
 
-| Property | Type | Default<br/>Value | Description |
-| --- | --- | --- | --- |
-| includeVersion| Boolean | false | "true" to include version numbers in attributions. "false" to not include them. |
-| inputFileDir| File | Plugin's CLASSPATH | Path to the directory containing the input XML file. |
-| inputFileName| String | HELIDON_THIRD_PARTY_LICENSES.xml | Name of the input XML file. |
-| outputFileDir| File | `target` | Directory to place generated report text file. |
-| outputFileName| String | `HELIDON_THIRD_PARTY_LICENSES.txt` | Name of generated report file. |
-| modules| String | `*`  | Comma seperated list of Helidon module names (`helidon-webserver,helidon-microprofile`). `*` means all Helidon modules in application's dependencies |
-| skip| boolean | false | true to skip this goal. |
+| Property       | Type    | Default Value                      | Description                                                                                                                                          |
+|----------------|---------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| includeVersion | Boolean | false                              | "true" to include version numbers in attributions. "false" to not include them.                                                                      |
+| inputFileDir   | File    | Plugin's CLASSPATH                 | Path to the directory containing the input XML file.                                                                                                 |
+| inputFileName  | String  | HELIDON_THIRD_PARTY_LICENSES.xml   | Name of the input XML file.                                                                                                                          |
+| outputFileDir  | File    | `target`                           | Directory to place generated report text file.                                                                                                       |
+| outputFileName | String  | `HELIDON_THIRD_PARTY_LICENSES.txt` | Name of generated report file.                                                                                                                       |
+| modules        | String  | `*`                                | Comma seperated list of Helidon module names (`helidon-webserver,helidon-microprofile`). `*` means all Helidon modules in application's dependencies |
+| skip           | boolean | false                              | true to skip this goal.                                                                                                                              |
 
