@@ -1,8 +1,16 @@
 {
     "versions": [
-        {{#versions}}
-            "{{value}}"{{^last}},{{/last}}
-        {{/versions}}
+    {{#versions}}
+        "{{value}}"{{^last}},{{/last}}
+    {{/versions}}
+    ],
+    "preview-versions": [
+    {{#preview-versions}}
+        {
+            "order": {{value.order}},
+            "version": "{{value.version}}"
+        }{{^last}},{{/last}}
+    {{/preview-versions}}
     ],
     "latest": "{{latest}}"
 }
