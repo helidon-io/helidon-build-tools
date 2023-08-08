@@ -18,7 +18,7 @@ import io.helidon.build.common.test.utils.JUnitLauncher
 import io.helidon.build.maven.stager.ProjectsTestIT
 
 JUnitLauncher.builder()
-        .select(ProjectsTestIT.class, "test1", String.class)
+        .select(ProjectsTestIT.class, "testArchive", String.class)
         .parameter("basedir", basedir.getAbsolutePath())
         .reportsDir(basedir)
         .outputFile(new File(basedir, "test.log"))

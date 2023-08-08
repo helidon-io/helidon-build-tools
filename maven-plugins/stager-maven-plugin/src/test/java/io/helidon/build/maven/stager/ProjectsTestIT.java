@@ -23,6 +23,7 @@ import java.nio.file.Path;
 
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
@@ -33,7 +34,7 @@ public class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test1(String basedir) throws IOException {
+    void testArchive(String basedir) throws IOException {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
 
@@ -44,54 +45,65 @@ public class ProjectsTestIT {
             Path file1 = fs.getPath("/").resolve("versions.json");
             assertExist(file1);
 
-            assertEquals(Files.readString(file1),"{\n" +
-                    "    \"versions\": [\n" +
-                    "            \"3.0.0-SNAPSHOT\",\n" +
-                    "            \"2.5.0\",\n" +
-                    "            \"2.4.2\",\n" +
-                    "            \"2.4.0\",\n" +
-                    "            \"2.0.1\",\n" +
-                    "            \"2.0.0\"\n" +
-                    "    ],\n" +
-                    "    \"latest\": \"3.0.0-SNAPSHOT\"\n" +
-                    "}\n");
+            assertEquals(Files.readString(file1), "{\n"
+                    + "    \"versions\": [\n"
+                    + "        \"3.0.0-SNAPSHOT\",\n"
+                    + "        \"2.5.0\",\n"
+                    + "        \"2.4.2\",\n"
+                    + "        \"2.4.0\",\n"
+                    + "        \"2.0.1\",\n"
+                    + "        \"2.0.0\"\n"
+                    + "    ],\n"
+                    + "    \"latest\": \"3.0.0-SNAPSHOT\"\n"
+                    + "}\n");
         }
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test2(String basedir) throws IOException {
+    void testTemplate(String basedir) throws IOException {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
 
         Path file1 = stageDir.resolve("versions1.json");
         assertExist(file1);
-
-        assertEquals(Files.readString(file1), "{\n" +
-                "    \"versions\": [\n" +
-                "            \"3.0.0-SNAPSHOT\",\n" +
-                "            \"2.5.0\",\n" +
-                "            \"2.4.2\",\n" +
-                "            \"2.4.0\",\n" +
-                "            \"2.0.1\",\n" +
-                "            \"2.0.0\"\n" +
-                "    ],\n" +
-                "    \"latest\": \"3.0.0-SNAPSHOT\"\n" +
-                "}\n");
+        assertEquals(Files.readString(file1), "{\n"
+                + "    \"versions\": [\n"
+                + "        \"3.0.0-SNAPSHOT\",\n"
+                + "        \"2.5.0\",\n"
+                + "        \"2.4.2\",\n"
+                + "        \"2.4.0\",\n"
+                + "        \"2.0.1\",\n"
+                + "        \"2.0.0\"\n"
+                + "    ],\n"
+                + "    \"preview-versions\": [\n"
+                + "        {\n"
+                + "            \"order\": 199,\n"
+                + "            \"version\": \"4.0.0-M1\"\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"order\": 200,\n"
+                + "            \"version\": \"4.0.0-ALPHA6\"\n"
+                + "        }\n"
+                + "    ],\n"
+                + "    \"latest\": \"3.0.0-SNAPSHOT\"\n"
+                + "}\n");
 
         Path file2 = stageDir.resolve("versions2.json");
-        assertEquals(Files.readString(file2), "{\n" +
-                "    \"versions\": [\n" +
-                "            \"4.0.0-SNAPSHOT\",\n" +
-                "            \"3.0.0\"\n" +
-                "    ],\n" +
-                "    \"latest\": \"4.0.0-SNAPSHOT\"\n" +
-                "}\n");
+        assertEquals(Files.readString(file2), "{\n"
+                + "    \"versions\": [\n"
+                + "        \"4.0.0-SNAPSHOT\",\n"
+                + "        \"3.0.0\"\n"
+                + "    ],\n"
+                + "    \"preview-versions\": [\n"
+                + "    ],\n"
+                + "    \"latest\": \"4.0.0-SNAPSHOT\"\n"
+                + "}\n");
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test3(String basedir) {
+    void testCopyArtifact(String basedir) {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
         assertExist(stageDir.resolve("helidon-bare-mp-2.0.0-RC1.jar"));
@@ -101,7 +113,7 @@ public class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test4(String basedir) {
+    void testDownload(String basedir) {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
         assertExist(stageDir.resolve("cli/2.0.0-RC1/darwin/helidon"));
@@ -112,7 +124,7 @@ public class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test5(String basedir) throws IOException {
+    void testFile(String basedir) throws IOException {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
 
@@ -127,7 +139,7 @@ public class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test6(String basedir) {
+    void testSymlink(String basedir) {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
 
@@ -146,7 +158,7 @@ public class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test7(String basedir) {
+    void testUnpackArtifact(String basedir) {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertExist(stageDir);
 
