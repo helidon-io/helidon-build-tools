@@ -145,7 +145,7 @@
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.lsp4j>0.16.0</version.lib.lsp4j>
         <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
-        <version.lib.maven>3.6.2</version.lib.maven>
+        <version.lib.maven>3.8.1</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
         <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
