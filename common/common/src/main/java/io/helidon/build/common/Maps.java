@@ -432,9 +432,9 @@ public class Maps {
             Function<T, K> keyMapper,
             Function<U, V> valueMapper) {
         return map.entrySet().stream()
-                  .filter(entry-> keyFilter.test(entry.getKey()))
+                  .filter(entry -> keyFilter.test(entry.getKey()))
                   .collect(Collectors.toMap(
-                          entry->keyMapper.apply(entry.getKey()),
-                          entry->entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
+                          entry -> keyMapper.apply(entry.getKey()),
+                          entry -> entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
     }
 }
