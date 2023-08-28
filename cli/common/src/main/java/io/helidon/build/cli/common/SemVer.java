@@ -49,14 +49,14 @@ final class SemVer {
     static List<String> latestMajorVersions(List<ArchetypesData.Version> versions) {
         List<String> ids = versions.stream().map(ArchetypesData.Version::id).collect(Collectors.toList());
         // versions grouped by major digit
-        Map<String, List<String>> groups = Lists.mappedBy(ids, SemVer::majorDigit);
+        Map<String, List<String>> groups = Lists.mappedBy(ids, SemVer::lowestVersionFromMajorDigit);
 
         // Maven versions grouped by version range
         Map<VersionRange, List<MavenVersion>> ranges =
                 Maps.mapEntry(groups, Strings::isValid, VersionRange::higherOrEqual, MavenVersion::toMavenVersion);
 
         // the latest of each group
-        Collection<MavenVersion> latest = Maps.mapEntryValue(ranges, entry->entry.getKey().resolveLatest(entry.getValue()))
+        Collection<MavenVersion> latest = Maps.mapEntryValue(ranges, entry -> entry.getKey().resolveLatest(entry.getValue()))
                                               .values();
         List<ArchetypesData.Version> latestVersions = versions.stream()
                 .filter(version -> latest.contains(version.toMavenVersion()))
@@ -72,10 +72,10 @@ final class SemVer {
         return versions;
     }
 
-    private static String majorDigit(String version) {
+    private static String lowestVersionFromMajorDigit(String version) {
         Matcher matcher = MAJOR_PATTERN.matcher(version);
         if (matcher.find()) {
-            return matcher.group("major");
+            return matcher.group("major") + "-SNAPSHOT";
         }
         return "";
     }

@@ -88,6 +88,30 @@ public class ArchetypesDataTest {
                 Matchers.is(List.of("2.0.0", "1.0.1", "4.0.0")));
     }
 
+    @Test
+    public void testVersionQualifierOrdering() {
+        String version1;
+        String version2;
+        List<String> versions = List.of(
+                "1.0-SNAPSHOT",
+                "1.0-ALPHA",
+                "1.0-BETA",
+                "1.0-MILESTONE",
+                "1.0-RC",
+                "1.0",
+                "1.0-sp");
+
+        for (int i = 0; i < versions.size() - 1; i += 2) {
+            version1 = versions.get(i);
+            version2 = versions.get(i + 1);
+            assertThat(String.format("%s should be picked over %s", version1, version2),
+                    data(version(version1, 100),
+                            version(version2, 100))
+                            .latestMajorVersions(),
+                    Matchers.is(List.of(version2)));
+        }
+    }
+
     private static ArchetypesData data(ArchetypesData.Version... versions) {
         return ArchetypesData.builder().versions(versions).build();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,11 +259,11 @@ class ComparableVersion implements Comparable<ComparableVersion> {
     private static class StringItem implements Item {
 
         private static final List<String> QUALIFIERS = Arrays.asList(
+                "snapshot",
                 "alpha",
                 "beta",
                 "milestone",
                 "rc",
-                "snapshot",
                 "",
                 "sp");
 

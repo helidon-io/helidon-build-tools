@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.build.common.maven;
+
+import java.util.List;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -81,5 +83,26 @@ class MavenVersionTest {
         assertThat(toMavenVersion("2.0.0-RC1"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-M4"))));
         assertThat(toMavenVersion("2.0.0-RC2"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-RC1"))));
         assertThat(toMavenVersion("2.0.0"), is(org.hamcrest.Matchers.greaterThan(toMavenVersion("2.0.0-RC2"))));
+    }
+
+    @Test
+    void testQualifierComparison() {
+        MavenVersion version1;
+        MavenVersion version2;
+        List<MavenVersion> versions = List.of(
+                toMavenVersion("0-SNAPSHOT"),
+                toMavenVersion("0-ALPHA"),
+                toMavenVersion("0-BETA"),
+                toMavenVersion("0-MILESTONE"),
+                toMavenVersion("0-RC"),
+                toMavenVersion("0"),
+                toMavenVersion("0-sp"));
+
+        for (int i = 0; i < versions.size() - 1; i += 2) {
+            version1 = versions.get(i);
+            version2 = versions.get(i + 1);
+            assertThat(String.format("%s should be lower than %s", version1, version2),
+                    version1, is(org.hamcrest.Matchers.lessThan(version2)));
+        }
     }
 }
