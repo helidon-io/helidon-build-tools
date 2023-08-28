@@ -101,7 +101,7 @@ public class ArchetypesDataTest {
                 "1.0",
                 "1.0-sp");
 
-        for (int i = 0; i < versions.size() - 1; i += 2) {
+        for (int i = 0; i < versions.size() - 1; i++) {
             version1 = versions.get(i);
             version2 = versions.get(i + 1);
             assertThat(String.format("%s should be picked over %s", version1, version2),
