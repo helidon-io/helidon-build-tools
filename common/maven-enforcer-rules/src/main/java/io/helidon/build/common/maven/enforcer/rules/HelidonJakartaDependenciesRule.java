@@ -34,10 +34,10 @@ import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 import static java.util.function.Predicate.not;
 
 /**
- * This rule will apply the same basic "eclipse transformer" checks, but applied as an enforcer rule. See
- * <a href="https://projects.eclipse.org/projects/technology.transformer"/>.
+ * This rule will apply the same basic "eclipse transformer" checks, but applied as an enforcer rule.
  */
 // see https://maven.apache.org/enforcer/enforcer-api/writing-a-custom-rule.html
+// see https://projects.eclipse.org/projects/technology.transformer
 @Named("helidonJakartaDependenciesRule") // rule name - must start from lowercase character
 @SuppressWarnings("unused")
 public class HelidonJakartaDependenciesRule extends AbstractEnforcerRule {
