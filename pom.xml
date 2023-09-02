@@ -150,6 +150,7 @@
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
         <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
         <version.lib.maven-embedder>3.6.2</version.lib.maven-embedder>
+        <version.lib.maven-enforcer>3.4.0</version.lib.maven-enforcer>
         <version.lib.maven-filtering>3.1.1</version.lib.maven-filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
         <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
@@ -183,7 +184,7 @@
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
-        <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
+        <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.frontend>1.11.3</version.plugin.frontend>
@@ -263,7 +264,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>${version.plugin.enforcer}</version>
+                    <version>${version.plugin.maven-enforcer}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -616,6 +617,11 @@
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>enforcer-api</artifactId>
+                <version>${version.lib.maven-enforcer}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
                 <version>${version.lib.maven-annotations}</version>
@@ -966,6 +972,7 @@
                     <plugin>
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>helidon-enforcer-plugin</artifactId>
+                        <!-- TODO: should align to 3.4.0 here? -->
                         <version>3.0.5</version>
                         <configuration>
                             <rules>
