@@ -30,6 +30,13 @@ public class Gav {
     private final String artifact;
     private final String version;
 
+    /**
+     * Creates an instance using group, artifact, and version id.
+     *
+     * @param g group id
+     * @param a artifact id
+     * @param v version id
+     */
     protected Gav(String g,
                   String a,
                   String v) {
@@ -40,6 +47,11 @@ public class Gav {
         assert (!group.isBlank());
     }
 
+    /**
+     * Creates an instance given a maven coordinate.
+     *
+     * @param c maven coordinate
+     */
     protected Gav(MavenCoordinate c) {
         this(c.getGroupId(), c.getArtifactId(), c.getVersion());
     }

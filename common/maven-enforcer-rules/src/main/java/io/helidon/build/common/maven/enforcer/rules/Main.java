@@ -20,7 +20,7 @@ package io.helidon.build.common.maven.enforcer.rules;
  * Wrapper for running {@link DependencyIsValidCheck}.
  */
 public final class Main {
-    static final DependencyIsValidCheck validationCheck = DependencyIsValidCheck.create();
+    static final DependencyIsValidCheck VALIDATION_CHECK = DependencyIsValidCheck.create();
 
     private Main() {
     }
@@ -31,7 +31,7 @@ public final class Main {
      * @param args args maven gavs to validate
      */
     public static void main(final String[] args) {
-        validationCheck.validate(args);
+        VALIDATION_CHECK.validate(args);
     }
 
 }
