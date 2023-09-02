@@ -56,6 +56,7 @@ public class HelidonJakartaDependenciesRule extends AbstractEnforcerRule {
     //    @Inject
     private List<String> excludedGavs;
 
+    @Override
     public void execute() throws EnforcerRuleException {
         ConfigurableMavenResolverSystem resolver = Maven.configureResolver()
                 .workOffline()
