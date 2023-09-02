@@ -81,13 +81,6 @@ public class HelidonJakartaDependenciesRule extends AbstractEnforcerRule {
         }
     }
 
-    /**
-     * A good practice is provided toString method for Enforcer Rule.
-     * <p>
-     * Output is used in verbose Maven logs, can help during investigate problems.
-     *
-     * @return rule description
-     */
     @Override
     public String toString() {
         return String.format(getClass().getSimpleName() + "[excludedGavs=%s]", excludedGavs);

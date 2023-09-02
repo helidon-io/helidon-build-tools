@@ -16,6 +16,9 @@
 
 package io.helidon.build.common.maven.enforcer.rules;
 
+/**
+ * Wrapper for running {@link DependencyIsValidCheck}.
+ */
 public final class Main {
     static final DependencyIsValidCheck validationCheck = DependencyIsValidCheck.create();
 

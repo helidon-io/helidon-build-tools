@@ -22,6 +22,9 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 
+/**
+ * A simple group-artifact-version.
+ */
 public class Gav {
     private final String group;
     private final String artifact;
@@ -46,17 +49,32 @@ public class Gav {
         return toCanonicalName();
     }
 
-    String group() {
+    /**
+     * The group id.
+     *
+     * @return group id
+     */
+    public String group() {
         assert (group != null && !group.isBlank());
         return group;
     }
 
-    String artifact() {
+    /**
+     * The artifact id.
+     *
+     * @return artifact id
+     */
+    public String artifact() {
         assert (artifact != null && !artifact.isBlank());
         return artifact;
     }
 
-    String version() {
+    /**
+     * The version id.
+     *
+     * @return version id
+     */
+    public String version() {
         assert (version != null && !version.isBlank());
         return version;
     }

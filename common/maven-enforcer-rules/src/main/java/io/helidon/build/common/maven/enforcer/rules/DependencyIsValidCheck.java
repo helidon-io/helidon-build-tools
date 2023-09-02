@@ -33,15 +33,24 @@ import org.apache.maven.artifact.versioning.VersionRange;
 public class DependencyIsValidCheck implements Function<Gav, Boolean> {
     static final String JAKARTA_RENAMED = "jakarta-renamed.properties";
     static final String JAKARTA_VERSIONS = "jakarta-versions.properties";
-    static final String JAKARTA_MODULES = "jakarta-modules.properties";
+    static final String JAKARTA_GROUPS = "jakarta-groups.properties";
 
-    private static final Map<String, VersionRange> packageToVersions = loadVersions();
-    private static final Map<String, String> packageToRenamed = loadRenamed();
-    private static final Map<String, String> groupToPackage = loadModules();
+    private static final Map<String, VersionRange> PACKAGE_TO_VERSIONS = loadVersions();
+    private static final Map<String, String> PACKAGE_TO_RENAMED = loadRenamed();
+    private static final Map<String, String> GROUP_TO_PACKAGE = loadGroups();
 
+    /**
+     * Default constructor.
+     */
     protected DependencyIsValidCheck() {
     }
 
+    /**
+     * Validates the provided maven GAVs. If any are invalid an exception is thrown.
+     *
+     * @param gavs the array of maven GAVs
+     * @throws IllegalStateException if a passed GAV is in violation of Helidon's usage policy
+     */
     public void validate(String... gavs) {
         for (String gav : gavs) {
             if (!apply(gav)) {
@@ -50,6 +59,12 @@ public class DependencyIsValidCheck implements Function<Gav, Boolean> {
         }
     }
 
+    /**
+     * Checks the given maven GAV.
+     *
+     * @param gav the maven GAV
+     * @return true if the GAV is not in violation
+     */
     public boolean apply(String gav) {
         return apply(Gav.create(gav));
     }
@@ -63,10 +78,10 @@ public class DependencyIsValidCheck implements Function<Gav, Boolean> {
         }
 
         if (groupPackageName.startsWith("javax.")) {
-            String renamedPackage = packageToRenamed.get(groupPackageName);
+            String renamedPackage = PACKAGE_TO_RENAMED.get(groupPackageName);
             return (renamedPackage == null);
         } else if (groupPackageName.startsWith("jakarta.")) {
-            VersionRange versionRange = packageToVersions.get(groupPackageName);
+            VersionRange versionRange = PACKAGE_TO_VERSIONS.get(groupPackageName);
             if (versionRange != null) {
                 return versionRange.containsVersion(gav.toArtifactVersion());
             }
@@ -75,12 +90,23 @@ public class DependencyIsValidCheck implements Function<Gav, Boolean> {
         return true;
     }
 
+    /**
+     * Converts a group name to a package name.
+     *
+     * @param group the group name
+     * @return the associated package name
+     */
     public String toPackage(String group) {
-        String packageName = groupToPackage.get(group);
+        String packageName = GROUP_TO_PACKAGE.get(group);
         return (packageName == null) ? group : packageName;
 
     }
 
+    /**
+     * Creates a new instance.
+     *
+     * @return a new instance
+     */
     public static DependencyIsValidCheck create() {
         return new DependencyIsValidCheck();
     }
@@ -103,9 +129,9 @@ public class DependencyIsValidCheck implements Function<Gav, Boolean> {
         return result;
     }
 
-    static Map<String, String> loadModules() {
+    static Map<String, String> loadGroups() {
         Map<String, String> result = new LinkedHashMap<>();
-        load(JAKARTA_MODULES).forEach((k, v) -> result.put(k.toString(), v.toString()));
+        load(JAKARTA_GROUPS).forEach((k, v) -> result.put(k.toString(), v.toString()));
         return result;
     }
 
