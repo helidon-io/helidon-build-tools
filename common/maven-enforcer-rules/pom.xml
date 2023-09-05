@@ -36,6 +36,7 @@
         <version.lib.shrinkwrap>3.2.1</version.lib.shrinkwrap>
 
         <mainClass>io.helidon.build.common.maven.enforcer.rules.Main</mainClass>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
