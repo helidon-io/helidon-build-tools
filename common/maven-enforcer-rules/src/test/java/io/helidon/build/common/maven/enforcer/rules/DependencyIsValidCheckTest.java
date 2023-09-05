@@ -18,8 +18,10 @@ package io.helidon.build.common.maven.enforcer.rules;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DependencyIsValidCheckTest {
     static final DependencyIsValidCheck dependencyIsValidCheck = DependencyIsValidCheck.create();
@@ -44,7 +46,7 @@ public class DependencyIsValidCheckTest {
 
     @Test
     void testJavaxCryptoIsValid() {
-        assertThat(dependencyIsValidCheck.apply("javax.crypto:1"),
+        assertThat(dependencyIsValidCheck.apply("javax.crypto:"),
                    is(true));
     }
 
@@ -52,6 +54,20 @@ public class DependencyIsValidCheckTest {
     void testJavaxInjectIsNotValid() {
         assertThat(dependencyIsValidCheck.apply("javax.inject:javax.inject:1"),
                    is(false));
+    }
+
+    @Test
+    void testValidate() {
+        ViolationException ve = assertThrows(ViolationException.class, () ->
+                dependencyIsValidCheck.validate("javax.inject:javax.inject:1",
+                                                "javax.crypto:javax.crypto:1",
+                                                "jakarta.servlet",
+                                                "javax.servlet",
+                                                "other.servlet"));
+        assertThat(ve.getMessage(),
+                   equalTo("Violations detected: [javax.inject:javax.inject:1, jakarta.servlet, javax.servlet]"));
+        assertThat(ve.violations().toString(),
+                   equalTo("[javax.inject:javax.inject:1, jakarta.servlet, javax.servlet]"));
     }
 
 }

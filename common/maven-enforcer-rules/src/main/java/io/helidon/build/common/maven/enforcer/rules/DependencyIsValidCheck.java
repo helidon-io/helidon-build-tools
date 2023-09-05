@@ -19,7 +19,9 @@ package io.helidon.build.common.maven.enforcer.rules;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
@@ -49,13 +51,18 @@ public class DependencyIsValidCheck implements Function<Gav, Boolean> {
      * Validates the provided maven GAVs. If any are invalid an exception is thrown.
      *
      * @param gavs the array of maven GAVs
-     * @throws IllegalStateException if a passed GAV is in violation of Helidon's usage policy
+     * @throws ViolationException if a passed GAV is in violation of Helidon's usage policy
      */
     public void validate(String... gavs) {
+        List<String> violations = new ArrayList<>();
         for (String gav : gavs) {
             if (!apply(gav)) {
-                throw new IllegalStateException(gav + " is a violation.");
+                violations.add(gav);
             }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new ViolationException("Violations detected: " + violations, violations);
         }
     }
 
