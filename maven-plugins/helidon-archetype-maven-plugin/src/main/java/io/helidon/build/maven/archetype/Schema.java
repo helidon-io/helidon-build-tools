@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,14 +43,19 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 class Schema {
 
     /**
-     * Schema location.
+     * Default schema location.
      */
-    static final String LOCATION = "https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd";
+    static final String DEFAULT_LOCATION = "https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd";
 
     /**
-     * Schema namespace.
+     * Default schema namespace.
      */
-    static final String NAMESPACE = "https://helidon.io/archetype/2.0";
+    static final String DEFAULT_NAMESPACE = "https://helidon.io/archetype/2.0";
+
+    /**
+     * Default schema version.
+     */
+    static final String DEFAULT_VERSION = "2.0";
 
     /**
      * XML root element.
@@ -58,11 +63,12 @@ class Schema {
     static final String ROOT_ELEMENT = "archetype-script";
 
     /**
-     * Archetype 2.0 schema.
+     * Default archetype schema.
      */
-    static final String RESOURCE_NAME = "schema-2.0.xsd";
+    static final String DEFAULT_RESOURCE_NAME = "schemas/archetype-2.0.xsd";
 
     private final Validator validator;
+
 
     /**
      * Create a new validator.
@@ -111,6 +117,18 @@ class Schema {
         }
     }
 
+    void validate(Path file, Document doc) throws ValidationException {
+        try {
+            if (doc.getDocumentElement().getNodeName().equals(ROOT_ELEMENT)) {
+                validator.validate(new StreamSource(Files.newInputStream(file)));
+            }
+        } catch (SAXParseException ex) {
+            throw new ValidationException(ex);
+        } catch (SAXException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Validation exception.
      */
@@ -123,6 +141,12 @@ class Schema {
             super(cause.getMessage(), cause);
             lineNo = cause.getLineNumber();
             colNo = cause.getColumnNumber();
+        }
+
+        ValidationException(String message) {
+            super(message);
+            lineNo = -1;
+            colNo = -1;
         }
 
         /**
@@ -141,6 +165,30 @@ class Schema {
          */
         public int lineNo() {
             return lineNo;
+        }
+    }
+
+    static class Info {
+        private final String version;
+        private final String location;
+        private final String namespace;
+
+        Info(String version, String location, String namespace) {
+            this.version = version;
+            this.location = location;
+            this.namespace = namespace;
+        }
+
+        public String namespace() {
+            return namespace;
+        }
+
+        String version() {
+            return version;
+        }
+
+        String schemaLocation() {
+            return location;
         }
     }
 }

@@ -157,32 +157,22 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <configuration>
+                    <resourceBundles>
+                        <resourceBundle>io.helidon.build-tools.archetype:helidon-archetype-engine-v2:${project.version}</resourceBundle>
+                    </resourceBundles>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>schema</id>
                         <phase>generate-resources</phase>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>process</goal>
                         </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.helidon.build-tools.archetype</groupId>
-                                    <artifactId>helidon-archetype-engine-v2</artifactId>
-                                    <classifier>schema-2.0</classifier>
-                                    <type>xsd</type>
-                                    <version>${project.version}</version>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <destFileName>schema-2.0.xsd</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
