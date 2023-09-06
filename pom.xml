@@ -185,7 +185,6 @@
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
-        <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.frontend>1.11.3</version.plugin.frontend>

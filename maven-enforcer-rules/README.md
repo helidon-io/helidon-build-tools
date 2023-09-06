@@ -3,7 +3,7 @@
 This module provides common Helidon enforcer rules intended to integrate with the [Maven Enforcer Plugin](https://maven.apache.org/enforcer/maven-enforcer-plugin/).
 
 ## Rules
-* [HelidonJakartaDependenciesRule](src/main/java/io/helidon/build/common/maven/enforcer/rules/HelidonJakartaDependenciesRule.java) - Verifies compile and runtime maven dependencies (including transitive dependencies) for compatibility with Helidon.
+* [HelidonDependenciesRule](src/main/java/io/helidon/build/maven/enforcer/rules/HelidonDependenciesRule.java) - Verifies compile and runtime maven dependencies (including transitive dependencies) for compatibility with Helidon.
 
 ### General usage
 
@@ -34,6 +34,7 @@ Here is an example pom.xml:
                                 <namespace>JARKTA | JAVAX</namespace>
                                  <!-- list of strings - can be used to exclude a package / group name from validation -->
                                  <excludedGavRegExs>
+                                    <!-- for example only - we suggest not including this exclusion in your usage -->
                                     <excludedGavRegEx>javax.servlet.*</excludedGavRegEx>
                                  </excludedGavs>
                             </helidonJakartaDependenciesRule>

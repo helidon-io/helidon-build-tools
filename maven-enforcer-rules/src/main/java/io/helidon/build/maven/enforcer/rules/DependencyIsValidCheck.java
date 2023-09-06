@@ -26,7 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -119,7 +118,7 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
         }
 
         if (!violations.isEmpty()) {
-            throw new ViolationException("Bad dependencies spotted (review with mvn dependency:tree): " + violations, violations);
+            throw new ViolationException("Bad dependencies spotted (review with mvn dependency:tree):   " + violations, violations);
         }
     }
 

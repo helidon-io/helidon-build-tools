@@ -17,7 +17,6 @@
 package io.helidon.build.maven.enforcer.rules;
 
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -26,7 +25,6 @@ import javax.inject.Named;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.enforcer.rule.api.AbstractEnforcerRule;
-import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 
@@ -97,8 +95,8 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
             return namespace;
         }
 
-        throw new IllegalArgumentException("The namespace '" + namespace + "' is invalid. Only valid namespace names are: '" +
-                JAKARTA + "' and '" + JAVAX + "'.");
+        throw new IllegalArgumentException("The namespace '" + namespace + "' is invalid. Only valid namespace names are: '"
+                                                   + JAKARTA + "' and '" + JAVAX + "'.");
     }
 
 }
