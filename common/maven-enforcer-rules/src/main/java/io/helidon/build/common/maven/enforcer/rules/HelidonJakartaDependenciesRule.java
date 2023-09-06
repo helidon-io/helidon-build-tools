@@ -26,11 +26,8 @@ import org.apache.maven.enforcer.rule.api.AbstractEnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.rtinfo.RuntimeInformation;
-import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 
+import static io.helidon.build.common.maven.enforcer.rules.DependenciesResolver.toGav;
 import static java.util.function.Predicate.not;
 
 /**
@@ -47,34 +44,29 @@ public class HelidonJakartaDependenciesRule extends AbstractEnforcerRule {
     @Inject
     private MavenSession session;
 
-    @Inject
-    private RuntimeInformation runtimeInformation;
+//    @Inject
+//    private RuntimeInformation runtimeInformation;
 
     /**
      * Rule parameter as list of items. Reflectively injected from pom.xml
      */
-    //    @Inject
+    // @Inject
     private List<String> excludedGavs;
 
     @Override
     public void execute() throws EnforcerRuleException {
-        ConfigurableMavenResolverSystem resolver = Maven.configureResolver()
-                .workOffline()
-                .withClassPathResolution(false);
-        List<Gav> deps = resolver
-//                .resolve(project.getGroupId()+":"+project.getArtifactId()+":"+project.getVersion())
-                .loadPomFromFile(session.getCurrentProject().getFile()).importCompileAndRuntimeDependencies().resolve()
-                .withTransitivity()
-                .asList(MavenCoordinate.class).stream()
-                .map(Gav::create)
-                .filter(gav -> gav.group().startsWith("javax.") || gav.group().startsWith("jakarta."))
-                .filter(gav -> !excludedGavs.contains(gav.toCanonicalName()))
-                .collect(Collectors.toList());
-        System.out.println("DEPS: " + deps);
+//        SimpleEngineFacade.checkMavenVersion();
+//        SimpleEngineFacade.checkJavaVersion();
+
+        DependenciesResolver dependenciesResolver = new DependenciesResolver(project, session);
+        Gav projectGav = toGav(project.getArtifact());
+        List<Gav> deps = dependenciesResolver.resolveProjectDependencies();
+        System.out.println(projectGav + ": compile and runtime dependencies: " + deps);
 
         DependencyIsValidCheck isValid = DependencyIsValidCheck.create();
         List<Gav> badDeps = deps.stream()
                 .filter(not(isValid::apply))
+                .filter(a -> !excludedGavs.contains(a.toCanonicalName()))
                 .collect(Collectors.toList());
 
         if (!badDeps.isEmpty()) {

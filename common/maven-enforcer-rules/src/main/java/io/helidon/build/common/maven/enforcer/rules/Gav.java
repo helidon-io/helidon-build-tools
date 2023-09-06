@@ -20,10 +20,9 @@ import java.util.Objects;
 
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 
 /**
- * A simple group-artifact-version.
+ * A simple group-artifact-version model representation.
  */
 public class Gav {
     private final String group;
@@ -45,15 +44,6 @@ public class Gav {
         version = v;
 
         assert (!group.isBlank());
-    }
-
-    /**
-     * Creates an instance given a maven coordinate.
-     *
-     * @param c maven coordinate
-     */
-    protected Gav(MavenCoordinate c) {
-        this(c.getGroupId(), c.getArtifactId(), c.getVersion());
     }
 
     @Override
@@ -102,10 +92,6 @@ public class Gav {
     static Gav create(String gav) {
         String[] split = gav.split(":");
         return new Gav(split[0], split.length > 1 ? split[1] : null, split.length > 2 ? split[2] : null);
-    }
-
-    static Gav create(MavenCoordinate gav) {
-        return new Gav(gav);
     }
 
 }
