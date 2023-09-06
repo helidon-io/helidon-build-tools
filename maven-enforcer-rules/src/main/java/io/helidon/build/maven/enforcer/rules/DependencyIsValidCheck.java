@@ -118,7 +118,7 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
         }
 
         if (!violations.isEmpty()) {
-            throw new ViolationException("Bad dependencies spotted (review with mvn dependency:tree):   " + violations, violations);
+            throw new ViolationException("Bad dependencies spotted (review with mvn dependency:tree): " + violations, violations);
         }
     }
 
