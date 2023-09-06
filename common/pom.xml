@@ -35,7 +35,6 @@
         <module>maven</module>
         <module>maven-plugin</module>
         <module>maven-url-support</module>
-        <module>maven-enforcer-rules</module>
         <module>test-utils</module>
         <module>xml</module>
         <module>markdown</module>

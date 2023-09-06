@@ -211,6 +211,7 @@
 
     <modules>
         <module>common</module>
+        <module>maven-enforcer-rules</module>
         <module>maven-plugins</module>
         <module>cli</module>
         <module>archetype</module>
