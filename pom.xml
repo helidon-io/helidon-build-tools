@@ -973,7 +973,6 @@
                     <plugin>
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>helidon-enforcer-plugin</artifactId>
-                        <!-- TODO: should align to 3.4.0 here? -->
                         <version>3.0.5</version>
                         <configuration>
                             <rules>
