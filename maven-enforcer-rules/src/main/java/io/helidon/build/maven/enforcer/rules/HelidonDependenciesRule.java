@@ -75,6 +75,7 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
         List<Artifact> artifacts = project.getArtifacts().stream()
                 .filter(a -> a.getGroupId().startsWith("javax.") || a.getGroupId().startsWith("jakarta."))
                 .filter(a -> a.getScope().equalsIgnoreCase("compile") || a.getScope().equalsIgnoreCase("runtime"))
+                .filter(a -> !a.isOptional())
                 .collect(Collectors.toList());
         DependencyIsValidCheck check = new DependencyIsValidCheck(namespace, excludedGavRegExs);
         check.validate(artifacts);
