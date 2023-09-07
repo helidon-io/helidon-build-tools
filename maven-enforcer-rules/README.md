@@ -31,7 +31,7 @@ Here is an example pom.xml:
                     <configuration>
                         <rules>
                             <helidonDependenciesRule>
-                                <namespace>JARKTA | JAVAX</namespace>
+                                <namespace>JAKARTA | JAVAX</namespace>
                                  <!-- list of strings - can be used to exclude a package / group name from validation -->
                                  <excludedGavRegExs>
                                     <!-- for example only - we suggest not including this exclusion in your usage -->

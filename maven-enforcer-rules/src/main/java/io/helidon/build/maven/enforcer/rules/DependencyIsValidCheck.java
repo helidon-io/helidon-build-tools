@@ -71,9 +71,9 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
         }
 
         try {
-            if (HelidonDependenciesRule.JAKARTA.equals(namespace)) {
+            if (HelidonDependenciesRule.JAKARTA.equalsIgnoreCase(namespace)) {
                 return applyJakartaRule(groupPackageName, gav.getSelectedVersion());
-            } else if (HelidonDependenciesRule.JAVAX.equals(namespace)) {
+            } else if (HelidonDependenciesRule.JAVAX.equalsIgnoreCase(namespace)) {
                 return applyJavaxRule(groupPackageName, gav.getSelectedVersion());
             } else {
                 throw new IllegalStateException("Invalid namespace: " + namespace);

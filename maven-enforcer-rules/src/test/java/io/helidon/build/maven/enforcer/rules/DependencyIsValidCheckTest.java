@@ -21,14 +21,13 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class DependencyIsValidCheckTest {
+class DependencyIsValidCheckTest {
     DependencyIsValidCheck dependencyIsValidCheckForJakarta =
             new DependencyIsValidCheck(HelidonDependenciesRule.JAKARTA, List.of());
     DependencyIsValidCheck dependencyIsValidCheckForJavax =
