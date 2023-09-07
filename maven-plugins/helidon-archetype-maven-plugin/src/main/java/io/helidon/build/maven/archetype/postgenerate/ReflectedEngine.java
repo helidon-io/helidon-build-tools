@@ -23,8 +23,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
-
 /**
  * Utility class to invoke the archetype engine using reflection.
  */
@@ -74,7 +72,7 @@ final class ReflectedEngine {
                               .invoke(builder, inputResolver(isInteractive));
             engineBuilderClass.getDeclaredMethod("fileSystem", FileSystem.class)
                               .invoke(builder, fileSystem);
-            Constructor<?> constructor = engineClass.getDeclaredConstructor(ArchetypeEngineV2.Builder.class);
+            Constructor<?> constructor = engineClass.getDeclaredConstructor(engineBuilderClass);
             constructor.setAccessible(true);
             engineInstance = constructor.newInstance(builder);
             generateMethod = engineClass.getDeclaredMethod("generate");
