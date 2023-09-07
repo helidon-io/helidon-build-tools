@@ -618,7 +618,7 @@
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.maven</groupId>
+                <groupId>org.apache.maven.enforcer</groupId>
                 <artifactId>enforcer-api</artifactId>
                 <version>${version.lib.maven-enforcer}</version>
             </dependency>
