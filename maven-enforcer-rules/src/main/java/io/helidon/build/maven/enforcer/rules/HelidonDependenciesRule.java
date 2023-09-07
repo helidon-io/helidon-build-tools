@@ -54,7 +54,7 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
     /**
      * Rule parameter as list of gav regular expressions. Reflectively injected from pom.xml
      */
-    // @Inject
+    // @Inject // injected by maven
     private List<String> excludedGavRegExs;
 
     /**
@@ -63,7 +63,7 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
      * When set to {@link #JAKARTA}, only "post javax->jakarta" module names are allowed. When set to {@link #JAVAX}, only
      * "pre javax->jakarta" module names are allowed.
      */
-    // @Inject
+    // @Inject // injected by maven
     private String namespace;
 
     @Override
