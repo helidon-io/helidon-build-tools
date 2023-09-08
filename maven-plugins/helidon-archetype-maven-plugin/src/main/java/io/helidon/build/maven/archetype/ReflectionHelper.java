@@ -41,8 +41,6 @@ class ReflectionHelper {
      */
     @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
     static Object invokeMethod(ClassLoader classLoader, String className, String methodName, Object... args) {
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(classLoader);
         try {
             ClassLoader cl = new ByteArrayClassLoader(classLoader);
             Class<?> clazz = cl.loadClass(className);
@@ -63,8 +61,6 @@ class ReflectionHelper {
                 throw (RuntimeException) cause;
             }
             throw new RuntimeException(ex.getCause());
-        } finally {
-            Thread.currentThread().setContextClassLoader(ccl);
         }
     }
 

@@ -34,15 +34,6 @@
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.eclipse.sisu</groupId>
-                <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>0.3.5</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
@@ -133,11 +124,6 @@
             <artifactId>helidon-build-common-test-utils</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-archetype-plugin</artifactId>
-            <version>3.2.1</version>
         </dependency>
     </dependencies>
 

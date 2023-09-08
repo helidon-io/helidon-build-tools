@@ -70,7 +70,11 @@ class MavenArchetypeGenerator {
                 .setProjectBuildingRequest(session.getProjectBuildingRequest());
 
         ArchetypeGenerationResult result = new ArchetypeGenerationResult();
+
+        Thread currentThread = Thread.currentThread();
+        ClassLoader ccl = currentThread.getContextClassLoader();
         try {
+            currentThread.setContextClassLoader(container.getLookupRealm());
             ArchetypeGenerator generator = container.lookup(ArchetypeGenerator.class);
             generator.generateArchetype(request, archetypeFile, result);
             if (result.getCause() != null) {
@@ -83,6 +87,8 @@ class MavenArchetypeGenerator {
             }
         } catch (ComponentLookupException e) {
             throw new RuntimeException(e);
+        } finally {
+            currentThread.setContextClassLoader(ccl);
         }
     }
 }

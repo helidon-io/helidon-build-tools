@@ -38,21 +38,19 @@ final class MojoHelper {
      */
     static final String PLUGIN_ARTIFACT_ID = "helidon-archetype-maven-plugin";
 
-    private static final String MAVEN_ARCHETYPE_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
-    private static final String MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID = "maven-archetype-plugin";
-    private static final String MAVEN_ARCHETYPE_PLUGIN_VERSION = version(MAVEN_ARCHETYPE_PLUGIN_GROUP_ID,
-                                                                         MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID);
+    private static final String MAVEN_ARCHETYPE_VERSION = version("org.apache.maven.archetype", "archetype-common");
 
     /**
      * The Maven archetype plugin coordinates.
      */
-    static final Plugin MAVEN_ARCHETYPE_PLUGIN = plugin(MAVEN_ARCHETYPE_PLUGIN_GROUP_ID,
-                                                        MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID,
-                                                        MAVEN_ARCHETYPE_PLUGIN_VERSION);
+    static final Plugin MAVEN_ARCHETYPE_PLUGIN = plugin("org.apache.maven.plugins",
+                                                        "maven-archetype-plugin",
+                                                        MAVEN_ARCHETYPE_VERSION);
 
     private MojoHelper() {
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static String version(String groupId, String artifactId) {
         try {
             String path = String.format("/META-INF/maven/%s/%s/pom.properties", groupId, artifactId);
@@ -74,6 +72,7 @@ final class MojoHelper {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Plugin plugin(String groupId, String artifactId, String version) {
         Plugin plugin = new Plugin();
         plugin.setGroupId(groupId);
