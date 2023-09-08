@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 package io.helidon.build.maven.archetype;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.Properties;
+
+import org.apache.maven.model.Plugin;
 
 /**
  * Maven mojo helper class.
@@ -33,38 +38,47 @@ final class MojoHelper {
      */
     static final String PLUGIN_ARTIFACT_ID = "helidon-archetype-maven-plugin";
 
-    /**
-     * The resource name for the {@code pom.properties} file included in the plugin JAR file.
-     */
-    static final String POM_PROPERTIES_RESOURCE_NAME = "/META-INF/maven/"
-            + PLUGIN_GROUP_ID + "/"
-            + PLUGIN_ARTIFACT_ID + "/pom.properties";
+    private static final String MAVEN_ARCHETYPE_PLUGIN_GROUP_ID = "org.apache.maven.plugins";
+    private static final String MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID = "maven-archetype-plugin";
+    private static final String MAVEN_ARCHETYPE_PLUGIN_VERSION = version(MAVEN_ARCHETYPE_PLUGIN_GROUP_ID,
+                                                                         MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID);
 
     /**
-     * The plugin version.
+     * The Maven archetype plugin coordinates.
      */
-    static final String PLUGIN_VERSION = getPluginVersion();
+    static final Plugin MAVEN_ARCHETYPE_PLUGIN = plugin(MAVEN_ARCHETYPE_PLUGIN_GROUP_ID,
+                                                        MAVEN_ARCHETYPE_PLUGIN_ARTIFACT_ID,
+                                                        MAVEN_ARCHETYPE_PLUGIN_VERSION);
 
     private MojoHelper() {
     }
 
-    /**
-     * Get the plugin version from the maven plugin JAR file.
-     *
-     * @return version, never {@code null}
-     * @throws IllegalStateException if the version is {@code null} or if an IO error occurs
-     */
-    private static String getPluginVersion() {
+    private static String version(String groupId, String artifactId) {
         try {
-            Properties props = new Properties();
-            props.load(JarMojo.class.getResourceAsStream(POM_PROPERTIES_RESOURCE_NAME));
-            String version = props.getProperty("version");
-            if (version == null) {
-                throw new IllegalStateException("Unable to resolve engine version");
+            String path = String.format("/META-INF/maven/%s/%s/pom.properties", groupId, artifactId);
+            URL resource = MojoHelper.class.getResource(path);
+            if (resource == null) {
+                throw new IllegalArgumentException("Resource not found: " + path);
             }
-            return version;
+            try (InputStream is = resource.openStream()) {
+                Properties props = new Properties();
+                props.load(is);
+                String version = props.getProperty("version");
+                if (version == null) {
+                    throw new IllegalStateException("Unable to resolve engine version");
+                }
+                return version;
+            }
         } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            throw new UncheckedIOException(ex);
         }
+    }
+
+    private static Plugin plugin(String groupId, String artifactId, String version) {
+        Plugin plugin = new Plugin();
+        plugin.setGroupId(groupId);
+        plugin.setArtifactId(artifactId);
+        plugin.setVersion(version);
+        return plugin;
     }
 }
