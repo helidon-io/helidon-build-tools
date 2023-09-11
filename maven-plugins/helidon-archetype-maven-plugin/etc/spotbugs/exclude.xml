@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -55,6 +55,12 @@
     <Match>
         <!-- Method creates a java.net.URLClassLoader classloader, which should be performed within a doPrivileged block -->
         <Class name="io.helidon.build.maven.archetype.postgenerate.EngineFacade"/>
+        <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
+    </Match>
+
+    <Match>
+        <!-- Method creates a java.net.URLClassLoader classloader, which should be performed within a doPrivileged block -->
+        <Class name="io.helidon.build.maven.archetype.ReflectionHelper"/>
         <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
     </Match>
 
