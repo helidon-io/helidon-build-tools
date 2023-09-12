@@ -49,10 +49,6 @@ import io.helidon.build.common.Maps;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 import io.helidon.build.maven.archetype.config.Validation;
 
-import org.apache.maven.archetype.ArchetypeGenerationRequest;
-import org.apache.maven.archetype.ArchetypeGenerationResult;
-import org.apache.maven.archetype.exception.ArchetypeNotConfigured;
-import org.apache.maven.archetype.generator.ArchetypeGenerator;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -72,7 +68,7 @@ import org.apache.maven.shared.transfer.artifact.install.ArtifactInstallerExcept
 import org.apache.maven.shared.transfer.project.NoFileAssignedException;
 import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
 import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
-import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.PlexusContainer;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.unique;
@@ -81,6 +77,8 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Cyan;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Italic;
+import static io.helidon.build.maven.archetype.MojoHelper.MAVEN_ARCHETYPE_PLUGIN;
+import static io.helidon.build.maven.archetype.ReflectionHelper.invokeMethod;
 import static java.nio.file.FileSystems.newFileSystem;
 
 /**
@@ -88,13 +86,9 @@ import static java.nio.file.FileSystems.newFileSystem;
  */
 @Mojo(name = "integration-test")
 public class IntegrationTestMojo extends AbstractMojo {
-    private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? "  " : "  =  ";
 
-    /**
-     * Archetype generate to invoke Maven compatible archetypes.
-     */
-    @Component
-    private ArchetypeGenerator archetypeGenerator;
+    private static final String SEP = AnsiConsoleInstaller.areAnsiEscapesEnabled() ? "  " : "  =  ";
+    private static final String MAVEN_GENERATOR_FCN = MavenArchetypeGenerator.class.getName();
 
     /**
      * Maven invoker.
@@ -239,6 +233,9 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     @Component
     private ProjectInstaller installer;
+
+    @Component
+    private PluginContainerManager pluginContainerManager;
 
     /**
      * Generated code inspection.
@@ -492,34 +489,24 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoExecutionException("Unable to pre-install archetype artifact", ex);
         }
 
-        ArchetypeGenerationRequest request = new ArchetypeGenerationRequest()
-                .setArchetypeGroupId(archetypeGroupId)
-                .setArchetypeArtifactId(archetypeArtifactId)
-                .setArchetypeVersion(archetypeVersion)
-                .setGroupId(properties.getProperty("groupId"))
-                .setArtifactId(properties.getProperty("artifactId"))
-                .setVersion(properties.getProperty("version"))
-                .setPackage(properties.getProperty("package"))
-                .setOutputDirectory(basedir.toString())
-                .setProperties(properties)
-                .setProjectBuildingRequest(session.getProjectBuildingRequest());
+        PlexusContainer container = pluginContainerManager.create(MAVEN_ARCHETYPE_PLUGIN,
+                                                                  project.getRemotePluginRepositories(),
+                                                                  session.getRepositorySession());
 
-        ArchetypeGenerationResult result = new ArchetypeGenerationResult();
-        archetypeGenerator.generateArchetype(request, archetypeFile, result);
-
-        if (result.getCause() != null) {
-            if (result.getCause() instanceof ArchetypeNotConfigured) {
-                ArchetypeNotConfigured anc = (ArchetypeNotConfigured) result.getCause();
-                throw new MojoExecutionException(
-                        "Missing required properties in archetype.properties: "
-                                + StringUtils.join(anc.getMissingProperties().iterator(), ", "), anc);
-            }
-            throw new MojoExecutionException(result.getCause().getMessage(), result.getCause());
-        }
+        Object[] args = new Object[] {
+                container,
+                archetypeGroupId,
+                archetypeArtifactId,
+                archetypeVersion,
+                archetypeFile,
+                properties,
+                basedir,
+                session
+        };
+        invokeMethod(container.getLookupRealm(), MAVEN_GENERATOR_FCN, "generate", args);
     }
 
     private void invokePostArchetypeGenerationGoals(File basedir) throws IOException, MojoExecutionException {
-
         FileLogger logger = setupBuildLogger(basedir);
 
         getLog().info("Invoking post-archetype-generation goal: " + testGoal);

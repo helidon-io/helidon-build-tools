@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ public class JarMojo extends AbstractMojo {
     @Parameter
     private PlexusConfiguration entrypoint;
 
-    private final Schema schema = new Schema(resolveResource(RESOURCE_NAME));
+    private final Schema schema = new Schema(resourceAsStream(RESOURCE_NAME));
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -192,7 +192,7 @@ public class JarMojo extends AbstractMojo {
         scope.put("dependencies", dependencies);
 
         // The non mustache post generate script that contains the postGenerate function
-        String postGenerateScript = new String(resolveResource(POST_SCRIPT_NAME).readAllBytes(), UTF_8);
+        String postGenerateScript = new String(resourceAsBytes(POST_SCRIPT_NAME), UTF_8);
         postGenerateScript = COPYRIGHT_HEADER.matcher(postGenerateScript).replaceAll("");
 
         scope.put("postGenerateScript", new RawString(postGenerateScript));
@@ -200,7 +200,7 @@ public class JarMojo extends AbstractMojo {
         getLog().info("Rendering " + POST_SCRIPT_NAME);
 
         renderMustacheTemplate(
-                resolveResource(POST_SCRIPT_NAME + MUSTACHE_EXT), POST_SCRIPT_NAME,
+                resolveResource(POST_SCRIPT_NAME + MUSTACHE_EXT).openStream(), POST_SCRIPT_NAME,
                 archetypeDir.resolve("META-INF/" + POST_SCRIPT_NAME),
                 scope);
     }
@@ -274,7 +274,7 @@ public class JarMojo extends AbstractMojo {
 
     private Stream<Path> postGenerateClasses() throws IOException {
         try {
-            URL url = this.getClass().getClassLoader().getResource(JarMojo.POST_SCRIPT_PKG);
+            URL url = this.getClass().getClassLoader().getResource(POST_SCRIPT_PKG);
             return url == null ? Stream.empty() : Files.walk(pathOf(url.toURI()));
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
@@ -327,12 +327,29 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    private InputStream resolveResource(String path) {
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(path);
-        if (is == null) {
+    @SuppressWarnings("SameParameterValue")
+    private byte[] resourceAsBytes(String path) {
+        try (InputStream is = resourceAsStream(path)) {
+            return is.readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private InputStream resourceAsStream(String path) {
+        try {
+            return resolveResource(path).openStream();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private URL resolveResource(String path) {
+        URL resource = getClass().getClassLoader().getResource(path);
+        if (resource == null) {
             throw new IllegalStateException("Unable to resolve resource: " + path);
         }
-        return is;
+        return resource;
     }
 
     @SuppressWarnings("SameParameterValue")
