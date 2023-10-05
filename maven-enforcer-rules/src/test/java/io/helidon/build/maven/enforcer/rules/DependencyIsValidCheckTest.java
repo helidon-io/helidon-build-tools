@@ -19,6 +19,9 @@ package io.helidon.build.maven.enforcer.rules;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -83,6 +86,21 @@ class DependencyIsValidCheckTest {
                    is(false));
         assertThat(dependencyIsValidCheckForJavax.apply("javax.inject:javax.inject:1"),
                    is(true));
+    }
+
+    @Test
+    void testArtifactApply() {
+        DependencyIsValidCheck dependencyIsValidCheckForJakarta =
+                new DependencyIsValidCheck(HelidonDependenciesRule.JAKARTA,
+                                           List.of(Pattern.compile("jakarta.servlet:jakarta.servlet-api.*")));
+        Artifact artifact = new DefaultArtifact("jakarta.servlet",
+                                                "jakarta.servlet-api",
+                                                "2.1.0",
+                                                "",
+                                                "",
+                                                "",
+                                                null);
+        assertThat(dependencyIsValidCheckForJakarta.apply(artifact), is((true)));
     }
 
     @Test

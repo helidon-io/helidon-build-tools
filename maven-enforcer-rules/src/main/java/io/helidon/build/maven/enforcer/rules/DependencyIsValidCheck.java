@@ -60,11 +60,11 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
 
     @Override
     public Boolean apply(Artifact gav) {
-        String groupPackageName = toPackage(gav.getGroupId());
-        if (isExcluded(groupPackageName)) {
+        if (isExcluded(toSimpleGav(gav))) {
             return true;
         }
 
+        String groupPackageName = toPackage(gav.getGroupId());
         if (groupPackageName.equals("javax.servlet")
                 || groupPackageName.equals("jakarta.servlet")) {
             return false;
@@ -113,7 +113,7 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
         List<String> violations = new ArrayList<>();
         for (Artifact gav : gavs) {
             if (!apply(gav)) {
-                violations.add(gav.getGroupId() + ":" + gav.getArtifactId() + ":" + gav.getVersion());
+                violations.add(toSimpleGav(gav));
             }
         }
 
@@ -214,6 +214,10 @@ class DependencyIsValidCheck implements Function<Artifact, Boolean> {
             throw new UncheckedIOException(e);
         }
         return props;
+    }
+
+    static String toSimpleGav(Artifact gav) {
+        return gav.getGroupId() + ":" + gav.getArtifactId() + ":" + gav.getVersion();
     }
 
 }
