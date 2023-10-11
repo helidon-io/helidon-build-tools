@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.helidon.build-tools.devloop</groupId>
         <artifactId>helidon-build-devloop-project</artifactId>
-        <version>3.0.7-SNAPSHOT</version>
+        <version>3.0.7</version>
     </parent>
     <artifactId>helidon-build-devloop</artifactId>
     <name>Helidon Dev Loop</name>
