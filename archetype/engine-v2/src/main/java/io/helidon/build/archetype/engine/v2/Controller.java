@@ -21,6 +21,8 @@ import java.util.Objects;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
+import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Output;
@@ -92,10 +94,12 @@ public final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
-        if (condition.expression().eval(ctx::getValue)) {
-            return VisitResult.CONTINUE;
-        }
-        return VisitResult.SKIP_SUBTREE;
+        return evaluate(condition.expression(), ctx);
+    }
+
+    @Override
+    public VisitResult visitConditionBlock(ConditionBlock condition, Context ctx) {
+        return evaluate(condition.expression(), ctx);
     }
 
     /**
@@ -211,5 +215,12 @@ public final class Controller extends VisitorAdapter<Context> {
         if (scope != context.scope()) {
             throw new IllegalStateException("Invalid scope after walking block");
         }
+    }
+
+    private VisitResult evaluate(Expression expression, Context ctx) {
+        if (expression.eval(ctx::getValue)) {
+            return VisitResult.CONTINUE;
+        }
+        return VisitResult.SKIP_SUBTREE;
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Model;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
 import io.helidon.build.archetype.engine.v2.ast.Script;
+import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.context.Context;
@@ -36,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
@@ -143,6 +146,63 @@ class ControllerTest {
         assertThat(values.size(), is(0));
     }
 
+    @Test
+    void testConditionalScript() {
+        Script script = load("controller/conditional-block.xml");
+        Context context = createConditionalContext();
+
+        Controller.walk(script, context);
+
+        assertThat(context.getValue("success1"), is(notNullValue()));
+        assertThat(context.getValue("success2"), is(notNullValue()));
+        assertThat(context.getValue("success3"), is(notNullValue()));
+        assertThat(context.getValue("outside1"), is(notNullValue()));
+        assertThat(context.getValue("outside2"), is(notNullValue()));
+        assertThat(context.getValue("outside3"), is(notNullValue()));
+        assertThat(context.getValue("failure1"), is(nullValue()));
+        assertThat(context.getValue("failure2"), is(nullValue()));
+        assertThat(context.getValue("failure3"), is(nullValue()));
+    }
+
+    @Test
+    void testConditionModel() {
+        Script script = load("controller/conditional-block.xml");
+        Context context = createConditionalContext();
+
+        Controller.walk(script, context);
+
+        List<String> values = modelValues(script, context);
+        assertThat(values, contains("value1", "value2"));
+    }
+
+    @Test
+    void testConditionalStep() {
+        Script script = load("controller/conditional-block.xml");
+        Context context = createConditionalContext();
+        List<String> steps = new LinkedList<>();
+        Controller.walk(new TerminalInputResolver(new ByteArrayInputStream("yes".getBytes())) {
+            @Override
+            protected void onVisitStep(Step step, Context context) {
+                steps.add(step.name());
+                super.onVisitStep(step, context);
+            }
+        }, script, context);
+
+        assertThat(steps, contains("step", "my-step"));
+    }
+
+    @Test
+    void testConditionalInput() {
+        Script script = load("controller/conditional-inputs.xml");
+        Context context = Context.create();
+        context.putValue("enum1", Value.create("option1"), ContextValue.ValueKind.EXTERNAL);
+        context.putValue("list1", Value.create(List.of("option1", "option3")), ContextValue.ValueKind.EXTERNAL);
+
+        List<String> values = modelValues(script, context);
+
+        assertThat(values, contains("value1", "value2", "value3", "value4", "value5"));
+    }
+
     private static List<String> modelValues(Block block, Context context) {
         List<String> values = new LinkedList<>();
         Controller.walk(new Model.Visitor<>() {
@@ -153,5 +213,12 @@ class ControllerTest {
             }
         }, block, context);
         return values;
+    }
+
+    private Context createConditionalContext() {
+        Context context = Context.create();
+        context.putValue("foo", Value.create(true), ContextValue.ValueKind.EXTERNAL);
+        context.putValue("bar", Value.create(false), ContextValue.ValueKind.EXTERNAL);
+        return context;
     }
 }

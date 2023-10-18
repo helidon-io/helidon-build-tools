@@ -109,6 +109,17 @@
         </xs:simpleContent>
     </xs:complexType>
 
+    <xs:attributeGroup name="condition-group">
+        <xs:attribute type="xs:string" name="expr" use="required">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Expression to guard nested blocks.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
     <xs:group name="file-includes-group">
         <xs:sequence>
             <xs:element type="xs:string" name="directory">
@@ -400,13 +411,33 @@
                 Map data type.
             </xs:documentation>
         </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="a:map-else-type">
+                <xs:attributeGroup ref="a:if-group"/>
+                <xs:attributeGroup ref="a:order-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-map-type">
+        <xs:complexContent>
+            <xs:extension base="a:map-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="map-else-type">
         <xs:sequence>
             <xs:element name="value" type="a:keyed-value-type" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="list" type="a:keyed-list-type" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="map" type="a:keyed-map-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="if" type="a:condition-map-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-map-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:map-else-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
         </xs:sequence>
-        <xs:attributeGroup ref="a:if-group"/>
-        <xs:attributeGroup ref="a:order-group"/>
     </xs:complexType>
 
     <xs:complexType name="keyed-map-type">
@@ -424,13 +455,33 @@
                 List data type. Nested elements do not require a <code>key</code> attribute.
             </xs:documentation>
         </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="a:list-else-type">
+                <xs:attributeGroup ref="a:if-group"/>
+                <xs:attributeGroup ref="a:order-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-list-type">
+        <xs:complexContent>
+            <xs:extension base="a:list-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="list-else-type">
         <xs:sequence>
             <xs:element name="value" type="a:value-type" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="list" type="a:list-type" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="map" type="a:map-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="if" type="a:condition-list-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-list-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:list-else-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
         </xs:sequence>
-        <xs:attributeGroup ref="a:if-group"/>
-        <xs:attributeGroup ref="a:order-group"/>
     </xs:complexType>
 
     <xs:complexType name="keyed-list-type">
@@ -523,75 +574,94 @@
                 Define a variable.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="boolean">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a boolean value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:boolean">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                            <xs:attributeGroup ref="a:transient-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="text">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a text value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                            <xs:attributeGroup ref="a:transient-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="enum">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define an enum value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="a:required-string">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                            <xs:attributeGroup ref="a:transient-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="list">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a list value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                        <xs:element name="value">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string"/>
-                            </xs:simpleType>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="a:context-attribute-group"/>
-                    <xs:attributeGroup ref="a:transient-attribute-group"/>
-                </xs:complexType>
-            </xs:element>
-        </xs:choice>
+        <xs:complexContent>
+            <xs:extension base="a:variables-else-type"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-variables-type">
+        <xs:complexContent>
+            <xs:extension base="a:variables-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="variables-else-type">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="boolean">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a boolean value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:boolean">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                                <xs:attributeGroup ref="a:transient-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="text">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a text value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                                <xs:attributeGroup ref="a:transient-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="enum">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define an enum value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="a:required-string">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                                <xs:attributeGroup ref="a:transient-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="list">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a list value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                            <xs:element name="value">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string"/>
+                                </xs:simpleType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attributeGroup ref="a:context-attribute-group"/>
+                        <xs:attributeGroup ref="a:transient-attribute-group"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="if" type="a:condition-variables-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-variables-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:variables-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="presets-type">
@@ -601,71 +671,90 @@
                 Define a read-only value for an input.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="boolean">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a boolean value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:boolean">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="text">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a text value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:string">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="enum">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define an enum value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:simpleContent>
-                        <xs:extension base="a:required-string">
-                            <xs:attributeGroup ref="a:context-attribute-group"/>
-                        </xs:extension>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="list">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation source="version">2.0</xs:documentation>
-                        <xs:documentation source="description">
-                            Define a list value.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                        <xs:element name="value">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string"/>
-                            </xs:simpleType>
-                        </xs:element>
-                    </xs:sequence>
-                    <xs:attributeGroup ref="a:context-attribute-group"/>
-                </xs:complexType>
-            </xs:element>
-        </xs:choice>
+        <xs:complexContent>
+            <xs:extension base="a:presets-else-type"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-presets-type">
+        <xs:complexContent>
+            <xs:extension base="a:presets-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="presets-else-type">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="boolean">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a boolean value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:boolean">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="text">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a text value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="enum">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define an enum value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleContent>
+                            <xs:extension base="a:required-string">
+                                <xs:attributeGroup ref="a:context-attribute-group"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="list">
+                    <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                Define a list value.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                            <xs:element name="value">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string"/>
+                                </xs:simpleType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attributeGroup ref="a:context-attribute-group"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="if" type="a:condition-presets-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-presets-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:presets-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="help-type">
@@ -840,50 +929,51 @@
     </xs:complexType>
 
     <xs:complexType name="boolean-input-type">
+        <xs:complexContent>
+            <xs:extension base="a:boolean-input-else-type">
+                <xs:attributeGroup ref="a:input-group"/>
+                <xs:attributeGroup ref="a:name-group"/>
+                <xs:attributeGroup ref="a:desc-group"/>
+                <xs:attributeGroup ref="a:optional-group"/>
+                <xs:attributeGroup ref="a:global-group"/>
+                <xs:attribute name="default" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Default boolean input value.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-boolean-input-type">
+        <xs:complexContent>
+            <xs:extension base="a:boolean-input-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="boolean-input-else-type">
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="if" type="a:condition-boolean-input-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-boolean-input-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:boolean-input-else-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
         </xs:sequence>
-        <xs:attributeGroup ref="a:input-group"/>
-        <xs:attributeGroup ref="a:name-group"/>
-        <xs:attributeGroup ref="a:desc-group"/>
-        <xs:attributeGroup ref="a:optional-group"/>
-        <xs:attributeGroup ref="a:global-group"/>
-        <xs:attribute name="default" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation source="version">2.0</xs:documentation>
-                <xs:documentation source="description">
-                    Default boolean input value.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="enum-input-type">
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice maxOccurs="unbounded">
-                <xs:element name="option">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element name="help" type="a:help-type" minOccurs="0"/>
-                            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
-                        </xs:sequence>
-                        <xs:attribute name="value" type="xs:string" use="required">
-                            <xs:annotation>
-                                <xs:documentation source="version">2.0</xs:documentation>
-                                <xs:documentation source="description">
-                                    Enum constant value.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                        <xs:attributeGroup ref="a:name-group"/>
-                        <xs:attributeGroup ref="a:desc-group"/>
-                        <xs:attributeGroup ref="a:if-group"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="option" type="a:option-type"/>
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
@@ -901,30 +991,50 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="option-type">
+        <xs:complexContent>
+            <xs:extension base="a:option-else-type">
+                <xs:attribute name="value" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation source="version">2.0</xs:documentation>
+                        <xs:documentation source="description">
+                            Enum/List constant value.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attributeGroup ref="a:name-group"/>
+                <xs:attributeGroup ref="a:desc-group"/>
+                <xs:attributeGroup ref="a:if-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-option-type">
+        <xs:complexContent>
+            <xs:extension base="a:option-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="option-else-type">
+        <xs:sequence>
+            <xs:element name="help" type="a:help-type" minOccurs="0"/>
+            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="output" type="a:output-type" minOccurs="0"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="if" type="a:condition-option-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-option-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:option-else-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
     <xs:complexType name="list-input-type">
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice maxOccurs="unbounded">
-                <xs:element name="option">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element name="help" type="a:help-type" minOccurs="0"/>
-                            <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
-                        </xs:sequence>
-                        <xs:attribute name="value" type="xs:string" use="required">
-                            <xs:annotation>
-                                <xs:documentation source="version">2.0</xs:documentation>
-                                <xs:documentation source="description">
-                                    List constant value.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                        <xs:attributeGroup ref="a:name-group"/>
-                        <xs:attributeGroup ref="a:desc-group"/>
-                        <xs:attributeGroup ref="a:if-group"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="option" type="a:option-type"/>
             </xs:choice>
         </xs:sequence>
         <xs:attributeGroup ref="a:optional-group"/>
@@ -996,12 +1106,29 @@
                 A user input.
             </xs:documentation>
         </xs:annotation>
-        <xs:sequence minOccurs="0">
+        <xs:complexContent>
+            <xs:extension base="a:input-else-type"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-input-type">
+        <xs:complexContent>
+            <xs:extension base="a:input-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="input-else-type">
+        <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="text" type="a:text-input-type"/>
                 <xs:element name="boolean" type="a:boolean-input-type"/>
                 <xs:element name="enum" type="a:enum-input-type"/>
                 <xs:element name="list" type="a:list-input-type"/>
+                <xs:element name="if" type="a:condition-input-type"/>
+                <xs:element name="else-if" type="a:condition-input-type"/>
+                <xs:element name="else" type="a:input-else-type"/>
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
@@ -1015,21 +1142,41 @@
                 Step. A logical group of inputs to be presented together like a pane or a window.
             </xs:documentation>
         </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="a:step-else-type">
+                <xs:attributeGroup ref="a:if-group"/>
+                <xs:attributeGroup ref="a:name-group"/>
+                <xs:attributeGroup ref="a:optional-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-step-type">
+        <xs:complexContent>
+            <xs:extension base="a:step-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="step-else-type">
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="presets" type="a:presets-type"/>
-                <xs:element name="variables" type="a:variables-type"/>
-                <xs:element name="exec" type="a:exec-type"/>
-                <xs:element name="source" type="a:source-type"/>
-                <xs:element name="call" type="a:call-type"/>
-                <xs:element name="inputs" type="a:input-types"/>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="presets" type="a:presets-type"/>
+                    <xs:element name="variables" type="a:variables-type"/>
+                    <xs:element name="exec" type="a:exec-type"/>
+                    <xs:element name="source" type="a:source-type"/>
+                    <xs:element name="call" type="a:call-type"/>
+                    <xs:element name="inputs" type="a:input-types"/>
+                    <xs:element name="if" type="a:condition-step-type"/>
+                    <xs:element name="else-if" type="a:condition-step-type"/>
+                    <xs:element name="else" type="a:step-else-type"/>
+                </xs:choice>
             </xs:choice>
             <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
-        <xs:attributeGroup ref="a:if-group"/>
-        <xs:attributeGroup ref="a:name-group"/>
-        <xs:attributeGroup ref="a:optional-group"/>
     </xs:complexType>
 
     <xs:complexType name="model-type">
@@ -1040,12 +1187,32 @@
                 or &lt;templates&gt;.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="value" type="a:keyed-value-type"/>
-            <xs:element name="list" type="a:keyed-list-type"/>
-            <xs:element name="map" type="a:keyed-map-type"/>
-        </xs:choice>
-        <xs:attributeGroup ref="a:if-group"/>
+        <xs:complexContent>
+            <xs:extension base="a:model-else-type">
+                <xs:attributeGroup ref="a:if-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-model-type">
+        <xs:complexContent>
+            <xs:extension base="a:model-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="model-else-type">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="value" type="a:keyed-value-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="list" type="a:keyed-list-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="map" type="a:keyed-map-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="if" type="a:condition-model-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-model-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:model-else-type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="output-type">
@@ -1055,6 +1222,22 @@
                 Configuration of files, template and data model for the current scope.
             </xs:documentation>
         </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="a:output-else-type">
+                <xs:attributeGroup ref="a:if-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="condition-output-type">
+        <xs:complexContent>
+            <xs:extension base="a:output-else-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="output-else-type">
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="transformation">
@@ -1314,12 +1497,14 @@
                         <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="if" type="a:condition-output-type"/>
+                <xs:element name="else-if" type="a:condition-output-type"/>
+                <xs:element name="else" type="a:output-else-type"/>
             </xs:choice>
             <xs:choice minOccurs="0">
                 <xs:element name="model" type="a:model-type"/>
             </xs:choice>
         </xs:sequence>
-        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="method-types">
@@ -1356,20 +1541,34 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:element name="archetype-script">
+    <xs:element name="archetype-script" type="a:archetype-type">
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
                 The &lt;archetype-script&gt; element is the root of the descriptor.
             </xs:documentation>
         </xs:annotation>
-        <xs:complexType>
-            <xs:sequence>
+    </xs:element>
+
+    <xs:complexType name="condition-archetype-type">
+        <xs:complexContent>
+            <xs:extension base="a:archetype-type">
+                <xs:attributeGroup ref="a:condition-group"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="archetype-type">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="if" type="a:condition-archetype-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else-if" type="a:condition-archetype-type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="else" type="a:archetype-type" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="help" type="a:help-type" minOccurs="0"/>
                 <xs:element name="methods" type="a:method-types" minOccurs="0" />
                 <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="output" type="a:output-type" minOccurs="0"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
 </xs:schema>

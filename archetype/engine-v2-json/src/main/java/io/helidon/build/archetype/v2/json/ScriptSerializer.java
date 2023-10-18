@@ -35,6 +35,7 @@ import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Expression.Token;
@@ -195,8 +196,12 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
 
     @Override
     public VisitResult visitCondition(Condition cond, Script script) {
-        exprId = exprIds.computeIfAbsent(cond.expression(), this::exprId);
-        return VisitResult.CONTINUE;
+        return evaluate(cond.expression());
+    }
+
+    @Override
+    public VisitResult visitConditionBlock(ConditionBlock condition, JsonObjectBuilder arg) {
+        return evaluate(condition.expression());
     }
 
     @Override
@@ -367,6 +372,11 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
         String exprId = String.valueOf(nextExprId.incrementAndGet());
         expressionsBuilder.add(exprId, serialize(expr));
         return exprId;
+    }
+
+    private VisitResult evaluate(Expression expression) {
+        exprId = exprIds.computeIfAbsent(expression, this::exprId);
+        return VisitResult.CONTINUE;
     }
 
     private static final class TokenVisitor implements Token.Visitor<JsonObjectBuilder> {

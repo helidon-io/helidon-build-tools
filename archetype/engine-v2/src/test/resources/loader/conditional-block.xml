@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <if expr="true">
+        <presets>
+            <if expr="true">
+                <text path="path"/>
+            </if>
+        </presets>
+    </if>
+    <if expr="true">
+        <variables>
+            <if expr="true">
+                <text path="path"/>
+            </if>
+        </variables>
+    </if>
+    <if expr="false"/>
+    <else-if expr="true">
+        <step name="step">
+            <if expr="false"/>
+            <else-if expr="true">
+                <inputs>
+                    <if expr="false"/>
+                    <else>
+                        <boolean id="bool1" name="Bool 1">
+                            <if expr="true">
+                                <validations>
+                                    <validation id="validation1">
+                                        <regex>regex</regex>
+                                    </validation>
+                                </validations>
+                            </if>
+                            <if expr="false">
+                                <exec src="file3.xml"/>
+                            </if>
+                        </boolean>
+                        <if expr="true">
+                            <enum id="enum1" name="Enum 1">
+                                <option value="option1" name="Option 1">
+                                    <if expr="false">
+                                        <source src="file2.xml"/>
+                                    </if>
+                                    <else>
+                                        <validations>
+                                            <validation id="validation2">
+                                                <regex>regex</regex>
+                                            </validation>
+                                        </validations>
+                                    </else>
+                                </option>
+                            </enum>
+                            <if expr="true">
+                                <list id="list1" name="List 1">
+                                    <option value="option1" name="Option 1"/>
+                                </list>
+                            </if>
+                        </if>
+                    </else>
+                </inputs>
+            </else-if>
+        </step>
+    </else-if>
+    <if expr="false"/>
+    <else>
+        <output>
+            <if expr="true">
+                <model>
+                    <if expr="true">
+                        <value key="value">value1</value>
+                        <if expr="false"/>
+                        <else-if expr="true">
+                            <list key="list">
+                                <if expr="true">
+                                    <value>value2</value>
+                                </if>
+                                <else>
+                                    <value>failure</value>
+                                </else>
+                            </list>
+                            <if expr="false"/>
+                            <else>
+                                <map key="map">
+                                    <if expr="false">
+                                        <value key="value">failure</value>
+                                    </if>
+                                    <else-if expr="false">
+                                        <value key="value">failure</value>
+                                    </else-if>
+                                    <else>
+                                        <value key="value">value3</value>
+                                    </else>
+                                </map>
+                            </else>
+                        </else-if>
+                    </if>
+                </model>
+            </if>
+        </output>
+    </else>
+</archetype-script>

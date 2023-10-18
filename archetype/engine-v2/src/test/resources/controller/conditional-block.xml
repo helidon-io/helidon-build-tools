@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <if expr="${foo}">
+        <presets>
+            <if expr="${foo}">
+                <text path="success1">success</text>
+            </if>
+        </presets>
+    </if>
+    <presets>
+        <text path="outside1">success</text>
+    </presets>
+    <if expr="${bar}">
+        <presets>
+            <text path="failure1" if="${bar}">failure</text>
+        </presets>
+    </if>
+    <else-if expr="${foo}">
+        <presets>
+            <text path="success2">success</text>
+        </presets>
+    </else-if>
+    <presets>
+        <text path="outside2">success</text>
+    </presets>
+    <if expr="${bar}">
+        <presets>
+            <text path="failure2" if="${bar}">failure</text>
+        </presets>
+    </if>
+    <else-if expr="${bar}">
+        <presets>
+            <text path="failure3" if="${bar}">failure</text>
+        </presets>
+    </else-if>
+    <else>
+        <presets>
+            <text path="success3">success</text>
+        </presets>
+    </else>
+    <presets>
+        <text path="outside3">success</text>
+    </presets>
+    <step name="step">
+        <help>my help</help>
+        <if expr="${foo}">
+            <if expr="${bar}"/>
+            <else-if expr="${bar}"/>
+            <else>
+                <inputs>
+                    <if expr="${bar} &amp;&amp; ${foo}"/>
+                    <else-if expr="${bar}"/>
+                    <else>
+                        <boolean id="bool" name="Bool">
+                            <if expr="${bar}"/>
+                            <else-if expr="${foo} || ${bar}">
+                                <step name="my-step">
+                                    <inputs>
+                                        <boolean id="bool1" name="Bool"/>
+                                    </inputs>
+                                </step>
+                            </else-if>
+                        </boolean>
+                    </else>
+                </inputs>
+            </else>
+        </if>
+    </step>
+    <output>
+        <model>
+            <map key="map">
+                <if expr="${foo}">
+                    <map key="map1">
+                        <if expr="${bar}">
+                            <value key="dummy">dummy</value>
+                        </if>
+                        <else-if expr="${foo}">
+                            <if expr="${bar}"/>
+                            <else-if expr="${bar}">
+                                <value key="dummy">dummy</value>
+                            </else-if>
+                            <else>
+                                <value key="value">value1</value>
+                            </else>
+                        </else-if>
+                    </map>
+                </if>
+            </map>
+            <list key="list">
+                <if expr="${foo}">
+                    <list>
+                        <if expr="${bar}">
+                            <value>dummy</value>
+                        </if>
+                        <else-if expr="${foo}">
+                            <list>
+                                <if expr="${bar}"/>
+                                <else-if expr="${bar}">
+                                    <value>dummy</value>
+                                </else-if>
+                                <else>
+                                    <value>value2</value>
+                                </else>
+                            </list>
+                        </else-if>
+                    </list>
+                </if>
+            </list>
+        </model>
+    </output>
+</archetype-script>

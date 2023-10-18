@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
+import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Model;
@@ -33,6 +35,7 @@ import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Validation;
+import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.ValueTypes;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.test.utils.TestFiles;
@@ -726,5 +729,128 @@ class ScriptLoaderTest {
             }
         }, script);
         assertThat(colors, contains("yellow", "green", "red", "blue"));
+    }
+
+    @Test
+    void testConditionalBlock() {
+        Script script = load("loader/conditional-block.xml");
+        int[] index = new int[]{0};
+
+        Model.Visitor<Void> modelVisitor = new Model.Visitor<>() {
+            @Override
+            public VisitResult visitValue(Model.Value value, Void arg) {
+                switch (++index[0]) {
+                    case 3:
+                        assertThat(value.value(), is("value1"));
+                        break;
+                    case 4:
+                        assertThat(value.value(), is("value2"));
+                        break;
+                    case 5:
+                        assertThat(value.value(), is("value3"));
+                        break;
+                    default:
+                        Assertions.fail();
+                }
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitList(Model.List list, Void arg) {
+                assertThat(list.key(), is("list"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitMap(Model.Map map, Void arg) {
+                assertThat(map.key(), is("map"));
+                return VisitResult.CONTINUE;
+            }
+        };
+
+        walk(new VisitorAdapter<>(null, null, modelVisitor, null) {
+
+            @Override
+            public VisitResult visitValidation(Validation validation, Void arg) {
+                switch (++index[0]) {
+                    case 1:
+                        assertThat(validation.id(), is("validation1"));
+                        break;
+                    case 2:
+                        assertThat(validation.id(), is("validation2"));
+                        break;
+                    default:
+                        Assertions.fail();
+                }
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitPreset(Preset preset, Void arg) {
+                assertThat(preset.path(), is("path"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitVariable(Variable variable, Void arg) {
+                assertThat(variable.path(), is("path"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitCondition(Condition condition, Void arg) {
+                return evaluate(condition.expression());
+            }
+
+            @Override
+            public VisitResult visitConditionBlock(ConditionBlock condition, Void arg) {
+                return evaluate(condition.expression());
+            }
+
+            @Override
+            public VisitResult visitStep(Step step, Void arg) {
+                assertThat(step.name(), is("step"));
+                return VisitResult.CONTINUE;
+            }
+
+            @Override
+            public VisitResult visitInput(Input input, Void arg) {
+                return input.accept(new Input.Visitor<>() {
+                    @Override
+                    public VisitResult visitBoolean(Input.Boolean input, Void arg) {
+                        assertThat(input.id(), is("bool1"));
+                        assertThat(input.name(), is("Bool 1"));
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitOption(Input.Option input, Void arg) {
+                        assertThat(input.value(), is("option1"));
+                        assertThat(input.name(), is("Option 1"));
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitEnum(Input.Enum input, Void arg) {
+                        assertThat(input.id(), is("enum1"));
+                        assertThat(input.name(), is("Enum 1"));
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitList(Input.List input, Void arg) {
+                        assertThat(input.id(), is("list1"));
+                        assertThat(input.name(), is("List 1"));
+                        return VisitResult.CONTINUE;
+                    }
+                }, arg);
+            }
+            private VisitResult evaluate(Expression expression) {
+                if (expression.eval()) {
+                    return VisitResult.CONTINUE;
+                }
+                return VisitResult.SKIP_SUBTREE;
+            }
+        }, script);
     }
 }
