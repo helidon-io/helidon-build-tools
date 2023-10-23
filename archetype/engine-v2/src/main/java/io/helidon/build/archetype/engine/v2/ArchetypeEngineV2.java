@@ -58,9 +58,15 @@ public class ArchetypeEngineV2 {
     /**
      * Generate a project.
      *
+     * @param externalValues external values
+     * @param externalDefaults external defaults
+     * @param directorySupplier directory supplier
      * @return output directory
      */
-    public Path generate() {
+    public Path generate(Map<String, String> externalValues,
+                         Map<String, String> externalDefaults,
+                         Function<String, Path> directorySupplier) {
+
         Context context = Context.builder()
                                  .cwd(cwd)
                                  .externalValues(externalValues)
@@ -92,6 +98,15 @@ public class ArchetypeEngineV2 {
         }
 
         return directory;
+    }
+
+    /**
+     * Generate a project.
+     *
+     * @return output directory
+     */
+    public Path generate() {
+        return generate(externalValues, externalDefaults, directorySupplier);
     }
 
     /**

@@ -25,6 +25,7 @@ import java.util.Set;
 
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.Condition;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
 import io.helidon.build.archetype.engine.v2.ast.Node;
@@ -114,6 +115,14 @@ public class OptimizedWalker<T> implements Node.Visitor<Void> {
             default:
                 return postVisitAny(block, arg);
         }
+    }
+
+    @Override
+    public Node.VisitResult visitCondition(Condition condition, Void arg) {
+        if (isSkipped(condition.then())) {
+            return Node.VisitResult.SKIP_SUBTREE;
+        }
+        return condition.accept(visitor, this.visitorArg);
     }
 
     @Override
