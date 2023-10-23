@@ -188,7 +188,7 @@ class ControllerTest {
             }
         }, script, context);
 
-        assertThat(steps, contains("step", "my-step"));
+        assertThat(steps, contains("step1", "step2"));
     }
 
     @Test

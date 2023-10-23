@@ -144,6 +144,17 @@ class ScriptSerializerTest {
     }
 
     @Test
+    void testFiltering3() throws IOException {
+        Path targetDir = targetDir(this.getClass());
+        Path sourceDir = targetDir.resolve("test-classes/filtering3");
+        Path expected = targetDir.resolve("test-classes/expected/filtering3.json");
+        FileSystem fs = VirtualFileSystem.create(sourceDir);
+
+        JsonObject archetypeJson = ScriptSerializer.serialize(fs);
+        assertThat(jsonDiff(archetypeJson, readJson(expected)), is(EMPTY_JSON_ARRAY));
+    }
+
+    @Test
     void testConvertExpression() throws IOException {
         int id = 1;
         JsonObjectBuilder builder = JsonFactory.createObjectBuilder();

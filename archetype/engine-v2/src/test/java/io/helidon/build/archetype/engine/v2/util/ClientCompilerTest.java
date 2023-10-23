@@ -16,9 +16,11 @@
 package io.helidon.build.archetype.engine.v2.util;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Node.VisitResult;
+import io.helidon.build.archetype.engine.v2.ast.Preset;
 import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 
@@ -617,5 +619,64 @@ class ClientCompilerTest {
             }
         }, compiledScript);
         assertThat(index[0], is(12));
+    }
+
+    @Test
+    void testCondition() {
+        Script script = load("compiler/conditions/condition.xml");
+        Script compiledScript = ClientCompiler.compile(script, false);
+        int[] index = new int[]{0};
+        walk(new Node.Visitor<>() {
+            @Override
+            public VisitResult visitBlock(Block block, Void arg) {
+                return block.accept(new Block.Visitor<>() {
+                    @Override
+                    public VisitResult visitStep(Step step, Void arg) {
+                        assertThat(++index[0], is(1));
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitAny(Block block, Void arg) {
+                        switch (block.kind()) {
+                            case SCRIPT:
+                                break;
+                            case INPUTS:
+                                assertThat(++index[0], is(3));
+                                break;
+                            default:
+                                fail(String.format("Unexpected block: %s, index=%d", block, index[0]));
+                        }
+                        return VisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public VisitResult visitInput(Input input, Void arg) {
+                        return input.accept(new Input.Visitor<>() {
+                            @Override
+                            public VisitResult visitBoolean(Input.Boolean input, Void arg) {
+                                assertThat(++index[0], is(4));
+                                assertThat(input.id(), is("boolean1"));
+                                assertThat(input.name(), is("Boolean1"));
+                                return VisitResult.CONTINUE;
+                            }
+
+                            @Override
+                            public VisitResult visitAny(Input input, Void arg) {
+                                fail(String.format("Unexpected input: %s, index=%d", block, index[0]));
+                                return VisitResult.CONTINUE;
+                            }
+                        }, arg);
+                    }
+
+                    @Override
+                    public VisitResult visitConditionBlock(ConditionBlock condition, Void arg) {
+                        assertThat(++index[0], is(2));
+                        return VisitResult.CONTINUE;
+                    }
+                }, arg);
+            }
+        }, compiledScript);
+        assertThat(index[0], is(4));
     }
 }

@@ -846,10 +846,7 @@ class ScriptLoaderTest {
                 }, arg);
             }
             private VisitResult evaluate(Expression expression) {
-                if (expression.eval()) {
-                    return VisitResult.CONTINUE;
-                }
-                return VisitResult.SKIP_SUBTREE;
+                return expression.eval() ? VisitResult.CONTINUE : VisitResult.SKIP_SUBTREE;
             }
         }, script);
     }

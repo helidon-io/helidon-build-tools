@@ -61,20 +61,26 @@
     <presets>
         <text path="outside3">success</text>
     </presets>
-    <step name="step">
+    <step name="step1">
         <help>my help</help>
         <if expr="${foo}">
             <if expr="${bar}"/>
             <else-if expr="${bar}"/>
             <else>
                 <inputs>
-                    <if expr="${bar} &amp;&amp; ${foo}"/>
+                    <if expr="${bar} &amp;&amp; ${foo}">
+                        <boolean id="foo" name="Foo">
+                            <inputs>
+                                <boolean id="foo" name="Foo"/>
+                            </inputs>
+                        </boolean>
+                    </if>
                     <else-if expr="${bar}"/>
                     <else>
                         <boolean id="bool" name="Bool">
                             <if expr="${bar}"/>
                             <else-if expr="${foo} || ${bar}">
-                                <step name="my-step">
+                                <step name="step2">
                                     <inputs>
                                         <boolean id="bool1" name="Bool"/>
                                     </inputs>
@@ -92,12 +98,12 @@
                 <if expr="${foo}">
                     <map key="map1">
                         <if expr="${bar}">
-                            <value key="dummy">dummy</value>
+                            <value key="foo">bar</value>
                         </if>
                         <else-if expr="${foo}">
                             <if expr="${bar}"/>
                             <else-if expr="${bar}">
-                                <value key="dummy">dummy</value>
+                                <value key="foo">bar</value>
                             </else-if>
                             <else>
                                 <value key="value">value1</value>
@@ -110,13 +116,13 @@
                 <if expr="${foo}">
                     <list>
                         <if expr="${bar}">
-                            <value>dummy</value>
+                            <value>foo</value>
                         </if>
                         <else-if expr="${foo}">
                             <list>
                                 <if expr="${bar}"/>
                                 <else-if expr="${bar}">
-                                    <value>dummy</value>
+                                    <value>bar</value>
                                 </else-if>
                                 <else>
                                     <value>value2</value>

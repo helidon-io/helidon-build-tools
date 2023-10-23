@@ -94,17 +94,17 @@
                                     <value>value2</value>
                                 </if>
                                 <else>
-                                    <value>failure</value>
+                                    <value>foo</value>
                                 </else>
                             </list>
                             <if expr="false"/>
                             <else>
                                 <map key="map">
                                     <if expr="false">
-                                        <value key="value">failure</value>
+                                        <value key="value">foo</value>
                                     </if>
                                     <else-if expr="false">
-                                        <value key="value">failure</value>
+                                        <value key="value">foo</value>
                                     </else-if>
                                     <else>
                                         <value key="value">value3</value>

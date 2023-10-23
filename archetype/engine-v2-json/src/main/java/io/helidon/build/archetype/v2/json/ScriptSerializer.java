@@ -201,7 +201,13 @@ public final class ScriptSerializer implements Node.Visitor<Script>,
 
     @Override
     public VisitResult visitConditionBlock(ConditionBlock condition, JsonObjectBuilder arg) {
-        return evaluate(condition.expression());
+        VisitResult result = evaluate(condition.expression());
+        BuilderContext builder = stack.peek();
+        if (builder != null) {
+            builder.block.add("if", exprId);
+        }
+        exprId = null;
+        return result;
     }
 
     @Override

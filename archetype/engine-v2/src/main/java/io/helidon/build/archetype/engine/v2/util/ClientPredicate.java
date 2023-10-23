@@ -17,6 +17,7 @@
 package io.helidon.build.archetype.engine.v2.util;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.Node;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 
@@ -51,5 +52,20 @@ public final class ClientPredicate implements Node.Visitor<Void>, Block.Visitor<
             return Node.VisitResult.TERMINATE;
         }
         return Node.VisitResult.CONTINUE;
+    }
+
+    @Override
+    public Node.VisitResult visitConditionBlock(ConditionBlock condition, Void arg) {
+        if (condition.children().isEmpty()) {
+            return Node.VisitResult.SKIP_SUBTREE;
+        }
+        for (Node node : condition.children()) {
+            if (node instanceof Block) {
+                if (((Block) node).kind() != Block.Kind.OUTPUT) {
+                    return Node.VisitResult.CONTINUE;
+                }
+            }
+        }
+        return Node.VisitResult.SKIP_SUBTREE;
     }
 }

@@ -21,10 +21,12 @@ package io.helidon.build.archetype.engine.v2.ast;
  */
 public final class ConditionBlock extends Block {
     private final Expression expression;
+    private final String rawExpression;
 
     private ConditionBlock(Builder builder) {
         super(builder);
         this.expression = builder.expression;
+        this.rawExpression = builder.rawExpression;
     }
 
     /**
@@ -47,6 +49,15 @@ public final class ConditionBlock extends Block {
         return expression;
     }
 
+    /**
+     * Get the raw expression.
+     *
+     * @return raw expression
+     */
+    public String rawExpression() {
+        return rawExpression;
+    }
+
     @Override
     public <A> VisitResult accept(Block.Visitor<A> visitor, A arg) {
         return visitor.visitConditionBlock(this, arg);
@@ -62,6 +73,7 @@ public final class ConditionBlock extends Block {
      */
     public static final class Builder extends Block.Builder {
         private Expression expression;
+        private String rawExpression;
 
         private Builder(BuilderInfo info, Kind kind) {
             super(info, kind);
@@ -74,6 +86,7 @@ public final class ConditionBlock extends Block {
          * @return this builder
          */
         public Builder expression(String expression) {
+            this.rawExpression = expression;
             this.expression = Expression.create(expression);
             return this;
         }
