@@ -139,6 +139,7 @@
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
         <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
         <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
+        <version.lib.maven-enforcer>3.4.0</version.lib.maven-enforcer>
         <version.lib.maven.filtering>3.1.1</version.lib.maven.filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
         <version.lib.mustache>0.9.6</version.lib.mustache>
@@ -173,7 +174,7 @@
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
-        <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
+        <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
@@ -211,6 +212,7 @@
         <module>stager-maven-plugin</module>
         <module>build-cache-maven-plugin</module>
         <module>enforcer-maven-plugin</module>
+        <module>maven-enforcer-rules</module>
         <module>services-maven-plugin</module>
     </modules>
 
@@ -593,6 +595,11 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
                 <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>enforcer-api</artifactId>
+                <version>${version.lib.maven-enforcer}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
