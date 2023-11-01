@@ -495,22 +495,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-top-parent-basedir</id>
-                        <goals>
-                            <goal>highest-basedir</goal>
-                        </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <property>top.parent.basedir</property>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
@@ -525,7 +509,7 @@
                             <resources>
                                 <resource>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <directory>${top.parent.basedir}</directory>
+                                    <directory>${maven.multiModuleProjectDirectory}</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <includes>
                                         <include>LICENSE.txt</include>
@@ -875,9 +859,10 @@
                                 <phase>validate</phase>
                                 <configuration>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
                                     <!--suppress UnresolvedMavenProperty -->
-                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
+                                    <suppressionsLocation>
+                                        ${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml
                                     </suppressionsLocation>
                                 </configuration>
                             </execution>
@@ -891,34 +876,28 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.glassfish.copyright</groupId>
-                        <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-enforcer-plugin</artifactId>
+                        <version>2.3.7</version>
+                        <configuration>
+                            <rules>
+                                <rule>copyright</rule>
+                            </rules>
+                            <copyrightConfig>
+                                <failOnError>true</failOnError>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <templateFile>${maven.multiModuleProjectDirectory}/etc/copyright.txt</templateFile>
+                                <!--suppress UnresolvedMavenProperty -->
+                                <excludeFile>${maven.multiModuleProjectDirectory}/etc/copyright-exclude.txt</excludeFile>
+                            </copyrightConfig>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>print-copyright</id>
-                                <goals>
-                                    <goal>copyright</goal>
-                                </goals>
+                                <id>helidon-enforcer</id>
                                 <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>check-copyright</id>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

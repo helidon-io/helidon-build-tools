@@ -1,12 +1,12 @@
-/README.md
-/CHANGELOG.md
-/.gitignore
-/NOTICE.txt
-/LICENSE.txt
-/3RD-PARTY-LICENSE.txt
-/etc/copyright-exclude.txt
-/etc/copyright.txt
-/etc/images/
+README.md
+CHANGELOG.md
+.gitignore
+NOTICE.txt
+LICENSE.txt
+3RD-PARTY-LICENSE.txt
+etc/copyright-exclude.txt
+etc/copyright.txt
+etc/images/
 _plantuml-config.txt
 superagent.js
 vuex-router-sync.js
@@ -19,7 +19,7 @@ vuex-router-sync.js
 .bat
 javax.annotation.processing.Processor
 com.sun.source.util.Plugin
-/cli-data/latest
+cli-data/latest
 cli-data.zip
 .exit
 .log
@@ -27,3 +27,4 @@ cli-data.zip
 .hello
 .hbs
 HELIDON_THIRD_PARTY_LICENSES.xml
+jvm.config
