@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
@@ -34,7 +34,7 @@ DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --build-number=N ] CMD
+$(basename "${0}") [ --build-number=N ] CMD
 
   --version=V
         Override the version to use.
@@ -48,137 +48,162 @@ $(basename ${0}) [ --build-number=N ] CMD
     update_version
         Update the version in the workspace
 
+    release_version
+        Print the release version
+
+    create_tag
+        Create and and push a release tag
+
     release_build
         Perform a release build
-        This will create a local branch, deploy artifacts and push a tag
 
 EOF
 }
 
 # parse command line args
-ARGS=( "${@}" )
-for ((i=0;i<${#ARGS[@]};i++))
-{
-    ARG=${ARGS[${i}]}
-    case ${ARG} in
+ARGS=( )
+while (( ${#} > 0 )); do
+    case ${1} in
     "--version="*)
-        VERSION=${ARG#*=}
+        VERSION=${1#*=}
+        shift
         ;;
     "--help")
         usage
         exit 0
         ;;
+    "update_version"|"release_version"|"create_tag"|"release_build")
+        COMMAND="${1}"
+        shift
+        ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
-            readonly COMMAND="${ARG}"
-        else
-            echo "ERROR: unknown argument: ${ARG}"
-            exit 1
-        fi
+        ARGS+=( "${1}" )
+        shift
         ;;
     esac
-}
+done
+readonly ARGS
+readonly COMMAND
 
-if [ -z "${COMMAND}" ] ; then
+if [ -z "${COMMAND+x}" ] ; then
   echo "ERROR: no command provided"
   exit 1
 fi
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+# copy stdout as fd 6 and redirect stdout to stderr
+# this allows us to use fd 6 for returning data
+exec 6>&1 1>&2
 
-# Resolve FULL_VERSION
-if [ -z "${VERSION+x}" ]; then
-
-    # get maven version
-    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
-        -q \
-        -f ${WS_DIR}/pom.xml \
+current_version() {
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -q \
+        -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
         --non-recursive \
-        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
-
-    # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    readonly FULL_VERSION="${VERSION}"
-else
-    readonly FULL_VERSION="${VERSION}"
-fi
-
-export FULL_VERSION
-printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
-
-update_version(){
-    # Update version
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml versions:set versions:set-property \
-        -DgenerateBackupPoms="false" \
-        -DnewVersion="${FULL_VERSION}" \
-        -Dproperty="helidon.version" \
-        -DprocessAllModules="true"
-
-    # Hacks to hard-coded versions
-    local file="helidon-archetype/maven-plugin/src/it/projects/test1/catalog2/catalog.xml"
-    cat ${file} | sed s@'^\([ \t]*\)version=".*"'@"\1version=\"${FULL_VERSION}\""@g > ${file}.tmp
-    mv ${file}.tmp ${file}
+        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
 }
 
-release_build(){
-    # Do the release work in a branch
-    local GIT_BRANCH="release/${FULL_VERSION}"
-    git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
-    git checkout -b "${GIT_BRANCH}"
+release_version() {
+    local current_version
+    current_version=$(current_version)
+    echo "${current_version%-*}"
+}
+
+update_version(){
+    local version
+    version=${1-${VERSION}}
+    if [ -z "${version+x}" ] ; then
+        echo "ERROR: version required"
+        usage
+        exit 1
+    fi
+
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        -f "${WS_DIR}"/pom.xml versions:set versions:set-property \
+        -DgenerateBackupPoms="false" \
+        -DnewVersion="${version}" \
+        -Dproperty="helidon.version" \
+        -DprocessFromLocalAggregationRoot="false" \
+        -DupdateMatchingVersions="false"
+}
+
+create_tag() {
+    local git_branch version
+
+    version=$(release_version)
+    git_branch="release/${version}"
+
+    # Use a separate branch
+    git branch -D "${git_branch}" > /dev/null 2>&1 || true
+    git checkout -b "${git_branch}"
 
     # Invoke update_version
-    update_version
+    update_version "${version}"
 
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
 
     # Commit version changes
-    git commit -a -m "Release ${FULL_VERSION} [ci skip]"
-
-    # Create the nexus staging repository
-    local STAGING_DESC="Helidon Build Tools v${FULL_VERSION}"
-    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
-        -DstagingProfileId="6026dab46eed94" \
-        -DstagingDescription="${STAGING_DESC}"
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-        awk '{print $2" "$3}' | \
-        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-        head -1)
-    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
-
-    # Perform deployment
-    mvn ${MAVEN_ARGS} clean deploy -Prelease -DskipTests \
-        -DstagingRepositoryId="${STAGING_REPO_ID}" \
-        -DretryFailedDeploymentCount="10"
-
-    # Close the nexus staging repository
-    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
-        -DstagingRepositoryId="${STAGING_REPO_ID}" \
-        -DstagingDescription="${STAGING_DESC}"
+    git commit -a -m "Release ${version}"
 
     # Create and push a git tag
-    local GIT_REMOTE=$(git config --get remote.origin.url | \
-        sed "s,https://\([^/]*\)/,git@\1:,")
+    git tag -f "${version}"
+    git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 
-    git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-    git remote set-url release "${GIT_REMOTE}"
+    echo "tag=refs/tags/${version}" >&6
+}
 
-    git tag -f "${FULL_VERSION}"
-    git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+release_build(){
+    local tmpfile version
+
+    # Bootstrap credentials from environment
+    if [ -n "${MAVEN_SETTINGS}" ] ; then
+        tmpfile=$(mktemp XXXXXXsettings.xml)
+        echo "${MAVEN_SETTINGS}" > "${tmpfile}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${tmpfile}"
+    fi
+    if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+        tmpfile=$(mktemp XXXXXX.key)
+        echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+        gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+        rm "${tmpfile}"
+    fi
+    if [ -n "${GPG_PASSPHRASE}" ] ; then
+        echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+        gpg-connect-agent reloadagent /bye
+        GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+    fi
+
+    # Perform local deployment
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        deploy \
+        -Prelease \
+        -DskipTests \
+        -DskipRemoteStaging=true
+
+    # Upload all artifacts to nexus
+    version=$(release_version)
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
+        -DstagingDescription="Helidon Build Tools v${version}"
 }
 
 # Invoke command
