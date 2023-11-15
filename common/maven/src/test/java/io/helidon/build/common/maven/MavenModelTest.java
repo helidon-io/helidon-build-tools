@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ class MavenModelTest {
                     + "<version>1.0.0-SNAPSHOT</version>"
                     + "<name>ACME Project</name>"
                     + "<description>A project by ACME</description>"
+                    + "<packaging>jar</packaging>"
                     + "<#INVALID#>"
                     + "</project>").getBytes(UTF_8)));
             assertThat(mavenModel, is(not(nullValue())));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.function.Predicate;
  */
 final class ConsoleRecorder {
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
     private final StringBuilder capturedOutput = new StringBuilder();
     private final StringBuilder capturedStdOut = new StringBuilder();
     private final StringBuilder capturedStdErr = new StringBuilder();
@@ -37,27 +37,31 @@ final class ConsoleRecorder {
     private final PrintStream stdErr;
     private LineReader stdOutReader;
     private LineReader stdErrReader;
+    private final boolean autoEol;
 
     /**
      * Create a new output forwarder.
      *
-     * @param stdOut print stream for {@code stdout}
-     * @param stdErr print stream for {@code stderr}
-     * @param filter        predicate to filter the lines to print
-     * @param transform     function to transform the lines to print
-     * @param recording     {@code true} if the output should be captured
+     * @param stdOut    print stream for {@code stdout}
+     * @param stdErr    print stream for {@code stderr}
+     * @param filter    predicate to filter the lines to print
+     * @param transform function to transform the lines to print
+     * @param recording {@code true} if the output should be captured
+     * @param autoEol   {@code true} if new line character should be added to captured lines
      */
     ConsoleRecorder(PrintStream stdOut,
                     PrintStream stdErr,
                     Predicate<String> filter,
                     Function<String, String> transform,
-                    boolean recording) {
+                    boolean recording,
+                    boolean autoEol) {
 
         this.filter = filter;
         this.transform = transform;
         this.capturing = recording;
         this.stdOut = PrintStreams.delegate(stdOut, (printer, str) -> print(printer, str, capturedStdOut));
         this.stdErr = PrintStreams.delegate(stdErr, (printer, str) -> print(printer, str, capturedStdErr));
+        this.autoEol = autoEol;
     }
 
     /**
@@ -129,7 +133,10 @@ final class ConsoleRecorder {
     }
 
     private void print(PrintStream printer, String str, StringBuilder capture) {
-        String line = str + EOL;
+        String line = str;
+        if (autoEol) {
+            line += EOL;
+        }
         if (filter.test(str)) {
             printer.print(transform.apply(line));
         }

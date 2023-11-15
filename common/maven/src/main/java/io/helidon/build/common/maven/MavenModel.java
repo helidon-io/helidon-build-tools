@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public final class MavenModel {
     private final String version;
     private final String name;
     private final String description;
+    private final String packaging;
 
     private MavenModel(ModelReader reader) {
         if (reader.hasParent) {
@@ -54,6 +55,8 @@ public final class MavenModel {
         this.version = requireValid(version, "version is not valid");
         this.name = reader.name;
         this.description = reader.description;
+        String packaging = isValid(reader.packaging) ? reader.packaging : "jar";
+        this.packaging = requireValid(packaging, "packaging is not valid");
     }
 
     /**
@@ -143,6 +146,15 @@ public final class MavenModel {
     }
 
     /**
+     * Get the project packaging.
+     *
+     * @return packaging, never {@code null}
+     */
+    public String getPackaging() {
+        return packaging;
+    }
+
+    /**
      * Parent POM definition.
      */
     public static class Parent {
@@ -187,6 +199,8 @@ public final class MavenModel {
 
     private static final class ModelReader implements SimpleXMLParser.Reader {
 
+        private static final int STOP = (1 << 9) - 1;
+
         private final LinkedList<String> stack = new LinkedList<>();
         private boolean hasParent;
         private String parentGroupId;
@@ -197,11 +211,12 @@ public final class MavenModel {
         private String version;
         private String name;
         private String description;
+        private String packaging;
         private int mask = 0;
 
         @Override
         public boolean keepParsing() {
-            return mask != (1 << 8) - 1;
+            return mask != STOP;
         }
 
         @Override
@@ -217,10 +232,12 @@ public final class MavenModel {
 
         @Override
         public void endElement(String name) {
-            if ("parent".equals(name)) {
+            stack.pop();
+            if (stack.isEmpty()) {
+                mask = STOP;
+            } else if ("parent".equals(name)) {
                 mask |= 7;
             }
-            stack.pop();
         }
 
         @Override
@@ -230,48 +247,52 @@ public final class MavenModel {
                 String parentQName = stack.get(1);
                 if ("project".equals(parentQName)) {
                     switch (qName) {
-                        case "groupId":
-                            groupId = data;
-                            mask |= (1 << 3);
-                            break;
-                        case "artifactId":
-                            artifactId = data;
-                            mask |= (1 << 4);
-                            break;
-                        case "version":
-                            version = data;
-                            mask |= (1 << 5);
-                            break;
-                        case "name":
-                            name = data;
-                            mask |= (1 << 6);
-                            break;
-                        case "description":
-                            description = data;
-                            mask |= (1 << 7);
-                            break;
-                        default:
-                            // do nothing
+                    case "groupId":
+                        groupId = data;
+                        mask |= (1 << 3);
+                        break;
+                    case "artifactId":
+                        artifactId = data;
+                        mask |= (1 << 4);
+                        break;
+                    case "version":
+                        version = data;
+                        mask |= (1 << 5);
+                        break;
+                    case "name":
+                        name = data;
+                        mask |= (1 << 6);
+                        break;
+                    case "description":
+                        description = data;
+                        mask |= (1 << 7);
+                        break;
+                    case "packaging":
+                        packaging = data;
+                        mask |= (1 << 8);
+                        break;
+                    default:
+                        // do nothing
                     }
                 } else if ("parent".equals(parentQName)) {
                     switch (qName) {
-                        case "groupId":
-                            hasParent = true;
-                            parentGroupId = data;
-                            mask |= (1 << 1);
-                            break;
-                        case "artifactId":
-                            hasParent = true;
-                            parentArtifactId = data;
-                            mask |= (1 << 2);
-                            break;
-                        case "version":
-                            hasParent = true;
-                            parentVersion = data;
-                            mask |= (1 << 3);
-                            break;
-                        default:
-                            // do nothing
+                    case "groupId":
+                        hasParent = true;
+                        parentGroupId = data;
+                        mask |= (1 << 1);
+                        break;
+                    case "artifactId":
+                        hasParent = true;
+                        parentArtifactId = data;
+                        mask |= (1 << 2);
+                        break;
+                    case "version":
+                        hasParent = true;
+                        parentVersion = data;
+                        mask |= (1 << 3);
+                        break;
+                    default:
+                        // do nothing
                     }
                 }
             }

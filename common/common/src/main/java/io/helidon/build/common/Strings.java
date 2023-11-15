@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,11 +81,11 @@ public class Strings {
      * @param value The value to normalize, may be {@code null}
      * @return normalized value
      */
-    public static String normalizePath(String value) {
+    public static String normalizePath(Object value) {
         if (value == null) {
             return null;
         }
-        return value.replace("\\", "/");
+        return value.toString().replace("\\", "/");
     }
 
     /**
@@ -175,7 +175,7 @@ public class Strings {
      * Count the amount of the symbols in the line that that match the predicate.
      *
      * @param predicate predicate for the symbols
-     * @param line line
+     * @param line      line
      * @return amount of the symbols in the line that that match the predicate
      */
     public static int countWhile(Predicate<Character> predicate, String line) {
@@ -212,7 +212,7 @@ public class Strings {
      * @param str1 the first String, may be null
      * @param str2 the second String, may be null
      * @return the portion of str2 where it differs from str1; returns the
-     * empty String if they are equal
+     *         empty String if they are equal
      */
     public static String difference(final String str1, final String str2) {
         if (str1 == null) {

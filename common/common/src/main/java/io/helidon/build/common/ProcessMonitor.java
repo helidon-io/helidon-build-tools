@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNullElseGet;
  */
 public final class ProcessMonitor {
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
     private static final int GRACEFUL_STOP_TIMEOUT = 3;
     private static final int FORCEFUL_STOP_TIMEOUT = 2;
     private static final MonitorThread MONITOR_THREAD = new MonitorThread();
@@ -83,6 +83,7 @@ public final class ProcessMonitor {
         private Function<String, String> transform = Function.identity();
         private Runnable beforeShutdown = () -> {};
         private Runnable afterShutdown = () -> {};
+        private boolean autoEol = true;
 
         private Builder() {
         }
@@ -202,6 +203,17 @@ public final class ProcessMonitor {
         }
 
         /**
+         * Specifies if and new line character should be added to captured lines.
+         *
+         * @param autoEol {@code true} if new line character should be added
+         * @return This builder.
+         */
+        public Builder autoEol(boolean autoEol) {
+            this.autoEol = autoEol;
+            return this;
+        }
+
+        /**
          * Sets the after shutdown callback.
          *
          * @param afterShutdown a callback invoked after the process is stopped by the shutdown hook
@@ -253,7 +265,8 @@ public final class ProcessMonitor {
                 builder.stdErr,
                 builder.filter,
                 builder.transform,
-                builder.capture);
+                builder.capture,
+                builder.autoEol);
         this.shutdown = new AtomicBoolean();
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
@@ -264,12 +277,12 @@ public final class ProcessMonitor {
      * Starts the process and waits for completion.
      *
      * @param timeout The maximum time to wait.
-     * @param unit The time unit of the {@code timeout} argument.
+     * @param unit    The time unit of the {@code timeout} argument.
      * @return This instance.
-     * @throws IOException If an I/O error occurs.
+     * @throws IOException             If an I/O error occurs.
      * @throws ProcessTimeoutException If the process does not complete in the specified time.
-     * @throws ProcessFailedException If the process fails.
-     * @throws InterruptedException If the thread is interrupted.
+     * @throws ProcessFailedException  If the process fails.
+     * @throws InterruptedException    If the thread is interrupted.
      */
     @SuppressWarnings({"checkstyle:JavadocMethod", "checkstyle:ThrowsCount"})
     public ProcessMonitor execute(long timeout, TimeUnit unit) throws IOException,
@@ -284,7 +297,7 @@ public final class ProcessMonitor {
      *
      * @return This instance.
      * @throws IllegalStateException If the process was already started.
-     * @throws IOException If an I/O error occurs.
+     * @throws IOException           If an I/O error occurs.
      */
     public ProcessMonitor start() throws IOException {
         if (process != null) {
