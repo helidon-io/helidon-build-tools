@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ function loadPage(id, targetPath, compDef, customJsPath) {
             }
 
             // download the template
-            const page = "pages/" + targetPath + ".js";
+            const page = "/pages/" + targetPath + ".js";
             superagent.get(page).end(function (error, response) {
 
                 // error loading page
