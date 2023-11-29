@@ -16,7 +16,9 @@
 
 package io.helidon.build.maven.enforcer.rules;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -68,6 +70,10 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
 
     @Override
     public void execute() throws ViolationException {
+        if (this.excludedGavRegExs == null) {
+            this.excludedGavRegExs = List.of();
+        }
+
         String namespace = checkNamespace(this.namespace);
         List<Pattern> excludedGavRegExs = this.excludedGavRegExs.stream()
                 .map(Pattern::compile)
@@ -84,6 +90,14 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
     @Override
     public String toString() {
         return String.format(getClass().getSimpleName() + "[namespace=%s, excludedGavRegExs=%s]", namespace, excludedGavRegExs);
+    }
+
+    void setProject(MavenProject project) {
+        this.project = Objects.requireNonNull(project);
+    }
+
+    void setExcludedGavRegExs(List<String> excludedGavRegExs) {
+        this.excludedGavRegExs = new ArrayList<>(Objects.requireNonNull(excludedGavRegExs));
     }
 
     static String checkNamespace(String namespace) {
