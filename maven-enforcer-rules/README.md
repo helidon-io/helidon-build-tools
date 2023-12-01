@@ -36,7 +36,7 @@ Here is an example pom.xml:
 <!--                                 <excludedGavRegExs>-->
 <!--                                    &lt;!&ndash; for example only - we suggest not including this exclusion in your usage &ndash;&gt;-->
 <!--                                    <excludedGavRegEx>javax.servlet.*</excludedGavRegEx>-->
-<!--                                 </excludedGavs>-->
+<!--                                 </excludedGavRegExs>-->
                             </helidonDependenciesRule>
                         </rules>
                     </configuration>
