@@ -76,6 +76,7 @@ public class HelidonDependenciesRule extends AbstractEnforcerRule {
 
         String namespace = checkNamespace(this.namespace);
         List<Pattern> excludedGavRegExs = this.excludedGavRegExs.stream()
+                .filter(s -> !s.isEmpty())
                 .map(Pattern::compile)
                 .collect(Collectors.toList());
         List<Artifact> artifacts = project.getArtifacts().stream()
