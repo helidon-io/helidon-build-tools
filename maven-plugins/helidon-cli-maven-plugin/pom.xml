@@ -67,6 +67,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-build-api</artifactId>
         </dependency>
@@ -140,9 +145,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <systemProperties>
+                    <systemPropertyVariables>
                         <version>${project.version}</version>
-                    </systemProperties>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

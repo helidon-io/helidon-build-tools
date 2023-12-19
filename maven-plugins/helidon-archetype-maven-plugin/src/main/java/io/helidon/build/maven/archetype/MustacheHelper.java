@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -40,6 +39,9 @@ import com.github.mustachejava.TemplateContext;
 import com.github.mustachejava.codes.ValueCode;
 import com.github.mustachejava.reflect.SimpleObjectHandler;
 import com.github.mustachejava.util.Wrapper;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 /**
  * Mustache helper.
@@ -88,8 +90,7 @@ public abstract class MustacheHelper {
 
         Mustache m = MUSTACHE_FACTORY.compile(new InputStreamReader(is), name);
         Files.createDirectories(target.getParent());
-        try (Writer writer = Files.newBufferedWriter(target, StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING)) {
+        try (Writer writer = Files.newBufferedWriter(target, CREATE, TRUNCATE_EXISTING)) {
             m.execute(writer, scope).flush();
         }
     }
@@ -122,7 +123,6 @@ public abstract class MustacheHelper {
         }
     }
 
-
     private static final class ObjectHandler extends SimpleObjectHandler {
 
         @Override
@@ -141,10 +141,10 @@ public abstract class MustacheHelper {
                         result = ((Map<?, ?>) scope).get(name);
                     } else if (scope instanceof Map.Entry) {
                         switch (name) {
-                            case("key"):
+                            case "key":
                                 result = ((Map.Entry<?, ?>) scope).getKey();
                                 break;
-                            case("value"):
+                            case "value":
                                 result = ((Map.Entry<?, ?>) scope).getValue();
                                 break;
                             default:

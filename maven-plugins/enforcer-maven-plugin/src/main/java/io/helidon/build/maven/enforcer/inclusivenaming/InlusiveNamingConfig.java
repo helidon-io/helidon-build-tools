@@ -64,7 +64,7 @@ public class InlusiveNamingConfig {
     private XmlData[] additionalTerms;
 
     /**
-     * XML file equivalent to the inclusive naming JSON {@link https://inclusivenaming.org/word-lists/index.json}.
+     * XML file equivalent to the inclusive naming <a href="https://inclusivenaming.org/word-lists/index.json">JSON</a>.
      */
     @Parameter
     private File inclusiveNamingFile;
