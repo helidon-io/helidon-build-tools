@@ -144,7 +144,7 @@ class GitIgnore implements FileMatcher {
 
     private boolean isParentExcluded(String pattern) {
         pattern = "/" + pattern;
-        String parent = normalizePath(Path.of(pattern).getParent().toString());
+        String parent = normalizePath(Path.of(pattern).getParent());
         if (!parent.endsWith("/")) {
             pattern = parent + "/";
         }

@@ -360,6 +360,6 @@ public class AsciidocEngine {
     }
 
     private static String relativePath(Path sourceDir, Path source) {
-        return normalizePath(sourceDir.relativize(source).toString());
+        return normalizePath(sourceDir.relativize(source));
     }
 }

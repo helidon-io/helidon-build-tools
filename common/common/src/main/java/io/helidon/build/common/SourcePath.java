@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -36,7 +36,8 @@ import java.util.stream.Collectors;
  */
 public class SourcePath {
 
-    private static final char WILDCARD = '*';
+    private static final char WILDCARD_CHAR = '*';
+    private static final String WILDCARD = "*";
     private static final String DOUBLE_WILDCARD = "**";
     private static final List<String> DEFAULT_INCLUDES = List.of("**/*");
 
@@ -90,12 +91,12 @@ public class SourcePath {
      */
     public SourcePath(List<String> paths) {
         segments = paths.stream()
-                        .flatMap(p -> Arrays.stream(parseSegments(p)))
-                        .toArray(n -> new String[n]);
+                .flatMap(p -> Arrays.stream(parseSegments(p)))
+                .toArray(String[]::new);
     }
 
     private static String getRelativePath(Path sourceDir, Path source) {
-        return Strings.normalizePath(sourceDir.relativize(source).toString());
+        return Strings.normalizePath(sourceDir.relativize(source));
     }
 
     /**
@@ -106,26 +107,21 @@ public class SourcePath {
      * @throws IllegalArgumentException If the path is invalid.
      */
     public static String[] parseSegments(String path) throws IllegalArgumentException {
-        if (Strings.isNotValid(path)) {
-            throw new IllegalArgumentException("path is null or empty");
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
         }
         String[] tokens = path.split("/");
-        int tokenCount = tokens.length;
-        if (tokenCount == 0) {
-            throw new IllegalArgumentException("invalid path: " + path);
-        }
-        List<String> segments = new ArrayList<>(tokenCount);
-        for (int i = 0; i < tokenCount; i++) {
+        List<String> segments = new ArrayList<>(tokens.length);
+        for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i];
-            if ((i < tokenCount - 1 && token.isEmpty())
-                    || token.equals(".")) {
+            if ((i < tokens.length - 1 && token.isEmpty())
+                || token.equals(".")) {
                 continue;
             }
             segments.add(token);
         }
         return segments.toArray(new String[0]);
     }
-
 
     /**
      * Filter the given {@code Collection} of {@link SourcePath} with the given filter.
@@ -143,8 +139,8 @@ public class SourcePath {
             return Collections.emptyList();
         }
         return paths.stream()
-                    .filter(p -> p.matches(includesPatterns, excludesPatterns))
-                    .collect(Collectors.toList());
+                .filter(p -> p.matches(includesPatterns, excludesPatterns))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -209,7 +205,7 @@ public class SourcePath {
         // unprocessed patterns can only be double wildcard
         for (; pOffset < patterns.length; pOffset++) {
             String pattern = patterns[pOffset];
-            if (!pattern.equals(DOUBLE_WILDCARD)) {
+            if (!(pattern.equals(DOUBLE_WILDCARD) || pattern.equals(WILDCARD))) {
                 return false;
             }
         }
@@ -303,8 +299,8 @@ public class SourcePath {
         int valIdx = 0;
         int patternIdx = 0;
         boolean matched = true;
-        while (matched) {
-            int wildcardIdx = pattern.indexOf(WILDCARD, patternIdx);
+        while (true) {
+            int wildcardIdx = pattern.indexOf(WILDCARD_CHAR, patternIdx);
             if (wildcardIdx >= 0) {
                 // pattern has unprocessed wildcard(s)
                 int patternOffset = wildcardIdx - patternIdx;
@@ -312,7 +308,7 @@ public class SourcePath {
                     // filter the sub pattern before the wildcard
                     String subPattern = pattern.substring(patternIdx, wildcardIdx);
                     int idx = val.indexOf(subPattern, valIdx);
-                    if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD) {
+                    if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD_CHAR) {
                         // if expanding a wildcard
                         // the sub-segment needs to contain the sub-pattern
                         if (idx < valIdx) {
@@ -331,7 +327,7 @@ public class SourcePath {
             } else {
                 String subPattern = pattern.substring(patternIdx);
                 String subSegment = val.substring(valIdx);
-                if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD) {
+                if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD_CHAR) {
                     // if expanding a wildcard
                     // sub-segment needs to end with sub-pattern
                     if (!subSegment.endsWith(subPattern)) {
@@ -374,7 +370,6 @@ public class SourcePath {
         }
         return sb.toString();
     }
-
 
     @Override
     public String toString() {
@@ -430,27 +425,21 @@ public class SourcePath {
     }
 
     private static List<SourcePath> doScan(Path root, Path dir) {
-        List<SourcePath> sourcePaths = new ArrayList<>();
-        DirectoryStream<Path> dirStream = null;
-        try {
-            dirStream = Files.newDirectoryStream(dir);
-            Iterator<Path> it = dirStream.iterator();
-            while (it.hasNext()) {
-                Path next = it.next();
+        if (!Files.exists(dir)) {
+            return List.of();
+        }
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+            List<SourcePath> sourcePaths = new ArrayList<>();
+            for (Path next : dirStream) {
                 if (Files.isDirectory(next)) {
                     sourcePaths.addAll(doScan(root, next));
                 } else {
                     sourcePaths.add(new SourcePath(root, next));
                 }
             }
+            return sort(sourcePaths);
         } catch (IOException ex) {
-            if (dirStream != null) {
-                try {
-                    dirStream.close();
-                } catch (IOException ignored) {
-                }
-            }
+            throw new UncheckedIOException(ex);
         }
-        return sort(sourcePaths);
     }
 }

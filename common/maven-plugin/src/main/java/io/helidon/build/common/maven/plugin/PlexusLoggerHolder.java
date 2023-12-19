@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.build.common.maven.plugin;
 
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.build.common.logging.LogLevel;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -40,6 +42,15 @@ public class PlexusLoggerHolder {
     @Requirement
     @SuppressWarnings("unused")
     public void setLogger(Logger logger) {
+        if (logger.isDebugEnabled()) {
+            LogLevel.set(LogLevel.DEBUG);
+        } else if (logger.isWarnEnabled()) {
+            LogLevel.set(LogLevel.ERROR);
+        } else if (logger.isWarnEnabled()) {
+            LogLevel.set(LogLevel.WARN);
+        } else if (logger.isInfoEnabled()) {
+            LogLevel.set(LogLevel.INFO);
+        }
         REF.set(logger);
     }
 }

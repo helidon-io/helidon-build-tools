@@ -37,6 +37,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -53,6 +54,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.helidon.build.common.logging.Log;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.FileSystems.getFileSystem;
@@ -73,7 +76,6 @@ public final class FileUtils {
     private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
     private static final Path TMPDIR = Path.of(System.getProperty("java.io.tmpdir"));
     private static final Random RANDOM = new Random();
-
 
     /**
      * The working directory.
@@ -100,7 +102,7 @@ public final class FileUtils {
      */
     public static Path requiredDirectoryFromProperty(String systemPropertyName, boolean createIfRequired) {
         final String path = Requirements.requireNonNull(System.getProperty(systemPropertyName),
-                "Required system property %s not set", systemPropertyName);
+                                                        "Required system property %s not set", systemPropertyName);
         return requiredDirectory(path, createIfRequired);
     }
 
@@ -253,12 +255,58 @@ public final class FileUtils {
      * @param maxDepth  The maximum recursion depth.
      * @return The normalized, absolute file paths.
      */
-    public static List<Path> list(Path directory, final int maxDepth) {
+    public static List<Path> list(Path directory, int maxDepth) {
         try (Stream<Path> pathStream = Files.find(requireDirectory(directory), maxDepth, (path, attrs) -> true)) {
             return pathStream
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Walk the directory and return the files that match the given predicate.
+     * If a directory is filtered out by the predicate its subtree is skipped.
+     *
+     * @param directory The directory
+     * @param predicate predicate used to filter files and directories
+     * @return The normalized, absolute file paths.
+     */
+    public static List<Path> walk(Path directory, BiPredicate<Path, BasicFileAttributes> predicate) {
+        try {
+            List<Path> files = new ArrayList<>();
+            Files.walkFileTree(directory, new FileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    if (predicate.test(dir, attrs)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (predicate.test(file, attrs)) {
+                        files.add(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException ex) {
+                    Log.warn(ex, ex.getMessage());
+                    return FileVisitResult.SKIP_SIBLINGS;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            return files;
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -358,13 +406,13 @@ public final class FileUtils {
             if (Files.isDirectory(directory)) {
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                          .forEach(file -> {
-                              try {
-                                  Files.delete(file);
-                              } catch (IOException ioe) {
-                                  throw new UncheckedIOException(ioe);
-                              }
-                          });
+                            .forEach(file -> {
+                                try {
+                                    Files.delete(file);
+                                } catch (IOException ioe) {
+                                    throw new UncheckedIOException(ioe);
+                                }
+                            });
                 } catch (IOException ioe) {
                     throw new UncheckedIOException(ioe);
                 }
@@ -388,14 +436,14 @@ public final class FileUtils {
                 //noinspection DuplicatedCode
                 try (Stream<Path> stream = Files.walk(directory)) {
                     stream.sorted(Comparator.reverseOrder())
-                          .filter(file -> !file.equals(directory))
-                          .forEach(file -> {
-                              try {
-                                  Files.delete(file);
-                              } catch (IOException e) {
-                                  throw new UncheckedIOException(e);
-                              }
-                          });
+                            .filter(file -> !file.equals(directory))
+                            .forEach(file -> {
+                                try {
+                                    Files.delete(file);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            });
                 }
             } else {
                 throw new IllegalArgumentException(directory + " is not a directory");
@@ -559,10 +607,10 @@ public final class FileUtils {
      */
     public static Optional<Path> findExecutableInPath(String executableName) {
         return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
-                     .map(Paths::get)
-                     .map(path -> path.resolve(executableName))
-                     .filter(Files::isExecutable)
-                     .findFirst();
+                .map(Paths::get)
+                .map(path -> path.resolve(executableName))
+                .filter(Files::isExecutable)
+                .findFirst();
     }
 
     /**
@@ -587,8 +635,8 @@ public final class FileUtils {
      */
     public static Path requireJavaExecutable() {
         return javaExecutable().orElseThrow(() -> new IllegalStateException(JAVA_BINARY_NAME
-                + " not found. Please add it to"
-                + " your PATH or set the JAVA_HOME or variable."));
+                                                                            + " not found. Please add it to"
+                                                                            + " your PATH or set the JAVA_HOME or variable."));
     }
 
     /**
@@ -601,22 +649,32 @@ public final class FileUtils {
     }
 
     /**
+     * Returns the path to the given executable using the {@code JAVA_HOME} var if present and valid.
+     *
+     * @param name executable name
+     * @return The path.
+     */
+    public static Optional<Path> findExecutableInJavaHome(String name) {
+        final String javaHomePath = System.getenv(JAVA_HOME_VAR);
+        if (javaHomePath != null) {
+            final Path javaHome = Paths.get(javaHomePath);
+            final Path binary = javaHome.resolve(BIN_DIR_NAME).resolve(name);
+            if (Files.isExecutable(binary)) {
+                return Optional.of(binary);
+            } else {
+                throw new IllegalStateException(name + " not found in JAVA_HOME path: " + javaHomePath);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Returns the path to the java executable using the {@code JAVA_HOME} var if present and valid.
      *
      * @return The path.
      */
     public static Optional<Path> javaExecutableInJavaHome() {
-        final String javaHomePath = System.getenv(JAVA_HOME_VAR);
-        if (javaHomePath != null) {
-            final Path javaHome = Paths.get(javaHomePath);
-            final Path binary = javaHome.resolve(BIN_DIR_NAME).resolve(JAVA_BINARY_NAME);
-            if (Files.isExecutable(binary)) {
-                return Optional.of(binary);
-            } else {
-                throw new IllegalStateException(JAVA_BINARY_NAME + " not found in JAVA_HOME path: " + javaHomePath);
-            }
-        }
-        return Optional.empty();
+        return findExecutableInJavaHome(JAVA_BINARY_NAME);
     }
 
     /**
@@ -747,15 +805,16 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
-        return zip(zip, directory, path -> {});
+        return zip(zip, directory, path -> {
+        });
     }
 
     /**
      * Zip a directory.
      *
-     * @param zip           target file
-     * @param directory     source directory
-     * @param fileConsumer  zipped file consumer
+     * @param zip          target file
+     * @param directory    source directory
+     * @param fileConsumer zipped file consumer
      * @return zip file
      */
     public static Path zip(Path zip, Path directory, Consumer<Path> fileConsumer) {
@@ -763,21 +822,21 @@ public final class FileUtils {
         try (FileSystem fs = newZipFileSystem(zip)) {
             try (Stream<Path> entries = Files.walk(directory)) {
                 entries.sorted(Comparator.reverseOrder())
-                       .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
-                       .map(p -> {
-                           try {
-                               Path target = fs.getPath(directory.relativize(p).toString());
-                               Path parent = target.getParent();
-                               if (parent != null) {
-                                   Files.createDirectories(parent);
-                               }
-                               Files.copy(p, target, REPLACE_EXISTING);
-                               return target;
-                           } catch (IOException ioe) {
-                               throw new UncheckedIOException(ioe);
-                           }
-                       })
-                       .forEach(fileConsumer);
+                        .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                        .map(p -> {
+                            try {
+                                Path target = fs.getPath(directory.relativize(p).toString());
+                                Path parent = target.getParent();
+                                if (parent != null) {
+                                    Files.createDirectories(parent);
+                                }
+                                Files.copy(p, target, REPLACE_EXISTING);
+                                return target;
+                            } catch (IOException ioe) {
+                                throw new UncheckedIOException(ioe);
+                            }
+                        })
+                        .forEach(fileConsumer);
             }
             return zip;
         } catch (IOException ioe) {
@@ -808,22 +867,22 @@ public final class FileUtils {
             Path root = fs.getRootDirectories().iterator().next();
             try (Stream<Path> entries = Files.walk(root)) {
                 entries.filter(p -> !p.equals(root))
-                       .forEach(file -> {
-                           Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
-                           try {
-                               if (Files.isDirectory(file)) {
-                                   Files.createDirectories(filePath);
-                               } else {
-                                   Files.copy(file, filePath);
-                               }
-                               if (posix) {
-                                   Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
-                                   Files.setPosixFilePermissions(filePath, perms);
-                               }
-                           } catch (IOException ioe) {
-                               throw new UncheckedIOException(ioe);
-                           }
-                       });
+                        .forEach(file -> {
+                            Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
+                            try {
+                                if (Files.isDirectory(file)) {
+                                    Files.createDirectories(filePath);
+                                } else {
+                                    Files.copy(file, filePath);
+                                }
+                                if (posix) {
+                                    Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+                                    Files.setPosixFilePermissions(filePath, perms);
+                                }
+                            } catch (IOException ioe) {
+                                throw new UncheckedIOException(ioe);
+                            }
+                        });
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -871,7 +930,7 @@ public final class FileUtils {
     /**
      * Get the path for the given URL.
      *
-     * @param url         url
+     * @param url url
      * @return Path
      */
     public static Path pathOf(URL url) {

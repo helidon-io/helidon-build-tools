@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -37,19 +36,19 @@ public class Lists {
     }
 
     /**
-     * Filter the elements of the given list.
+     * Filter the elements of the given collection.
      *
      * @param list      input list
      * @param predicate predicate function
      * @param <T>       output element type
      * @return new list
      */
-    public static <T> List<T> filter(List<T> list, Predicate<T> predicate) {
+    public static <T> List<T> filter(Collection<T> list, Predicate<T> predicate) {
         return list == null ? List.of() : list.stream().filter(predicate).collect(Collectors.toList());
     }
 
     /**
-     * Filter the elements of the given list.
+     * Filter the elements of the given collection.
      *
      * @param list  input list
      * @param clazz type predicate
@@ -136,7 +135,7 @@ public class Lists {
      * @return new list
      */
     public static <T> List<T> addAll(Collection<T> list1, Collection<T> list2) {
-        List<T> list = new LinkedList<>();
+        List<T> list = new ArrayList<>();
         if (list1 != null) {
             list.addAll(list1);
         }
@@ -156,7 +155,7 @@ public class Lists {
      */
     @SafeVarargs
     public static <T> List<T> addAll(Collection<T> list1, T... elements) {
-        List<T> list = new LinkedList<>();
+        List<T> list = new ArrayList<>();
         if (list1 != null) {
             list.addAll(list1);
         }
@@ -202,8 +201,8 @@ public class Lists {
      * @param <T>       element type
      * @return string
      */
-    public static <T> String join(Collection<T> list, Function<T, String> function, String delimiter) {
-        return list.stream().map(function).collect(Collectors.joining(delimiter));
+    public static <T> String join(Collection<T> list, Function<T, Object> function, String delimiter) {
+        return list.stream().map(function).map(Object::toString).collect(Collectors.joining(delimiter));
     }
 
     /**
@@ -213,7 +212,7 @@ public class Lists {
      * @param function grouping function
      * @param <T>      list element type
      * @param <U>      key type
-     * @return map of groups
+     * @return list of groups
      */
     public static <T, U> List<List<T>> groupingBy(Collection<T> list, Function<T, U> function) {
         return new ArrayList<>(list.stream().collect(Collectors.groupingBy(function)).values());
@@ -228,7 +227,7 @@ public class Lists {
      * @param <U>      key type
      * @return map where values grouped by keys
      */
-    public static <T, U> Map<U, List<T>> mappedBy(List<T> list, Function<T, U> function) {
+    public static <T, U> Map<U, List<T>> mappedBy(Collection<T> list, Function<T, U> function) {
         return list.stream().collect(Collectors.groupingBy(function));
     }
 }
