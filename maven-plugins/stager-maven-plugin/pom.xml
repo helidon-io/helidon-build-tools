@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-tools-project</artifactId>
-        <version>4.0.2-SNAPSHOT</version>
+        <version>4.0.2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-stager-maven-plugin</artifactId>
