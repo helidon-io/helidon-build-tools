@@ -49,6 +49,9 @@ readonly  RESULT_FILE
 
 die(){ echo "${1}" ; exit 1 ;}
 
+# Remove cache
+rm -f "${WS_DIR}"/target/checkstyle-*
+
 # shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
     -f "${WS_DIR}"/pom.xml \

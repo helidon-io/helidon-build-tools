@@ -125,7 +125,7 @@
         <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
         <version.lib.asciidoctorj>2.5.2</version.lib.asciidoctorj>
         <version.lib.asm>7.2</version.lib.asm>
-        <version.lib.checkstyle>9.1</version.lib.checkstyle>
+        <version.lib.checkstyle>10.12.6</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.11.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
@@ -147,11 +147,11 @@
         <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
         <version.lib.maven>3.8.1</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
-        <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
+        <version.lib.maven-archiver>3.6.1</version.lib.maven-archiver>
         <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
         <version.lib.maven-embedder>3.6.2</version.lib.maven-embedder>
         <version.lib.maven-enforcer>3.4.0</version.lib.maven-enforcer>
-        <version.lib.maven-filtering>3.1.1</version.lib.maven-filtering>
+        <version.lib.maven-filtering>3.3.1</version.lib.maven-filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
         <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
         <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
@@ -179,7 +179,7 @@
         <version.plugin.assembly>3.3.0</version.plugin.assembly>
         <version.plugin.build-helper>3.2.0</version.plugin.build-helper>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
-        <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
@@ -193,16 +193,16 @@
         <version.plugin.graalvm>0.9.23</version.plugin.graalvm>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
+        <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
         <version.plugin.invoker>3.2.2</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>
-        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
+        <version.plugin.plugin-plugin>3.10.2</version.plugin.plugin-plugin>
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.surefire>3.1.2</version.plugin.surefire>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.toolchains>3.1.0</version.plugin.toolchains>
@@ -360,9 +360,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
                     <configuration>
-                        <sourceDirectories>
-                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                        </sourceDirectories>
+                        <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
+                        <suppressionsLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml</suppressionsLocation>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -375,6 +374,11 @@
                                     <artifactId>tools</artifactId>
                                 </exclusion>
                             </exclusions>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-core</artifactId>
+                            <version>1.9</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -397,23 +401,6 @@
                             </plugin>
                         </plugins>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>license-maven-plugin</artifactId>
-                    <version>${version.plugin.license}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-core</artifactId>
-                            <version>1.6</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.6</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -554,14 +541,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <configLocation>/etc/checkstyle.xml</configLocation>
-                    <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
@@ -615,6 +594,21 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings-builder</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-builder-support</artifactId>
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
@@ -952,14 +946,6 @@
                                     <goal>check</goal>
                                 </goals>
                                 <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <suppressionsLocation>
-                                        ${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml
-                                    </suppressionsLocation>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
