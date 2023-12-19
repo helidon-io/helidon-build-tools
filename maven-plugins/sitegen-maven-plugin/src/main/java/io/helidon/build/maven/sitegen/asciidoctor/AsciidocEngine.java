@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class AsciidocEngine {
     private final String backend;
     private final List<String> libraries;
     private final Map<String, Object> attributes;
-    private final String imagesdir;
+    private final String imagesDir;
     private final Instance<Asciidoctor> asciidoctorInst;
     private final AsciidocLogHandler logHandler;
     private final AsciidocPageRenderer pageRenderer;
@@ -70,7 +70,7 @@ public class AsciidocEngine {
         backend = requireValid(builder.backend, "backend is invalid!");
         attributes = builder.attributes;
         libraries = builder.libraries;
-        imagesdir = builder.imagesDir;
+        imagesDir = builder.imagesDir;
         pageRenderer = new AsciidocPageRenderer(this);
         logHandler = new AsciidocLogHandler(this::frames);
         asciidoctorInst = new Instance<>(this::initAsciidoctor);
@@ -131,7 +131,7 @@ public class AsciidocEngine {
      * @return image directory
      */
     public String imagesDir() {
-        return imagesdir;
+        return imagesDir;
     }
 
     /**
@@ -160,9 +160,9 @@ public class AsciidocEngine {
 
         // set imagesDir and 'imagesoutdir'
         // 'imagesoutdir' is needed by asciidoctorj-diagram
-        if (imagesdir != null) {
-            attrsBuilder.imagesDir(imagesdir);
-            attrsBuilder.attribute("imagesoutdir", outputDir.resolve(imagesdir).toString());
+        if (imagesDir != null) {
+            attrsBuilder.imagesDir(imagesDir);
+            attrsBuilder.attribute("imagesoutdir", outputDir.resolve(imagesDir).toString());
         }
 
         // set outdir attribute to relative to outputDir from source

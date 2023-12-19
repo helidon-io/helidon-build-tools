@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 const config = createConfig();
 const navItems = createNav();
 const searchIndex = new Promise(function(resolve, reject){
-    superagent.get("main/search-index.json").end(function (error, response) {
+    superagent.get("/main/search-index.json").end(function (error, response) {
         if (error) {
             reject("unable to load search index: " + error);
         } else {
@@ -80,7 +80,28 @@ function main() {
         getters: {}
     });
 
-    const router = new VueRouter({ routes: createRoutes() });
+    const routes = createRoutes()
+
+    // patch the '/' route to support the hash router mode
+    const indexRoute = routes[routes.length - 2]
+    routes[routes.length - 2] = {
+        path: '/', redirect: function(to) {
+            if (to.hash.startsWith('#/')) {
+                const path0 = to.hash.substring(1)
+                const index = path0.indexOf('#')
+                return {
+                    path: index >= 0 ? path0.substring(0, index) : path0,
+                    hash: index >= 0 ? path0.substring(index) : ''
+                }
+            }
+            return indexRoute.redirect
+        }
+    }
+    const router = new VueRouter({
+        mode: 'history',
+        base: '/',
+        routes
+    });
     sync(store, router);
 
     // noinspection JSUnresolvedFunction
