@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
@@ -63,6 +64,13 @@ import static java.util.Collections.unmodifiableMap;
  * Class ArchetypeInvoker.
  */
 abstract class ArchetypeInvoker {
+
+    protected static final String FLAVOR_PROPERTY = "flavor";
+    protected static final String GROUP_ID_PROPERTY = "groupId";
+    protected static final String ARTIFACT_ID_PROPERTY = "artifactId";
+    protected static final String PACKAGE_NAME_PROPERTY = "package";
+    protected static final String BUILD_SYSTEM_PROPERTY = "build-system";
+    protected static final String ARCHETYPE_BASE_PROPERTY = "app-type";
 
     /**
      * Archetype engine versions.
@@ -308,11 +316,18 @@ abstract class ArchetypeInvoker {
             String helidonVersion = initOptions.helidonVersion();
 
             if (isInteractive()) {
-                // Select flavor interactively
-                String[] flavorOptions = new String[]{"SE", "MP"};
-                int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
-                flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
-                initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
+                String userInputFlavor = userInput(
+                        initOptions::flavorOption,
+                        () -> this.initProperties().get(FLAVOR_PROPERTY),
+                        String::toUpperCase);
+                if (userInputFlavor == null) {
+                    // Select flavor interactively
+                    String[] flavorOptions = new String[]{"SE", "MP"};
+                    int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
+                    flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
+                    userInputFlavor = flavorOptions[flavorIndex];
+                }
+                initOptions.flavor(Flavor.valueOf(userInputFlavor));
             }
 
             Flavor flavor = initOptions.flavor();
@@ -324,12 +339,24 @@ abstract class ArchetypeInvoker {
 
             ArchetypeEntry archetype;
             if (isInteractive()) {
-                // Select archetype interactively
-                List<String> descriptions = archetypes.stream()
-                                                      .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
-                                                      .collect(Collectors.toList());
-                int archetypeIndex = prompt("Select archetype", descriptions, 0);
-                archetype = archetypes.get(archetypeIndex);
+                String userInputArchetypeName = userInput(
+                        initOptions::archetypeNameOption,
+                        ()->this.initProperties().get(ARCHETYPE_BASE_PROPERTY),
+                        Function.identity());
+                archetype = archetypes.stream()
+                                      .filter(arch -> arch.name().equalsIgnoreCase(userInputArchetypeName))
+                                      .findFirst().orElse(null);
+                if (userInputArchetypeName != null && archetype == null) {
+                    throw new IllegalArgumentException("Unable to find an archetype for the input - " + userInputArchetypeName);
+                }
+                if (archetype == null) {
+                    // Select archetype interactively
+                    List<String> descriptions = archetypes.stream()
+                                                          .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
+                                                          .collect(Collectors.toList());
+                    int archetypeIndex = prompt("Select archetype", descriptions, 0);
+                    archetype = archetypes.get(archetypeIndex);
+                }
                 initOptions.archetypeName(archetype.name());
             } else {
                 // find the archetype that matches archetypeName
@@ -350,6 +377,10 @@ abstract class ArchetypeInvoker {
             initProperties.putAll(Maps.fromProperties(System.getProperties()));
             initProperties.putAll(initOptions().initProperties());
 
+            Map<String, String> userInputs = new HashMap<>();
+            userInputs.putAll(initOptions().userInputs());
+            userInputs.putAll(this.initProperties());
+
             ArchetypeEngine engine = new ArchetypeEngine(loader, initProperties);
 
             // Run input flow if not in batch mode
@@ -359,7 +390,7 @@ abstract class ArchetypeInvoker {
 
                 // Process input flow from template and updates properties
                 inputFlow.nodes().stream()
-                         .map(n -> FlowNodeControllers.create(n, initProperties))
+                         .map(n -> FlowNodeControllers.create(n, initProperties, userInputs))
                          .forEach(FlowNodeController::execute);
             }
 
@@ -374,19 +405,23 @@ abstract class ArchetypeInvoker {
 
             return projectDir;
         }
+
+        private <T> String userInput(
+                Supplier<T> optionSupplier,
+                Supplier<String> propertySupplier,
+                Function<String, String> inputMapper) {
+            String input = optionSupplier.get() != null ? optionSupplier.get().toString() : propertySupplier.get();
+            if (input != null) {
+                return inputMapper.apply(input);
+            }
+            return input;
+        }
     }
 
     /**
      * Invoker for the archetype V2 engine.
      */
     static class V2Invoker extends ArchetypeInvoker {
-
-        private static final String FLAVOR_PROPERTY = "flavor";
-        private static final String GROUP_ID_PROPERTY = "groupId";
-        private static final String ARTIFACT_ID_PROPERTY = "artifactId";
-        private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String BUILD_SYSTEM_PROPERTY = "build-system";
-        private static final String ARCHETYPE_BASE_PROPERTY = "app-type";
 
         private V2Invoker(Builder builder) {
             super(builder);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,16 @@ public class FlowNodeControllers {
      *
      * @param flowNode The flow node.
      * @param properties Properties used to resolve and expressions.
+     * @param userInputs userInputs
      * @return A flow controller.
      */
-    public static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties) {
+    public static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties,
+                                            Map<String, String> userInputs) {
         if (flowNode instanceof ArchetypeDescriptor.Input) {
-            return new InputController((ArchetypeDescriptor.Input) flowNode, properties);
+            return new InputController((ArchetypeDescriptor.Input) flowNode, properties, userInputs);
         }
         if (flowNode instanceof ArchetypeDescriptor.Select) {
-            return new SelectController((ArchetypeDescriptor.Select) flowNode, properties);
+            return new SelectController((ArchetypeDescriptor.Select) flowNode, properties, userInputs);
         }
         throw new UnsupportedOperationException("No support for " + flowNode);
     }
@@ -54,13 +56,19 @@ public class FlowNodeControllers {
      */
     public abstract static class FlowNodeController {
         private final Map<String, String> properties;
+        private final Map<String, String> userInputs;
 
-        FlowNodeController(Map<String, String> properties) {
+        FlowNodeController(Map<String, String> properties, Map<String, String> userInputs) {
             this.properties = properties;
+            this.userInputs = userInputs;
         }
 
         Map<String, String> properties() {
             return properties;
+        }
+
+        Map<String, String> userInputs() {
+            return userInputs;
         }
 
         /**
@@ -75,8 +83,8 @@ public class FlowNodeControllers {
     static class InputController extends FlowNodeController {
         private final ArchetypeDescriptor.Input input;
 
-        InputController(ArchetypeDescriptor.Input input, Map<String, String> properties) {
-            super(properties);
+        InputController(ArchetypeDescriptor.Input input, Map<String, String> properties, Map<String, String> userInputs) {
+            super(properties, userInputs);
             this.input = input;
         }
 
@@ -89,8 +97,10 @@ public class FlowNodeControllers {
             String defaultValue = input.defaultValue()
                     .map(v -> hasExpression(v) ? PropertyEvaluator.evaluate(v, properties()) : v)
                     .orElse(null);
-            String v = prompt(input.text(), defaultValue);
-            properties().put(property, v);
+            if (!userInputs().containsKey(property)) {
+                String v = prompt(input.text(), defaultValue);
+                properties().put(property, v);
+            }
         }
     }
 
@@ -100,8 +110,8 @@ public class FlowNodeControllers {
     static class SelectController extends FlowNodeController {
         private final ArchetypeDescriptor.Select select;
 
-        SelectController(ArchetypeDescriptor.Select select, Map<String, String> properties) {
-            super(properties);
+        SelectController(ArchetypeDescriptor.Select select, Map<String, String> properties, Map<String, String> userInputs) {
+            super(properties, userInputs);
             this.select = select;
         }
 

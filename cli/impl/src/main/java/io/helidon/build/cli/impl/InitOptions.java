@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.build.cli.harness.CommandFragment;
 import io.helidon.build.cli.harness.Creator;
@@ -41,6 +42,9 @@ public final class InitOptions {
     private static final String ARTIFACT_ID_PROPERTY = "artifactId";
     private static final String PACKAGE_NAME_PROPERTY = "package";
     private static final String HELIDON_VERSION_PROPERTY = "helidonVersion";
+    private static final String HELIDON_VERSION_OPTION = "version";
+    private static final String FLAVOR_OPTION = "flavor";
+    private static final String ARTIFACT_OPTION = "app-type";
     private static final String MAVEN_PROPERTY = "maven";
     private static final List<String> OVERRIDES = List.of(GROUP_ID_PROPERTY, ARTIFACT_ID_PROPERTY,
             PACKAGE_NAME_PROPERTY);
@@ -397,6 +401,23 @@ public final class InitOptions {
         result.put(PACKAGE_NAME_PROPERTY, packageName);
         result.put(HELIDON_VERSION_PROPERTY, helidonVersion);
         result.putIfAbsent(MAVEN_PROPERTY, "true");        // No gradle support yet
+        return result;
+    }
+
+    /**
+     * Get user inputs of init options.
+     *
+     * @return Map of init options
+     */
+    Map<String, String> userInputs() {
+        Map<String, String> result = new HashMap<>();
+        Optional.ofNullable(projectNameOption).ifPresent(value -> result.put(PROJECT_NAME_PROPERTY, value));
+        Optional.ofNullable(groupIdOption).ifPresent(value -> result.put(GROUP_ID_PROPERTY, value));
+        Optional.ofNullable(artifactIdOption).ifPresent(value -> result.put(ARTIFACT_ID_PROPERTY, value));
+        Optional.ofNullable(packageNameOption).ifPresent(value -> result.put(PACKAGE_NAME_PROPERTY, value));
+        Optional.ofNullable(helidonVersion).ifPresent(value -> result.put(HELIDON_VERSION_OPTION, value));
+        Optional.ofNullable(flavorOption).ifPresent(value -> result.put(FLAVOR_OPTION, value.name()));
+        Optional.ofNullable(artifactIdOption).ifPresent(value -> result.put(ARTIFACT_OPTION, value));
         return result;
     }
 }
