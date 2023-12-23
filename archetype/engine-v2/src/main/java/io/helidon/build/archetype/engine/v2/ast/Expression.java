@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
+import io.helidon.build.archetype.engine.v2.ast.Value.TypedValue;
 import io.helidon.build.common.GenericType;
 
 import static java.util.Spliterator.ORDERED;
@@ -91,7 +92,7 @@ public final class Expression {
      *
      * @return result
      */
-    public boolean eval() {
+    public Value eval() {
         return eval(s -> null);
     }
 
@@ -101,38 +102,47 @@ public final class Expression {
      * @param resolver variable resolver
      * @return result
      */
-    public boolean eval(Function<String, Value> resolver) {
+    public Value eval(Function<String, Value> resolver) {
         Deque<Value> stack = new ArrayDeque<>();
         for (Token token : tokens) {
             Value value;
             if (token.operator != null) {
-                boolean result;
-                Value operand1 = stack.pop();
+                Value result = null;
+                Value lastOperand = stack.pop();
                 if (token.operator == Operator.NOT) {
-                    result = !operand1.asBoolean();
+                    result = new Value.TypedValue(!lastOperand.asBoolean(), ValueTypes.BOOLEAN);
+                } else if (token.operator == Operator.TERNARY_IF) {
+                    result = lastOperand;
+                } else if (token.operator == Operator.TERNARY_ELSE) {
+                    Value ifOperand = stack.pop();
+                    Value condition = stack.pop();
+                    result = condition.asBoolean() ? ifOperand : lastOperand;
                 } else {
                     Value operand2 = stack.pop();
                     switch (token.operator) {
                         case OR:
-                            result = operand2.asBoolean() || operand1.asBoolean();
+                            result = new TypedValue(operand2.asBoolean() || lastOperand.asBoolean(), ValueTypes.BOOLEAN);
                             break;
                         case AND:
-                            result = operand2.asBoolean() && operand1.asBoolean();
+                            result = new TypedValue(operand2.asBoolean() && lastOperand.asBoolean(), ValueTypes.BOOLEAN);
                             break;
                         case EQUAL:
-                            result = Value.equals(operand2, operand1);
+                            result = new TypedValue(Value.equals(operand2, lastOperand), ValueTypes.BOOLEAN);
                             break;
                         case NOT_EQUAL:
-                            result = !Value.equals(operand2, operand1);
+                            result = new TypedValue(!Value.equals(operand2, lastOperand), ValueTypes.BOOLEAN);
                             break;
                         case CONTAINS:
-                            if (operand1.type() == ValueTypes.STRING_LIST) {
-                                result = new HashSet<>(operand2.asList()).containsAll(operand1.asList());
+                            if (lastOperand.type() == ValueTypes.STRING_LIST) {
+                                result = new TypedValue(new HashSet<>(operand2.asList()).containsAll(lastOperand.asList()),
+                                        ValueTypes.BOOLEAN);
                             } else {
                                 if (operand2.type() == ValueTypes.STRING) {
-                                    result = operand2.asString().contains(operand1.asString());
+                                    result = new TypedValue(operand2.asString().contains(lastOperand.asString()),
+                                            ValueTypes.BOOLEAN);
                                 } else {
-                                    result = operand2.asList().contains(operand1.asString());
+                                    result = new TypedValue(operand2.asList().contains(lastOperand.asString()),
+                                            ValueTypes.BOOLEAN);
                                 }
                             }
                             break;
@@ -140,7 +150,7 @@ public final class Expression {
                             throw new IllegalStateException("Unsupported operator: " + token.operator);
                     }
                 }
-                value = Value.create(result);
+                value = result;
             } else if (token.operand != null) {
                 value = token.operand;
             } else if (token.variable != null) {
@@ -153,7 +163,7 @@ public final class Expression {
             }
             stack.push(value);
         }
-        return stack.pop().asBoolean();
+        return stack.pop();
     }
 
     /**
@@ -186,7 +196,12 @@ public final class Expression {
      */
     public static final class FormatException extends RuntimeException {
 
-        private FormatException(String message) {
+        /**
+         * Create new instance.
+         *
+         * @param message message
+         */
+        public FormatException(String message) {
             super(message);
         }
     }
@@ -226,7 +241,38 @@ public final class Expression {
                     while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
                         Operator currentOp = OPS.get(symbol.value);
                         Operator leftOp = OPS.get(stack.peek().value);
-                        if ((leftOp.precedence >= currentOp.precedence)) {
+                        if (leftOp.precedence >= currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            continue;
+                        }
+                        break;
+                    }
+                    stack.push(symbol);
+                    break;
+                case TERNARY_IF_OPERATOR:
+                    while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
+                        Operator currentOp = OPS.get(symbol.value);
+                        Operator leftOp = OPS.get(stack.peek().value);
+                        if (leftOp == currentOp) {
+                            break;
+                        }
+                        if (leftOp.precedence > currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            continue;
+                        }
+                        break;
+                    }
+                    stack.push(symbol);
+                    break;
+                case TERNARY_ELSE_OPERATOR:
+                    while (!stack.isEmpty() && OPS.containsKey(stack.peek().value)) {
+                        Operator currentOp = OPS.get(symbol.value);
+                        Operator leftOp = OPS.get(stack.peek().value);
+                        if (leftOp.precedence == currentOp.precedence) {
+                            stackSize += 1 - addToken(stack.pop(), tokens);
+                            break;
+                        }
+                        if (leftOp.precedence > currentOp.precedence) {
                             stackSize += 1 - addToken(stack.pop(), tokens);
                             continue;
                         }
@@ -252,6 +298,7 @@ public final class Expression {
                 case BOOLEAN:
                 case STRING:
                 case ARRAY:
+                case INTEGER:
                 case VARIABLE:
                     stackSize += 1 - addToken(symbol, tokens);
                     break;
@@ -332,7 +379,17 @@ public final class Expression {
         /**
          * Not operator.
          */
-        NOT(13, "!");
+        NOT(13, "!"),
+
+        /**
+         * Ternary operator (first part).
+         */
+        TERNARY_IF(2, "?"),
+
+        /**
+         * Ternary operator (second part).
+         */
+        TERNARY_ELSE(2, ":");
 
         private final int precedence;
         private final String symbol;
@@ -485,11 +542,15 @@ public final class Expression {
                 case UNARY_LOGICAL_OPERATOR:
                 case EQUALITY_OPERATOR:
                 case CONTAINS_OPERATOR:
+                case TERNARY_IF_OPERATOR:
+                case TERNARY_ELSE_OPERATOR:
                     return new Token(OPS.get(symbol.value), null, null);
                 case BOOLEAN:
                     return new Token(null, null, Value.create(Boolean.parseBoolean(symbol.value)));
                 case STRING:
                     return new Token(null, null, Value.create(symbol.value.substring(1, symbol.value.length() - 1)));
+                case INTEGER:
+                    return new Token(null, null, Value.create(Integer.parseInt(symbol.value), ValueTypes.INT));
                 case ARRAY:
                     return new Token(null, null, Value.create(parseArray(symbol.value)));
                 case VARIABLE:
@@ -523,7 +584,10 @@ public final class Expression {
             UNARY_LOGICAL_OPERATOR("^[!]"),
             CONTAINS_OPERATOR("^contains"),
             PARENTHESIS("^[()]"),
-            COMMENT("#.*\\R");
+            COMMENT("#.*\\R"),
+            TERNARY_IF_OPERATOR("^\\?"),
+            TERNARY_ELSE_OPERATOR("^:"),
+            INTEGER("^[0-9]+");
 
             private final Pattern pattern;
 

@@ -92,7 +92,7 @@ public final class Controller extends VisitorAdapter<Context> {
 
     @Override
     public VisitResult visitCondition(Condition condition, Context ctx) {
-        if (condition.expression().eval(ctx::getValue)) {
+        if (condition.expression().eval(ctx::getValue).asBoolean()) {
             return VisitResult.CONTINUE;
         }
         return VisitResult.SKIP_SUBTREE;
