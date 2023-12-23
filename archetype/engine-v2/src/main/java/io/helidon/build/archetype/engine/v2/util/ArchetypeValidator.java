@@ -29,6 +29,7 @@ import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.Walker;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.Expression;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Input.DeclaredInput;
@@ -149,10 +150,9 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
         return null;
     }
 
-    @Override
-    public VisitResult visitCondition(Condition condition, Context ctx) {
+    private VisitResult evaluate(Node node, Expression expression, Context ctx) {
         try {
-            condition.expression().eval(variable -> {
+            expression.eval(variable -> {
                 List<Block> refs = refs(variable, ctx);
                 if (refs == null || refs.isEmpty()) {
                     return null;
@@ -174,18 +174,28 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
             });
         } catch (Expression.UnresolvedVariableException ex) {
             errors.add(String.format("%s %s: '%s'",
-                    condition.location(),
+                    node.location(),
                     EXPR_UNRESOLVED_VARIABLE,
                     ex.variable()));
         } catch (IllegalStateException ex) {
             errors.add(String.format(
                     "%s %s: '%s'",
-                    condition.location(),
+                    node.location(),
                     EXPR_EVAL_ERROR,
                     ex.getMessage()));
         }
         // visit all branches
         return VisitResult.CONTINUE;
+    }
+
+    @Override
+    public VisitResult visitCondition(Condition condition, Context ctx) {
+        return evaluate(condition, condition.expression(), ctx);
+    }
+
+    @Override
+    public VisitResult visitConditionBlock(ConditionBlock condition, Context ctx) {
+        return evaluate(condition, condition.expression(), ctx);
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.util.Map;
 import io.helidon.build.archetype.engine.v2.ScriptLoader;
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredBlock;
 import io.helidon.build.archetype.engine.v2.ast.DeclaredValue;
 import io.helidon.build.archetype.engine.v2.ast.Input;
@@ -137,6 +138,9 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 builder = Step.builder(builderInfo(block));
             } else if (block instanceof Input) {
                 builder = Input.builder(builderInfo, kind);
+            } else if (block instanceof ConditionBlock) {
+                builder = ConditionBlock.builder(builderInfo(block), kind)
+                        .expression(((ConditionBlock) block).rawExpression());
             } else {
                 builder = Block.builder(builderInfo, kind);
             }
@@ -159,6 +163,9 @@ public class ClientCompiler implements Node.Visitor<Script> {
                 case VARIABLES:
                 case INVOKE:
                 case INVOKE_DIR:
+                case IF:
+                case ELSEIF:
+                case ELSE:
                     Node.Builder<?, ?> parentBuilder = stack.peek();
                     if (parentBuilder != null) {
                         parentBuilder.nestedBuilders().remove(builder);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -278,6 +278,28 @@ public class Block extends Node {
         }
 
         /**
+         * Visit a condition block.
+         *
+         * @param condition condition block
+         * @param arg   visitor argument
+         * @return result
+         */
+        default VisitResult visitConditionBlock(ConditionBlock condition, A arg) {
+            return visitAny(condition, arg);
+        }
+
+        /**
+         * Visit a condition block after traversing the nested nodes.
+         *
+         * @param condition condition block
+         * @param arg   visitor argument
+         * @return result
+         */
+        default VisitResult postVisitConditionBlock(ConditionBlock condition, A arg) {
+            return postVisitAny(condition, arg);
+        }
+
+        /**
          * Visit any block.
          *
          * @param block block
@@ -504,6 +526,21 @@ public class Block extends Node {
          * Invoke.
          */
         INVOKE,
+
+        /**
+         * If.
+         */
+        IF,
+
+        /**
+         * Else.
+         */
+        ELSE,
+
+        /**
+         * Else-if.
+         */
+        ELSEIF
     }
 
     /**

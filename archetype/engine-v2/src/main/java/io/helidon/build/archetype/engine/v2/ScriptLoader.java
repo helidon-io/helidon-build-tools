@@ -30,6 +30,7 @@ import java.util.WeakHashMap;
 
 import io.helidon.build.archetype.engine.v2.ast.Block;
 import io.helidon.build.archetype.engine.v2.ast.Condition;
+import io.helidon.build.archetype.engine.v2.ast.ConditionBlock;
 import io.helidon.build.archetype.engine.v2.ast.DynamicValue;
 import io.helidon.build.archetype.engine.v2.ast.Input;
 import io.helidon.build.archetype.engine.v2.ast.Invocation;
@@ -178,6 +179,7 @@ public class ScriptLoader {
         private String qName;
         private Map<String, Value> attrs;
         private LinkedList<Context> stack;
+        private LinkedList<String> expressions;
         private Context ctx;
         private Script.Builder scriptBuilder;
 
@@ -188,6 +190,7 @@ public class ScriptLoader {
         Script read(InputStream is, Path path) throws IOException {
             this.path = Objects.requireNonNull(path, "path is null");
             stack = new LinkedList<>();
+            expressions = new LinkedList<>();
             parser = SimpleXMLParser.create(is, this);
             parser.parse();
             if (scriptBuilder == null) {
@@ -198,7 +201,7 @@ public class ScriptLoader {
 
         @Override
         public void startElement(String qName, Map<String, String> attrs) {
-            this.qName = qName;
+            this.qName = qName.replace("-", "");
             this.attrs = Maps.mapValue(attrs, DynamicValue::create);
             Location location = Location.of(path, parser.lineNumber(), parser.charNumber());
             info = BuilderInfo.of(loader, path, location);
@@ -241,6 +244,11 @@ public class ScriptLoader {
 
         void processElement() {
             switch (qName) {
+                case "if":
+                case "elseif":
+                case "else":
+                    processCondition();
+                    return;
                 case "directory":
                 case "help":
                     stack.push(new Context(ctx.state, new ValueBuilder(ctx.builder, qName)));
@@ -336,6 +344,32 @@ public class ScriptLoader {
                     throw new XMLReaderException(String.format(
                             "Invalid validation block: %s. { element=%s }", kind, qName));
             }
+        }
+
+        void processCondition() {
+            String expression;
+            ConditionBlock.Builder builder;
+            Block.Kind kind = blockKind();
+            switch (kind) {
+                case IF:
+                    expression = processXmlEscapes(attrs.get("expr").asString());
+                    builder = ConditionBlock.builder(info, kind).expression(expression);
+                    expressions.push(expression);
+                    break;
+                case ELSEIF:
+                    expression = String.format("!(%s) && %s", expressions.pop(), processXmlEscapes(attrs.get("expr").asString()));
+                    builder = ConditionBlock.builder(info, kind).expression(expression);
+                    expressions.push(expression);
+                    break;
+                case ELSE:
+                    expression = expressions.pop();
+                    builder = ConditionBlock.builder(info, kind).expression(String.format("!(%s)", expression));
+                    break;
+                default:
+                    throw new XMLReaderException(String.format(
+                            "Invalid input block: %s. { element=%s }", kind, qName));
+            }
+            addChild(ctx.state, builder);
         }
 
         void processPreset() {

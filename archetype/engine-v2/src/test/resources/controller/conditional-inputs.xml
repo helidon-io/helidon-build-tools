@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+
+    <step name="step">
+        <if expr="true">
+            <inputs>
+                <if expr="true">
+                    <boolean id="bool1" name="Bool 1" if="true">
+                        <if expr="true">
+                            <output>
+                                <model>
+                                    <value key="value1">value1</value>
+                                </model>
+                            </output>
+                        </if>
+                    </boolean>
+                </if>
+                <if expr="false"/>
+                <else-if expr="true">
+                    <enum id="enum1" name="Enum 1" if="true">
+                        <option value="option1" name="Option 1" if="true">
+                            <if expr="true">
+                                <output>
+                                    <model>
+                                        <value key="value2">value2</value>
+                                    </model>
+                                </output>
+                            </if>
+                            <else-if expr="true">
+                                <output>
+                                    <model>
+                                        <value key="failure">failure</value>
+                                    </model>
+                                </output>
+                            </else-if>
+                        </option>
+                    </enum>
+                </else-if>
+                <if expr="false"/>
+                <else-if expr="false"/>
+                <else>
+                    <list id="list1" name="List 1" if="true">
+                        <option value="option1" name="Option 1" if="true">
+                            <output>
+                                <model>
+                                    <value key="value3">value3</value>
+                                </model>
+                            </output>
+                        </option>
+                        <option value="option2" name="Option 2" if="false"/>
+                        <option value="option3" name="Option 3" if="true">
+                            <if expr="false"/>
+                            <else>
+                                <output>
+                                    <if expr="true">
+                                        <model>
+                                            <value key="value4">value4</value>
+                                        </model>
+                                    </if>
+                                    <model>
+                                        <value key="value5">value5</value>
+                                    </model>
+                                </output>
+                            </else>
+                        </option>
+                    </list>
+                </else>
+            </inputs>
+        </if>
+    </step>
+</archetype-script>
