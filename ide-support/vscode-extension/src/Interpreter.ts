@@ -224,10 +224,12 @@ export class Interpreter {
     private processVariables(element: any) {
         if (element.children) {
             for (const child of element.children) {
-                const expressionResult = Expression.create(this.archetype.expressions[child.if])
-                    .eval((val: string) => this.generatorData.context.lookup(val));
-                if (expressionResult === true) {
-                    this.generatorData.context.variables.set(child.path, child.value);
+                if (this.archetype.expressions[child.if]) {
+                    const expressionResult = Expression.create(this.archetype.expressions[child.if])
+                        .eval((val: string) => this.generatorData.context.lookup(val));
+                    if (expressionResult === true) {
+                        this.generatorData.context.variables.set(child.path, child.value);
+                    }
                 }
             }
         }
