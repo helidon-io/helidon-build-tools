@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,20 +153,7 @@ class StagingTaskTest {
                 throw new IllegalStateException();
             }
         };
-        StagingTask subTask2 = new StagingTask() {
-
-            @Override
-            public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                return super.execute(ctx, dir, vars).exceptionally(exceptionally);
-            }
-
-            @Override
-            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                throw new IllegalStateException();
-            }
-        };
-
-        StagingTask task = new StagingTask(null, List.of(subTask1, subTask2), null, null);
+        StagingTask task = withFailedSubTask(exceptionally, subTask1);
         StagingContext context = new TestContextImpl(Executors.newCachedThreadPool());
         try {
             task.execute(context, null, Map.of()).toCompletableFuture().get();
@@ -248,6 +235,21 @@ class StagingTaskTest {
         assertThat(list, is(List.of(1, 2)));
     }
 
+    private static StagingTask withFailedSubTask(Function<Throwable, Void> exceptionally, StagingTask subTask1) {
+        return new StagingTask(null, List.of(subTask1, new StagingTask() {
+
+            @Override
+            public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                return super.execute(ctx, dir, vars).exceptionally(exceptionally);
+            }
+
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                throw new IllegalStateException();
+            }
+        }), null, null);
+    }
+
     static void sleep(int seconds) {
         try {
             Thread.sleep(seconds * 1000L);
@@ -256,17 +258,6 @@ class StagingTaskTest {
         }
     }
 
-    static class TestContextImpl implements StagingContext {
-
-        final Executor executor;
-
-        TestContextImpl(Executor executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public Executor executor() {
-            return executor;
-        }
+    record TestContextImpl(Executor executor) implements StagingContext {
     }
 }

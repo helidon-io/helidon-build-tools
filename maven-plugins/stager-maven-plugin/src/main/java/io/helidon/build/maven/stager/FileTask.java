@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
  */
 package io.helidon.build.maven.stager;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,8 +32,8 @@ final class FileTask extends StagingTask {
     private final String content;
     private final String source;
 
-    FileTask(ActionIterators iterators, Map<String, String> attrs, String content) {
-        super(ELEMENT_NAME, null, iterators, attrs);
+    FileTask(ActionIterators iterators, List<TextAction> nested, Map<String, String> attrs, String content) {
+        super(ELEMENT_NAME, nested, iterators, attrs);
         this.content = content;
         this.source = attrs.get("source");
     }
@@ -50,8 +52,14 @@ final class FileTask extends StagingTask {
      *
      * @return content, may be {@code null}
      */
-    public String content() {
+    String content() {
         return content;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    List<TextAction> tasks() {
+        return (List<TextAction>) super.tasks();
     }
 
     @Override
@@ -72,6 +80,12 @@ final class FileTask extends StagingTask {
             Files.createFile(targetFile);
             if (resolvedContent != null && !resolvedContent.isEmpty()) {
                 Files.writeString(targetFile, resolvedContent);
+            } else {
+                try (BufferedWriter writer = Files.newBufferedWriter(targetFile)) {
+                    for (TextAction task : tasks()) {
+                        writer.write(task.text());
+                    }
+                }
             }
         }
     }

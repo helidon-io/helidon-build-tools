@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 
 /**
  * Tests {@link ConfigReader}.
@@ -52,12 +54,12 @@ class ConfigReaderTest {
         assertThat(root.tasks().size(), is(1));
         StagingDirectory dir1 = (StagingDirectory) root.tasks().get(0);
         assertThat(dir1.target(), is("${project.build.directory}/site"));
-        List<StagingAction> dir1Tasks = dir1.tasks();
+        List<? extends StagingAction> dir1Tasks = dir1.tasks();
         assertThat(dir1Tasks.size(), is(6));
 
         dir1Tasks.forEach(c -> assertThat(c, is(instanceOf(StagingTasks.class))));
 
-        List<StagingAction> unpackArtifacts = ((StagingTasks) dir1Tasks.get(0)).tasks();
+        List<? extends StagingAction> unpackArtifacts = ((StagingTasks) dir1Tasks.get(0)).tasks();
         assertThat(unpackArtifacts.size(), is(2));
 
         UnpackArtifactTask unpack1 = (UnpackArtifactTask) unpackArtifacts.get(0);
@@ -87,7 +89,7 @@ class ConfigReaderTest {
         assertThat(unpack2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
         assertThat(unpack2.iterators().get(0).hasNext(), is(false));
 
-        List<StagingAction> symlinks = ((StagingTasks) dir1Tasks.get(1)).tasks();
+        List<? extends StagingAction> symlinks = ((StagingTasks) dir1Tasks.get(1)).tasks();
         assertThat(symlinks.size(), is(4));
 
         SymlinkTask symlink1 = (SymlinkTask) symlinks.get(0);
@@ -106,7 +108,7 @@ class ConfigReaderTest {
         assertThat(symlink4.source(), is("./${cli.latest.version}"));
         assertThat(symlink4.target(), is("cli/latest"));
 
-        List<StagingAction> downloads = ((StagingTasks) dir1Tasks.get(2)).tasks();
+        List<? extends StagingAction> downloads = ((StagingTasks) dir1Tasks.get(2)).tasks();
         assertThat(downloads.size(), is(2));
 
         DownloadTask download1 = (DownloadTask) downloads.get(0);
@@ -137,15 +139,15 @@ class ConfigReaderTest {
         assertThat(download2It4.get("version"), is("${cli.latest.version}"));
         assertThat(download2.iterators().get(0).hasNext(), is(false));
 
-        List<StagingAction> archives = ((StagingTasks) dir1Tasks.get(3)).tasks();
+        List<? extends StagingAction> archives = ((StagingTasks) dir1Tasks.get(3)).tasks();
         assertThat(archives.size(), is(1));
 
         ArchiveTask archive = (ArchiveTask) archives.get(0);
-        List<StagingAction> archiveTasks = archive.tasks();
+        List<? extends StagingAction> archiveTasks = archive.tasks();
         assertThat(archiveTasks.size(), is(2));
         archiveTasks.forEach(c -> assertThat(c, is(instanceOf(StagingTasks.class))));
 
-        List<StagingAction> copyArtifacts = ((StagingTasks) archiveTasks.get(0)).tasks();
+        List<? extends StagingAction> copyArtifacts = ((StagingTasks) archiveTasks.get(0)).tasks();
         assertThat(copyArtifacts.size(), is(3));
 
         CopyArtifactTask archiveCopyArtifact1 = (CopyArtifactTask) copyArtifacts.get(0);
@@ -165,7 +167,7 @@ class ConfigReaderTest {
         assertThat(archiveCopyArtifact3.gav().artifactId(), is("helidon-bare-mp"));
         assertThat(archiveCopyArtifact3.gav().version(), is("${cli.data.latest.version}"));
 
-        List<StagingAction> templates = ((StagingTasks) archiveTasks.get(1)).tasks();
+        List<? extends StagingAction> templates = ((StagingTasks) archiveTasks.get(1)).tasks();
         assertThat(templates.size(), is(1));
 
         TemplateTask archiveTemplate1 = (TemplateTask) templates.get(0);
@@ -218,7 +220,7 @@ class ConfigReaderTest {
         }
         assertThat(index, is(3));
 
-        List<StagingAction> templates1 = ((StagingTasks) dir1Tasks.get(4)).tasks();
+        List<? extends StagingAction> templates1 = ((StagingTasks) dir1Tasks.get(4)).tasks();
         assertThat(templates1.size(), is(3));
 
         TemplateTask template1 = (TemplateTask) templates1.get(0);
@@ -281,17 +283,37 @@ class ConfigReaderTest {
         assertThat(template3.templateVariables().get("og-description"), is(instanceOf(String.class)));
         assertThat(template3.templateVariables().get("og-description"), is("Javadocs"));
 
-        List<StagingAction> files = ((StagingTasks) dir1Tasks.get(5)).tasks();
-        assertThat(files.size(), is(2));
+        List<? extends StagingAction> files = ((StagingTasks) dir1Tasks.get(5)).tasks();
+        assertThat(files.size(), is(3));
 
         FileTask file1 = (FileTask) files.get(0);
         assertThat(file1.source(), is(nullValue()));
         assertThat(file1.target(), is("CNAME"));
         assertThat(file1.content(), is("${cname}"));
+        assertThat(file1.tasks(), is(empty()));
 
         FileTask file2 = (FileTask) files.get(1);
         assertThat(file2.source(), is(nullValue()));
         assertThat(file2.target(), is("cli-data/latest"));
         assertThat(file2.content(), is("${cli.data.latest.version}"));
+        assertThat(file2.tasks(), is(empty()));
+
+        FileTask file3 = (FileTask) files.get(2);
+        assertThat(file3.source(), is(nullValue()));
+        assertThat(file3.target(), is("sitemap.txt"));
+        assertThat(file3.content(), is(nullValue()));
+        assertThat(file3.tasks().size(), is(1));
+
+        TextAction file3Task1 = file3.tasks().get(0);
+        assertThat(file3Task1, is(instanceOf(ListFilesTask.class)));
+        ListFilesTask listFiles = (ListFilesTask) file3Task1;
+        assertThat(listFiles.includes(), contains("**/foo/**", "**/bar/**"));
+        assertThat(listFiles.excludes(), contains("**/bob/**", "**/alice/**"));
+        assertThat(listFiles.substitutions().size(), is(1));
+
+        Substitution substitution = listFiles.substitutions().get(0);
+        assertThat(substitution.match(), is("^(?<path>([^/]+/)*)index.html$"));
+        assertThat(substitution.replace(), is("{path}"));
+        assertThat(substitution.isRegex(), is(true));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 package io.helidon.build.maven.stager;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  */
 final class ConfigReader implements PlexusConfigNode.Visitor {
 
-    private final Map<PlexusConfigNode, Map<String, List<StagingElement>>> mappings;
+    private final Map<PlexusConfigNode, List<StagingElement>> mappings;
     private final Deque<Scope> scopes;
     private final StagingElementFactory factory;
 
@@ -46,9 +46,7 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
      */
     StagingTasks read(PlexusConfigNode node) {
         node.visit(this);
-        StagingAction action = (StagingAction) mappings.get(node.parent())
-                .get(node.name())
-                .get(0);
+        StagingAction action = (StagingAction) mappings.get(node.parent()).iterator().next();
         if (action instanceof StagingTasks) {
             return (StagingTasks) action;
         }
@@ -62,28 +60,26 @@ final class ConfigReader implements PlexusConfigNode.Visitor {
 
     @Override
     public void postVisitNode(PlexusConfigNode node) {
-        PlexusConfigNode nodeParent = node.parent();
-        String nodeName = node.name();
-        mappings.computeIfAbsent(node, n -> new LinkedHashMap<>());
-        mappings.computeIfAbsent(nodeParent, n -> new LinkedHashMap<>());
+        PlexusConfigNode parent = node.parent();
+        String name = node.name();
+        mappings.computeIfAbsent(node, n -> new ArrayList<>());
+        mappings.computeIfAbsent(parent, n -> new ArrayList<>());
         Scope scope = scopes.peek();
         if (scope == null) {
             throw new IllegalStateException("Scope is not available");
         }
-        StagingElement element = factory.create(
-                nodeName,
-                node.attributes(),
-                mappings.get(node),
-                node.value(),
-                scope);
-        if (element instanceof Variables) {
-            for (Variable variable : ((Variables) element)) {
+        StagingElement element = factory.create(name, node.attributes(), mappings.get(node), node.value(), scope);
+        if (element instanceof Variables variables) {
+            for (Variable variable : variables) {
                 scope.parent.variables.put(variable.name(), variable);
             }
         }
-        mappings.get(nodeParent)
-                .computeIfAbsent(nodeName, n -> new LinkedList<>())
-                .add(element);
+        List<StagingElement> siblings = mappings.computeIfAbsent(parent, n -> new ArrayList<>());
+        if (element instanceof StagingElements elements) {
+            siblings.addAll(elements.nested());
+        } else {
+            siblings.add(element);
+        }
         scopes.pop();
     }
 

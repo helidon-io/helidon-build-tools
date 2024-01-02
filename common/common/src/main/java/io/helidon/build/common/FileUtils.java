@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -271,11 +272,28 @@ public final class FileUtils {
      * @param directory The directory
      * @param predicate predicate used to filter files and directories
      * @return The normalized, absolute file paths.
+     * @see Files#walkFileTree(java.nio.file.Path, java.util.Set, int, java.nio.file.FileVisitor)
      */
     public static List<Path> walk(Path directory, BiPredicate<Path, BasicFileAttributes> predicate) {
+        return walk(directory, Set.of(), predicate);
+    }
+
+    /**
+     * Walk the directory and return the files that match the given predicate.
+     * If a directory is filtered out by the predicate its subtree is skipped.
+     *
+     * @param directory The directory
+     * @param options   options to configure the traversal
+     * @param predicate predicate used to filter files and directories
+     * @return The normalized, absolute file paths.
+     * @see Files#walkFileTree(java.nio.file.Path, java.util.Set, int, java.nio.file.FileVisitor)
+     */
+    public static List<Path> walk(Path directory,
+                                  Set<FileVisitOption> options,
+                                  BiPredicate<Path, BasicFileAttributes> predicate) {
         try {
             List<Path> files = new ArrayList<>();
-            Files.walkFileTree(directory, new FileVisitor<>() {
+            Files.walkFileTree(directory, options, Integer.MAX_VALUE, new FileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     if (predicate.test(dir, attrs)) {

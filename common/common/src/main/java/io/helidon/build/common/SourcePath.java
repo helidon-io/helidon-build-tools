@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static io.helidon.build.common.Strings.normalizePath;
 
 /**
  * Utility class to parse and match path segments.
@@ -62,7 +64,16 @@ public class SourcePath {
      * @param file the filed contained in the directory
      */
     public SourcePath(Path dir, Path file) {
-        segments = parseSegments(getRelativePath(dir, file));
+        this(dir.relativize(file));
+    }
+
+    /**
+     * Create a new {@link SourcePath} instance for the given path.
+     *
+     * @param path the path to use
+     */
+    public SourcePath(Path path) {
+        this(normalizePath(path));
     }
 
     /**
@@ -93,10 +104,6 @@ public class SourcePath {
         segments = paths.stream()
                 .flatMap(p -> Arrays.stream(parseSegments(p)))
                 .toArray(String[]::new);
-    }
-
-    private static String getRelativePath(Path sourceDir, Path source) {
-        return Strings.normalizePath(sourceDir.relativize(source));
     }
 
     /**
