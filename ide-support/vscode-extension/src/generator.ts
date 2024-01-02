@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ export async function showHelidonGenerator(extensionPath: string) {
         VSCodeAPI.showInformationMessage('Your Helidon project is being created...');
 
         const archetypeValues = prepareProperties(projectData);
-        const cmd = `java -jar ${extensionPath}/target/cli/helidon-cli.jar init --batch \
+        const cmd = `java -jar ${extensionPath}/target/cli/helidon-cli.jar --plain init --batch \
             ${archetypeValues}`;
 
         channel.appendLine(cmd);
