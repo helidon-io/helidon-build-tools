@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -43,6 +43,27 @@
                                 <files>
                                     <file target="CNAME">${cname}</file>
                                     <file target="cli-data/latest">${cli.data.latest.version}</file>
+                                    <file target="docs/4.0.2/index.html"/>
+                                    <file target="docs/4.0.2/apidocs/index.html"/>
+                                    <file target="docs/4.0.2/images/foo.svg"/>
+                                </files>
+                                <symlinks join="true">
+                                    <symlink source="docs/4.0.2" target="docs/v4"/>
+                                </symlinks>
+                                <files join="true">
+                                    <file target="sitemap.txt">
+                                        <list-files dir=".">
+                                            <includes>
+                                                <include>**/docs/**/*.html</include>
+                                            </includes>
+                                            <excludes>
+                                                <exclude>**/images/**</exclude>
+                                            </excludes>
+                                            <substitutions>
+                                                <substitution match="^(.*)/index.html$" replace="$1" />
+                                            </substitutions>
+                                        </list-files>
+                                    </file>
                                 </files>
                             </directory>
                         </directories>

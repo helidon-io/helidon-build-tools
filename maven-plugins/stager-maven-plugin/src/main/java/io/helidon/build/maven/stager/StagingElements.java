@@ -15,22 +15,10 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Container of {@link StagingTask}.
+ * Container of {@link StagingElement}.
  */
-final class StagingTasks extends StagingTask {
-
-    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
-        super(elementName, nested, null, attrs);
-    }
-
-    @Override
-    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return CompletableFuture.completedFuture(null);
-    }
+record StagingElements(String elementName, List<StagingElement> nested) implements StagingElement {
 }

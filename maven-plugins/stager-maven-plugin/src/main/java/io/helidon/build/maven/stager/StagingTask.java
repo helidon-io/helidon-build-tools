@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static java.util.concurrent.CompletableFuture.runAsync;
 class StagingTask implements StagingAction {
 
     private final String elementName;
-    private final List<StagingAction> nested;
+    private final List<? extends StagingAction> nested;
     private final ActionIterators iterators;
     private final Map<String, String> attrs;
     private final String target;
@@ -56,7 +56,7 @@ class StagingTask implements StagingAction {
         this(null, null, null, null);
     }
 
-    StagingTask(String elementName, List<StagingAction> nested, ActionIterators iterators, Map<String, String> attrs) {
+    StagingTask(String elementName, List<? extends StagingAction> nested, ActionIterators iterators, Map<String, String> attrs) {
         this.elementName = elementName != null ? elementName : "unknown";
         this.nested = nested == null ? List.of() : nested;
         this.iterators = iterators;
@@ -79,7 +79,7 @@ class StagingTask implements StagingAction {
      *
      * @return tasks, never {@code null}
      */
-    List<StagingAction> tasks() {
+    List<? extends StagingAction> tasks() {
         return nested;
     }
 

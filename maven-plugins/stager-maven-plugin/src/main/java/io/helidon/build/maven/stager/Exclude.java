@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,15 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Container of {@link StagingTask}.
+ * Exclude.
  */
-final class StagingTasks extends StagingTask {
+record Exclude(String value) implements StagingElement {
 
-    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
-        super(elementName, nested, null, attrs);
-    }
+    static final String ELEMENT_NAME = "exclude";
 
     @Override
-    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return CompletableFuture.completedFuture(null);
+    public String elementName() {
+        return ELEMENT_NAME;
     }
 }

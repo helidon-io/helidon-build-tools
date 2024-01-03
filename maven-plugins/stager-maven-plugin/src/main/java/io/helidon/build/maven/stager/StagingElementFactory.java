@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package io.helidon.build.maven.stager;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.build.maven.stager.ConfigReader.Scope;
 
@@ -32,7 +33,7 @@ import static java.util.stream.Collectors.toMap;
  */
 class StagingElementFactory {
 
-    private static final List<String> WRAPPED_ELEMENTS = List.of(
+    private static final Set<String> ACTION_ELEMENTS = Set.of(
             StagingDirectory.ELEMENT_NAME,
             ArchiveTask.ELEMENT_NAME,
             DownloadTask.ELEMENT_NAME,
@@ -40,10 +41,17 @@ class StagingElementFactory {
             FileTask.ELEMENT_NAME,
             SymlinkTask.ELEMENT_NAME,
             TemplateTask.ELEMENT_NAME,
-            UnpackArtifactTask.ELEMENT_NAME);
+            UnpackArtifactTask.ELEMENT_NAME,
+            ListFilesTask.ELEMENT_NAME);
 
-    private static final Map<String, String> WRAPPER_ELEMENTS = WRAPPED_ELEMENTS
-            .stream()
+    private static final Set<String> SYNTHETIC_ELEMENTS = Set.of(
+            Include.ELEMENT_NAME,
+            Exclude.ELEMENT_NAME,
+            Substitution.ELEMENT_NAME);
+
+    private static final Map<String, String> WRAPPER_ELEMENTS = Stream.of(ACTION_ELEMENTS, SYNTHETIC_ELEMENTS)
+            .flatMap(Collection::stream)
+            .filter(n -> !n.endsWith("s"))
             .collect(toMap(n -> n.endsWith("y") ? n.substring(0, n.length() - 1) + "ies" : n + "s", n -> n));
 
     /**
@@ -58,101 +66,17 @@ class StagingElementFactory {
      */
     StagingElement create(String name,
                           Map<String, String> attrs,
-                          Map<String, List<StagingElement>> children,
+                          List<StagingElement> children,
                           String text,
                           Scope scope) {
 
-        switch (name) {
-            case StagingDirectory.ELEMENT_NAME:
-            case UnpackArtifactTask.ELEMENT_NAME:
-            case CopyArtifactTask.ELEMENT_NAME:
-            case SymlinkTask.ELEMENT_NAME:
-            case DownloadTask.ELEMENT_NAME:
-            case ArchiveTask.ELEMENT_NAME:
-            case TemplateTask.ELEMENT_NAME:
-            case FileTask.ELEMENT_NAME:
-                return createAction(name, attrs, children, text);
-            case ActionIterators.ELEMENT_NAME:
-                return actionIterators(children, attrs);
-            case Variables.ELEMENT_NAME:
-                return variables(children, attrs);
-            case Variable.ELEMENT_NAME:
-                if (attrs.containsKey("ref")) {
-                    return scope.resolve(attrs.get("ref"));
-                }
-                return variable(attrs.get("name"), children, attrs.get("value"));
-            case VariableValue.ELEMENT_NAME:
-                return variableValue(children, text);
-            default:
-                if (isWrapperElement(name)) {
-                    return createAction(name, attrs, children, text);
-                }
-                throw new IllegalStateException("Unknown element: " + name);
-        }
-    }
-
-    /**
-     * Test if the given element name is a wrapper element.
-     *
-     * @param name element name
-     * @return {@code true} if the name is a wrapper element, {@code false} otherwise
-     */
-    boolean isWrapperElement(String name) {
-        return WRAPPER_ELEMENTS.containsKey(name);
-    }
-
-    /**
-     * Create a new action iterators using the variables found in the given children.
-     *
-     * @param children child elements to process, should not be {@code null}
-     * @param attrs    attributes
-     * @return ActionIterators, never {@code null}
-     */
-    ActionIterators actionIterators(Map<String, List<StagingElement>> children, Map<String, String> attrs) {
-        List<ActionIterator> iterators = filterChildren(children, Variables.ELEMENT_NAME, Variables.class)
-                .stream()
-                .map(ActionIterator::new)
-                .collect(toList());
-        return new ActionIterators(iterators, attrs);
-    }
-
-    /**
-     * Create a new variables instance from the variable found in the given children.
-     *
-     * @param children child elements to process, should not be {@code null}
-     * @param attrs    attributes
-     * @return Variables, never {@code null}
-     */
-    Variables variables(Map<String, List<StagingElement>> children, Map<String, String> attrs) {
-        return new Variables(filterChildren(children, Variable.ELEMENT_NAME, Variable.class), attrs);
-    }
-
-    /**
-     * Create a new variable instance from the variable values found in the given children.
-     *
-     * @param children child elements to process, should not be {@code null}
-     * @return Variable, never {@code null}
-     */
-    Variable variable(String name, Map<String, List<StagingElement>> children, String text) {
-        List<VariableValue> values = filterChildren(children, VariableValue.ELEMENT_NAME, VariableValue.class);
-        if (!values.isEmpty()) {
-            return new Variable(name, new VariableValue.ListValue(values));
-        }
-        return new Variable(name, new VariableValue.SimpleValue(text));
-    }
-
-    /**
-     * Create a new variable value instance from the given children.
-     *
-     * @param children child elements to process, should not be {@code null}
-     * @return VariableValue, never {@code null}
-     */
-    VariableValue variableValue(Map<String, List<StagingElement>> children, String text) {
-        List<Variable> variables = filterChildren(children, Variable.ELEMENT_NAME, Variable.class);
-        if (!variables.isEmpty()) {
-            return new VariableValue.MapValue(variables);
-        }
-        return new VariableValue.SimpleValue(text);
+        return switch (name) {
+            case Variables.ELEMENT_NAME -> variables(attrs, children);
+            case Variable.ELEMENT_NAME -> variable(attrs, children, scope);
+            case VariableValue.ELEMENT_NAME -> variableValue(children, text);
+            case ActionIterators.ELEMENT_NAME -> actionIterators(children, attrs);
+            default -> createDefault(name, attrs, children, text);
+        };
     }
 
     /**
@@ -166,7 +90,7 @@ class StagingElementFactory {
      */
     StagingAction createAction(String name,
                                Map<String, String> attrs,
-                               Map<String, List<StagingElement>> children,
+                               List<StagingElement> children,
                                String text) {
 
         Supplier<ActionIterators> iterators = () -> firstChild(children, ActionIterators.class, () -> null);
@@ -187,52 +111,92 @@ class StagingElementFactory {
             case TemplateTask.ELEMENT_NAME:
                 return new TemplateTask(iterators.get(), attrs, variables.get());
             case FileTask.ELEMENT_NAME:
-                return new FileTask(iterators.get(), attrs, text);
+                return new FileTask(iterators.get(), filterChildren(children, TextAction.class), attrs, text);
+            case ListFilesTask.ELEMENT_NAME:
+                List<Include> includes = filterChildren(children, Include.class);
+                List<Exclude> excludes = filterChildren(children, Exclude.class);
+                List<Substitution> substitutions = filterChildren(children, Substitution.class);
+                return new ListFilesTask(iterators.get(), includes, excludes, substitutions, attrs);
             default:
-                if (isWrapperElement(name)) {
+                if (WRAPPER_ELEMENTS.containsKey(name)) {
                     return new StagingTasks(name, filterChildren(children, StagingAction.class), attrs);
                 }
                 throw new IllegalStateException("Unknown action: " + name);
         }
     }
 
-    /**
-     * Filter the children with the given element name and type.
-     *
-     * @param mappings    children mappings
-     * @param elementName map key to filter
-     * @param type        type of the child to include
-     * @param <T>         type parameter
-     * @return list of children, never {@code null}
-     */
-    <T> List<T> filterChildren(Map<String, List<StagingElement>> mappings, String elementName, Class<T> type) {
-        return Optional.ofNullable(mappings.get(elementName)).stream()
-                       .flatMap(Collection::stream)
-                       .filter(type::isInstance)
-                       .map(type::cast)
-                       .collect(toList());
+    private StagingElement createDefault(String name,
+                                         Map<String, String> attrs,
+                                         List<StagingElement> children,
+                                         String text) {
+
+        if (SYNTHETIC_ELEMENTS.contains(name)) {
+            return synthetic(name, attrs, text);
+        } else if (ACTION_ELEMENTS.contains(name)) {
+            return createAction(name, attrs, children, text);
+        } else if (WRAPPER_ELEMENTS.containsKey(name)) {
+            String wrapped = WRAPPER_ELEMENTS.get(name);
+            if (SYNTHETIC_ELEMENTS.contains(wrapped)) {
+                return new StagingElements(name, filterChildren(children, StagingElement.class));
+            }
+            return createAction(name, attrs, children, text);
+        }
+        throw new IllegalStateException("Unknown element: " + name);
     }
 
-    /**
-     * Filter the children with the given type.
-     *
-     * @param mappings children mappings
-     * @param type     type of the child to include
-     * @param <T>      type parameter
-     * @return list of children, never {@code null}
-     */
-    <T> List<T> filterChildren(Map<String, List<StagingElement>> mappings, Class<T> type) {
-        return Optional.of(mappings.values())
-                       .stream()
-                       .flatMap(Collection::stream)
-                       .flatMap(List::stream)
-                       .filter(type::isInstance)
-                       .map(type::cast)
-                       .collect(toList());
+    private static Variables variables(Map<String, String> attrs, List<StagingElement> children) {
+        return new Variables(filterChildren(children, Variable.class), attrs);
     }
 
-    <T> T firstChild(Map<String, List<StagingElement>> mappings, Class<T> type, Supplier<T> defaultValue) {
-        return filterChildren(mappings, type)
+    private static Variable variable(Map<String, String> attrs, List<StagingElement> children, Scope scope) {
+        if (attrs.containsKey("ref")) {
+            return scope.resolve(attrs.get("ref"));
+        }
+        return variable(attrs.get("name"), children, attrs.get("value"));
+    }
+
+    private static Variable variable(String name, List<StagingElement> children, String text) {
+        List<VariableValue> values = filterChildren(children, VariableValue.class);
+        if (!values.isEmpty()) {
+            return new Variable(name, new VariableValue.ListValue(values));
+        }
+        return new Variable(name, new VariableValue.SimpleValue(text));
+    }
+
+    private static VariableValue variableValue(List<StagingElement> children, String text) {
+        List<Variable> variables = filterChildren(children, Variable.class);
+        if (!variables.isEmpty()) {
+            return new VariableValue.MapValue(variables);
+        }
+        return new VariableValue.SimpleValue(text);
+    }
+
+    private static ActionIterators actionIterators(List<StagingElement> children, Map<String, String> attrs) {
+        List<ActionIterator> iterators = filterChildren(children, Variables.class)
+                .stream()
+                .map(ActionIterator::new)
+                .collect(toList());
+        return new ActionIterators(iterators, attrs);
+    }
+
+    private static StagingElement synthetic(String name, Map<String, String> attrs, String text) {
+        return switch (name) {
+            case Include.ELEMENT_NAME -> new Include(text);
+            case Exclude.ELEMENT_NAME -> new Exclude(text);
+            case Substitution.ELEMENT_NAME -> new Substitution(attrs);
+            default -> throw new IllegalStateException("Unknown element: " + name);
+        };
+    }
+
+    private static <T> List<T> filterChildren(List<StagingElement> children, Class<T> type) {
+        return children.stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .collect(toList());
+    }
+
+    private static <T> T firstChild(List<StagingElement> children, Class<T> type, Supplier<T> defaultValue) {
+        return filterChildren(children, type)
                 .stream()
                 .findFirst()
                 .orElse(defaultValue.get());
