@@ -78,7 +78,7 @@ final class ListFilesTask extends StagingTask implements TextAction {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Path resolved = dir.resolve(dirName);
+        Path resolved = dir.resolve(resolveVar(dirName, vars));
         List<Path> files = walk(resolved, FILE_VISIT_OPTIONS, this::filter);
         for (Path file : files) {
             String entry = normalizePath(dir.relativize(file));
