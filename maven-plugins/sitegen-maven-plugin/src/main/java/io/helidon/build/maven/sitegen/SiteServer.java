@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public final class SiteServer {
     public SiteServer(int port, Path dir) {
         this.port = port;
         try {
-            server = HttpServer.create(new InetSocketAddress(8080), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/", new Handler(dir));
             server.setExecutor(Executors.newWorkStealingPool());
         } catch (IOException ex) {
@@ -95,7 +95,15 @@ public final class SiteServer {
      * @param args args
      */
     public static void main(String[] args) {
-        new SiteServer(8080, Path.of(args[0])).start();
+        if (args.length > 0) {
+            Path dir = Path.of(args[0]);
+            int port = 8080;
+            if (args.length > 1) {
+                port = Integer.parseInt(args[1]);
+            }
+            new SiteServer(port, dir).start();
+        }
+        throw new IllegalArgumentException("usage: dir [port]");
     }
 
     private static final class Handler implements HttpHandler {
