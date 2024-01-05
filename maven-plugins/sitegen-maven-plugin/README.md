@@ -47,6 +47,20 @@ Creates the site archive.
 The parameter `siteArchiveSkip` is mapped to a user property:
  `sitegen.siteArchiveSkip`.
 
+## Goal: `serve`
+
+Serve the site.
+
+### Optional Parameters
+
+| Property            | Type    | Default<br/>Value                 | Description                                              |
+|---------------------|---------|-----------------------------------|----------------------------------------------------------|
+| siteOutputDirectory | File    | `${project.build.directory}/site` | Directory containing the generate site files to archive. |
+| sitePort            | int     | 8080                              | TCP port to use.                                         |
+| siteServeSkip       | Boolean | `false`                           | Skip this goal execution                                 |
+
+All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
+
 ## Goal: `preprocess-adoc`
 
 Pre-includes included text specified by AsciiDoc `include::` directives into
