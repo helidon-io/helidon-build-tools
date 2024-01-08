@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.Strings;
 
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.measuredSize;
 
 /**
@@ -66,7 +67,7 @@ final class DownloadTask extends StagingTask {
     private void download(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         String path = resolveVar(target(), vars);
         Path file = dir.resolve(path).normalize();
-        Files.createDirectories(file.getParent());
+        ensureDirectory(file.getParent());
         URL url = new URL(resolveVar(this.url, vars));
         try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx))) {
             try (OutputStream fos = Files.newOutputStream(file)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 package io.helidon.build.maven.stager;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 
 /**
  * Unpack an artifact to a given target location.
@@ -73,7 +74,7 @@ final class UnpackArtifactTask extends StagingTask {
         Path artifact = ctx.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
-        Files.createDirectories(targetDir);
+        ensureDirectory(targetDir);
         ctx.unpack(artifact, targetDir, excludes, includes);
     }
 }

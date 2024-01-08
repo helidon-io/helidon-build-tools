@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.build.common.Maps;
+
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 
 /**
  * Copy an artifact to a given target location.
@@ -54,7 +56,7 @@ final class CopyArtifactTask extends StagingTask {
         ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
         Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
-        Files.createDirectories(targetFile.getParent());
+        ensureDirectory(targetFile.getParent());
         Files.copy(artifact, targetFile);
     }
 

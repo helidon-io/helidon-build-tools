@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.build.common.Strings;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.util.DecoratedCollection;
 
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -74,7 +75,7 @@ final class TemplateTask extends StagingTask {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
         Path targetFile = dir.resolve(resolvedTarget).normalize();
-        Files.createDirectories(targetFile.getParent());
+        ensureDirectory(targetFile.getParent());
         try (Reader reader = Files.newBufferedReader(sourceFile);
              Writer writer = Files.newBufferedWriter(targetFile,
                      StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {

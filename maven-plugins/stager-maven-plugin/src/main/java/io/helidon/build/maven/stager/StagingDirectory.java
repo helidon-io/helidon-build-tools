@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 
 /**
  * Generate a directory using a set of actions.
@@ -39,8 +39,8 @@ class StagingDirectory extends StagingTask {
         Path targetDir = dir.resolve(target());
         ctx.logInfo("Staging %s", targetDir);
         try {
-            Files.createDirectories(targetDir);
-        } catch (IOException ex) {
+            ensureDirectory(targetDir);
+        } catch (Throwable ex) {
             return CompletableFuture.failedFuture(ex);
         }
         return super.execute(ctx, targetDir, vars);
