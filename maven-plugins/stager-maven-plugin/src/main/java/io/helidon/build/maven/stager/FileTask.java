@@ -85,7 +85,7 @@ final class FileTask extends StagingTask {
             } else {
                 try (BufferedWriter writer = Files.newBufferedWriter(targetFile)) {
                     for (TextAction task : tasks()) {
-                        writer.write(task.text());
+                        writer.write(task.text(vars));
                     }
                 }
             }
