@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+
+import static io.helidon.build.common.FileUtils.ensureDirectory;
 
 /**
  * Create a symlink.
@@ -54,7 +56,7 @@ final class SymlinkTask extends StagingTask {
         Path link = dir.resolve(resolveVar(target(), vars));
         Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
         ctx.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
-        Files.createDirectories(link.getParent());
+        ensureDirectory(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
     }
 }
