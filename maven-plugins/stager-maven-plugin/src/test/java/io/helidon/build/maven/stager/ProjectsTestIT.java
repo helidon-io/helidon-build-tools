@@ -152,13 +152,21 @@ public class ProjectsTestIT {
         assertThat(stageDir.resolve("docs/v4/apidocs/index.html"), fileExists());
         assertThat(stageDir.resolve("docs/v4/images/foo.svg"), fileExists());
 
-        Path file3 = stageDir.resolve("sitemap.txt");
+        Path file3 = stageDir.resolve("docs/v4/sitemap.txt");
         assertThat(file3, fileExists());
         assertThat(Files.readAllLines(file3), containsInAnyOrder(
                 "docs/v4",
-                "docs/v4/apidocs",
-                "docs/4.0.2",
-                "docs/4.0.2/apidocs"
+                "docs/v4/apidocs"
+        ));
+
+        assertThat(stageDir.resolve("docs/v3/index.html"), fileExists());
+        assertThat(stageDir.resolve("docs/v3/apidocs/index.html"), fileExists());
+
+        Path file4 = stageDir.resolve("docs/v3/sitemap.txt");
+        assertThat(file4, fileExists());
+        assertThat(Files.readAllLines(file4), containsInAnyOrder(
+                "docs/v3",
+                "docs/v3/apidocs"
         ));
     }
 

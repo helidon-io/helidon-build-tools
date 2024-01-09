@@ -15,6 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
+import java.util.Map;
+
 /**
  * A {@link StagingAction} that produces text.
  */
@@ -25,5 +27,5 @@ interface TextAction extends StagingAction {
      *
      * @return text
      */
-    String text();
+    String text(Map<String, String> vars);
 }

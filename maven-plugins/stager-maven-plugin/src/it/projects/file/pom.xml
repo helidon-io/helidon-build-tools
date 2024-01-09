@@ -46,15 +46,26 @@
                                     <file target="docs/4.0.2/index.html"/>
                                     <file target="docs/4.0.2/apidocs/index.html"/>
                                     <file target="docs/4.0.2/images/foo.svg"/>
+                                    <file target="docs/3.2.2/index.html"/>
+                                    <file target="docs/3.2.2/apidocs/index.html"/>
                                 </files>
                                 <symlinks join="true">
                                     <symlink source="docs/4.0.2" target="docs/v4"/>
+                                    <symlink source="docs/3.2.2" target="docs/v3"/>
                                 </symlinks>
                                 <files join="true">
-                                    <file target="sitemap.txt">
-                                        <list-files dir=".">
+                                    <file target="docs/{version}/sitemap.txt">
+                                        <iterators>
+                                            <variables>
+                                                <variable name="version">
+                                                    <value>v3</value>
+                                                    <value>v4</value>
+                                                </variable>
+                                            </variables>
+                                        </iterators>
+                                        <list-files dir="docs/{version}">
                                             <includes>
-                                                <include>**/docs/**/*.html</include>
+                                                <include>**/*.html</include>
                                             </includes>
                                             <excludes>
                                                 <exclude>**/images/**</exclude>
