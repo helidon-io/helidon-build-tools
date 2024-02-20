@@ -6,6 +6,7 @@ LICENSE.txt
 3RD-PARTY-LICENSE.txt
 etc/copyright-exclude.txt
 etc/copyright.txt
+etc/dependency-check-suppression.xml
 etc/images/
 _plantuml-config.txt
 superagent.js
