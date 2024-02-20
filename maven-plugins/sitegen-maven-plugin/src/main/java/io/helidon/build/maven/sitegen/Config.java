@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.SubstitutionVariables;
 
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -303,7 +304,7 @@ public final class Config {
      * @return new instance
      */
     public static Config create(Reader reader, Map<String, String> properties) {
-        Yaml yaml = new Yaml(new SafeConstructor());
+        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         return create(yaml.loadAs(reader, Object.class), properties);
     }
 
