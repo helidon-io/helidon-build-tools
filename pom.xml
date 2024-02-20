@@ -183,6 +183,7 @@
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
+        <version.plugin.dependency-check>9.0.9</version.plugin.dependency-check>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -494,6 +495,30 @@
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
                     <version>${version.plugin.graalvm}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${version.plugin.dependency-check}</version>
+                    <configuration>
+                        <skip>${dependency-check.skip}</skip>
+                        <skipTestScope>true</skipTestScope>
+                        <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                        <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <nvdApiKey>${nvd-api-key}</nvdApiKey>
+                        <excludes>
+                            <!-- Exclude stuff we do not deploy -->
+                            <!-- This should be excluded by above, but for some reason it persists -->
+                            <exclude>org.testng:testng</exclude>
+                        </excludes>
+                        <formats>
+                            <format>HTML</format>
+                        </formats>
+                        <suppressionFiles>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <suppressionFile>${top.parent.basedir}/etc/dependency-check-suppression.xml</suppressionFile>
+                        </suppressionFiles>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
