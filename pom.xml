@@ -166,7 +166,7 @@
         <version.lib.rhino>1.7.14</version.lib.rhino>
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
-        <version.lib.snakeyaml>1.32</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
         <version.lib.commons-text>1.10.0</version.lib.commons-text>
