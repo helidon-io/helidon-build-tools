@@ -20,7 +20,13 @@ set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
 # Path to this script
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    # shellcheck disable=SC155
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
@@ -36,20 +42,22 @@ trap on_error ERR
 
 readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
 
-die() { cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
+die() { cat "${RESULT_FILE}" ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
 if [ "${PIPELINE}" = "true" ] ; then
     # If in pipeline do a priming build before scan
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml clean install -DskipTests
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -f "${WS_DIR}"/pom.xml clean install -DskipTests
 fi
 
 # Setting NVD_API_KEY is not required but improves behavior of NVD API throttling
 
+# shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
-        -f ${WS_DIR}/pom.xml \
+        -f "${WS_DIR}"/pom.xml \
         -Dtop.parent.basedir="${WS_DIR}" \
-        -Dnvd-api-key=${NVD_API_KEY} \
-        > ${RESULT_FILE} || die "Error running the Maven command"
+        -Dnvd-api-key="${NVD_API_KEY}" \
+        > "${RESULT_FILE}" || die "Error running the Maven command"
 
-grep -i "One or more dependencies were identified with known vulnerabilities" ${RESULT_FILE} \
+grep -i "One or more dependencies were identified with known vulnerabilities" "${RESULT_FILE}" \
     && die "CVE SCAN ERROR" || echo "CVE SCAN OK"
