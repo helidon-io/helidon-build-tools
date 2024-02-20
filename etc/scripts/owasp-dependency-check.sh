@@ -40,7 +40,8 @@ on_error(){
 }
 trap on_error ERR
 
-readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
+RESULT_FILE=$(mktemp -t XXXdependency-check-result)
+readonly  RESULT_FILE
 
 die() { cat "${RESULT_FILE}" ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
