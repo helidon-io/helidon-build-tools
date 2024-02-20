@@ -305,7 +305,7 @@ public final class Config {
      */
     public static Config create(Reader reader, Map<String, String> properties) {
         Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
-        return create(yaml.loadAs(reader, Object.class), properties);
+        return create((Object) yaml.loadAs(reader, Object.class), properties);
     }
 
     private static final Set<Class<?>> PRIMITIVE_BOXED =
