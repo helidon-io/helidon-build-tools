@@ -140,7 +140,7 @@
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
         <version.lib.jsonp-impl>1.1.4</version.lib.jsonp-impl>
-        <version.lib.junit>5.8.0-M1</version.lib.junit>
+        <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform>1.8.0-M1</version.lib.junit-platform>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.lsp4j>0.16.0</version.lib.lsp4j>
@@ -168,7 +168,7 @@
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
-        <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
+        <version.lib.wagon-http>3.5.3</version.lib.wagon-http>
         <version.lib.commons-text>1.10.0</version.lib.commons-text>
 
         <!--
@@ -775,6 +775,12 @@
                 <groupId>com.github.wumpz</groupId>
                 <artifactId>diffutils</artifactId>
                 <version>${version.lib.diffutils}</version>
+                <exclusions>
+                    <exclusion>
+                    <groupId>org.eclipse.jgit</groupId>
+                    <artifactId>org.eclipse.jgit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.github.spullara.mustache.java</groupId>
@@ -886,6 +892,13 @@
                 <groupId>org.apache.maven.archetype</groupId>
                 <artifactId>archetype-common</artifactId>
                 <version>${version.lib.archetype-common}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- not needed -->
+                        <groupId>org.apache.ivy</groupId>
+                        <artifactId>ivy</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
