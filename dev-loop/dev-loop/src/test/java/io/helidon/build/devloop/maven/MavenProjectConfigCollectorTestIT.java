@@ -16,14 +16,11 @@
 
 package io.helidon.build.devloop.maven;
 
-import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 
 import io.helidon.build.cli.common.ProjectConfig;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.TestMonitor;
@@ -44,7 +41,6 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link MavenProjectConfigCollector}.
- *
  * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
  * <pre>
  *    mvn install -DskipTests && mvn test -Dtest=MavenProjectConfigCollectorTest
@@ -54,14 +50,6 @@ import static org.hamcrest.Matchers.notNullValue;
 @EnabledIfSystemProperty(named = "test", matches = "MavenProjectConfigCollectorTest")
 class MavenProjectConfigCollectorTestIT {
     private static final String DEBUG_ARG = "-Dproject.config.collector.debug=true";
-
-    static private void touch(Path path) throws IOException {
-        try {
-            Files.createFile(path);
-        } catch (FileAlreadyExistsException e) {
-            Files.setLastModifiedTime(path, FileTime.from(Instant.now()));
-        }
-    }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
@@ -102,7 +90,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        touch(dotHelidonFile);
+        FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
@@ -124,7 +112,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        touch(dotHelidonFile);
+        FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
