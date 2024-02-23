@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package io.helidon.build.devloop.maven;
 
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.TestMonitor;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,6 +54,14 @@ import static org.hamcrest.Matchers.notNullValue;
 @EnabledIfSystemProperty(named = "test", matches = "MavenProjectConfigCollectorTest")
 class MavenProjectConfigCollectorTestIT {
     private static final String DEBUG_ARG = "-Dproject.config.collector.debug=true";
+
+    static private void touch(Path path) throws IOException {
+        try {
+            Files.createFile(path);
+        } catch (FileAlreadyExistsException e) {
+            Files.setLastModifiedTime(path, FileTime.from(Instant.now()));
+        }
+    }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
@@ -91,7 +102,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        FileUtils.touch(dotHelidonFile.toFile());
+        touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
@@ -113,7 +124,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        FileUtils.touch(dotHelidonFile.toFile());
+        touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
