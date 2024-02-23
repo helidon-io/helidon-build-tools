@@ -136,6 +136,7 @@
         <dependency>
             <groupId>com.github.wumpz</groupId>
             <artifactId>diffutils</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>

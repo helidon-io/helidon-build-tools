@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.cli.common.ProjectConfig;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.TestMonitor;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,7 +41,6 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Unit test for class {@link MavenProjectConfigCollector}.
- *
  * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
  * <pre>
  *    mvn install -DskipTests && mvn test -Dtest=MavenProjectConfigCollectorTest
@@ -91,7 +90,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        FileUtils.touch(dotHelidonFile.toFile());
+        FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
@@ -113,7 +112,7 @@ class MavenProjectConfigCollectorTestIT {
         final Path dotHelidonFile = projectDir.resolve(DOT_HELIDON);
 
         Files.deleteIfExists(dotHelidonFile);
-        FileUtils.touch(dotHelidonFile.toFile());
+        FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
         assertThat(config.keySet().isEmpty(), is(true));
 
