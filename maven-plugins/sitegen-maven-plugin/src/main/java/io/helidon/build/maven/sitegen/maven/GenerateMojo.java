@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package io.helidon.build.maven.sitegen.maven;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.build.common.Maps;
 import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
@@ -85,7 +87,11 @@ public class GenerateMojo extends AbstractMojo {
 
         project.addCompileSourceRoot(siteSourceDirectory.getAbsolutePath());
 
-        Map<String, String> properties = AbstractAsciiDocMojo.projectProperties(project);
+        Map<String, String> properties = new HashMap<>(Maps.fromProperties(project.getProperties()));
+        properties.put("project.groupId", project.getGroupId());
+        properties.put("project.artifactId", project.getArtifactId());
+        properties.put("project.version", project.getVersion());
+        properties.put("project.basedir", project.getBasedir().getAbsolutePath());
 
         try {
             Config config = Config.create(siteConfigFile.toPath(), properties);
