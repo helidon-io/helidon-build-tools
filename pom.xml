@@ -885,6 +885,7 @@
                 <version>${version.lib.gson}</version>
             </dependency>
             <dependency>
+                <!-- force upgrade trans dep of lsp4j and maven-core -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.lib.guava}</version>
