@@ -124,7 +124,7 @@
         <version.lib.apache-commons-lang3>3.10</version.lib.apache-commons-lang3>
         <version.lib.apache-commons-collections>3.2.2</version.lib.apache-commons-collections>
         <version.lib.apache-commons-compress>1.26.0</version.lib.apache-commons-compress>
-        <version.lib.apache-commons-io>2.9.0</version.lib.apache-commons-io>
+        <version.lib.apache-commons-io>2.15.0</version.lib.apache-commons-io>
         <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
         <version.lib.asciidoctorj>2.5.2</version.lib.asciidoctorj>
         <version.lib.asm>7.2</version.lib.asm>
