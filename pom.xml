@@ -121,7 +121,10 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.apache-commons>3.10</version.lib.apache-commons>
+        <version.lib.apache-commons-lang3>3.10</version.lib.apache-commons-lang3>
+        <version.lib.apache-commons-collections>3.2.2</version.lib.apache-commons-collections>
+        <version.lib.apache-commons-compress>1.26.0</version.lib.apache-commons-compress>
+        <version.lib.apache-commons-io>2.9.0</version.lib.apache-commons-io>
         <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
         <version.lib.asciidoctorj>2.5.2</version.lib.asciidoctorj>
         <version.lib.asm>7.2</version.lib.asm>
@@ -845,7 +848,25 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>${version.lib.apache-commons}</version>
+                <version>${version.lib.apache-commons-lang3}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${version.lib.apache-commons-collections}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${version.lib.apache-commons-compress}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.apache-commons-io}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.lsp4j</groupId>
