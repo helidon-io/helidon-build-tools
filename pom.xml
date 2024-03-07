@@ -123,8 +123,8 @@
         -->
         <version.lib.apache-commons>3.10</version.lib.apache-commons>
         <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
-        <version.lib.asciidoctorj>2.5.2</version.lib.asciidoctorj>
-        <version.lib.asm>7.2</version.lib.asm>
+        <version.lib.asciidoctorj>2.5.11</version.lib.asciidoctorj>
+        <version.lib.asm>9.5</version.lib.asm>
         <version.lib.checkstyle>10.12.6</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.11.1</version.lib.doxia>
