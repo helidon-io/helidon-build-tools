@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,6 +162,27 @@ class JavaParserModuleTest {
         assertThat(requires[0].modifiers(), contains(Requires.Modifier.TRANSITIVE));
         assertThat(requires[1].name(), is("com.acme4"));
         assertThat(requires[1].modifiers(), is(empty()));
+    }
+
+    @Test
+    void testRequiresTransitiveStatic() {
+        String src = """
+                module com.acme1 {
+                    requires transitive static com.acme2;
+                    requires static transitive com.acme3;
+                }
+                """;
+        ModuleDescriptor module = parse(src);
+        Requires[] requires = module.requires()
+                .stream()
+                .sorted(Comparator.comparing(Requires::name))
+                .filter(r -> !r.modifiers().contains(Requires.Modifier.MANDATED))
+                .toArray(Requires[]::new);
+        assertThat(requires.length, is(2));
+        assertThat(requires[0].name(), is("com.acme2"));
+        assertThat(requires[0].modifiers(), containsInAnyOrder(Requires.Modifier.TRANSITIVE, Requires.Modifier.STATIC));
+        assertThat(requires[1].name(), is("com.acme3"));
+        assertThat(requires[1].modifiers(), containsInAnyOrder(Requires.Modifier.TRANSITIVE, Requires.Modifier.STATIC));
     }
 
     @Test

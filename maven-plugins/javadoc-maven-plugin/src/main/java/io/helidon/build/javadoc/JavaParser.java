@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.build.javadoc.JavaTokenizer.Keyword;
 import io.helidon.build.javadoc.JavaTokenizer.Symbol;
@@ -44,8 +44,6 @@ import static java.util.Collections.unmodifiableSet;
 class JavaParser {
 
     private static final Symbol TO = Symbol.keyword(Keyword.TO);
-    private static final Symbol STATIC = Symbol.keyword(Keyword.STATIC);
-    private static final Symbol TRANSITIVE = Symbol.keyword(Keyword.TRANSITIVE);
     private static final Symbol WITH = Symbol.keyword(Keyword.WITH);
     private static final Symbol SEMI_COLON = Symbol.token(Token.SEMI_COLON);
     private static final Symbol COMMA = Symbol.token(Token.COMMA);
@@ -168,6 +166,23 @@ class JavaParser {
         throw new IllegalStateException("Unexpected EOF");
     }
 
+    private List<Symbol> nextSymbols(Predicate<Symbol> predicate) {
+        List<Symbol> symbols = new ArrayList<>();
+        while (tokenizer.hasNext()) {
+            Symbol symbol = tokenizer.peek();
+            if (symbol.isConcrete()) {
+                if (predicate.test(symbol)) {
+                    tokenizer.skip();
+                    symbols.add(symbol);
+                } else {
+                    return symbols;
+                }
+            }
+            tokenizer.skip();
+        }
+        throw new IllegalStateException("Unexpected EOF");
+    }
+
     private String parseName() {
         StringBuilder sb = new StringBuilder();
         Symbol previous = WHITESPACE;
@@ -204,20 +219,16 @@ class JavaParser {
     }
 
     private void parseModuleRequires(ModuleDescriptor.Builder builder) {
-        Symbol symbol = nextSymbol(Symbol::isKeyword);
-        if (symbol == null || symbol == STATIC || symbol == TRANSITIVE) {
-            String source = parseName();
-            Set<Requires.Modifier> modifiers = new HashSet<>();
-            if (symbol == STATIC) {
-                modifiers.add(Requires.Modifier.STATIC);
-            } else if (symbol == TRANSITIVE) {
-                modifiers.add(Requires.Modifier.TRANSITIVE);
-            }
-            builder.requires(modifiers, source);
-        } else {
-            throw new IllegalStateException(String.format(
-                    "Invalid directive at %s", tokenizer.cursor()));
-        }
+        List<Symbol> symbols = nextSymbols(Symbol::isKeyword);
+        Set<Requires.Modifier> modifiers = symbols.stream()
+                .map(symbol -> switch (symbol.keyword()) {
+                    case STATIC -> Requires.Modifier.STATIC;
+                    case TRANSITIVE -> Requires.Modifier.TRANSITIVE;
+                    default -> throw new IllegalStateException(String.format(
+                            "Invalid directive at %s", tokenizer.cursor()));
+                }).collect(Collectors.toSet());
+        String source = parseName();
+        builder.requires(modifiers, source);
     }
 
     private void parseModuleExports(ModuleDescriptor.Builder builder) {
