@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 package io.helidon.build.archetype.maven.postgenerate;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
@@ -98,6 +101,7 @@ final class Aether {
                 settings.setActiveProfiles(activeProfiles);
             }
             repoSession = MavenRepositorySystemUtils.newSession();
+            repoSession.setSystemProperties(systemProperties());
             repoSession.setTransferListener(new Slf4jMavenTransferListener());
             repoSession.setProxySelector(proxySelector());
             repoSession.setMirrorSelector(mirrorSelector());
@@ -138,6 +142,13 @@ final class Aether {
         } catch (SettingsBuildingException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private static Map<String, String> systemProperties() {
+        Map<String, String> map = new HashMap<>();
+        Properties properties = System.getProperties();
+        properties.stringPropertyNames().forEach(k -> map.put(k, properties.getProperty(k)));
+        return map;
     }
 
     private MirrorSelector mirrorSelector() {
