@@ -71,3 +71,9 @@ jobs:
           MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
           build-cache: read-only
           run: etc/scripts/release.sh release_build
+      - name: Upload Staged Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
+          path: target/nexus-staging/
+          retention-days: 90
