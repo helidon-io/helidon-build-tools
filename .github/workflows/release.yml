@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,4 +70,6 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
           build-cache: read-only
+          artifact-name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
+          artifact-path: target/nexus-staging/
           run: etc/scripts/release.sh release_build
