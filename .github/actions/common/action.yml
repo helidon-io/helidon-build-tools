@@ -117,13 +117,13 @@ runs:
         check-for-updates: 'false'
         set-java-home: 'false'
     - name: Set up JDK
-      uses: actions/setup-java@v3.11.0
+      uses: actions/setup-java@v4.1.0
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v4.0.2
       with:
         path: |
           .m2/repository/**
@@ -134,7 +134,7 @@ runs:
           local-maven-
     - name: Cache local Maven repository (read-only)
       if: ${{ inputs.maven-cache == 'read-only' }}
-      uses: actions/cache/restore@v3.3.1
+      uses: actions/cache/restore@v4.0.2
       with:
         path: |
           .m2/repository/**
@@ -145,7 +145,7 @@ runs:
           local-maven-
     - name: Build cache (read-write)
       if: ${{ inputs.build-cache == 'read-write' }}
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v4.0.2
       with:
         path: |
           ./**/target/**
@@ -157,7 +157,7 @@ runs:
           build-cache-${{ github.run_id }}-
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
-      uses: actions/cache/restore@v3.3.1
+      uses: actions/cache/restore@v4.0.2
       with:
         path: |
           ./**/target/**
@@ -192,7 +192,7 @@ runs:
     - name: Archive test results
       # https://github.com/actions/upload-artifact/issues/240
       if: ${{ inputs.archive-test-results == 'true' && runner.os != 'Windows' && always() }}
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
         name: test-results
@@ -202,7 +202,7 @@ runs:
           **/target/it/**/*.log
     - name: Archive artifacts
       if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
         name: ${{ inputs.artifact-name }}
