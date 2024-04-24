@@ -70,11 +70,6 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
           build-cache: read-only
+          artifact-name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
+          artifact-path: target/nexus-staging/
           run: etc/scripts/release.sh release_build
-      - name: Upload Staged Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
-          path: target/nexus-staging/
-          retention-days: 90
-
