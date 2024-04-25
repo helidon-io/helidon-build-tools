@@ -56,10 +56,10 @@ inputs:
     description: Path of the files to include in the artifact
     required: false
     default: ''
-  archive-test-results:
-    description: Wether to archive test results (excluded on windows)
+  test-artifact-name:
+    description: Name of the test artifact to create (excluded on windows)
     required: false
-    default: 'false'
+    default: ''
   test-matrix:
     description: |
       A JSON matrix with a "group" dimension, and a "groups" object to resolve Maven modules
@@ -191,11 +191,11 @@ runs:
       shell: bash
     - name: Archive test results
       # https://github.com/actions/upload-artifact/issues/240
-      if: ${{ inputs.archive-test-results == 'true' && runner.os != 'Windows' && always() }}
+      if: ${{ inputs.test-artifact-name != '' && runner.os != 'Windows' && always() }}
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
-        name: test-results
+        name: ${{ inputs.test-artifact-name }}
         path: |
           **/target/surefire-reports/*.txt
           **/target/failsafe-reports/*.txt

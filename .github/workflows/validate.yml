@@ -122,7 +122,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          archive-test-results: true
+          test-artifact-name: tests-${{ matrix.group }}-${{ matrix.platform }}
           run: |
             mvn ${MAVEN_ARGS} \
               -pl ${{ matrix.modules }} \
@@ -202,8 +202,8 @@ jobs:
         with:
           build-cache: read-only
           native-image: true
-          archive-test-results: true
-          artifact-name: helidon-cli
+          test-artifact-name: helidon-cli-smoketest-${{ matrix.platform }}
+          artifact-name: helidon-cli-${{ matrix.platform }}
           artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
