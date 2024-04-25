@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ env:
     -Djdk.toolchain.version=${JAVA_VERSION}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -56,7 +56,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -78,7 +78,7 @@ jobs:
     outputs:
       test-matrix: ${{ steps.build.outputs.test-matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - id: build
@@ -86,7 +86,7 @@ jobs:
         with:
           build-cache: read-write
           maven-cache: read-write
-          artifact-name: helidon-cli
+          artifact-name: helidon-cli-dist
           artifact-path: cli/impl/target/helidon-cli.zip
           run: |
             mvn ${MAVEN_ARGS} -T 8 \
@@ -116,13 +116,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.group }}-${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          archive-test-results: true
+          test-artifact-name: tests-${{ matrix.group }}-${{ matrix.platform }}
           run: |
             mvn ${MAVEN_ARGS} \
               -pl ${{ matrix.modules }} \
@@ -134,7 +134,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -150,7 +150,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -166,7 +166,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -195,15 +195,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: cli/${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
           native-image: true
-          archive-test-results: true
-          artifact-name: helidon-cli
+          test-artifact-name: helidon-cli-smoketest-${{ matrix.platform }}
+          artifact-name: helidon-cli-bin-${{ matrix.platform }}
           artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
@@ -222,3 +222,19 @@ jobs:
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
               -Dtest=CliFunctionalV2Test#*Native* \
               test
+  cli-binaries:
+    runs-on: ubuntu-20.04
+    needs: [ build, cli ]
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: helidon-cli
+          pattern: "helidon-cli-{bin-*,dist}"
+  test-results:
+    runs-on: ubuntu-20.04
+    needs: [ tests, cli ]
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
+          pattern: "*test*"
