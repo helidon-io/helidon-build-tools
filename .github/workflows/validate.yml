@@ -224,7 +224,7 @@ jobs:
               test
   cli-binaries:
     runs-on: ubuntu-20.04
-    needs: cli
+    needs: [ build, cli ]
     steps:
       - uses: actions/upload-artifact/merge@v4
         with:
