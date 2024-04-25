@@ -86,7 +86,7 @@ jobs:
         with:
           build-cache: read-write
           maven-cache: read-write
-          artifact-name: helidon-cli
+          artifact-name: helidon-cli-dist
           artifact-path: cli/impl/target/helidon-cli.zip
           run: |
             mvn ${MAVEN_ARGS} -T 8 \
@@ -129,6 +129,13 @@ jobs:
               -Pbuild-cache \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
               verify
+  merge-tests:
+    runs-on: ubuntu-20.04
+    needs: test
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
   spotbugs:
     needs: build
     timeout-minutes: 15
@@ -222,3 +229,10 @@ jobs:
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
               -Dtest=CliFunctionalV2Test#*Native* \
               test
+  merge-cli:
+    runs-on: ubuntu-20.04
+    needs: cli
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: helidon-cli
