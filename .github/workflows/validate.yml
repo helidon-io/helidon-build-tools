@@ -37,7 +37,7 @@ env:
     -Djdk.toolchain.version=${JAVA_VERSION}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -129,13 +129,6 @@ jobs:
               -Pbuild-cache \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
               verify
-  merge-tests:
-    runs-on: ubuntu-20.04
-    needs: tests
-    steps:
-      - uses: actions/upload-artifact/merge@v4
-        with:
-          name: test-results
   spotbugs:
     needs: build
     timeout-minutes: 15
@@ -210,7 +203,7 @@ jobs:
           build-cache: read-only
           native-image: true
           test-artifact-name: helidon-cli-smoketest-${{ matrix.platform }}
-          artifact-name: helidon-cli-${{ matrix.platform }}
+          artifact-name: helidon-cli-bin-${{ matrix.platform }}
           artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
@@ -229,10 +222,23 @@ jobs:
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
               -Dtest=CliFunctionalV2Test#*Native* \
               test
-  merge-cli:
+  cli-binaries:
     runs-on: ubuntu-20.04
     needs: cli
     steps:
       - uses: actions/upload-artifact/merge@v4
         with:
           name: helidon-cli
+          pattern: |
+            helidon-cli-bin-*
+            helidon-cli-dist
+  test-results:
+    runs-on: ubuntu-20.04
+    needs: [ tests, cli ]
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
+          path: |
+            tests-*
+            helidon-cli-smoketests-*
