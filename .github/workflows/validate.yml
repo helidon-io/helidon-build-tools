@@ -229,9 +229,7 @@ jobs:
       - uses: actions/upload-artifact/merge@v4
         with:
           name: helidon-cli
-          pattern: |
-            helidon-cli-bin-*
-            helidon-cli-dist
+          pattern: "helidon-cli-{bin-*,dist}"
   test-results:
     runs-on: ubuntu-20.04
     needs: [ tests, cli ]
@@ -239,6 +237,4 @@ jobs:
       - uses: actions/upload-artifact/merge@v4
         with:
           name: test-results
-          path: |
-            tests-*
-            helidon-cli-smoketests-*
+          pattern: "*test*"
