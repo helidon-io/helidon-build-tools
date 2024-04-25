@@ -131,7 +131,7 @@ jobs:
               verify
   merge-tests:
     runs-on: ubuntu-20.04
-    needs: test
+    needs: tests
     steps:
       - uses: actions/upload-artifact/merge@v4
         with:

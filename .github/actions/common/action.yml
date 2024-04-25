@@ -57,7 +57,7 @@ inputs:
     required: false
     default: ''
   test-artifact-name:
-    description: Name of the test artifact to create (excluded on windows)
+    description: Name of the test artifact to create (excluded on windows), if non empty tests are archived
     required: false
     default: ''
   test-matrix:
