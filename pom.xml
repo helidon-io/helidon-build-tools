@@ -457,8 +457,6 @@
                         <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipInvocation>${skipTests}</skipInvocation>
                         <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                        <skipInvocation>${skipTests}</skipInvocation>
-                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
                         <skipInstallation>${skipTests}</skipInstallation>
                         <pomIncludes>
                             <pomInclude>projects/*/pom.xml</pomInclude>
