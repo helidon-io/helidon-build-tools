@@ -265,7 +265,7 @@ public class InputPermutations {
                         return DynamicValue.create(v);
                     }
                     return null;
-                });
+                }).asBoolean();
                 if (!result) {
                     return false;
                 }

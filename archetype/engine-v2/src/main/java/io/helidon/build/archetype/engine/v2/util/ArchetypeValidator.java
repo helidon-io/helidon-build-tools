@@ -171,7 +171,7 @@ public final class ArchetypeValidator implements Node.Visitor<Context>, Block.Vi
                     default:
                         throw new IllegalStateException("Bad input type");
                 }
-            });
+            }).asBoolean();
         } catch (Expression.UnresolvedVariableException ex) {
             errors.add(String.format("%s %s: '%s'",
                     condition.location(),
