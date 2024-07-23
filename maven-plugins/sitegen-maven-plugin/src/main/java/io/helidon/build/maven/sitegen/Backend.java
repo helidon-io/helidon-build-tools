@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.build.maven.sitegen;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.build.common.Instance;
+import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.Strings;
 
 /**
@@ -28,7 +28,7 @@ import io.helidon.build.common.Strings;
 public abstract class Backend implements Model {
 
     private final String name;
-    private final Instance<List<PageRenderer>> renderers;
+    private final LazyValue<List<PageRenderer>> renderers;
 
     /**
      * Create a new backend instance.
@@ -37,7 +37,7 @@ public abstract class Backend implements Model {
      */
     protected Backend(String name) {
         this.name = Strings.requireValid(name, "name");
-        renderers = new Instance<>(this::renderers);
+        renderers = new LazyValue<>(this::renderers);
     }
 
     /**
@@ -74,7 +74,7 @@ public abstract class Backend implements Model {
      * @throws IllegalArgumentException if no renderer is found
      */
     public PageRenderer renderer(Path source) {
-        for (PageRenderer renderer : renderers.instance()) {
+        for (PageRenderer renderer : renderers.get()) {
             if (renderer.supports(source)) {
                 return renderer;
             }

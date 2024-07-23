@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.helidon.build.common.Instance;
+import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.maven.sitegen.Config;
@@ -60,7 +60,7 @@ public class AsciidocEngine {
     private final List<String> libraries;
     private final Map<String, Object> attributes;
     private final String imagesDir;
-    private final Instance<Asciidoctor> asciidoctorInst;
+    private final LazyValue<Asciidoctor> asciidoctor;
     private final AsciidocLogHandler logHandler;
     private final AsciidocPageRenderer pageRenderer;
     private volatile String sourcePath;
@@ -73,16 +73,16 @@ public class AsciidocEngine {
         imagesDir = builder.imagesDir;
         pageRenderer = new AsciidocPageRenderer(this);
         logHandler = new AsciidocLogHandler(this::frames);
-        asciidoctorInst = new Instance<>(this::initAsciidoctor);
+        asciidoctor = new LazyValue<>(this::initAdoc);
     }
 
-    private Asciidoctor initAsciidoctor() {
-        Asciidoctor asciidoctor = Asciidoctor.Factory.create();
+    private Asciidoctor initAdoc() {
+        Asciidoctor adoc = Asciidoctor.Factory.create();
         AsciidocLogHandler.init();
-        asciidoctor.registerLogHandler(logHandler);
-        asciidoctor.requireLibraries(libraries);
-        AsciidocExtensionRegistry.create(backend).register(asciidoctor);
-        return asciidoctor;
+        adoc.registerLogHandler(logHandler);
+        adoc.requireLibraries(libraries);
+        AsciidocExtensionRegistry.create(backend).register(adoc);
+        return adoc;
     }
 
     private Collection<String> frames() {
@@ -173,6 +173,7 @@ public class AsciidocEngine {
         // set options
         // set headerFooter to false in order to use embedded transform
         // basedir needed by asciidoctorj-diagram
+        //noinspection deprecation
         Options options = Options.builder()
                                  .attributes(attrsBuilder.build())
                                  .sourcemap(true)
@@ -187,7 +188,7 @@ public class AsciidocEngine {
         sourcePath = sourceDir.relativize(source).toString();
         Log.info("rendering %s to %s", sourcePath, outputDir.relativize(target));
 
-        try (Asciidoctor asciidoctor = asciidoctorInst.instance()) {
+        try (Asciidoctor asciidoctor = this.asciidoctor.get()) {
             Document document = asciidoctor.loadFile(source.toFile(), options);
             try {
                 String output = document.convert();

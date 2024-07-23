@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import io.helidon.build.common.Instance;
+import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.VirtualFileSystem;
 import io.helidon.build.common.logging.Log;
@@ -65,9 +65,9 @@ public class Context {
     private final Path outputDir;
     private final Map<String, String> assets;
     private volatile List<RenderingException> errors;
-    private final Instance<Map<String, Page>> pages;
-    private final Instance<List<SourcePath>> sourcePaths;
-    private final Instance<List<String>> resolvedAssets;
+    private final LazyValue<Map<String, Page>> pages;
+    private final LazyValue<List<SourcePath>> sourcePaths;
+    private final LazyValue<List<String>> resolvedAssets;
 
     /**
      * Create a new instance.
@@ -82,9 +82,9 @@ public class Context {
         this.outputDir = VirtualFileSystem.create(outputDir).getPath("/");
         templateSession = TemplateSession.create();
         assets = new HashMap<>();
-        sourcePaths = new Instance<>(this::initSourcePaths);
-        resolvedAssets = new Instance<>(this::initResolvedAssets);
-        pages = new Instance<>(this::initPages);
+        sourcePaths = new LazyValue<>(this::initSourcePaths);
+        resolvedAssets = new LazyValue<>(this::initResolvedAssets);
+        pages = new LazyValue<>(this::initPages);
     }
 
     /**
@@ -257,7 +257,7 @@ public class Context {
      * @return the scanned pages, never {@code null}
      */
     public Map<String, Page> pages() {
-        return pages.instance();
+        return pages.get();
     }
 
     /**
@@ -319,7 +319,7 @@ public class Context {
      * @return map of assets, key is the asset path, value is the target directory
      */
     public List<String> resolvedAssets() {
-        return resolvedAssets.instance();
+        return resolvedAssets.get();
     }
 
     /**
@@ -364,7 +364,7 @@ public class Context {
         List<PageFilter> filters = site.pages();
         Log.debug("creating pages, dir=%s, filters:%s", sourceDir, site.pages());
 
-        List<SourcePath> paths = sourcePaths.instance();
+        List<SourcePath> paths = sourcePaths.get();
         List<SourcePath> resolvedPaths;
         if (filters.isEmpty()) {
             resolvedPaths = paths;
@@ -398,7 +398,7 @@ public class Context {
 
     private List<String> initResolvedAssets() {
         List<String> resolvedAssets = new ArrayList<>();
-        List<SourcePath> sourcePaths = this.sourcePaths.instance();
+        List<SourcePath> sourcePaths = this.sourcePaths.get();
         for (StaticAsset asset : site.assets()) {
             for (SourcePath path : asset.resolvePaths(sourcePaths)) {
                 String source = path.asString(false);
