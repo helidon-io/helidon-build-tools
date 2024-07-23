@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import io.helidon.build.archetype.engine.v2.ast.Script;
 import io.helidon.build.archetype.engine.v2.ast.Step;
 import io.helidon.build.archetype.engine.v2.ast.Validation;
 import io.helidon.build.archetype.engine.v2.ast.Value;
-import io.helidon.build.common.Instance;
+import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.VirtualFileSystem;
 
@@ -47,7 +47,7 @@ import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 public class TestHelper {
 
     private static final BuilderInfo BUILDER_INFO = BuilderInfo.of(ScriptLoader.create(), Path.of("test-helper.xml"), null);
-    private static final Instance<FileSystem> FS = new Instance<>(TestHelper::createTestFileSystem);
+    private static final LazyValue<FileSystem> FS = new LazyValue<>(TestHelper::createTestFileSystem);
 
     private static FileSystem createTestFileSystem() {
         Path target = targetDir(TestHelper.class);
@@ -73,7 +73,7 @@ public class TestHelper {
      * @return script
      */
     public static Script load(String path) {
-        return ScriptLoader.load(FS.instance().getPath(path));
+        return ScriptLoader.load(FS.get().getPath(path));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.common.Instance;
+import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.logging.Log;
 
 import org.asciidoctor.Asciidoctor;
@@ -49,8 +49,8 @@ final class AsciidocHeaders {
 
     private static final ThreadLocal<Deque<List<Document>>> REGISTRY = ThreadLocal.withInitial(ArrayDeque::new);
     private static final IncludeProcessorImpl PROCESSOR = new IncludeProcessorImpl();
-    private static final Instance<Asciidoctor> ASCIIDOC = new Instance<>(() -> newAsciidoc(PROCESSOR));
-    private static final Instance<Asciidoctor> RAW_ASCIIDOC = new Instance<>(() -> newAsciidoc(null));
+    private static final LazyValue<Asciidoctor> ADOC = new LazyValue<>(() -> initAdoc(PROCESSOR));
+    private static final LazyValue<Asciidoctor> RAW_ADOC = new LazyValue<>(() -> initAdoc(null));
 
     private AsciidocHeaders() {
     }
@@ -84,7 +84,7 @@ final class AsciidocHeaders {
             ArrayList<Document> documents = new ArrayList<>();
             REGISTRY.get().push(documents);
             Log.debug("Reading header " + source);
-            try (Asciidoctor asciidoctor = ASCIIDOC.instance()) {
+            try (Asciidoctor asciidoctor = ADOC.get()) {
                 Options options = options(Map.of()).baseDir(baseDir.toFile()).build();
                 Document doc = asciidoctor.load(header, options);
                 headerMap.putAll(doc.getAttributes());
@@ -107,10 +107,10 @@ final class AsciidocHeaders {
         }
     }
 
-    private static Asciidoctor newAsciidoc(IncludeProcessor includeProcessor) {
+    private static Asciidoctor initAdoc(IncludeProcessor processor) {
         Asciidoctor asciidoctor = Asciidoctor.Factory.create();
-        if (includeProcessor != null) {
-            asciidoctor.javaExtensionRegistry().includeProcessor(includeProcessor);
+        if (processor != null) {
+            asciidoctor.javaExtensionRegistry().includeProcessor(processor);
         }
         AsciidocLogHandler.init();
         return asciidoctor;
@@ -145,7 +145,7 @@ final class AsciidocHeaders {
                     return;
                 }
                 String source = Files.readString(targetPath);
-                try (Asciidoctor asciidoctor = RAW_ASCIIDOC.instance()) {
+                try (Asciidoctor asciidoctor = RAW_ADOC.get()) {
                     Options options = options(doc.getAttributes()).build();
                     Document included = asciidoctor.load(source, options);
                     List<Document> documents = REGISTRY.get().peek();
