@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,10 +101,10 @@ public class CommandRequirements {
             if (!Files.exists(projectConfigFile)) {
                 // Find the helidon version if we can and create the config file
                 MavenModel model = MavenModel.read(pomFile);
-                Parent parent = model.getParent();
+                Parent parent = model.parent();
                 String helidonVersion = null;
-                if (parent != null && parent.getGroupId().startsWith("io.helidon.")) {
-                    helidonVersion = parent.getVersion();
+                if (parent != null && parent.groupId().startsWith("io.helidon.")) {
+                    helidonVersion = parent.version();
                 }
                 ensureProjectConfig(projectDir, helidonVersion);
             }

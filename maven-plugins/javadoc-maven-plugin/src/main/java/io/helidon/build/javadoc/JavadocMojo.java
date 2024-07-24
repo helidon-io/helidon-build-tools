@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,16 +51,14 @@ import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenModel;
+import io.helidon.build.common.maven.plugin.MavenArtifact;
+import io.helidon.build.common.maven.plugin.MavenFilters;
 import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.javadoc.JavadocModule.CompositeJavadocModule;
 import io.helidon.build.javadoc.JavadocModule.JarModule;
 import io.helidon.build.javadoc.JavadocModule.SourceModule;
 import io.helidon.build.javadoc.JavadocModule.SourceRoot;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.ArtifactHandler;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Organization;
@@ -114,9 +112,9 @@ import static java.util.stream.Collectors.toSet;
  */
 @Mojo(name = "javadoc", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 @Execute(phase = LifecyclePhase.NONE)
+@SuppressWarnings("SpellCheckingInspection")
 public class JavadocMojo extends AbstractMojo {
 
-    private static final ArtifactHandler JAR_HANDLER = new DefaultArtifactHandler("jar");
     private static final String JAVADOC_EXE = OSType.currentOS() == OSType.Windows ? "javadoc.exe" : "javadoc";
 
     @Component
@@ -219,7 +217,7 @@ public class JavadocMojo extends AbstractMojo {
      * Pom scanning excludes.
      * List of glob expressions used as an exclude filter for directories that may contain {@code pom.xml} files.
      */
-    @Parameter(property = "helidon.javadoc.pomScanningExcludes", defaultValue = "**/target/**")
+    @Parameter(property = "helidon.javadoc.pomScanningExcludes", defaultValue = "**/target/**,**/src**")
     private List<String> pomScanningExcludes = List.of();
 
     /**
@@ -422,7 +420,7 @@ public class JavadocMojo extends AbstractMojo {
     @Parameter(property = "helidon.javadoc.failOnWarnings", defaultValue = "false")
     private boolean failOnWarnings;
 
-    private Predicate<Artifact> dependencyFilter;
+    private Predicate<MavenArtifact> dependencyFilter;
     private Predicate<MavenModel> pomFilter;
     private Predicate<Path> pomIdentityFilter;
     private Predicate<Path> pomScanningFilter;
@@ -449,13 +447,13 @@ public class JavadocMojo extends AbstractMojo {
 
         // init filters
         sourcesJarSelectors = selectors(sourcesJarIncludes, sourcesJarExcludes);
-        dependencyFilter = Filters.artifactFilter(dependencyIncludes, dependencyExcludes);
-        pomFilter = Filters.pomFilter(pomIncludes, pomExcludes);
-        sourceFilter = Filters.pathFilter(sourceIncludes, sourceExcludes, projectRoot.toPath());
-        pomIdentityFilter = Filters.dirFilter(pomScanningIdentity);
-        pomScanningFilter = Filters.pathFilter(pomScanningIncludes, pomScanningExcludes, projectRoot.toPath());
-        moduleFilter = Filters.stringFilter(moduleIncludes, moduleExcludes);
-        packageFilter = Filters.stringFilter(packageIncludes, packageExcludes);
+        dependencyFilter = MavenFilters.artifactFilter(dependencyIncludes, dependencyExcludes);
+        pomFilter = MavenFilters.pomFilter(pomIncludes, pomExcludes);
+        sourceFilter = MavenFilters.pathFilter(sourceIncludes, sourceExcludes, projectRoot.toPath());
+        pomIdentityFilter = MavenFilters.dirFilter(pomScanningIdentity);
+        pomScanningFilter = MavenFilters.pathFilter(pomScanningIncludes, pomScanningExcludes, projectRoot.toPath());
+        moduleFilter = MavenFilters.stringFilter(moduleIncludes, moduleExcludes);
+        packageFilter = MavenFilters.stringFilter(packageIncludes, packageExcludes);
         workDir = ensureDirectory(buildDirectory.toPath().resolve("javadoc-maven-plugin"));
         workspace = scanWorkspace();
 
@@ -503,8 +501,8 @@ public class JavadocMojo extends AbstractMojo {
     }
 
     private void resolveJavadocModules() {
-        for (Artifact artifact : project.getArtifacts()) {
-            if (!"jar".equals(artifact.getType())) {
+        for (MavenArtifact artifact : Lists.map(project.getArtifacts(), MavenArtifact::new)) {
+            if (!"jar".equals(artifact.type())) {
                 Log.debug("Dependency ignored (not a jar type): " + artifact);
                 continue;
             }
@@ -548,7 +546,7 @@ public class JavadocMojo extends AbstractMojo {
             if (computed instanceof CompositeJavadocModule cm) {
                 if (!cm.name().equals(JavadocModule.INVALID)) {
                     Log.debug("Found module '%s' in multiple locations: %s",
-                              cm.name(), Lists.join(cm.artifacts(), Artifact::getFile, " "));
+                            cm.name(), Lists.join(cm.artifacts(), MavenArtifact::file, " "));
                 }
             }
         }
@@ -606,12 +604,12 @@ public class JavadocMojo extends AbstractMojo {
         // for all the patched modules, layout is src/{module-name}
         Path moduleSrcDir = workDir.resolve("src");
         sources.forEach((name, it) -> {
-            modulePath.add(normalizePath(it.artifact().getFile()));
+            modulePath.add(normalizePath(it.artifact().file()));
             ensureDirectory(moduleSrcDir.resolve(name));
         });
 
         jars.forEach((name, it) -> {
-            String path = normalizePath(it.artifact().getFile());
+            String path = normalizePath(it.artifact().file());
             if (resolved.containsKey(name)) {
                 modulePath.add(path);
             } else {
@@ -729,8 +727,8 @@ public class JavadocMojo extends AbstractMojo {
                 .orElse(null);
     }
 
-    private Set<SourceRoot> sourceRootsFromSourceJar(Artifact dep) {
-        File sourcesJar = resolveSourcesJar(dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+    private Set<SourceRoot> sourceRootsFromSourceJar(MavenArtifact dep) {
+        File sourcesJar = resolveArtifact(dep.sourcesJar());
         Path sourceRoot = workDir.resolve("source-jars").resolve(dep.toString());
         try {
             Log.debug("Unpacking %s to %s", sourcesJar, sourceRoot);
@@ -791,7 +789,7 @@ public class JavadocMojo extends AbstractMojo {
         return path;
     }
 
-    private ModuleDescriptor moduleDescriptor(Set<SourceRoot> sourceRoots, Artifact artifact) {
+    private ModuleDescriptor moduleDescriptor(Set<SourceRoot> sourceRoots, MavenArtifact artifact) {
         return sourceRoots.stream()
                 .filter(s -> parseModuleInfo)
                 .map(s -> s.dir().resolve("module-info.java"))
@@ -806,21 +804,16 @@ public class JavadocMojo extends AbstractMojo {
         return JavaParser.module(path);
     }
 
-    private ModuleDescriptor moduleDescriptor(Artifact artifact) {
+    private ModuleDescriptor moduleDescriptor(MavenArtifact artifact) {
         Log.debug("Resolving module descriptor for %s", artifact);
-        ModuleFinder mf = ModuleFinder.of(artifact.getFile().toPath());
+        ModuleFinder mf = ModuleFinder.of(artifact.file());
         return mf.findAll().iterator().next().descriptor();
     }
 
-    private File resolveSourcesJar(String groupId, String artifactId, String version) {
-        return resolveArtifact(groupId, artifactId, version, "sources", "jar");
-    }
-
-    private File resolveArtifact(String groupId, String artifactId, String version, String classifier, String type) {
+    private File resolveArtifact(MavenArtifact artifact) {
         try {
             ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact(new org.eclipse.aether.artifact.DefaultArtifact(
-                    groupId, artifactId, classifier, type, version));
+            request.setArtifact(artifact.toAetherArtifact());
             request.setRepositories(remoteRepos);
             return repoSystem.resolveArtifact(repoSession, request).getArtifact().getFile();
         } catch (ArtifactResolutionException e) {
@@ -828,7 +821,7 @@ public class JavadocMojo extends AbstractMojo {
         }
     }
 
-    private List<Artifact> resolveDependencies(Dependency dep) {
+    private List<MavenArtifact> resolveDependencies(Dependency dep) {
         try {
             CollectRequest collectRequest = new CollectRequest();
             collectRequest.setRoot(new org.eclipse.aether.graph.Dependency(
@@ -842,21 +835,14 @@ public class JavadocMojo extends AbstractMojo {
                     .stream()
                     .map(ArtifactResult::getArtifact)
                     .filter(it -> "jar".equals(it.getExtension()))
-                    .map(it -> {
-                        Artifact artifact = new DefaultArtifact(
-                                it.getGroupId(), it.getArtifactId(), it.getVersion(),
-                                "compile", it.getExtension(), it.getClassifier(), JAR_HANDLER);
-                        artifact.setFile(it.getFile());
-                        return artifact;
-                    })
+                    .map(MavenArtifact::new)
                     .toList();
-        } catch (DependencyCollectionException
-                 | DependencyResolutionException e) {
+        } catch (DependencyCollectionException | DependencyResolutionException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private MavenProject effectivePom(Artifact dep) {
+    private MavenProject effectivePom(MavenArtifact a) {
         try {
             ProjectBuildingRequest pbr = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
             pbr.setRemoteRepositories(project.getRemoteArtifactRepositories());
@@ -864,7 +850,7 @@ public class JavadocMojo extends AbstractMojo {
             pbr.setProject(null);
             pbr.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
             pbr.setResolveDependencies(true);
-            File pomFile = resolveArtifact(dep.getGroupId(), dep.getArtifactId(), dep.getVersion(), null, "pom");
+            File pomFile = resolveArtifact(a.pom());
             return projectBuilder.build(pomFile, pbr).getProject();
         } catch (ProjectBuildingException ex) {
             throw new RuntimeException(ex);
@@ -907,8 +893,8 @@ public class JavadocMojo extends AbstractMojo {
                 text = text.replace(
                         "{organizationName}",
                         String.format("<a href=\"%s\">%s</a>",
-                                      organization.getUrl(),
-                                      organization.getName()));
+                                organization.getUrl(),
+                                organization.getName()));
             } else {
                 text = text.replace("{organizationName}", organization.getName());
             }
@@ -947,12 +933,12 @@ public class JavadocMojo extends AbstractMojo {
                 }).orElseThrow(() -> new IllegalStateException("Unable to find javadoc executable"));
     }
 
-    private static String gav(Artifact dep) {
-        return String.format("%s:%s:%s", dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+    private static String gav(MavenArtifact dep) {
+        return String.format("%s:%s:%s", dep.groupId(), dep.artifactId(), dep.version());
     }
 
     private static String gav(MavenModel pom) {
-        return String.format("%s:%s:%s", pom.getGroupId(), pom.getArtifactId(), pom.getVersion());
+        return String.format("%s:%s:%s", pom.groupId(), pom.artifactId(), pom.version());
     }
 
     private static boolean addOption(List<String> args, String option, Object... values) {

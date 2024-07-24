@@ -97,7 +97,7 @@ public final class MavenModel {
      *
      * @return Parent, or {@code null} if the POM does not have a parent.
      */
-    public Parent getParent() {
+    public Parent parent() {
         return parent;
     }
 
@@ -106,7 +106,7 @@ public final class MavenModel {
      *
      * @return groupId, never {@code null}
      */
-    public String getGroupId() {
+    public String groupId() {
         return groupId;
     }
 
@@ -115,7 +115,7 @@ public final class MavenModel {
      *
      * @return artifactId, never {@code null}
      */
-    public String getArtifactId() {
+    public String artifactId() {
         return artifactId;
     }
 
@@ -124,7 +124,7 @@ public final class MavenModel {
      *
      * @return version, never {@code null}
      */
-    public String getVersion() {
+    public String version() {
         return version;
     }
 
@@ -133,7 +133,7 @@ public final class MavenModel {
      *
      * @return name, may be {@code null}
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -142,7 +142,7 @@ public final class MavenModel {
      *
      * @return description, may be {@code null}
      */
-    public String getDescription() {
+    public String description() {
         return description;
     }
 
@@ -151,7 +151,7 @@ public final class MavenModel {
      *
      * @return packaging, never {@code null}
      */
-    public String getPackaging() {
+    public String packaging() {
         return packaging;
     }
 
@@ -175,7 +175,7 @@ public final class MavenModel {
          *
          * @return groupId
          */
-        public String getGroupId() {
+        public String groupId() {
             return groupId;
         }
 
@@ -184,7 +184,7 @@ public final class MavenModel {
          *
          * @return artifactId
          */
-        public String getArtifactId() {
+        public String artifactId() {
             return artifactId;
         }
 
@@ -193,7 +193,7 @@ public final class MavenModel {
          *
          * @return version
          */
-        public String getVersion() {
+        public String version() {
             return version;
         }
     }

@@ -161,7 +161,7 @@
         <version.lib.mockito>3.10.0</version.lib.mockito>
         <version.lib.plexus-archiver>4.8.0</version.lib.plexus-archiver>
         <version.lib.plexus-build-api>0.0.7</version.lib.plexus-build-api>
-        <version.lib.plexus-component>2.0.0</version.lib.plexus-component>
+        <version.lib.plexus-component>2.2.0</version.lib.plexus-component>
         <version.lib.plexus-java>1.1.1</version.lib.plexus-java>
         <version.lib.plexus-utils>3.3.0</version.lib.plexus-utils>
         <version.lib.rhino>1.7.14</version.lib.rhino>
@@ -502,10 +502,12 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${version.plugin.dependency-check}</version>
                     <configuration>
+                        <!--suppress MavenModelInspection -->
                         <skip>${dependency-check.skip}</skip>
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <!--suppress MavenModelInspection -->
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
