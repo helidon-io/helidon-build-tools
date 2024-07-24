@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public class IntegrationTestMojo extends AbstractMojo {
      * Directory of test projects.
      */
     @Parameter(property = "archetype.test.projectsDirectory", defaultValue = "${project.build.testOutputDirectory}/projects",
-            required = true)
+               required = true)
     private File testProjectsDirectory;
 
     /**
@@ -164,6 +164,12 @@ public class IntegrationTestMojo extends AbstractMojo {
      */
     @Parameter(property = "archetype.test.testGoal", defaultValue = "package")
     private String testGoal;
+
+    /**
+     * The profiles to use when building archetypes.
+     */
+    @Parameter(property = "archetype.test.testProfiles")
+    private List<String> testProfiles = List.of();
 
     /**
      * External values to use when generating archetypes.
@@ -218,6 +224,12 @@ public class IntegrationTestMojo extends AbstractMojo {
      */
     @Parameter(property = "archetype.test.permutationStartIndex", defaultValue = "1")
     private int permutationStartIndex;
+
+    /**
+     * Permutations end index.
+     */
+    @Parameter(property = "archetype.test.permutationEndIndex", defaultValue = "-1")
+    private int permutationEndIndex;
 
     /**
      * Permutations to process.
@@ -308,11 +320,11 @@ public class IntegrationTestMojo extends AbstractMojo {
         try (FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader())) {
             Script script = ScriptLoader.load(fileSystem.getPath("main.xml"));
             InputPermutations.Builder builder = InputPermutations.builder()
-                                                       .script(script)
-                                                       .externalValues(externalValues)
-                                                       .externalDefaults(externalDefaults)
-                                                       .inputFilters(inputFilters)
-                                                       .permutationFilters(permutationFilters);
+                    .script(script)
+                    .externalValues(externalValues)
+                    .externalDefaults(externalDefaults)
+                    .inputFilters(inputFilters)
+                    .permutationFilters(permutationFilters);
             if (inputFiltersFile != null) {
                 builder.inputFilters(filtersFromFile(inputFiltersFile));
             }
@@ -350,14 +362,15 @@ public class IntegrationTestMojo extends AbstractMojo {
             Iterator<Map<String, String>> it = permutations.iterator();
             for (int i = 1; it.hasNext(); i++) {
                 Map<String, String> next = it.next();
-                if (i >= permutationStartIndex) {
+                if (i >= permutationStartIndex
+                    && (permutationEndIndex <= 0 || i <= permutationEndIndex)) {
                     perms.put(i, next);
                 }
             }
         } else {
             List<Integer> indices = Arrays.stream(permutation.split(","))
-                                          .map(Integer::valueOf)
-                                          .collect(Collectors.toList());
+                    .map(Integer::valueOf)
+                    .collect(Collectors.toList());
             Iterator<Map<String, String>> it = permutations.iterator();
             for (int i = 1; it.hasNext(); i++) {
                 Map<String, String> next = it.next();
@@ -381,7 +394,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         Path ourProjectDir = project.getFile().toPath();
         Path projectsDir = ourProjectDir.getParent().resolve("target/projects");
         ensureDirectory(projectsDir);
-        String projectName = props.getProperty("artifactId");
+        String projectName = props.getProperty("artifactId", "my-project");
         Path outputDir = unique(projectsDir, projectName);
         projectName = outputDir.getFileName().toString();
         props.setProperty("artifactId", projectName);
@@ -463,11 +476,11 @@ public class IntegrationTestMojo extends AbstractMojo {
         try {
             FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
             ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
-                                                        .fileSystem(fileSystem)
-                                                        .inputResolver(new BatchInputResolver())
-                                                        .externalValues(Maps.fromProperties(props))
-                                                        .directorySupplier(n -> outputDir)
-                                                        .build();
+                    .fileSystem(fileSystem)
+                    .inputResolver(new BatchInputResolver())
+                    .externalValues(Maps.fromProperties(props))
+                    .directorySupplier(n -> outputDir)
+                    .build();
             engine.generate();
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
@@ -490,8 +503,8 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
 
         PlexusContainer container = pluginContainerManager.create(MAVEN_ARCHETYPE_PLUGIN,
-                                                                  project.getRemotePluginRepositories(),
-                                                                  session.getRepositorySession());
+                project.getRemotePluginRepositories(),
+                session.getRepositorySession());
 
         Object[] args = new Object[] {
                 container,
@@ -509,10 +522,15 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void invokePostArchetypeGenerationGoals(File basedir) throws IOException, MojoExecutionException {
         FileLogger logger = setupBuildLogger(basedir);
 
-        getLog().info("Invoking post-archetype-generation goal: " + testGoal);
+        getLog().info(String.format("Invoking post-archetype-generation goal: %s, profiles: %s", testGoal, testProfiles));
+
+        File localRepo = session.getRepositorySession().getLocalRepository().getBasedir();
         InvocationRequest request = new DefaultInvocationRequest()
+                .setUserSettingsFile(session.getRequest().getUserSettingsFile())
+                .setLocalRepositoryDirectory(localRepo)
                 .setBaseDirectory(basedir)
                 .setGoals(List.of(testGoal))
+                .setProfiles(testProfiles)
                 .setBatchMode(true)
                 .setShowErrors(true)
                 .setDebug(debug)
