@@ -25,21 +25,21 @@ This goal binds to the `package` phase by default.
 ### General usage
 
 The plugin includes a custom packaging `helidon-archetype`. You need to declare the plugin as an extension to enable
- the use of the custom packaging.
+the use of the custom packaging.
 
 ```xml
 <project>
-    <!-- ... -->
-    <packaging>helidon-archetype</packaging>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <extensions>true</extensions>
-            </plugin>
-        </plugins>
-    </build>
+ <!-- ... -->
+ <packaging>helidon-archetype</packaging>
+ <build>
+  <plugins>
+   <plugin>
+    <groupId>io.helidon.build-tools</groupId>
+    <artifactId>helidon-archetype-maven-plugin</artifactId>
+    <extensions>true</extensions>
+   </plugin>
+  </plugins>
+ </build>
 </project>
 ```
 
@@ -51,7 +51,8 @@ Maven goal to test Helidon archetypes.
 |--------------------------|---------|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | invokerEnvVars           | Map     | `{}`                                            | Invoker environment variables                                                                                              |
 | permutation              | String  | `null`                                          | Indices (comma separated) of the permutations to process                                                                   |
-| permutationStartIndex    | Integer | `1`                                             | Permutation start index (resume-from)                                                                                      |
+| permutationStartIndex    | Integer | `1`                                             | Permutation start index                                                                                                    |
+| permutationEndIndex      | Integer | `-1`                                            | Permutation end index                                                                                                      |
 | permutationsOnly         | boolean | `false`                                         | Whether to only generate input permutations                                                                                |
 | generatePermutations     | boolean | `true`                                          | Whether to auto-compute input permutations                                                                                 |
 | permutationFilters       | List    | `[]`                                            | Permutation filters to filter the computed permutations.                                                                   |
@@ -61,6 +62,7 @@ Maven goal to test Helidon archetypes.
 | externalDefaults         | boolean | `false`                                         | External defaults to use when generating archetypes                                                                        |
 | externalValues           | boolean | `false`                                         | External values to use when generating archetypes                                                                          |
 | testGoal                 | String  | `package`                                       | The goal to use when building archetypes.                                                                                  |
+| testProfiles             | List    | `[]`                                            | The profiles to use when building archetypes.                                                                              |
 | mavenArchetypeCompatible | boolean | `60`                                            | Indicate if the project should be generated with the maven-archetype-plugin or with the Helidon archetype engine directly. |
 | debug                    | boolean | `false`                                         | Whether to show debug statements in the build output                                                                       |
 | showVersion              | boolean | `false`                                         | flag to show the maven version used.                                                                                       |
