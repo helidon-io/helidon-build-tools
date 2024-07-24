@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,17 @@
  */
 package io.helidon.build.archetype.engine.v1;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import io.helidon.build.common.Lists;
+import io.helidon.build.common.Maps;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Helidon archetype V1 descriptor.
@@ -33,37 +39,48 @@ public final class ArchetypeDescriptor {
 
     private final String modelVersion;
     private final String name;
-    private final List<Property> properties;
-    private final List<Transformation> transformations;
+    private final Map<String, Property> properties;
+    private final Map<String, Transformation> transformations;
     private final TemplateSets templateSets;
     private final FileSets fileSets;
     private final InputFlow inputFlow;
 
-    ArchetypeDescriptor(String modelVersion,
-                        String name,
-                        List<Property> properties,
-                        List<Transformation> transformations,
-                        TemplateSets templateSets,
-                        FileSets fileSets,
-                        InputFlow inputFlow) {
-
-        this.modelVersion = Objects.requireNonNull(modelVersion, "modelVersion is null");
-        this.name = Objects.requireNonNull(name, "name is null");
-        this.properties = Objects.requireNonNull(properties, "properties is null");
-        this.transformations = Objects.requireNonNull(transformations, "transformations is null");
-        this.templateSets = templateSets;
-        this.fileSets = fileSets;
-        this.inputFlow = Objects.requireNonNull(inputFlow, "inputFlow is null");
+    ArchetypeDescriptor(XMLElement elt) {
+        if (!"archetype-descriptor".equals(elt.name())) {
+            throw new IllegalStateException("Invalid root element " + elt.name());
+        }
+        modelVersion = elt.attribute("modelVersion");
+        name = elt.attribute("name");
+        properties = elt.child("properties")
+                .map(e -> Maps.from(e.children("property"), Property::id, Property::new))
+                .orElse(Map.of());
+        transformations = elt.child("transformations")
+                .map(e -> Maps.from(e.children("transformation"), Transformation::id, Transformation::new))
+                .orElse(Map.of());
+        templateSets = elt.child("template-sets")
+                .map(e -> new TemplateSets(e, transformations, properties))
+                .orElse(null);
+        fileSets = elt.child("file-sets")
+                .map(e -> new FileSets(e, transformations, properties))
+                .orElse(null);
+        inputFlow = elt.child("input-flow")
+                .map(e -> new InputFlow(e, properties))
+                .orElseThrow(() -> new IllegalStateException("Missing input flow"));
     }
 
     /**
-     * Create a archetype descriptor instance from an input stream.
+     * Create an archetype descriptor instance from an input stream.
      *
      * @param is input stream
      * @return ArchetypeDescriptor
      */
     public static ArchetypeDescriptor read(InputStream is) {
-        return ArchetypeDescriptorReader.read(is);
+        try {
+            XMLElement elt = XMLElement.parse(is);
+            return new ArchetypeDescriptor(elt);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
@@ -89,18 +106,18 @@ public final class ArchetypeDescriptor {
     /**
      * Get the archetype properties.
      *
-     * @return list of {@link Property}, never {@code null}
+     * @return map of {@link Property}, never {@code null}
      */
-    public List<Property> properties() {
+    public Map<String, Property> properties() {
         return properties;
     }
 
     /**
      * Get the transformations.
      *
-     * @return list of {@link Transformation}, never {@code null}
+     * @return map of {@link Transformation}, never {@code null}
      */
-    public List<Transformation> transformations() {
+    public Map<String, Transformation> transformations() {
         return transformations;
     }
 
@@ -133,15 +150,19 @@ public final class ArchetypeDescriptor {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ArchetypeDescriptor that = (ArchetypeDescriptor) o;
         return modelVersion.equals(that.modelVersion)
-                && properties.equals(that.properties)
-                && transformations.equals(that.transformations)
-                && Objects.equals(templateSets, that.templateSets)
-                && Objects.equals(fileSets, that.fileSets)
-                && inputFlow.equals(that.inputFlow);
+               && properties.equals(that.properties)
+               && transformations.equals(that.transformations)
+               && Objects.equals(templateSets, that.templateSets)
+               && Objects.equals(fileSets, that.fileSets)
+               && inputFlow.equals(that.inputFlow);
     }
 
     @Override
@@ -152,9 +173,9 @@ public final class ArchetypeDescriptor {
     @Override
     public String toString() {
         return "ArchetypeDescriptor{"
-                + "modelVersion='" + modelVersion + '\''
-                + ", name='" + name + '\''
-                + '}';
+               + "modelVersion='" + modelVersion + '\''
+               + ", name='" + name + '\''
+               + '}';
     }
 
     /**
@@ -168,17 +189,17 @@ public final class ArchetypeDescriptor {
         private final boolean readonly;
 
         Property(String id, String value) {
-            this(id, value, true, false);
+            this.id = Objects.requireNonNull(id, "id is null");
+            this.value = value;
+            this.exported = true;
+            this.readonly = false;
         }
 
-        Property(String id, String value, boolean exported, boolean readonly) {
-            this.id = Objects.requireNonNull(id, "id is null");
-            this.exported = exported;
-            this.readonly = readonly;
-            if (readonly && (value == null || value.isEmpty())) {
-                throw new IllegalArgumentException("A readonly property requires a value");
-            }
-            this.value = value;
+        Property(XMLElement elt) {
+            id = elt.attribute("id");
+            value = elt.attribute("value", null);
+            exported = elt.attributeBoolean("exported", true);
+            readonly = elt.attributeBoolean("readonly", false);
         }
 
         /**
@@ -211,8 +232,8 @@ public final class ArchetypeDescriptor {
 
         /**
          * Indicate if this property is exported.
-         * Properties marked as not exported are excluded converting to other descriptor formats
-         * (e.g. {@code maven/archetype-metadata.xml}.
+         * Properties marked as not exported are excluded converting to other descriptor formats.
+         * E.g. {@code maven/archetype-metadata.xml}.
          *
          * @return {@code true} if exported, {@code false} otherwise
          */
@@ -222,13 +243,17 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Property property = (Property) o;
             return exported == property.exported
-                    && readonly == property.readonly
-                    && id.equals(property.id)
-                    && Objects.equals(value, property.value);
+                   && readonly == property.readonly
+                   && id.equals(property.id)
+                   && Objects.equals(value, property.value);
         }
 
         @Override
@@ -239,25 +264,34 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Property{"
-                    + "id='" + id + '\''
-                    + ", value='" + value + '\''
-                    + ", exported=" + exported
-                    + ", readonly=" + readonly
-                    + '}';
+                   + "id='" + id + '\''
+                   + ", value='" + value + '\''
+                   + ", exported=" + exported
+                   + ", readonly=" + readonly
+                   + '}';
         }
     }
 
     /**
-     *  transformation, a pipeline of string replacement operations.
+     * transformation, a pipeline of string replacement operations.
      */
     public static final class Transformation {
 
         private final String id;
-        private final LinkedList<Replacement> replacements;
+        private final List<Replacement> replacements;
 
-        Transformation(String id) {
-            this.id = Objects.requireNonNull(id, "id is null");
-            this.replacements = new LinkedList<>();
+        Transformation(String id, List<Replacement> replacements) {
+            this.id = id;
+            this.replacements = replacements;
+        }
+
+        private Transformation(XMLElement elt) {
+            this.id = elt.attribute("id");
+            this.replacements = elt.children("replace").stream()
+                    .map(r -> new Replacement(
+                            r.attribute("regex"),
+                            r.attribute("replacement")))
+                    .collect(Collectors.toList());
         }
 
         /**
@@ -274,17 +308,20 @@ public final class ArchetypeDescriptor {
          *
          * @return list of replacement, never {@code null}
          */
-        public LinkedList<Replacement> replacements() {
+        public List<Replacement> replacements() {
             return replacements;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Transformation that = (Transformation) o;
-            return id.equals(that.id)
-                    && replacements.equals(that.replacements);
+            return id.equals(that.id) && replacements.equals(that.replacements);
         }
 
         @Override
@@ -295,9 +332,9 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Transformation{"
-                    + "id='" + id + '\''
-                    + ", replacements=" + replacements
-                    + '}';
+                   + "id='" + id + '\''
+                   + ", replacements=" + replacements
+                   + '}';
         }
     }
 
@@ -334,11 +371,15 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Replacement that = (Replacement) o;
             return regex.equals(that.regex)
-                    && replacement.equals(that.replacement);
+                   && replacement.equals(that.replacement);
         }
 
         @Override
@@ -349,9 +390,9 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Replacement{"
-                    + "regex='" + regex + '\''
-                    + ", replacement='" + replacement + '\''
-                    + '}';
+                   + "regex='" + regex + '\''
+                   + ", replacement='" + replacement + '\''
+                   + '}';
         }
     }
 
@@ -363,13 +404,22 @@ public final class ArchetypeDescriptor {
         private final List<Property> ifProperties;
         private final List<Property> unlessProperties;
 
-        Conditional(List<Property> ifProperties, List<Property> unlessProperties) {
-            this.ifProperties = Objects.requireNonNull(ifProperties, "ifProperties is null");
-            this.unlessProperties = Objects.requireNonNull(unlessProperties, "unlessProperties is null");
+        private Conditional(List<Property> ifProperties, List<Property> unlessProperties) {
+            this.ifProperties = ifProperties;
+            this.unlessProperties = unlessProperties;
+        }
+
+        private Conditional(XMLElement elt, Map<String, Property> properties) {
+            this.ifProperties = Lists.map(elt.attributeList("if", ","), it ->
+                    Maps.getOrThrow(properties, it, k -> new IllegalStateException(String.format(
+                            "Unknown property %s in %s", it, elt.name()))));
+            this.unlessProperties = Lists.map(elt.attributeList("unless", ","), it ->
+                    Maps.getOrThrow(properties, it, k -> new IllegalStateException(String.format(
+                            "Unknown property %s in %s", it, elt.name()))));
         }
 
         /**
-         * Get the if properties.
+         * Get the {@code if} properties.
          *
          * @return list of properties, never {@code null}
          */
@@ -388,11 +438,15 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Conditional that = (Conditional) o;
             return ifProperties.equals(that.ifProperties)
-                    && unlessProperties.equals(that.unlessProperties);
+                   && unlessProperties.equals(that.unlessProperties);
         }
 
         @Override
@@ -406,10 +460,11 @@ public final class ArchetypeDescriptor {
      */
     public static final class TemplateSets extends PathSets {
 
-        private final LinkedList<FileSet> templateSets = new LinkedList<>();
+        private final List<FileSet> templateSets;
 
-        TemplateSets(List<Transformation> transformations) {
-            super(transformations);
+        TemplateSets(XMLElement elt, Map<String, Transformation> transformations, Map<String, Property> properties) {
+            super(elt, transformations);
+            templateSets = Lists.map(elt.children("template-set"), it -> new FileSet(it, transformations, properties));
         }
 
         /**
@@ -417,17 +472,22 @@ public final class ArchetypeDescriptor {
          *
          * @return list of file set, never {@code null}
          */
-        public LinkedList<FileSet> templateSets() {
+        public List<FileSet> templateSets() {
             return templateSets;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            TemplateSets that = (TemplateSets) o;
-            return templateSets.equals(that.templateSets);
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            return templateSets.equals(((TemplateSets) o).templateSets);
         }
 
         @Override
@@ -438,9 +498,9 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "TemplateSets{"
-                    + "templateSets=" + templateSets
-                    + ", transformations=" + transformations()
-                    + '}';
+                   + "templateSets=" + templateSets
+                   + ", transformations=" + transformations()
+                   + '}';
         }
     }
 
@@ -449,10 +509,11 @@ public final class ArchetypeDescriptor {
      */
     public static final class FileSets extends PathSets {
 
-        private final LinkedList<FileSet> fileSets = new LinkedList<>();
+        private final List<FileSet> fileSets;
 
-        FileSets(List<Transformation> transformations) {
-            super(transformations);
+        private FileSets(XMLElement elt, Map<String, Transformation> transformations, Map<String, Property> properties) {
+            super(elt, transformations);
+            fileSets = Lists.map(elt.children("file-set"), it -> new FileSet(it, transformations, properties));
         }
 
         /**
@@ -460,17 +521,22 @@ public final class ArchetypeDescriptor {
          *
          * @return list of file set, never {@code null}
          */
-        public LinkedList<FileSet> fileSets() {
+        public List<FileSet> fileSets() {
             return fileSets;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            FileSets fileSets1 = (FileSets) o;
-            return fileSets.equals(fileSets1.fileSets);
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            return fileSets.equals(((FileSets) o).fileSets);
         }
 
         @Override
@@ -481,9 +547,9 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "FileSets{"
-                    + "fileSets=" + fileSets
-                    + ", transformations=" + transformations()
-                    + '}';
+                   + "fileSets=" + fileSets
+                   + ", transformations=" + transformations()
+                   + '}';
         }
     }
 
@@ -494,13 +560,10 @@ public final class ArchetypeDescriptor {
 
         private final List<Transformation> transformations;
 
-        /**
-         * Create a new instance.
-         *
-         * @param transformations list of transformations
-         */
-        protected PathSets(List<Transformation> transformations) {
-            this.transformations = Objects.requireNonNull(transformations, "transformations is null");
+        private PathSets(XMLElement elt, Map<String, Transformation> transformations) {
+            this.transformations = Lists.map(elt.attributeList("transformations", ","), it ->
+                    Maps.getOrThrow(transformations, it, k -> new IllegalStateException(String.format(
+                            "Unknown transformation %s in %s", it, elt.name()))));
         }
 
         /**
@@ -514,8 +577,12 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             PathSets pathSets = (PathSets) o;
             return transformations.equals(pathSets.transformations);
         }
@@ -532,15 +599,32 @@ public final class ArchetypeDescriptor {
     public static final class FileSet extends Conditional {
 
         private final List<Transformation> transformations;
-        private final LinkedList<String> includes;
-        private final LinkedList<String> excludes;
-        private String directory;
+        private final List<String> includes;
+        private final List<String> excludes;
+        private final String directory;
 
-        FileSet(List<Transformation> transformations, List<Property> ifProperties, List<Property> unlessProperties) {
+        FileSet(String directory,
+                List<String> includes,
+                List<String> excludes,
+                List<Transformation> transformations,
+                List<Property> ifProperties,
+                List<Property> unlessProperties) {
+
             super(ifProperties, unlessProperties);
-            this.transformations = Objects.requireNonNull(transformations, "transformations is null");
-            this.includes = new LinkedList<>();
-            this.excludes = new LinkedList<>();
+            this.transformations = transformations;
+            this.includes = includes;
+            this.excludes = excludes;
+            this.directory = directory;
+        }
+
+        private FileSet(XMLElement elt, Map<String, Transformation> transformations, Map<String, Property> properties) {
+            super(elt, properties);
+            this.directory = elt.child("directory").map(XMLElement::value).orElse(null);
+            this.transformations = Lists.map(elt.attributeList("transformations", ","), it ->
+                    Maps.getOrThrow(transformations, it, k -> new IllegalStateException(String.format(
+                            "Unknown transformation %s in %s", it, elt.name()))));
+            this.includes = Lists.map(elt.childrenAt("includes", "include"), XMLElement::value);
+            this.excludes = Lists.map(elt.childrenAt("excludes", "exclude"), XMLElement::value);
         }
 
         /**
@@ -553,19 +637,11 @@ public final class ArchetypeDescriptor {
         }
 
         /**
-         * Set the directory.
-         * @param directory directory
-         */
-        void directory(String directory) {
-            this.directory = Objects.requireNonNull(directory, "directory is null");
-        }
-
-        /**
          * Get the exclude filters.
          *
          * @return list of exclude filter, never {@code null}
          */
-        public LinkedList<String> excludes() {
+        public List<String> excludes() {
             return excludes;
         }
 
@@ -574,7 +650,7 @@ public final class ArchetypeDescriptor {
          *
          * @return list of include filter, never {@code null}
          */
-        public LinkedList<String> includes() {
+        public List<String> includes() {
             return includes;
         }
 
@@ -589,14 +665,20 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
             FileSet fileSet = (FileSet) o;
             return transformations.equals(fileSet.transformations)
-                    && includes.equals(fileSet.includes)
-                    && excludes.equals(fileSet.excludes)
-                    && directory.equals(fileSet.directory);
+                   && includes.equals(fileSet.includes)
+                   && excludes.equals(fileSet.excludes)
+                   && directory.equals(fileSet.directory);
         }
 
         @Override
@@ -607,13 +689,13 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "FileSet{"
-                    + "ifProperties=" + ifProperties()
-                    + ", unlessProperties=" + unlessProperties()
-                    + ", transformations=" + transformations
-                    + ", includes=" + includes
-                    + ", excludes=" + excludes
-                    + ", directory='" + directory + '\''
-                    + '}';
+                   + "ifProperties=" + ifProperties()
+                   + ", unlessProperties=" + unlessProperties()
+                   + ", transformations=" + transformations
+                   + ", includes=" + includes
+                   + ", excludes=" + excludes
+                   + ", directory='" + directory + '\''
+                   + '}';
         }
     }
 
@@ -622,21 +704,37 @@ public final class ArchetypeDescriptor {
      */
     public static final class InputFlow {
 
-        private final LinkedList<FlowNode> nodes = new LinkedList<>();
+        private final List<FlowNode> nodes;
+
+        private InputFlow(XMLElement elt, Map<String, Property> properties) {
+            this.nodes = Lists.map(elt.children(), it -> {
+                if ("select".equals(it.name())) {
+                    return new Select(it, properties);
+                }
+                if ("input".equals(it.name())) {
+                    return new Input(it, properties);
+                }
+                throw new IllegalStateException("Invalid input flow node: " + it.name());
+            });
+        }
 
         /**
          * Get the flow nodes.
          *
          * @return list of flow node, never {@code null}
          */
-        public LinkedList<FlowNode> nodes() {
+        public List<FlowNode> nodes() {
             return nodes;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             InputFlow inputFlow = (InputFlow) o;
             return Objects.equals(nodes, inputFlow.nodes);
         }
@@ -649,8 +747,8 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "InputFlow{"
-                    + "nodes=" + nodes
-                    + '}';
+                   + "nodes=" + nodes
+                   + '}';
         }
     }
 
@@ -661,16 +759,9 @@ public final class ArchetypeDescriptor {
 
         private final String text;
 
-        /**
-         * Create a new instance.
-         *
-         * @param text             node text
-         * @param ifProperties     if properties
-         * @param unlessProperties unless properties
-         */
-        protected FlowNode(String text, List<Property> ifProperties, List<Property> unlessProperties) {
-            super(ifProperties, unlessProperties);
-            this.text = Objects.requireNonNull(text, "text is null");
+        private FlowNode(XMLElement elt, Map<String, Property> properties) {
+            super(elt, properties);
+            this.text = elt.attribute("text");
         }
 
         /**
@@ -684,9 +775,15 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
             FlowNode flowNode = (FlowNode) o;
             return text.equals(flowNode.text);
         }
@@ -702,11 +799,11 @@ public final class ArchetypeDescriptor {
      */
     public static final class Select extends FlowNode {
 
-        private final LinkedList<Choice> choices;
+        private final List<Choice> choices;
 
-        Select(String text, List<Property> ifProperties, List<Property> unlessProperties) {
-            super(text, ifProperties, unlessProperties);
-            this.choices = new LinkedList<>();
+        private Select(XMLElement elt, Map<String, Property> properties) {
+            super(elt, properties);
+            this.choices = Lists.map(elt.children("choice"), it -> new Choice(it, properties));
         }
 
         /**
@@ -714,15 +811,21 @@ public final class ArchetypeDescriptor {
          *
          * @return list of {@code Choice}, never {@code null}
          */
-        public LinkedList<Choice> choices() {
+        public List<Choice> choices() {
             return choices;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
             Select select = (Select) o;
             return choices.equals(select.choices);
         }
@@ -735,11 +838,11 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Select{"
-                    + "ifProperties=" + ifProperties()
-                    + ", unlessProperties=" + unlessProperties()
-                    + ", text='" + text() + '\''
-                    + ", choices=" + choices
-                    + '}';
+                   + "ifProperties=" + ifProperties()
+                   + ", unlessProperties=" + unlessProperties()
+                   + ", text='" + text() + '\''
+                   + ", choices=" + choices
+                   + '}';
         }
     }
 
@@ -750,9 +853,11 @@ public final class ArchetypeDescriptor {
 
         private final Property property;
 
-        Choice(Property property, String text, List<Property> ifProperties, List<Property> unlessProperties) {
-            super(text, ifProperties, unlessProperties);
-            this.property = Objects.requireNonNull(property, "property is null");
+        private Choice(XMLElement elt, Map<String, Property> properties) {
+            super(elt, properties);
+            this.property = Maps.getOrThrow(properties, elt.attribute("property"),
+                    k -> new IllegalStateException(String.format(
+                            "Unknown property %s in %s", k, elt.name())));
             if (property.isReadonly()) {
                 throw new IllegalArgumentException("Property: " + property.id() + " is readonly");
             }
@@ -769,9 +874,15 @@ public final class ArchetypeDescriptor {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
             Choice choice = (Choice) o;
             return Objects.equals(property, choice.property);
         }
@@ -784,11 +895,11 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Choice{"
-                    + "ifProperties=" + ifProperties()
-                    + ", unlessProperties=" + unlessProperties()
-                    + ", text='" + text() + '\''
-                    + ", property=" + property
-                    + '}';
+                   + "ifProperties=" + ifProperties()
+                   + ", unlessProperties=" + unlessProperties()
+                   + ", text='" + text() + '\''
+                   + ", property=" + property
+                   + '}';
         }
     }
 
@@ -798,17 +909,17 @@ public final class ArchetypeDescriptor {
     public static final class Input extends FlowNode {
 
         private final Property property;
-        private final Optional<String> defaultValue;
+        private final String defaultValue;
 
-        Input(Property property, String defaultValue, String text, List<Property> ifProperties,
-                List<Property> unlessProperties) {
-
-            super(text, ifProperties, unlessProperties);
-            this.property = Objects.requireNonNull(property, "property is null");
+        private Input(XMLElement elt, Map<String, Property> properties) {
+            super(elt, properties);
+            this.defaultValue = elt.attribute("default", null);
+            this.property = Maps.getOrThrow(properties, elt.attribute("property"),
+                    k -> new IllegalStateException(String.format(
+                            "Unknown property %s in %s", k, elt.name())));
             if (property.isReadonly()) {
                 throw new IllegalArgumentException("Property: " + property.id() + " is readonly");
             }
-            this.defaultValue = Optional.ofNullable(defaultValue);
         }
 
         /**
@@ -826,17 +937,23 @@ public final class ArchetypeDescriptor {
          * @return default value
          */
         public Optional<String> defaultValue() {
-            return defaultValue;
+            return Optional.ofNullable(defaultValue);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
             Input input = (Input) o;
             return property.equals(input.property)
-                    && defaultValue.equals(input.defaultValue);
+                   && defaultValue.equals(input.defaultValue);
         }
 
         @Override
@@ -847,12 +964,12 @@ public final class ArchetypeDescriptor {
         @Override
         public String toString() {
             return "Input{"
-                    + "ifProperties=" + ifProperties()
-                    + ", unlessProperties=" + unlessProperties()
-                    + ", text='" + text() + '\''
-                    + ", property=" + property
-                    + ", defaultValue=" + defaultValue
-                    + '}';
+                   + "ifProperties=" + ifProperties()
+                   + ", unlessProperties=" + unlessProperties()
+                   + ", text='" + text() + '\''
+                   + ", property=" + property
+                   + ", defaultValue=" + defaultValue
+                   + '}';
         }
     }
 }

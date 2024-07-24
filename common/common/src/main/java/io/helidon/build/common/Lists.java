@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,19 @@ public class Lists {
     /**
      * Flat-map the elements of the given list.
      *
+     * @param stream   input stream
+     * @param function mapping function
+     * @param <T>      output element type
+     * @param <V>      input element type
+     * @return new list
+     */
+    public static <T, V> List<T> flatMapStream(Stream<V> stream, Function<V, Stream<T>> function) {
+        return stream == null ? List.of() : stream.flatMap(function).collect(Collectors.toList());
+    }
+
+    /**
+     * Flat-map the elements of the given list.
+     *
      * @param list     input list
      * @param function mapping function
      * @param <T>      output element type
@@ -113,6 +126,19 @@ public class Lists {
      */
     public static <T, V> List<T> flatMap(Collection<V> list, Function<V, Collection<T>> function) {
         return flatMapStream(list, e -> function.apply(e).stream());
+    }
+
+    /**
+     * Flat-map the elements of the given stream.
+     *
+     * @param stream     input list
+     * @param function mapping function
+     * @param <T>      output element type
+     * @param <V>      input element type
+     * @return new list
+     */
+    public static <T, V> List<T> flatMap(Stream<V> stream, Function<V, Collection<T>> function) {
+        return flatMapStream(stream, e -> function.apply(e).stream());
     }
 
     /**

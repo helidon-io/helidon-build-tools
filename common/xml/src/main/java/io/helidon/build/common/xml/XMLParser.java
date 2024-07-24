@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,220 +18,16 @@ package io.helidon.build.common.xml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Collections;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * Simple XML parser.
+ * XML parser.
  */
-public final class SimpleXMLParser {
-
-    /**
-     * Base type for all XML exceptions.
-     */
-    public static class XMLException extends RuntimeException {
-
-        /**
-         * Create a new XML exception.
-         *
-         * @param msg   message
-         * @param cause cause
-         */
-        protected XMLException(String msg, Throwable cause) {
-            super(msg, cause);
-        }
-
-        /**
-         * Create a new XML exception.
-         *
-         * @param msg message
-         */
-        protected XMLException(String msg) {
-            super(msg);
-        }
-
-        /**
-         * Create a new XML exception.
-         */
-        protected XMLException() {
-            super();
-        }
-    }
-
-    /**
-     * XML parser exception.
-     */
-    public static class XMLParserException extends XMLException {
-
-        /**
-         * Create a new XML parser exception.
-         *
-         * @param msg message
-         */
-        public XMLParserException(String msg) {
-            super(msg);
-        }
-    }
-
-    /**
-     * XML reader exception.
-     */
-    public static class XMLReaderException extends XMLException {
-
-        /**
-         * Create a new XML reader exception.
-         *
-         * @param msg   message
-         * @param cause cause
-         */
-        public XMLReaderException(String msg, Throwable cause) {
-            super(msg, cause);
-        }
-
-        /**
-         * Create a new XML reader exception.
-         *
-         * @param msg message
-         */
-        public XMLReaderException(String msg) {
-            super(msg);
-        }
-
-        /**
-         * Create a new XML reader exception.
-         */
-        public XMLReaderException() {
-            super();
-        }
-    }
-
-    /**
-     * XML Reader.
-     */
-    public interface Reader {
-
-        /**
-         * Receive notification of the start of an element.
-         *
-         * @param name       the element name
-         * @param attributes the element attributes
-         * @throws XMLReaderException if any error occurs
-         */
-        default void startElement(String name, Map<String, String> attributes) {
-        }
-
-        /**
-         * Receive notification of the end of an element.
-         *
-         * @param name the element name
-         * @throws XMLReaderException if any error occurs
-         */
-        default void endElement(String name) {
-        }
-
-        /**
-         * Receive notification of text data inside an element.
-         *
-         * @param data the text data
-         * @throws XMLReaderException if any error occurs
-         */
-        default void elementText(String data) {
-        }
-
-        /**
-         * Continue action, can be overridden to stop parsing.
-         *
-         * @return {@code true} to keep parsing, {@code false} to stop parsing
-         */
-        default boolean keepParsing() {
-            return true;
-        }
-
-        /**
-         * Validate that a child element has a given name.
-         *
-         * @param child  expected child name
-         * @param parent parent name
-         * @param qName  element name to be compared
-         * @throws XMLReaderException if the child name does not match qName
-         */
-        default void validateChild(String child, String parent, String qName) throws XMLReaderException {
-            if (!child.equals(qName)) {
-                throw new XMLReaderException(String.format("Invalid child for '%s', node: '%s'", parent, qName));
-            }
-        }
-
-        /**
-         * Read an attribute and fallback to a default value if not present.
-         *
-         * @param name         attribute name
-         * @param qName        element name
-         * @param attr         attributes
-         * @param defaultValue the fallback value, may be {@code null}
-         * @return attribute value, may be {@code null} if fallback is null
-         */
-        @SuppressWarnings("unused")
-        default String readAttribute(String name, String qName, Map<String, String> attr, String defaultValue) {
-            String value = attr.get(name);
-            if (value == null) {
-                return defaultValue;
-            }
-            return value;
-        }
-
-        /**
-         * Read a required attribute.
-         *
-         * @param name  attribute name
-         * @param qName element name
-         * @param attr  attributes
-         * @return attribute value, never {@code null}
-         * @throws XMLReaderException if the attribute is not found
-         */
-        default String readRequiredAttribute(String name, String qName, Map<String, String> attr)
-                throws XMLReaderException {
-
-            String value = attr.get(name);
-            if (value == null) {
-                throw new XMLReaderException(String.format(
-                        "Missing required attribute '%s', element: '%s'", name, qName));
-            }
-            return value;
-        }
-
-        /**
-         * Read an attribute as a comma separate list.
-         *
-         * @param name  attribute name
-         * @param qName element name
-         * @param attr  attributes
-         * @return list of values, empty if the attribute is not found
-         */
-        @SuppressWarnings("unused")
-        default List<String> readAttributeList(String name, String qName, Map<String, String> attr) {
-            String value = attr.get(name);
-            if (value == null) {
-                return Collections.emptyList();
-            }
-            List<String> values = new LinkedList<>();
-            Collections.addAll(values, value.split(","));
-            return values;
-        }
-
-        /**
-         * Receive notification of content data inside a processing instruction element.
-         *
-         * @param data the content data of a processing instruction
-         * @param target the name of an application to which the instruction is directed
-         * @throws XMLReaderException if any error occurs
-         */
-        default void processingInstruction(String target, String data) {
-        }
-    }
+public final class XMLParser {
 
     private enum STATE {
         START,
@@ -274,18 +70,18 @@ public final class SimpleXMLParser {
     private int limit = 0;
     private int lineNo = 1;
     private int charNo = 0;
-    private StringBuilder nameBuilder = new StringBuilder();
-    private StringBuilder textBuilder = new StringBuilder();
-    private StringBuilder attrNameBuilder = new StringBuilder();
-    private StringBuilder attrValueBuilder = new StringBuilder();
+    private final StringBuilder nameBuilder = new StringBuilder();
+    private final StringBuilder textBuilder = new StringBuilder();
+    private final StringBuilder attrNameBuilder = new StringBuilder();
+    private final StringBuilder attrValueBuilder = new StringBuilder();
     private Map<String, String> attributes = new HashMap<>();
     private STATE state = STATE.START;
     private STATE resumeState = null;
-    private final LinkedList<String> stack = new LinkedList<>();
-    private final Reader reader;
+    private final Deque<Context> stack = new ArrayDeque<>();
+    private final XMLReader reader;
     private final InputStreamReader isr;
 
-    SimpleXMLParser(InputStream is, Reader reader) {
+    XMLParser(InputStream is, XMLReader reader) {
         this.isr = new InputStreamReader(Objects.requireNonNull(is, "input stream is null"));
         this.reader = Objects.requireNonNull(reader, "reader is null");
     }
@@ -298,8 +94,8 @@ public final class SimpleXMLParser {
      * @throws NullPointerException if the given InputStream or Reader is {@code null}
      * @throws IOException          If any IO error occurs
      */
-    public static void parse(InputStream is, Reader reader) throws IOException {
-        new SimpleXMLParser(is, reader).parse();
+    public static void parse(InputStream is, XMLReader reader) throws IOException {
+        new XMLParser(is, reader).parse();
     }
 
     /**
@@ -310,8 +106,8 @@ public final class SimpleXMLParser {
      * @return new parser
      * @throws NullPointerException if the given InputStream or Reader is {@code null}
      */
-    public static SimpleXMLParser create(InputStream is, Reader reader) {
-        return new SimpleXMLParser(is, reader);
+    public static XMLParser create(InputStream is, XMLReader reader) {
+        return new XMLParser(is, reader);
     }
 
     /**
@@ -322,10 +118,10 @@ public final class SimpleXMLParser {
      */
     public static String processXmlEscapes(String input) {
         return input.replaceAll("&quot;", "\"")
-                    .replaceAll("&apos", "'")
-                    .replaceAll("&lt;", "<")
-                    .replaceAll("&gt;", ">")
-                    .replaceAll("&amp;", "&");
+                .replaceAll("&apos", "'")
+                .replaceAll("&lt;", "<")
+                .replaceAll("&gt;", ">")
+                .replaceAll("&amp;", "&");
     }
 
     /**
@@ -396,7 +192,7 @@ public final class SimpleXMLParser {
             position++;
         } else {
             state = STATE.TEXT;
-            textBuilder.append(c);
+            context().textBuilder.append(c);
             position++;
         }
     }
@@ -423,18 +219,17 @@ public final class SimpleXMLParser {
                 throw new IllegalStateException(String.format(
                         "Missing opening element: %s", name));
             }
-            String parentName = stack.pop();
-            if (!name.equals(parentName)) {
+            Context ctx = stack.pop();
+            if (!name.equals(ctx.name)) {
                 throw new IllegalStateException(String.format(
                         "Invalid closing element: %s, expecting: %s, line: %d, char: %d",
-                        name, parentName, lineNo, charNo));
+                        name, ctx.name, lineNo, charNo));
             }
             position++;
             state = STATE.ELEMENT;
-            reader.elementText(decode(textBuilder.toString()));
+            reader.elementText(decode(ctx.textBuilder.toString()));
             reader.endElement(name);
-            nameBuilder = new StringBuilder();
-            textBuilder = new StringBuilder();
+            nameBuilder.setLength(0);
         } else {
             resumeState = STATE.END_ELEMENT;
             state = STATE.NAME;
@@ -451,15 +246,15 @@ public final class SimpleXMLParser {
             String name = nameBuilder.toString();
             reader.startElement(name, attributes);
             reader.endElement(name);
-            nameBuilder = new StringBuilder();
+            nameBuilder.setLength(0);
             attributes = new HashMap<>();
         } else if (hasToken(MARKUP_END)) {
             position++;
             state = STATE.ELEMENT;
             String name = nameBuilder.toString();
-            stack.push(name);
+            stack.push(new Context(name));
             reader.startElement(name, attributes);
-            nameBuilder = new StringBuilder();
+            nameBuilder.setLength(0);
             attributes = new HashMap<>();
         } else if (hasToken(ATTRIBUTE_VALUE)) {
             position++;
@@ -491,8 +286,8 @@ public final class SimpleXMLParser {
             position++;
             state = STATE.ATTRIBUTES;
             attributes.put(attrNameBuilder.toString(), decode(attrValueBuilder.toString()));
-            attrNameBuilder = new StringBuilder();
-            attrValueBuilder = new StringBuilder();
+            attrNameBuilder.setLength(0);
+            attrValueBuilder.setLength(0);
         } else {
             validateAttrValueChar(c);
             position++;
@@ -508,7 +303,7 @@ public final class SimpleXMLParser {
         } else if (hasToken(MARKUP_START)) {
             state = STATE.ELEMENT;
         } else {
-            textBuilder.append(buf[position]);
+            context().textBuilder.append(buf[position]);
             position++;
         }
     }
@@ -526,6 +321,8 @@ public final class SimpleXMLParser {
         if (hasToken(CDATA_END)) {
             state = resumeState;
             position += CDATA_END.length();
+            context().textBuilder.append(textBuilder);
+            textBuilder.setLength(0);
         } else {
             textBuilder.append(buf[position]);
             position++;
@@ -540,8 +337,8 @@ public final class SimpleXMLParser {
             reader.startElement(target, attributes);
             reader.processingInstruction(target, decode(textBuilder.toString()));
             reader.endElement(target);
-            nameBuilder = new StringBuilder();
-            textBuilder = new StringBuilder();
+            nameBuilder.setLength(0);
+            textBuilder.setLength(0);
         } else {
             position++;
             textBuilder.append(c);
@@ -561,6 +358,13 @@ public final class SimpleXMLParser {
         }
     }
 
+    private Context context() {
+        if (stack.isEmpty()) {
+            throw new IllegalStateException(String.format(
+                    "Invalid state, line: %d, char: %d", lineNo, charNo));
+        }
+        return stack.peek();
+    }
 
     /**
      * Start parsing.
@@ -671,10 +475,10 @@ public final class SimpleXMLParser {
 
     private static String decode(String value) {
         return value.replaceAll("&gt;", ">")
-                    .replaceAll("&lt;", "<")
-                    .replaceAll("&amp;", "&")
-                    .replaceAll("&quot;", "\"")
-                    .replaceAll("&apos;", "'");
+                .replaceAll("&lt;", "<")
+                .replaceAll("&amp;", "&")
+                .replaceAll("&quot;", "\"")
+                .replaceAll("&apos;", "'");
     }
 
     private static boolean isAllowedChar(char c) {
@@ -687,5 +491,15 @@ public final class SimpleXMLParser {
             }
         }
         return false;
+    }
+
+    private static final class Context {
+
+        private final String name;
+        private final StringBuilder textBuilder = new StringBuilder();
+
+        Context(String name) {
+            this.name = name;
+        }
     }
 }

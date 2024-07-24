@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package io.helidon.build.common.xml;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
-
-import io.helidon.build.common.xml.SimpleXMLParser.Reader;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +32,16 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Unit test for class {@link SimpleXMLParser}.
+ * Unit test for class {@link XMLParser}.
  */
-class SimpleMXLParserTest {
+class XMLParserTest {
 
     @Test
     void testParseProcessInstruction() throws IOException {
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test1.xml");
         assertThat(inputStream, is(not(nullValue())));
         Test1Reader reader = new Test1Reader();
-        SimpleXMLParser.parse(inputStream, reader);
+        XMLParser.parse(inputStream, reader);
         assertThat(reader.m2e, is("execute onConfiguration,onIncremental"));
     }
 
@@ -51,7 +50,7 @@ class SimpleMXLParserTest {
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test1.xml");
         assertThat(inputStream, is(not(nullValue())));
         Test1Reader reader = new Test1Reader();
-        SimpleXMLParser.parse(inputStream, reader);
+        XMLParser.parse(inputStream, reader);
         assertThat(reader.rootQName, is("document"));
         assertThat(reader.foo, is("bar"));
         assertThat(reader.bob, is("alice"));
@@ -60,7 +59,7 @@ class SimpleMXLParserTest {
     @Test
     void testKeepParsingFalse() throws IOException {
         try {
-            SimpleXMLParser.parse(new ByteArrayInputStream("INVALID".getBytes(UTF_8)), new Reader() {
+            XMLParser.parse(new ByteArrayInputStream("INVALID".getBytes(UTF_8)), new XMLReader() {
                 @Override
                 public boolean keepParsing() {
                     return false;
@@ -74,7 +73,7 @@ class SimpleMXLParserTest {
     @Test
     void testPartialParsing() throws IOException {
         try {
-            SimpleXMLParser.parse(new ByteArrayInputStream("<foo>bar</foo>BOB".getBytes(UTF_8)), new Reader() {
+            XMLParser.parse(new ByteArrayInputStream("<foo>bar</foo>BOB".getBytes(UTF_8)), new XMLReader() {
                 boolean keepParsing = true;
 
                 @Override
@@ -97,7 +96,7 @@ class SimpleMXLParserTest {
     @Test
     void testCdataParsing() throws IOException {
         try {
-            SimpleXMLParser.parse(new ByteArrayInputStream("<help><![CDATA[ some help ]]></help>".getBytes(UTF_8)), new Reader() {
+            XMLParser.parse(new ByteArrayInputStream("<help><![CDATA[ some help ]]></help>".getBytes(UTF_8)), new XMLReader() {
 
                 @Override
                 public void startElement(String name, Map<String, String> attributes) {
@@ -120,9 +119,9 @@ class SimpleMXLParserTest {
         }
     }
 
-    private static final class Test1Reader implements Reader {
+    private static final class Test1Reader implements XMLReader {
 
-        final LinkedList<String> stack = new LinkedList<>();
+        final Deque<String> stack = new ArrayDeque<>();
         String rootQName;
         String foo;
         String bob;
