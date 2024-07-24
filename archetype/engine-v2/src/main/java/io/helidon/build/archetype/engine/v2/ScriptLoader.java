@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,11 @@ import io.helidon.build.archetype.engine.v2.ast.Value;
 import io.helidon.build.archetype.engine.v2.ast.Variable;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.VirtualFileSystem;
-import io.helidon.build.common.xml.SimpleXMLParser;
-import io.helidon.build.common.xml.SimpleXMLParser.XMLReaderException;
+import io.helidon.build.common.xml.XMLParser;
+import io.helidon.build.common.xml.XMLReader;
+import io.helidon.build.common.xml.XMLReaderException;
 
-import static io.helidon.build.common.xml.SimpleXMLParser.processXmlEscapes;
+import static io.helidon.build.common.xml.XMLParser.processXmlEscapes;
 
 /**
  * Script loader.
@@ -169,12 +170,12 @@ public class ScriptLoader {
         }
     }
 
-    private static final class ReaderImpl implements SimpleXMLParser.Reader {
+    private static final class ReaderImpl implements XMLReader {
 
         private final ScriptLoader loader;
         private Path path;
         private BuilderInfo info;
-        private SimpleXMLParser parser;
+        private XMLParser parser;
         private String qName;
         private Map<String, Value> attrs;
         private LinkedList<Context> stack;
@@ -188,7 +189,7 @@ public class ScriptLoader {
         Script read(InputStream is, Path path) throws IOException {
             this.path = Objects.requireNonNull(path, "path is null");
             stack = new LinkedList<>();
-            parser = SimpleXMLParser.create(is, this);
+            parser = XMLParser.create(is, this);
             parser.parse();
             if (scriptBuilder == null) {
                 throw new IllegalStateException("Unable to create script");

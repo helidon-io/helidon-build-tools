@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 
 package io.helidon.build.cli.common;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
+import io.helidon.build.common.xml.XMLElement;
+import io.helidon.build.common.xml.XMLReaderException;
 
 import static io.helidon.build.cli.common.SemVer.sortVersions;
 
@@ -32,12 +35,37 @@ import static io.helidon.build.cli.common.SemVer.sortVersions;
  */
 public class ArchetypesData {
 
+    static final ArchetypesData EMPTY = new ArchetypesData(List.of(), List.of());
     private final List<Version> versions;
     private final List<Rule> rules;
 
-    private ArchetypesData(Builder builder) {
-        this.versions = builder.versions;
-        this.rules = builder.rules;
+    ArchetypesData(List<Version> versions, List<Rule> rules) {
+        this.versions = versions;
+        this.rules = rules;
+    }
+
+    private ArchetypesData(XMLElement elt) {
+        if (!"data".equals(elt.name())) {
+            throw new XMLReaderException(String.format("Invalid root element: " + elt.name()));
+        }
+        versions = sortVersions(Lists.map(elt.childrenAt("archetypes", "version"), Version::new));
+        rules = Lists.map(elt.childrenAt("rules", "rule"), Rule::new);
+    }
+
+    /**
+     * Get the data about archetype versions from the given file.
+     *
+     * @param versionsFile versionsFile
+     * @return data about archetype versions
+     */
+    public static ArchetypesData load(Path versionsFile) {
+        try {
+            InputStream is = Files.newInputStream(versionsFile);
+            XMLElement elt = XMLElement.parse(is);
+            return new ArchetypesData(elt);
+        } catch (IOException ex) {
+            return ArchetypesData.EMPTY;
+        }
     }
 
     /**
@@ -122,53 +150,6 @@ public class ArchetypesData {
     }
 
     /**
-     * Create a new builder.
-     *
-     * @return builder
-     */
-    static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * ArchetypesData builder.
-     */
-    @SuppressWarnings("UnusedReturnValue")
-    static class Builder {
-
-        private final List<Version> versions = new ArrayList<>();
-        private final List<Rule> rules = new ArrayList<>();
-
-        private Builder() {
-        }
-
-        Builder version(Version version) {
-            versions.add(version);
-            return this;
-        }
-
-        Builder versions(Version... versions) {
-            this.versions.addAll(Arrays.stream(versions).collect(Collectors.toList()));
-            return this;
-        }
-
-        Builder rule(Rule rule) {
-            rules.add(rule);
-            return this;
-        }
-
-        /**
-         * Create new instance of {@link ArchetypesData}.
-         *
-         * @return version
-         */
-        ArchetypesData build() {
-            sortVersions(versions);
-            return new ArchetypesData(this);
-        }
-    }
-
-    /**
      * Helidon version.
      */
     public static class Version {
@@ -176,10 +157,16 @@ public class ArchetypesData {
         private final boolean isDefault;
         private final int order;
 
-        Version(Builder builder) {
-            this.id = builder.id;
-            this.isDefault = builder.isDefault;
-            this.order = builder.order;
+        Version(String id, boolean isDefault, int order) {
+            this.id = id;
+            this.isDefault = isDefault;
+            this.order = order;
+        }
+
+        private Version(XMLElement elt) {
+            this.id = elt.value();
+            this.isDefault = elt.attributeBoolean("default", false);
+            this.order = elt.attribute("order", Integer::parseInt, 0);
         }
 
         MavenVersion toMavenVersion() {
@@ -212,51 +199,6 @@ public class ArchetypesData {
         public int order() {
             return order;
         }
-
-        /**
-         * Create a {@link Version} builder.
-         *
-         * @return builder instance
-         */
-        static Builder builder() {
-            return new Builder();
-        }
-
-        /**
-         * Version builder.
-         */
-        static class Builder {
-            private static final int DEFAULT_ORDER = 100;
-            private String id;
-            private boolean isDefault;
-            private int order = DEFAULT_ORDER;
-
-            Builder order(String order) {
-                if (order != null) {
-                    this.order = Integer.parseInt(order);
-                }
-                return this;
-            }
-
-            Builder order(int order) {
-                this.order = order;
-                return this;
-            }
-
-            Builder id(String id) {
-                this.id = id;
-                return this;
-            }
-
-            Builder isDefault(boolean isDefault) {
-                this.isDefault = isDefault;
-                return this;
-            }
-
-            Version build() {
-                return new Version(this);
-            }
-        }
     }
 
     /**
@@ -266,9 +208,9 @@ public class ArchetypesData {
         private final VersionRange archetypeRange;
         private final VersionRange cliRange;
 
-        Rule(VersionRange archetypeRange, VersionRange cliRange) {
-            this.archetypeRange = archetypeRange;
-            this.cliRange = cliRange;
+        private Rule(XMLElement elt) {
+            this.archetypeRange = VersionRange.createFromVersionSpec(elt.attribute("archetype"));
+            this.cliRange = VersionRange.createFromVersionSpec(elt.attribute("cli"));
         }
 
         VersionRange archetypeRange() {

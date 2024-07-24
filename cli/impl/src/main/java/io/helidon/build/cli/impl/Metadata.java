@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.cli.common.ArchetypesData;
-import io.helidon.build.cli.common.ArchetypesDataLoader;
 import io.helidon.build.common.ConfigProperties;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.Requirements;
@@ -217,7 +216,7 @@ public class Metadata {
             try {
                 update(null, versionsFile, quiet);
                 if (archetypesData.get() == null) {
-                    archetypesData.set(ArchetypesDataLoader.load(versionsFile));
+                    archetypesData.set(ArchetypesData.load(versionsFile));
                 }
                 return archetypesData.get();
             } catch (UpdateFailed | RuntimeException e) {
@@ -458,7 +457,7 @@ public class Metadata {
 
                 // update versions.xml
                 execPlugin(updateArgs(null, quiet), UPDATE_VERSIONS_PLUGIN);
-                ArchetypesData data = ArchetypesDataLoader.load(versionsFile);
+                ArchetypesData data = ArchetypesData.load(versionsFile);
                 archetypesData.set(data);
                 helidonVersion = data.defaultVersion();
 

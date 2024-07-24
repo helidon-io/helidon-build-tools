@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,23 +83,25 @@ public final class ArchetypeEngine implements Closeable {
      * Create a new archetype engine instance.
      *
      * @param loader     jar file loader
-     * @param properties user properties
+     * @param initProperties user properties
      */
-    public ArchetypeEngine(ArchetypeLoader loader, Map<String, String> properties) {
+    public ArchetypeEngine(ArchetypeLoader loader, Map<String, String> initProperties) {
+        Objects.requireNonNull(loader, "loader is null");
+        Objects.requireNonNull(initProperties, "properties is null");
         this.loader = loader;
         this.mf = new DefaultMustacheFactory();
         this.descriptor = loadDescriptor(loader);
-        Objects.requireNonNull(properties, "properties is null");
-        descriptor.properties().stream()
-                .filter(p -> p.value().isPresent() && !properties.containsKey(p.id()))
-                .forEach(p -> properties.put(p.id(), p.value().get()));
-        this.properties = properties;
+        this.properties = new HashMap<>(initProperties);
+        descriptor.properties().forEach((k, p) -> p.value().ifPresent(v -> properties.putIfAbsent(k, v)));
         List<SourcePath> paths = loadResourcesList(loader);
-        this.templates = resolveFileSets(descriptor.templateSets().map(TemplateSets::templateSets).orElseGet(LinkedList::new),
-                descriptor.templateSets().map(TemplateSets::transformations).orElseGet(Collections::emptyList), paths,
-                properties);
-        this.files = resolveFileSets(descriptor.fileSets().map(FileSets::fileSets).orElseGet(LinkedList::new),
-                descriptor.fileSets().map(FileSets::transformations).orElseGet(Collections::emptyList), paths, properties);
+        this.templates = resolveFileSets(
+                descriptor.templateSets().map(TemplateSets::templateSets).orElse(List.of()),
+                descriptor.templateSets().map(TemplateSets::transformations).orElse(List.of()),
+                paths, properties);
+        this.files = resolveFileSets(
+                descriptor.fileSets().map(FileSets::fileSets).orElse(List.of()),
+                descriptor.fileSets().map(FileSets::transformations).orElse(List.of()),
+                paths, properties);
     }
 
     /**
@@ -143,7 +144,7 @@ public final class ArchetypeEngine implements Closeable {
         Map<String, List<Transformation>> resolved = new HashMap<>();
         for (FileSet fileSet : fileSets) {
             if (evaluateConditional(fileSet, properties)) {
-                List<Transformation> allTransformations = new LinkedList<>(transformations);
+                List<Transformation> allTransformations = new ArrayList<>(transformations);
                 allTransformations.addAll(fileSet.transformations());
                 for (SourcePath path : SourcePath.filter(paths, fileSet.includes(), fileSet.excludes())) {
                     String filteredPath = path.asString();
@@ -191,7 +192,7 @@ public final class ArchetypeEngine implements Closeable {
     static boolean evaluateConditional(Conditional conditional, Map<String, String> props) {
         List<Property> ifProps = conditional.ifProperties();
         if (ifProps == null) {
-            ifProps = Collections.emptyList();
+            ifProps = List.of();
         }
         for (Property prop : ifProps) {
             if (!Boolean.parseBoolean(props.get(prop.id()))) {
@@ -200,7 +201,7 @@ public final class ArchetypeEngine implements Closeable {
         }
         List<Property> unlessProps = conditional.unlessProperties();
         if (unlessProps == null) {
-            unlessProps = Collections.emptyList();
+            unlessProps = List.of();
         }
         for (Property prop : unlessProps) {
             if (Boolean.parseBoolean(props.get(prop.id()))) {

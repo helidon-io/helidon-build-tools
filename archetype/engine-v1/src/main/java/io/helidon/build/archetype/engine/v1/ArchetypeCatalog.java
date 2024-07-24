@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.build.common.Lists;
+import io.helidon.build.common.xml.XMLElement;
+
 /**
  * Helidon archetype catalog.
  */
-public final class ArchetypeCatalog  {
+public final class ArchetypeCatalog {
 
     /**
      * The current version of the catalog model.
@@ -39,17 +42,19 @@ public final class ArchetypeCatalog  {
     private final String version;
     private final List<ArchetypeEntry> entries;
 
-    ArchetypeCatalog(String modelVersion, String name, String groupId, String version, List<ArchetypeEntry> entries) {
-        this.modelVersion = Objects.requireNonNull(modelVersion, "modelVersion is null");
-        this.name = Objects.requireNonNull(name, "id is null");
-        this.groupId = Objects.requireNonNull(groupId, "groupId is null");
-        this.version = Objects.requireNonNull(version, "version is null");
-        this.entries = entries;
+    ArchetypeCatalog(XMLElement elt) {
+        if (!"archetype-catalog".equals(elt.name())) {
+            throw new IllegalArgumentException("Invalid root element: %s" + elt.name());
+        }
+        this.modelVersion = elt.attribute("modelVersion");
+        this.name = elt.attribute("name");
+        this.groupId = elt.attribute("groupId");
+        this.version = elt.attribute("version");
+        this.entries = Lists.map(elt.children("archetype"), it -> new ArchetypeEntry(it, groupId, version));
     }
 
-
     /**
-     * Create a archetype descriptor instance from a file.
+     * Create an archetype descriptor instance from a file.
      *
      * @param file the file
      * @return ArchetypeCatalog
@@ -60,13 +65,18 @@ public final class ArchetypeCatalog  {
     }
 
     /**
-     * Create a archetype descriptor instance from an input stream.
+     * Create an archetype descriptor instance from an input stream.
      *
      * @param is input stream
      * @return ArchetypeCatalog
      */
     public static ArchetypeCatalog read(InputStream is) {
-        return ArchetypeCatalogReader.read(is);
+        try {
+            XMLElement element = XMLElement.parse(is);
+            return new ArchetypeCatalog(element);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
@@ -117,14 +127,18 @@ public final class ArchetypeCatalog  {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ArchetypeCatalog that = (ArchetypeCatalog) o;
         return modelVersion.equals(that.modelVersion)
-                && name.equals(that.name)
-                && groupId.equals(that.groupId)
-                && version.equals(that.version)
-                && entries.equals(that.entries);
+               && name.equals(that.name)
+               && groupId.equals(that.groupId)
+               && version.equals(that.version)
+               && entries.equals(that.entries);
     }
 
     @Override
@@ -135,11 +149,11 @@ public final class ArchetypeCatalog  {
     @Override
     public String toString() {
         return "ArchetypeCatalog{"
-                + "id='" + name + '\''
-                + ", groupId='" + groupId + '\''
-                + ", version='" + version + '\''
-                + ", modelVersion='" + modelVersion + '\''
-                + '}';
+               + "id='" + name + '\''
+               + ", groupId='" + groupId + '\''
+               + ", version='" + version + '\''
+               + ", modelVersion='" + modelVersion + '\''
+               + '}';
     }
 
     /**
@@ -156,17 +170,15 @@ public final class ArchetypeCatalog  {
         private final String description;
         private final List<String> tags;
 
-        ArchetypeEntry(String groupId, String artifactId, String version, String name, String title, String summary,
-                       String description, List<String> tags) {
-
-            this.name = Objects.requireNonNull(name, "name is null");
-            this.groupId = Objects.requireNonNull(groupId, "groupId is null");
-            this.artifactId = Objects.requireNonNull(artifactId, "artifactId is null");
-            this.version = Objects.requireNonNull(version, "version is null");
-            this.title = Objects.requireNonNull(title, "title is null");
-            this.summary = Objects.requireNonNull(summary, "summary is null");
-            this.description = description;
-            this.tags = Objects.requireNonNull(tags, "tags is null");
+        ArchetypeEntry(XMLElement elt, String defaultGroupId, String defaultVersion) {
+            groupId = elt.attribute("groupId", defaultGroupId);
+            artifactId = elt.attribute("artifactId");
+            version = elt.attribute("version", defaultVersion);
+            name = elt.attribute("name");
+            title = elt.attribute("title");
+            summary = elt.attribute("summary");
+            description = elt.attribute("description", null);
+            tags = elt.attributeList("tags", ",");
         }
 
         /**
@@ -243,17 +255,21 @@ public final class ArchetypeCatalog  {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ArchetypeEntry that = (ArchetypeEntry) o;
             return groupId.equals(that.groupId)
-                    && artifactId.equals(that.artifactId)
-                    && version.equals(that.version)
-                    && name.equals(that.name)
-                    && title.equals(that.title)
-                    && Objects.equals(summary, that.summary)
-                    && description.equals(that.description)
-                    && tags.equals(that.tags);
+                   && artifactId.equals(that.artifactId)
+                   && version.equals(that.version)
+                   && name.equals(that.name)
+                   && title.equals(that.title)
+                   && Objects.equals(summary, that.summary)
+                   && description.equals(that.description)
+                   && tags.equals(that.tags);
         }
 
         @Override
@@ -264,14 +280,14 @@ public final class ArchetypeCatalog  {
         @Override
         public String toString() {
             return "ArchetypeEntry{"
-                    + "groupId='" + groupId + '\''
-                    + ", artifactId='" + artifactId + '\''
-                    + ", version='" + version + '\''
-                    + ", name='" + name + '\''
-                    + ", title='" + title + '\''
-                    + ", summary='" + summary + '\''
-                    + ", description='" + description + '\''
-                    + '}';
+                   + "groupId='" + groupId + '\''
+                   + ", artifactId='" + artifactId + '\''
+                   + ", version='" + version + '\''
+                   + ", name='" + name + '\''
+                   + ", title='" + title + '\''
+                   + ", summary='" + summary + '\''
+                   + ", description='" + description + '\''
+                   + '}';
         }
     }
 }

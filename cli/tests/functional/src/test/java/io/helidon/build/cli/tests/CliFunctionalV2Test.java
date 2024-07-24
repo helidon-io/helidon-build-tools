@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.common.ArchetypesData;
-import io.helidon.build.cli.common.ArchetypesDataLoader;
 import io.helidon.build.cli.impl.Config;
 import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.ProcessMonitor;
@@ -243,7 +242,7 @@ public class CliFunctionalV2Test {
         List<String> content = SourcePath.scan(cacheDir).stream()
                 .map(SourcePath::asString)
                 .collect(Collectors.toList());
-        ArchetypesData data = ArchetypesDataLoader.load(cacheDir.resolve("versions.xml"));
+        ArchetypesData data = ArchetypesData.load(cacheDir.resolve("versions.xml"));
         String defaultVersion = data.defaultVersion().toString();
 
         assertThat(content, hasItem("/versions.xml"));

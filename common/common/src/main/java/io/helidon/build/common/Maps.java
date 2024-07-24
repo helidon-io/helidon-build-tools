@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,8 +133,8 @@ public class Maps {
      */
     public static <K, V, X> Map<K, X> mapEntryValue(Map<K, V> map, Function<Map.Entry<K, V>, X> mapper) {
         return map.entrySet()
-                  .stream()
-                  .collect(toMap(Entry::getKey, mapper));
+                .stream()
+                .collect(toMap(Entry::getKey, mapper));
     }
 
     /**
@@ -150,9 +150,9 @@ public class Maps {
      */
     public static <K, V, X> Map<K, X> mapValue(Map<K, V> map, BiPredicate<K, V> filter, Function<V, X> mapper) {
         return map.entrySet()
-                  .stream()
-                  .filter(e -> filter.test(e.getKey(), e.getValue()))
-                  .collect(toMap(Entry::getKey, e -> mapper.apply(e.getValue())));
+                .stream()
+                .filter(e -> filter.test(e.getKey(), e.getValue()))
+                .collect(toMap(Entry::getKey, e -> mapper.apply(e.getValue())));
     }
 
     /**
@@ -166,9 +166,9 @@ public class Maps {
      */
     public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> filter) {
         return map.entrySet()
-                  .stream()
-                  .filter(e -> filter.test(e.getKey(), e.getValue()))
-                  .collect(toMap(Entry::getKey, Entry::getValue));
+                .stream()
+                .filter(e -> filter.test(e.getKey(), e.getValue()))
+                .collect(toMap(Entry::getKey, Entry::getValue));
     }
 
     /**
@@ -327,6 +327,21 @@ public class Maps {
     /**
      * Get the given entries as a map.
      *
+     * @param entries     input entries
+     * @param keyMapper   key mapper
+     * @param valueMapper value mapper
+     * @param <T>         collection type
+     * @param <K>         key type
+     * @param <V>         value type
+     * @return map
+     */
+    public static <T, K, V> Map<K, V> from(Collection<T> entries, Function<V, K> keyMapper, Function<T, V> valueMapper) {
+        return entries.stream().map(valueMapper).collect(toMap(keyMapper, Function.identity()));
+    }
+
+    /**
+     * Get the given entries as a map.
+     *
      * @param entries input entries
      * @param <K>     key type
      * @param <V>     value type
@@ -432,9 +447,31 @@ public class Maps {
             Function<T, K> keyMapper,
             Function<U, V> valueMapper) {
         return map.entrySet().stream()
-                  .filter(entry -> keyFilter.test(entry.getKey()))
-                  .collect(Collectors.toMap(
-                          entry -> keyMapper.apply(entry.getKey()),
-                          entry -> entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
+                .filter(entry -> keyFilter.test(entry.getKey()))
+                .collect(Collectors.toMap(
+                        entry -> keyMapper.apply(entry.getKey()),
+                        entry -> entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
+    }
+
+    /**
+     * Get a value from the given map or throw an exception.
+     *
+     * @param map             map
+     * @param key             key to lookup in the map
+     * @param exceptionMapper exception mapper
+     * @param <K>             key type
+     * @param <V>             value type
+     * @param <E>             exception type
+     * @return value
+     * @throws E if a value is not found
+     */
+    public static <K, V, E extends Exception> V getOrThrow(Map<K, V> map,
+                                                           K key,
+                                                           Function<K, E> exceptionMapper) throws E {
+        V v = map.get(key);
+        if (v == null) {
+            throw exceptionMapper.apply(key);
+        }
+        return v;
     }
 }

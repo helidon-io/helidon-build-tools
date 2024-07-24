@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Map;
 
-import io.helidon.build.common.xml.SimpleXMLParser;
+import io.helidon.build.common.xml.XMLParser;
+import io.helidon.build.common.xml.XMLReader;
 
 import static io.helidon.build.common.Strings.isValid;
 import static io.helidon.build.common.Strings.requireValid;
@@ -84,7 +85,7 @@ public final class MavenModel {
     public static MavenModel read(InputStream is) {
         ModelReader reader = new ModelReader();
         try {
-            SimpleXMLParser.parse(is, reader);
+            XMLParser.parse(is, reader);
             return new MavenModel(reader);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
@@ -197,7 +198,7 @@ public final class MavenModel {
         }
     }
 
-    private static final class ModelReader implements SimpleXMLParser.Reader {
+    private static final class ModelReader implements XMLReader {
 
         private static final int STOP = (1 << 9) - 1;
 
