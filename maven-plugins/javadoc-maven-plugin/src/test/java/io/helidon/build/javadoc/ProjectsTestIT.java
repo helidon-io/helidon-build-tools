@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.build.javadoc;
 import java.nio.file.Path;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
@@ -27,7 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Integration test that verifies the projects under {@code src/it/projects}.
  */
-final class ProjectsTestIT {
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")

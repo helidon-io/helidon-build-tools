@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import java.util.function.Predicate;
 import io.helidon.build.common.FileChanges.DetectionType;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileChanges.DetectionType.FIRST;
@@ -42,9 +44,11 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Unit test for class {@link MavenProjectSupplier}.
+ * Tests {@link MavenProjectSupplier}.
  */
 @Order(3)
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+@SuppressWarnings("SpellCheckingInspection")
 class MavenProjectSupplierTestIT {
 
     private static final Predicate<Path> NOT_TEST_LOG = f -> !f.getFileName().toString().equals("test.log");

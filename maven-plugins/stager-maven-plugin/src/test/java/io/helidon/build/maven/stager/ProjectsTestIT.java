@@ -22,7 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
@@ -33,7 +35,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
-public class ProjectsTestIT {
+/**
+ * Integration test that verifies the projects under {@code src/it/projects}.
+ */
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")

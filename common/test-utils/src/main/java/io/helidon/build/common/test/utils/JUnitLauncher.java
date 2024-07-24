@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +70,11 @@ import static org.junit.platform.launcher.LauncherConstants.CAPTURE_STDOUT_PROPE
  */
 public class JUnitLauncher {
 
+    /**
+     * Identity property.
+     */
+    public static final String IDENTITY_PROP = "io.helidon.build.manual.launcher";
+
     private static final String FAST_STREAMS_PROP = "io.helidon.build.fast.streams";
 
     private final PrintStream out;
@@ -110,6 +115,7 @@ public class JUnitLauncher {
         Thread currentThread = Thread.currentThread();
         ClassLoader contextClassLoader = currentThread.getContextClassLoader();
         String origFastStream = System.getProperty(FAST_STREAMS_PROP);
+        String origIdentity = System.getProperty(IDENTITY_PROP);
         PrintStream origOut = System.out;
         PrintStream origErr = System.err;
         try {
@@ -117,13 +123,13 @@ public class JUnitLauncher {
             System.setOut(out);
             System.setErr(err);
             System.setProperty(FAST_STREAMS_PROP, "false");
+            System.setProperty(IDENTITY_PROP, "true");
             launch0();
         } finally {
             System.setOut(origOut);
             System.setErr(origErr);
-            if (origFastStream != null) {
-                System.setProperty(FAST_STREAMS_PROP, origFastStream);
-            }
+            restoreSysProp(FAST_STREAMS_PROP, origFastStream);
+            restoreSysProp(IDENTITY_PROP, origIdentity);
             currentThread.setContextClassLoader(contextClassLoader);
         }
     }
@@ -132,10 +138,10 @@ public class JUnitLauncher {
         LauncherDiscoveryRequestBuilder requestBuilder = LauncherDiscoveryRequestBuilder
                 .request()
                 .selectors(selectors)
-                .filters(filters.toArray(new Filter<?>[]{}))
+                .filters(filters.toArray(new Filter<?>[] {}))
                 .configurationParameters(parameters);
         LauncherDiscoveryRequest request = requestBuilder.build();
-        List<TestExecutionListener> listeners = new LinkedList<>();
+        List<TestExecutionListener> listeners = new ArrayList<>();
         PrintWriter outWriter = new PrintWriter(out);
         if (reportsDir != null) {
             listeners.add(new LegacyXmlReportGeneratingListener(reportsDir.toPath(), outWriter));
@@ -171,6 +177,14 @@ public class JUnitLauncher {
         }
     }
 
+    private static void restoreSysProp(String name, String value) {
+        if (value != null) {
+            System.setProperty(name, value);
+        } else {
+            System.clearProperty(name);
+        }
+    }
+
     /**
      * Create a new builder.
      *
@@ -183,6 +197,7 @@ public class JUnitLauncher {
     /**
      * Build of {@link JUnitLauncher}.
      */
+    @SuppressWarnings("unused")
     public static final class Builder {
 
         private boolean ignoreFailures = false;
@@ -190,8 +205,8 @@ public class JUnitLauncher {
         private String suiteDisplayName = "JUnit Launcher";
         private File reportsDir;
         private File outputFile;
-        private final List<Filter<?>> filters = new LinkedList<>();
-        private final List<DiscoverySelector> selectors = new LinkedList<>();
+        private final List<Filter<?>> filters = new ArrayList<>();
+        private final List<DiscoverySelector> selectors = new ArrayList<>();
         private final Map<String, String> parameters = new HashMap<>();
 
         private Builder() {

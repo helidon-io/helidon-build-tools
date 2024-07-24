@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.List;
 
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.common.test.utils.TestLogLevel;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.javaHome;
@@ -41,6 +43,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Integration test for class {@link ClassDataSharing}.
  */
 @Order(2)
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
 class ClassDataSharingTestIT {
 
     private static final Path JAVA_HOME = Path.of(javaHome());
