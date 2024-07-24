@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.devloop.BuildComponent;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.DirectoryType;
@@ -32,6 +33,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.test.utils.TestFiles.pathOf;
@@ -43,10 +45,12 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link DefaultProjectSupplier}.
+ * Tests {@link DefaultProjectSupplier}.
  */
 @Order(1)
 @TestMethodOrder(OrderAnnotation.class)
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+@SuppressWarnings("SpellCheckingInspection")
 class DefaultProjectSupplierTestIT {
 
     @Order(2)

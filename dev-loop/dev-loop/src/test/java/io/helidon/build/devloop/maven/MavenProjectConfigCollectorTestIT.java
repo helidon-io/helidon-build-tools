@@ -18,10 +18,12 @@ package io.helidon.build.devloop.maven;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.devloop.BuildExecutor;
 import io.helidon.build.devloop.TestMonitor;
 
@@ -40,14 +42,11 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Unit test for class {@link MavenProjectConfigCollector}.
- * NOTE: This test requires that the snapshot jar is already built, so is disabled by default; to run:
- * <pre>
- *    mvn install -DskipTests && mvn test -Dtest=MavenProjectConfigCollectorTest
- * </pre>
+ * Tests {@link MavenProjectConfigCollector}.
  */
 @Order(2)
-@EnabledIfSystemProperty(named = "test", matches = "MavenProjectConfigCollectorTest")
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+@SuppressWarnings("SpellCheckingInspection")
 class MavenProjectConfigCollectorTestIT {
     private static final String DEBUG_ARG = "-Dproject.config.collector.debug=true";
 
@@ -63,7 +62,7 @@ class MavenProjectConfigCollectorTestIT {
 
         executor.execute(DEBUG_ARG, "validate");
         final String output = monitor.outputAsString();
-        assertThat(output, containsString(DOT_HELIDON + " file is missing"));
+        assertThat(output, not(containsString(DOT_HELIDON + " file is missing")));
     }
 
     @ParameterizedTest
@@ -92,7 +91,7 @@ class MavenProjectConfigCollectorTestIT {
         Files.deleteIfExists(dotHelidonFile);
         FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
-        assertThat(config.keySet().isEmpty(), is(true));
+        assertThat(config.keySet(), is(Set.of("schema.version")));
 
         executor.execute(DEBUG_ARG, ENABLE_HELIDON_CLI, "validate");
         final String output = monitor.outputAsString();
@@ -100,7 +99,7 @@ class MavenProjectConfigCollectorTestIT {
         assertThat(output, not(containsString("Updating config")));
 
         config = ProjectConfig.projectConfig(projectDir);
-        assertThat(config.keySet().isEmpty(), is(true));
+        assertThat(config.keySet(), is(Set.of("schema.version")));
     }
 
     @ParameterizedTest
@@ -114,7 +113,7 @@ class MavenProjectConfigCollectorTestIT {
         Files.deleteIfExists(dotHelidonFile);
         FileUtils.touch(dotHelidonFile);
         ProjectConfig config = ProjectConfig.projectConfig(projectDir);
-        assertThat(config.keySet().isEmpty(), is(true));
+        assertThat(config.keySet(), is(Set.of("schema.version")));
 
         final long startTime = System.currentTimeMillis();
         executor.execute(DEBUG_ARG, ENABLE_HELIDON_CLI, "compile");
@@ -123,7 +122,7 @@ class MavenProjectConfigCollectorTestIT {
         assertThat(output, containsString("Updating config"));
 
         config = ProjectConfig.projectConfig(projectDir);
-        assertThat(config.keySet().isEmpty(), is(false));
+        assertThat(config.keySet().size(), is(greaterThan(1)));
         assertThat(config.property(PROJECT_LAST_BUILD_SUCCESS_TIME), is(notNullValue()));
         assertThat(config.lastSuccessfulBuildTime(), is(greaterThan(startTime)));
     }

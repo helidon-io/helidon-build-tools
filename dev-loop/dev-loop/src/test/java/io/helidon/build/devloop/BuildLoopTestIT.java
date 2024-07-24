@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.build.common.FileChanges.DetectionType;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
+import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.devloop.maven.MavenProjectSupplier;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.lastModifiedTime;
@@ -48,9 +50,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * Unit test for class {@link BuildLoop}.
+ * Tests {@link BuildLoop}.
  */
 @Order(4)
+@EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+@SuppressWarnings({"SpellCheckingInspection", "ExtractMethodRecommender", "WriteOnlyObject"})
 class BuildLoopTestIT {
 
     private static final String VALID_JAVA_PUBLIC_CLASS_PREFIX = "public class ";
