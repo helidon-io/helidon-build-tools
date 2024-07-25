@@ -17,7 +17,7 @@ package io.helidon.build.common;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 /**
@@ -25,26 +25,36 @@ import java.util.function.Supplier;
  *
  * @param <T> The type of the instance.
  */
-public class LazyValue<T> {
+public class LazyValue<T> implements Supplier<T> {
 
-    private static final VarHandle LATCH;
+    private static final VarHandle LOCK;
     private static final VarHandle STATE;
 
     static {
         try {
+            LOCK = MethodHandles.lookup().findVarHandle(LazyValue.class, "lock", Semaphore.class);
             STATE = MethodHandles.lookup().findVarHandle(LazyValue.class, "state", int.class);
-            LATCH = MethodHandles.lookup().findVarHandle(LazyValue.class, "latch", CountDownLatch.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
+        } catch (Exception e) {
+            throw new Error("Unable to obtain VarHandle's", e);
         }
     }
 
-    private final Supplier<T> supplier;
-    @SuppressWarnings("unused")
-    private volatile int state;
-    @SuppressWarnings("unused")
-    private volatile CountDownLatch latch;
     private T value;
+    private Supplier<T> delegate;
+
+    @SuppressWarnings("unused")
+    private volatile Semaphore lock;
+    private volatile int state;
+
+    /**
+     * Create a new loaded instance.
+     *
+     * @param value value
+     */
+    public LazyValue(T value) {
+        this.value = value;
+        this.state = 2;
+    }
 
     /**
      * Create a new instance.
@@ -52,7 +62,7 @@ public class LazyValue<T> {
      * @param supplier value supplier.
      */
     public LazyValue(Supplier<T> supplier) {
-        this.supplier = supplier;
+        this.delegate = supplier;
     }
 
     /**
@@ -60,38 +70,41 @@ public class LazyValue<T> {
      *
      * @return The value.
      */
+    @Override
     public T get() {
         int stateCopy = state;
-        CountDownLatch latchCopy;
-        if (stateCopy == 0) {
-            // init
-            if (STATE.compareAndSet(this, 0, 1)) {
-                try {
-                    value = supplier.get();
-                    state = 2;
-                } catch (Throwable th) {
-                    state = 0;
-                    throw th;
-                } finally {
-                    latchCopy = latch;
-                    if (latchCopy != null) {
-                        latchCopy.countDown();
-                    }
-                }
+        if (stateCopy == 2) {
+            return value;
+        }
+        Semaphore lockCopy = lock;
+        while (stateCopy != 2 && !STATE.compareAndSet(this, 0, 1)) {
+            if (lockCopy == null) {
+                LOCK.compareAndSet(this, null, new Semaphore(0));
+                lockCopy = lock;
             }
             stateCopy = state;
-        }
-        if (stateCopy == 1) {
-            // init race
-            latchCopy = latch;
-            if (latchCopy == null) {
-                LATCH.compareAndSet(this, null, new CountDownLatch(1));
-                latchCopy = latch;
+            if (stateCopy == 1) {
+                lockCopy.acquireUninterruptibly();
+                stateCopy = state;
             }
-            try {
-                latchCopy.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        }
+
+        try {
+            if (stateCopy == 2) {
+                return value;
+            }
+            stateCopy = 0;
+            value = delegate.get();
+            delegate = null;
+            stateCopy = 2;
+            state = 2;
+        } finally {
+            if (stateCopy == 0) {
+                state = 0;
+            }
+            lockCopy = lock;
+            if (lockCopy != null) {
+                lockCopy.release();
             }
         }
         return value;
