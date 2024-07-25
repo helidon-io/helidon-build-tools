@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.javadoc;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+package io.helidon.build.common.maven.plugin;
 
 import io.helidon.build.common.maven.MavenModel;
-
-import org.apache.maven.artifact.Artifact;
 
 import static io.helidon.build.common.SourcePath.wildcardMatch;
 
@@ -32,10 +27,7 @@ import static io.helidon.build.common.SourcePath.wildcardMatch;
  * @param classifier classifier
  * @param type       type
  */
-record MavenPattern(String groupId, String artifactId, String classifier, String type) {
-
-    private static final Pattern PATTERN = Pattern.compile(
-            "(?<groupId>[^:]+):(?<artifactId>[^:]+)(:(?<classifier>[^:]*))?(:(?<type>[^:]+))?");
+public record MavenPattern(String groupId, String artifactId, String classifier, String type) {
 
     /**
      * Create a new pattern from a formatted string ({@code groupId:artifactId[:classifier[:type]}.
@@ -43,18 +35,35 @@ record MavenPattern(String groupId, String artifactId, String classifier, String
      * @param filter filter
      * @return MavenPattern
      */
-    static MavenPattern create(String filter) {
-        Matcher m = PATTERN.matcher(filter);
-        if (m.matches()) {
-            String classifier = m.group("classifier");
-            String type = m.group("type");
-            return new MavenPattern(
-                    m.group("groupId"),
-                    m.group("artifactId"),
-                    classifier != null ? classifier : "*",
-                    type != null ? type : "*");
+    public static MavenPattern create(String filter) {
+        String[] args = new String[4];
+        int i = 0;
+        int index = 0;
+        for (; i < 4; i++) {
+            if (index >= 0) {
+                int endIndex = filter.indexOf(':', index);
+                if (index == endIndex + 1 || index == endIndex) {
+                    break;
+                }
+                if (endIndex > 0) {
+                    args[i] = filter.substring(index, endIndex);
+                    int nextIndex = endIndex + 1;
+                    if (nextIndex == filter.length()) {
+                        break;
+                    }
+                    index = nextIndex;
+                } else {
+                    args[i] = filter.substring(index);
+                    index = -1;
+                }
+            } else {
+                args[i] = "*";
+            }
         }
-        throw new IllegalArgumentException("Invalid filter: " + filter);
+        if (i > 0 && index == -1) {
+            return new MavenPattern(args[0], args[1], args[2], args[3]);
+        }
+        throw new IllegalArgumentException("Invalid filter at index %d: %s".formatted(i > 0 ? index : 0, filter));
     }
 
     /**
@@ -63,8 +72,8 @@ record MavenPattern(String groupId, String artifactId, String classifier, String
      * @param artifact artifact
      * @return {@code true} if the pattern matches
      */
-    boolean matches(Artifact artifact) {
-        return matches(artifact.getGroupId(), artifact.getArtifactId(), artifact.getClassifier(), artifact.getType());
+    public boolean matches(MavenArtifact artifact) {
+        return matches(artifact.groupId(), artifact.artifactId(), artifact.classifier(), artifact.type());
     }
 
     /**
@@ -73,8 +82,8 @@ record MavenPattern(String groupId, String artifactId, String classifier, String
      * @param pom pom
      * @return {@code true} if the pattern matches
      */
-    boolean matches(MavenModel pom) {
-        return matches(pom.getGroupId(), pom.getArtifactId(), "", pom.getPackaging());
+    public boolean matches(MavenModel pom) {
+        return matches(pom.groupId(), pom.artifactId(), "", pom.packaging());
     }
 
     /**
@@ -82,11 +91,11 @@ record MavenPattern(String groupId, String artifactId, String classifier, String
      *
      * @param groupId    groupId
      * @param artifactId artifactId
-     * @param classifier classifier
+     * @param classifier classifier, may be {@code null}
      * @param type       type
      * @return {@code true} if the pattern matches
      */
-    boolean matches(String groupId, String artifactId, String classifier, String type) {
+    public boolean matches(String groupId, String artifactId, String classifier, String type) {
         return wildcardMatch(groupId, this.groupId)
                && wildcardMatch(artifactId, this.artifactId)
                && wildcardMatch(classifier != null ? classifier : "", this.classifier)

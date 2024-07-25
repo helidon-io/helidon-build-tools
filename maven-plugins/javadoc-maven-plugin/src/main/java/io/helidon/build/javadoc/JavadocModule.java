@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import io.helidon.build.common.Lists;
-
-import org.apache.maven.artifact.Artifact;
+import io.helidon.build.common.maven.plugin.MavenArtifact;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.STATIC;
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.TRANSITIVE;
@@ -48,9 +47,9 @@ interface JavadocModule {
     /**
      * The Maven artifact of this module.
      *
-     * @return Artifact
+     * @return ArtifactInfo
      */
-    Artifact artifact();
+    MavenArtifact artifact();
 
     /**
      * The java module descriptor of this module.
@@ -153,7 +152,7 @@ interface JavadocModule {
      * @param sourceRoots source roots
      * @param descriptor  module descriptor
      */
-    record SourceModule(Artifact artifact, Set<SourceRoot> sourceRoots, ModuleDescriptor descriptor)
+    record SourceModule(MavenArtifact artifact, Set<SourceRoot> sourceRoots, ModuleDescriptor descriptor)
             implements JavadocModule {
     }
 
@@ -164,7 +163,7 @@ interface JavadocModule {
      * @param descriptor module descriptor
      * @param visible    {@code true} if {@link #artifact} is in the current project dependencies
      */
-    record JarModule(Artifact artifact, ModuleDescriptor descriptor, boolean visible)
+    record JarModule(MavenArtifact artifact, ModuleDescriptor descriptor, boolean visible)
             implements JavadocModule {
 
         @Override
@@ -181,7 +180,7 @@ interface JavadocModule {
     record CompositeJavadocModule(List<JavadocModule> elements) implements JavadocModule {
 
         @Override
-        public Artifact artifact() {
+        public MavenArtifact artifact() {
             // rely on the ordering and pick the first one
             return elements.stream()
                     .findFirst()
@@ -223,7 +222,7 @@ interface JavadocModule {
             return result.stream();
         }
 
-        Set<Artifact> artifacts() {
+        Set<MavenArtifact> artifacts() {
             return stream().map(JavadocModule::artifact).collect(toSet());
         }
     }

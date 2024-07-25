@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.javadoc;
+package io.helidon.build.common.maven.plugin;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,15 +26,13 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.maven.MavenModel;
 
-import org.apache.maven.artifact.Artifact;
-
 /**
- * Filters.
+ * Maven filters.
  */
-final class Filters {
+public final class MavenFilters {
 
-    private Filters() {
-        // cannot be instanciated
+    private MavenFilters() {
+        // cannot be instantiated
     }
 
     /**
@@ -43,7 +41,7 @@ final class Filters {
      * @param paths paths that must exists when resolved against the tested path
      * @return predicate
      */
-    static Predicate<Path> dirFilter(List<String> paths) {
+    public static Predicate<Path> dirFilter(List<String> paths) {
         return dir -> Files.isDirectory(dir) && paths.stream().map(dir::resolve).allMatch(Files::exists);
     }
 
@@ -55,7 +53,7 @@ final class Filters {
      * @param dir      root directory used to relativize the paths
      * @return predicate
      */
-    static Predicate<Path> pathFilter(List<String> includes, List<String> excludes, Path dir) {
+    public static Predicate<Path> pathFilter(List<String> includes, List<String> excludes, Path dir) {
         return filter(includes, excludes, Function.identity(), p -> new SourcePath(dir, p), SourcePath::matches);
     }
 
@@ -66,18 +64,18 @@ final class Filters {
      * @param excludes exclude patterns with wildcard support
      * @return predicate
      */
-    static Predicate<String> stringFilter(List<String> includes, List<String> excludes) {
+    public static Predicate<String> stringFilter(List<String> includes, List<String> excludes) {
         return filter(includes, excludes, Function.identity(), Function.identity(), SourcePath::wildcardMatch);
     }
 
     /**
-     * Create a new predicate for {@link Artifact} that matches include and exclude patterns.
+     * Create a new predicate for {@link MavenArtifact} that matches include and exclude patterns.
      *
      * @param includes include patterns (see {@link MavenPattern}
      * @param excludes exclude patterns (see {@link MavenPattern}
      * @return predicate
      */
-    static Predicate<Artifact> artifactFilter(List<String> includes, List<String> excludes) {
+    public static Predicate<MavenArtifact> artifactFilter(List<String> includes, List<String> excludes) {
         return filter(includes, excludes, MavenPattern::create, Function.identity(), (a, p) -> p.matches(a));
     }
 
@@ -88,7 +86,7 @@ final class Filters {
      * @param excludes exclude patterns (see {@link MavenPattern}
      * @return predicate
      */
-    static Predicate<MavenModel> pomFilter(List<String> includes, List<String> excludes) {
+    public static Predicate<MavenModel> pomFilter(List<String> includes, List<String> excludes) {
         return filter(includes, excludes, MavenPattern::create, Function.identity(), (a, p) -> p.matches(a));
     }
 
@@ -105,11 +103,11 @@ final class Filters {
      * @param <V>            mapped input type
      * @return predicate
      */
-    static <T, U, V> Predicate<U> filter(List<String> includes,
-                                         List<String> excludes,
-                                         Function<String, T> patternFactory,
-                                         Function<U, V> mapper,
-                                         BiFunction<V, T, Boolean> predicate) {
+    public static <T, U, V> Predicate<U> filter(List<String> includes,
+                                                List<String> excludes,
+                                                Function<String, T> patternFactory,
+                                                Function<U, V> mapper,
+                                                BiFunction<V, T, Boolean> predicate) {
 
         List<T> includePatterns = Lists.map(includes, patternFactory);
         List<T> excludePatterns = Lists.map(excludes, patternFactory);
@@ -119,5 +117,4 @@ final class Filters {
                    && excludePatterns.stream().noneMatch(it -> predicate.apply(v, it));
         };
     }
-
 }

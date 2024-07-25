@@ -27,10 +27,19 @@
     <artifactId>helidon-build-common-maven-plugin</artifactId>
     <name>Helidon Build Tools Common Maven Plugin</name>
 
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.build-tools.common</groupId>
+            <artifactId>helidon-build-common-maven</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -42,6 +51,16 @@
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

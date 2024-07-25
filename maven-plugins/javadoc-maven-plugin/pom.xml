@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-javadoc-maven-plugin</artifactId>
-    <name>Helidon Build Helper Maven Plugin</name>
+    <name>Helidon Javadoc Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <properties>

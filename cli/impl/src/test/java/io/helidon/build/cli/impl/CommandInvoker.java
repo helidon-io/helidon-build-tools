@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -520,21 +520,21 @@ public interface CommandInvoker {
             MavenModel model = MavenModel.read(pomFile);
 
             // Flavor
-            String parentArtifact = model.getParent().getArtifactId();
+            String parentArtifact = model.parent().artifactId();
             assertThat(parentArtifact, containsString(flavor.toLowerCase()));
 
             // GroupId
-            assertThat(model.getGroupId(), is(groupId));
+            assertThat(model.groupId(), is(groupId));
 
             // ArtifactId
-            assertThat(model.getArtifactId(), is(artifactId));
+            assertThat(model.artifactId(), is(artifactId));
 
             // Project Name
-            assertThat(model.getName(), is(projectName));
+            assertThat(model.name(), is(projectName));
 
             if (helidonVersion != null) {
                 // Project Version
-                assertThat(model.getParent().getVersion(), is(helidonVersion));
+                assertThat(model.parent().version(), is(helidonVersion));
             }
 
             return this;
