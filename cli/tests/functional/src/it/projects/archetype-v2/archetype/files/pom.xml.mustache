@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@
     <description>Http Server</description>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <mainClass>{{package}}.Main</mainClass>
     </properties>
 
@@ -64,9 +66,9 @@
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-cli-maven-plugin</artifactId>
+                <version>{{build-tools-version}}</version>
                 <extensions>true</extensions>
             </plugin>
         </plugins>
     </build>
 </project>
-
