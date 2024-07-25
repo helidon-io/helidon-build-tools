@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.build.dependency;
+package io.helidon.build.cache.plugin;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -112,21 +112,21 @@ public class GoOfflineMojo extends AbstractMojo {
      * Pom identity.
      * List of relative paths that must exist for a directory to be resolved as a Maven module.
      */
-    @Parameter(property = "helidon.dependency.offline.pomScanningIdentity", defaultValue = "pom.xml")
+    @Parameter(property = "cache.offline.pomScanningIdentity", defaultValue = "pom.xml")
     private List<String> pomScanningIdentity = List.of();
 
     /**
      * Pom scanning includes.
      * List of glob expressions used as an include filter for directories that may contain {@code pom.xml} files.
      */
-    @Parameter(property = "helidon.dependency.offline.pomScanningIncludes", defaultValue = "**/*")
+    @Parameter(property = "cache.offline.pomScanningIncludes", defaultValue = "**/*")
     private List<String> pomScanningIncludes = List.of();
 
     /**
      * Pom scanning excludes.
      * List of glob expressions used as an exclude filter for directories that may contain {@code pom.xml} files.
      */
-    @Parameter(property = "helidon.dependency.offline.pomScanningExcludes", defaultValue = "**/target/**,**/src/**")
+    @Parameter(property = "cache.offline.pomScanningExcludes", defaultValue = "**/target/**,**/src/**")
     private List<String> pomScanningExcludes = List.of();
 
     /**
@@ -134,7 +134,7 @@ public class GoOfflineMojo extends AbstractMojo {
      * List of include filters (format is {@code groupId:artifactId:packaging} with wildcard support)
      * of scanned {@code pom.xml} files.
      */
-    @Parameter(property = "helidon.dependency.offline.pomIncludes", defaultValue = "*:*:*")
+    @Parameter(property = "cache.offline.pomIncludes", defaultValue = "*:*:*")
     private List<String> pomIncludes = List.of();
 
     /**
@@ -142,89 +142,89 @@ public class GoOfflineMojo extends AbstractMojo {
      * List of exclude filters (format is {@code groupId:artifactId:packaging} with wildcard support)
      * of scanned {@code pom.xml} files.
      */
-    @Parameter(property = "helidon.dependency.offline.pomExcludes")
+    @Parameter(property = "cache.offline.pomExcludes")
     private List<String> pomExcludes = List.of();
 
     /**
      * Specifies if {@code -SNAPSHOT} artifacts should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includeSnapshots", defaultValue = "false")
+    @Parameter(property = "cache.offline.includeSnapshots", defaultValue = "false")
     private boolean includeSnapshots;
 
     /**
      * Specifies if dependencies should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includeDependencies", defaultValue = "true")
+    @Parameter(property = "cache.offline.includeDependencies", defaultValue = "true")
     private boolean includeDeps;
 
     /**
      * Specifies if dependency management should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includeDependencyManagement", defaultValue = "false")
+    @Parameter(property = "cache.offline.includeDependencyManagement", defaultValue = "false")
     private boolean includeDepsMgmt;
 
     /**
      * Specifies if plugins should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includePlugins", defaultValue = "true")
+    @Parameter(property = "cache.offline.includePlugins", defaultValue = "true")
     private boolean includePlugins;
 
     /**
      * Specifies if plugin management should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includePluginManagement", defaultValue = "false")
+    @Parameter(property = "cache.offline.includePluginManagement", defaultValue = "false")
     private boolean includePluginMgmt;
 
     /**
      * Specifies if the resolution should traverse.
      */
-    @Parameter(property = "helidon.dependency.offline.traverse", defaultValue = "true")
+    @Parameter(property = "cache.offline.traverse", defaultValue = "true")
     private boolean traverse;
 
     /**
      * Profile include patterns.
      * List of include filters (format is {@code groupId:artifactId:packaging} with wildcard support).
      */
-    @Parameter(property = "helidon.dependency.offline.profileIncludes", defaultValue = "*")
+    @Parameter(property = "cache.offline.profileIncludes", defaultValue = "*")
     private List<String> profileIncludes = List.of();
 
     /**
      * Profile exclude patterns.
      * List of exclude filters (format is {@code groupId:artifactId:packaging} with wildcard support).
      */
-    @Parameter(property = "helidon.dependency.offline.profileExcludes")
+    @Parameter(property = "cache.offline.profileExcludes")
     private List<String> profileExcludes = List.of();
 
     /**
      * Transitive scope include patterns.
      * List of include filters (format is {@code groupId:artifactId:packaging} with wildcard support).
      */
-    @Parameter(property = "helidon.dependency.offline.scopeIncludes", defaultValue = "*")
+    @Parameter(property = "cache.offline.scopeIncludes", defaultValue = "*")
     private List<String> scopeIncludes = List.of();
 
     /**
      * Transitive scope exclude patterns.
      * List of exclude filters (format is {@code groupId:artifactId:packaging} with wildcard support).
      */
-    @Parameter(property = "helidon.dependency.offline.scopeExcludes", defaultValue = "test")
+    @Parameter(property = "cache.offline.scopeExcludes", defaultValue = "test")
     private List<String> scopeExcludes = List.of();
 
     /**
      * Specifies if optional transitive dependencies should be processed.
      */
-    @Parameter(property = "helidon.dependency.offline.includeOptional", defaultValue = "true")
+    @Parameter(property = "cache.offline.includeOptional", defaultValue = "true")
     private boolean includeOptional;
 
     /**
      * Skip this goal execution.
      */
-    @Parameter(property = "helidon.dependency.offline.skip", defaultValue = "false")
+    @Parameter(property = "cache.offline.skip", defaultValue = "false")
     private boolean skip;
 
     /**
      * Specifies if the build will fail if there are errors during execution or not.
      */
-    @Parameter(property = "helidon.dependency.offline.failOnError", defaultValue = "false")
+    @Parameter(property = "cache.offline.failOnError", defaultValue = "false")
     private boolean failOnError;
 
     private Predicate<MavenModel> pomFilter;

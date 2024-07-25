@@ -1,10 +1,9 @@
 # Helidon Build Cache Maven Extension
 
-This plugin/extension provides features designed to help parallelize Maven builds CI pipelines.
+This extension provides features designed to help parallelize Maven builds CI pipelines.
 
 * [Lifecycle Fast Forwarding](#lifecycle-fast-forwarding)
 * [Reactor Splitting](#reactor-splitting)
-* [Goal: go-offline](#goal-go-offline)
 * [Extension Configuration](#extension-configuration)
 * [General usage](#general-usage)
 
@@ -160,6 +159,7 @@ The configuration resides in `.mvn/cache-config.xml`.
 | Property      | Type    | Default<br/>Value | Description                              |
 |---------------|---------|-------------------|------------------------------------------|
 | cache.enabled | Boolean | `false`           | Enables the extension                    |
+| cache.record  | Boolean | `false`           | Update the recorded cache state          |
 | reactorRule   | String  | `null`            | The reactor rule to use                  |
 | moduleSet     | String  | `null`            | The moduleset in the reactor rule to use |
 

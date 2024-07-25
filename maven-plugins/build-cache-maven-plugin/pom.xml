@@ -26,8 +26,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>helidon-dependency-maven-plugin</artifactId>
-    <name>Helidon Dependency Maven Plugin</name>
+    <artifactId>build-cache-maven-plugin</artifactId>
+    <name>Helidon Build Cache Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <properties>
@@ -131,7 +131,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
                 <configuration>
-                    <goalPrefix>helidon-dependency</goalPrefix>
+                    <goalPrefix>build-cache</goalPrefix>
                     <skipErrorNoDescriptorsFound>false</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>

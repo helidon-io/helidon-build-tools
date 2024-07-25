@@ -32,7 +32,7 @@
 
     <modules>
         <module>build-cache-maven-extension</module>
-        <module>dependency-maven-plugin</module>
+        <module>build-cache-maven-plugin</module>
         <module>javadoc-maven-plugin</module>
         <module>enforcer-maven-plugin</module>
         <module>helidon-archetype-maven-plugin</module>
