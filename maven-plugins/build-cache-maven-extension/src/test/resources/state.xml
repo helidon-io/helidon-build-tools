@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project-state>
+    <properties>
+        <property name="prop1" value="value1"/>
+    </properties>
+    <artifact file="artifact.jar" extension="jar" language="java" includesDependencies="false" addedToClasspath="true"/>
+    <attached-artifacts>
+        <artifact file="artifact-javadoc.jar" extension="jar" classifier="javadoc" language="java" includesDependencies="false" addedToClasspath="false"/>
+    </attached-artifacts>
+    <compile-source-roots>
+        <path>src/main/java</path>
+    </compile-source-roots>
+    <test-compile-source-roots>
+        <path>src/test/java</path>
+    </test-compile-source-roots>
+    <project-files count="7" last-modified="1717820328080"/>
+    <executions>
+        <execution groupId="groupId1" artifactId="artifactId1" version="version1" goal="goal1" id="id1">
+            <configuration>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <excludes>
+                    <exclude>foo/**</exclude>
+                </excludes>
+                <elt1 attr1="value1"/>
+            </configuration>
+        </execution>
+    </executions>
+</project-state>
