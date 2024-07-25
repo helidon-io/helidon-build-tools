@@ -21,10 +21,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.build-tools.dependency.tests</groupId>
+        <groupId>io.helidon.build-tools.cache.plugin.tests</groupId>
         <artifactId>parent</artifactId>
         <version>@project.version@</version>
     </parent>
     <artifactId>test-module2</artifactId>
-    <name>Test Dependency 1 - Module 2</name>
+    <name>Test Cache Plugin 1 - Module 2</name>
 </project>

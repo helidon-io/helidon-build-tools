@@ -20,10 +20,10 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.helidon.build-tools.dependency.tests</groupId>
+    <groupId>io.helidon.build-tools.cache.plugin.tests</groupId>
     <artifactId>parent</artifactId>
     <version>@project.version@</version>
-    <name>Test Dependency 1</name>
+    <name>Test Cache Plugin 1</name>
     <packaging>pom</packaging>
 
     <properties>
@@ -51,7 +51,7 @@
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
-                    <artifactId>helidon-dependency-maven-plugin</artifactId>
+                    <artifactId>build-cache-maven-plugin</artifactId>
                     <version>${project.version}</version>
                 </plugin>
             </plugins>

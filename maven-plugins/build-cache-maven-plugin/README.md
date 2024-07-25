@@ -1,6 +1,6 @@
-# Helidon Maven Plugin
+# Helidon Build Cache Maven Plugin
 
-This plugin provides Maven goals to manipulate dependencies.
+This plugin provides build cache related Maven goals.
 
 #### Goals
 
@@ -8,7 +8,7 @@ This plugin provides Maven goals to manipulate dependencies.
 
 ## Goal: `go-offline`
 
-A goal to aggressively cache all Maven dependencies.
+A goal similar to `dependency:go-offline` but more aggressive and resilient.
 
 This goal requires a direct execution.
 
@@ -35,11 +35,25 @@ This goal requires a direct execution.
 | failOnError                 | boolean | `false`                 | Specifies if the build will fail if there are errors during execution or not                            |
 | skip                        | boolean | `false`                 | Skip this goal execution                                                                                |
 
-The above parameters are mapped to user properties of the form `helidon.dependency.offline.PROPERTY`.
+The above parameters are mapped to user properties of the form `cache.offline.PROPERTY`.
  `List` values must be comma separated.
 
 ### General usage
 
+Define a plugin management entry in your parent pom.
+```xml
+<project>
+    <!-- ... -->
+    <pluginManagement>
+        <plugin>
+            <groupId>io.helidon.build-tools</groupId>
+            <artifactId>build-cache-maven-plugin</artifactId>
+            <version>${version.plugin.helidon-build-tools}</version>
+        </plugin>
+    </pluginManagement>
+</project>
+```
+
 ```shell
-mvn helidon-dependency:go-offline
+mvn build-cache:go-offline
 ```

@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Dependency Maven Plugin.
+ * Helidon Build Cache Maven Plugin.
  */
-package io.helidon.build.dependency;
+package io.helidon.build.cache.plugin;
