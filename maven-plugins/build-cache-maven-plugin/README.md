@@ -47,7 +47,7 @@ Define a plugin management entry in your parent pom.
     <pluginManagement>
         <plugin>
             <groupId>io.helidon.build-tools</groupId>
-            <artifactId>build-cache-maven-plugin</artifactId>
+            <artifactId>helidon-build-cache-maven-plugin</artifactId>
             <version>${version.plugin.helidon-build-tools}</version>
         </plugin>
     </pluginManagement>

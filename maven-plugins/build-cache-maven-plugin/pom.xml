@@ -26,7 +26,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>build-cache-maven-plugin</artifactId>
+    <artifactId>helidon-build-cache-maven-plugin</artifactId>
     <name>Helidon Build Cache Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
