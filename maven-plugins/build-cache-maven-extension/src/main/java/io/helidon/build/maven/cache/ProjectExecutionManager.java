@@ -185,6 +185,9 @@ public class ProjectExecutionManager {
         try {
             lock.lock();
             Lifecycle lifecycle = defaultLifecycles.get(phase);
+            if (lifecycle == null) {
+                return List.of();
+            }
             LifecycleMappingDelegate lifecycleDelegate = null;
             if (Arrays.binarySearch(DefaultLifecycles.STANDARD_LIFECYCLES, lifecycle.getId()) < 0) {
                 lifecycleDelegate = lifecycleDelegates.get(lifecycle.getId());
