@@ -51,7 +51,7 @@
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
-                    <artifactId>build-cache-maven-plugin</artifactId>
+                    <artifactId>helidon-build-cache-maven-plugin</artifactId>
                     <version>${project.version}</version>
                 </plugin>
             </plugins>
