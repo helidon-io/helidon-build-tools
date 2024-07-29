@@ -521,6 +521,11 @@
                         </suppressionFiles>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-build-cache-maven-plugin</artifactId>
+                    <version>4.0.7</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1120,26 +1125,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>build-cache</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-build-cache-maven-plugin</artifactId>
-                        <version>3.0.5</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <projectFilesExcludes>
-                                <exclude>.*/**</exclude>
-                                <exclude>etc/**</exclude>
-                                <exclude>**/vscode-extension/**</exclude>
-                            </projectFilesExcludes>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

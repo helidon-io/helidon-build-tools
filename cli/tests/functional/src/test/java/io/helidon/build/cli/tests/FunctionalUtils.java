@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.helidon.build.common.OSType;
 import io.helidon.build.common.Proxies;
 import io.helidon.build.common.SourcePath;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -43,7 +43,7 @@ import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class FunctionalUtils {
+class FunctionalUtils {
 
     private static final Logger LOGGER = Logger.getLogger(FunctionalUtils.class.getName());
     private static final String MAVEN_DIST_URL = "https://archive.apache.org/dist/maven/maven-3/%s/binaries/apache-maven-%s-bin.zip";
@@ -94,7 +94,7 @@ public class FunctionalUtils {
         }
     }
 
-    static void waitForApplication(int port, ByteArrayOutputStream os) throws Exception {
+    static void waitForApplication(int port, Supplier<String> output) throws Exception {
         long timeout = 60 * 1000;
         long now = System.currentTimeMillis();
         URL url = new URL("http://localhost:" + port + "/greet");
@@ -106,7 +106,7 @@ public class FunctionalUtils {
             if ((System.currentTimeMillis() - now) > timeout) {
                 throw new Exception(String.format("Application failed to start on port : %s\nProcess output:\n %s",
                         port,
-                        os.toString()));
+                        output.get()));
             }
             try {
                 conn = (HttpURLConnection) url.openConnection();

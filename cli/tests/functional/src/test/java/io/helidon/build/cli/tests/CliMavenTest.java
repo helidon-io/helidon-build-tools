@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,11 @@ import java.util.stream.Stream;
 
 import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.maven.MavenCommand;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.webclient.WebClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,13 +45,14 @@ import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
 import static io.helidon.build.cli.tests.FunctionalUtils.downloadMavenDist;
 import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
 import static io.helidon.build.cli.tests.FunctionalUtils.validateSeProject;
+import static io.helidon.build.cli.tests.FunctionalUtils.waitForApplication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SpellCheckingInspection")
-public class CliMavenTest {
+class CliMavenTest {
 
     private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
@@ -65,7 +66,7 @@ public class CliMavenTest {
     private static Path workDir;
     private static Path mavenDirectory;
 
-    private ByteArrayOutputStream stream;
+    private final StringBuilder capturedOutput = new StringBuilder();
 
     @BeforeAll
     static void setUp() throws IOException {
@@ -80,12 +81,7 @@ public class CliMavenTest {
     @BeforeEach
     void refresh() throws IOException {
         workDir = Files.createTempDirectory("generated");
-        stream = new ByteArrayOutputStream();
-    }
-
-    @AfterEach
-    void close() throws IOException {
-        stream.close();
+        capturedOutput.setLength(0);
     }
 
     @SuppressWarnings("unused")
@@ -95,7 +91,7 @@ public class CliMavenTest {
     }
 
     @Test
-    public void testWrongMavenVersion() throws Exception {
+    void testWrongMavenVersion() throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.1.1/bin");
         List<String> mavenArgs = List.of(
@@ -125,39 +121,39 @@ public class CliMavenTest {
 
     @ParameterizedTest
     @MethodSource("getValidMavenVersions")
-    public void testMissingValues(String version) {
+    void testMissingValues(String version) {
         missingArtifactGroupPackageValues(version);
         missingFlavorValue(version);
         missingBaseValue(version);
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void catchDevLoopRecompilationFails() {
+    void catchDevLoopRecompilationFails() {
         String output = runIssue499("2.2.3");
         assertThat(output, containsString("COMPILATION ERROR :"));
     }
 
     @Test //Issue#499 https://github.com/oracle/helidon-build-tools/issues/499
-    public void testDevLoopRecompilationFails() {
+    void testDevLoopRecompilationFails() {
         runIssue499(CLI_VERSION);
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
-    public void catchingJansiIssue() {
+    void catchingJansiIssue() {
         String output = runCliMavenPluginJansiIssue("2.1.0");
         assertThat(output, containsString("org/fusesource/jansi/AnsiOutputStream"));
         assertThat(output, containsString("BUILD FAILURE"));
     }
 
     @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
-    public void testFixJansiIssue() {
+    void testFixJansiIssue() {
         String output = runCliMavenPluginJansiIssue(CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
         validateSeProject(workDir);
     }
 
     @Test
-    public void testCliMavenPlugin() throws Exception {
+    void testCliMavenPlugin() throws Exception {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
         generateBareSe(workDir, "testCliMavenPlugin");
@@ -165,16 +161,17 @@ public class CliMavenTest {
         ProcessMonitor monitor = MavenCommand.builder()
                 .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("bare-se"))
-                .stdOut(new PrintStream(stream))
+                .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
+                .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                 .addOptionalArgument(LOCAL_REPO_ARG)
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
                 .build()
                 .start();
-        FunctionalUtils.waitForApplication(port, stream);
+        waitForApplication(port, capturedOutput::toString);
         monitor.stop();
 
-        assertThat(stream.toString(), containsString("BUILD SUCCESS"));
+        assertThat(capturedOutput.toString(), containsString("BUILD SUCCESS"));
     }
 
     private String runCliMavenPluginJansiIssue(String pluginVersion) {
@@ -185,23 +182,23 @@ public class CliMavenTest {
             ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("bare-se"))
-                    .stdOut(new PrintStream(stream))
-                    .stdErr(new PrintStream(stream))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addArgument("-B")
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                     .build()
                     .start();
-            FunctionalUtils.waitForApplication(port, stream);
+            waitForApplication(port, capturedOutput::toString);
             monitor.stop();
-            return stream.toString();
+            return capturedOutput.toString();
         } catch (Exception e) {
-            return stream.toString();
+            return capturedOutput.toString();
         }
     }
 
-    public String runIssue499(String pluginVersion) {
+    String runIssue499(String pluginVersion) {
         int port = FunctionalUtils.getAvailablePort();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.2/bin");
         generateBareSe(workDir, "runIssue499-" + pluginVersion);
@@ -209,14 +206,14 @@ public class CliMavenTest {
             ProcessMonitor monitor = MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("bare-se"))
-                    .stdOut(new PrintStream(stream))
-                    .stdErr(new PrintStream(stream))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
                     .build()
                     .start();
-            FunctionalUtils.waitForApplication(port, stream);
+            waitForApplication(port, capturedOutput::toString);
 
             try (Stream<Path> paths = Files.walk(workDir)) {
                 paths.filter(p -> p.toString().endsWith("Main.java"))
@@ -232,7 +229,7 @@ public class CliMavenTest {
                         });
             }
 
-            FunctionalUtils.waitForApplication(port, stream);
+            waitForApplication(port, capturedOutput::toString);
 
             WebClient.builder()
                     .baseUri("http://localhost:" + port + "/greet")
@@ -242,9 +239,9 @@ public class CliMavenTest {
                     .toCompletableFuture().get();
 
             monitor.stop();
-            return stream.toString();
+            return capturedOutput.toString();
         } catch (Exception e) {
-            return stream.toString();
+            return capturedOutput.toString();
         }
     }
 
@@ -254,15 +251,15 @@ public class CliMavenTest {
             MavenCommand.builder()
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
-                    .stdOut(new PrintStream(stream))
-                    .stdErr(new PrintStream(stream))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
+                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArguments(args)
                     .build()
                     .start()
                     .waitForCompletion(10, TimeUnit.MINUTES);
         } catch (ProcessMonitor.ProcessFailedException e) {
-            throw new Exception(stream.toString());
+            throw new Exception(capturedOutput.toString());
         }
     }
 
@@ -333,4 +330,11 @@ public class CliMavenTest {
         validateSeProject(wd);
     }
 
+    private void record(PrintStream stream, String str) {
+        String line = str + System.lineSeparator();
+        stream.print(str);
+        synchronized (capturedOutput) {
+            capturedOutput.append(line);
+        }
+    }
 }

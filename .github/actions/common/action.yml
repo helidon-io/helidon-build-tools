@@ -18,15 +18,15 @@ name: 'Common Job Steps'
 description: A composite action that abstracts the common steps needed to implement a job
 inputs:
   native-image:
-    description: Wether to setup GraalVM native-image
+    description: Whether to setup GraalVM native-image
     required: false
     default: 'false'
   maven-cache:
-    description: Wether to cache the Maven local repository (read-only or read-write)
+    description: Whether to cache the Maven local repository (read-only or read-write)
     required: false
     default: 'read-only'
   build-cache:
-    description:  Wether to cache the Maven build (read-only or read-write)
+    description:  Whether to cache the Maven build (read-only or read-write)
     required: false
     default: ''
   build-cache-id:
@@ -60,45 +60,19 @@ inputs:
     description: Name of the test artifact to create (excluded on windows), if non empty tests are archived
     required: false
     default: ''
-  test-matrix:
-    description: |
-      A JSON matrix with a "group" dimension, and a "groups" object to resolve Maven modules
-      from glob expressions.
-
-      The resolved modules are added in the include objects with a param "module".
-      A 'misc' group is always added to represent everything else by negating all the resolved modules (E.g. '!dir1,!dir2').
-
-      E.g.
-      {
-        "os": [ "ubuntu-20.04", "windows-2022" ],
-        "group": [ "group1", "group2", "misc" ],
-        "include": [
-          { "os": "ubuntu-20.04", "platform": "linux" },
-          { "os": "windows-2022", "platform": "windows" }
-        ]
-        "groups":  {
-          "group1": [ "dir1/**", "dir2/**" ],
-          "group2": [ "dir3/**" ]
-        }
-      }
-    required: false
-    default: ''
-outputs:
-  test-matrix:
-    value: ${{ steps.test-matrix.outputs.matrix }}
-    description: |
-      E.g.
-      groups: [ group1, group2 ]
-      includes:
-        - group: group1
-          modules: dir1,dir2,dir2a
-        - group: group2
-          modules: dir3,dir3a
-        - group: misc
-          modules: !dir1,!dir2,!dir2a,!dir3,!dir3a
+  free-space:
+    description: Whether to aggressively free disk space on the runner
+    default: 'false'
 runs:
   using: "composite"
   steps:
+    - if: ${{ inputs.free-space == 'true' }}
+      # See https://github.com/actions/runner-images/issues/2840
+      name: Free disk space
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/share/powershell
     - if: ${{ runner.os == 'Windows' }}
       name: Use GNU tar
       shell: cmd
@@ -125,11 +99,14 @@ runs:
       if: ${{ inputs.maven-cache == 'read-write' }}
       uses: actions/cache@v4.0.2
       with:
+        # See https://github.com/actions/toolkit/issues/713
+        # Include must not match top level directories
         path: |
-          .m2/repository/**
-          !.m2/repository/io/helidon/build-tools
+          .m2/repository/**/*.*
+          !.m2/repository/io/helidon/build-tools/**
         enableCrossOsArchive: true
-        key: local-maven-${{ hashFiles('**/pom.xml') }}
+        # only hash top-level poms to keep it fast
+        key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
         restore-keys: |
           local-maven-
     - name: Cache local Maven repository (read-only)
@@ -137,10 +114,10 @@ runs:
       uses: actions/cache/restore@v4.0.2
       with:
         path: |
-          .m2/repository/**
-          !.m2/repository/io/helidon/build-tools
+          .m2/repository/**/*.*
+          !.m2/repository/io/helidon/build-tools/**
         enableCrossOsArchive: true
-        key: local-maven-${{ hashFiles('**/pom.xml') }}
+        key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
         restore-keys: |
           local-maven-
     - name: Build cache (read-write)
@@ -168,13 +145,6 @@ runs:
         restore-keys: |
           build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
-    - name: Populate Maven cache
-      if: ${{ inputs.maven-cache == 'read-write' }}
-      run: |
-        mvn ${MAVEN_ARGS} -T 8 \
-          -Dmaven.repo.local=${{ github.workspace }}/.m2/repository \
-          dependency:go-offline
-      shell: bash
     - name: Exec
       env:
         GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
@@ -183,11 +153,8 @@ runs:
         MAVEN_ARGS: |
           ${{ env.MAVEN_ARGS }}
           -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
+          -Dcache.record=${{ inputs.build-cache == 'read-write' }}
       run: ${{ inputs.run }}
-      shell: bash
-    - id: test-matrix
-      if: ${{ inputs.test-matrix != '' }}
-      run: ./.github/actions/common/matrix.sh '${{ inputs.test-matrix }}' >> "${GITHUB_OUTPUT}"
       shell: bash
     - name: Archive test results
       # https://github.com/actions/upload-artifact/issues/240
