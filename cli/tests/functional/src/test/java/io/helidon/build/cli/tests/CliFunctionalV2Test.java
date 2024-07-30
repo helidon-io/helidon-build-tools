@@ -50,7 +50,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class CliFunctionalV2Test {
+class CliFunctionalV2Test {
 
     private static String expectedOutput;
     private static Path workDir;
@@ -73,7 +73,7 @@ public class CliFunctionalV2Test {
     }
 
     @AfterEach
-    public void cleanUp() throws IOException {
+    void cleanUp() throws IOException {
         deleteDirectoryContent(workDir);
     }
 
@@ -174,7 +174,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void testDebug() {
+    void testDebug() {
         String output = buildArchetype("testDebug")
                 .addOption("batch")
                 .addOption("debug")
@@ -185,7 +185,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void testVerbose() {
+    void testVerbose() {
         String output = cliProcessBuilder()
                 .workDirectory(workDir)
                 .addOption("verbose")
@@ -197,7 +197,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void IncorrectFlavorTest() {
+    void incorrectFlavorTest() {
         try {
             cliProcessBuilder()
                     .addArg("flavor", "wrongFlavor")
@@ -213,7 +213,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void IncorrectHelidonVersionTest() {
+    void incorrectHelidonVersionTest() {
         try {
             cliProcessBuilder()
                     .addArg("version", "0.0.0")
@@ -228,7 +228,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void testVersionCommand() {
+    void testVersionCommand() {
         String output = cliProcessBuilder().version().start(5, TimeUnit.MINUTES);
 
         assertThat(output, containsString(FunctionalUtils.CLI_VERSION));
@@ -236,7 +236,7 @@ public class CliFunctionalV2Test {
     }
 
     @Test
-    public void testCacheContent() {
+    void testCacheContent() {
         cliProcessBuilder().info().addOption("reset").start(5, TimeUnit.MINUTES);
         Path cacheDir = Config.userConfig().cacheDir();
         List<String> content = SourcePath.scan(cacheDir).stream()
@@ -272,44 +272,44 @@ public class CliFunctionalV2Test {
         private ExecutionMode mode = ExecutionMode.CLASSPATH;
         private final List<String> args = new LinkedList<>();
 
-        public Builder executable(Path executable) {
+        Builder executable(Path executable) {
             this.executable = executable;
             this.mode = ExecutionMode.EXECUTABLE;
             return this;
         }
 
-        public Builder input(File input) {
+        Builder input(File input) {
             this.input = input;
             return this;
         }
 
-        public Builder init() {
+        Builder init() {
             args.add(0, "init");
             return this;
         }
 
-        public Builder info() {
+        Builder info() {
             args.add(0, "info");
             return this;
         }
 
-        public Builder version() {
+        Builder version() {
             args.add(0, "version");
             return this;
         }
 
-        public Builder workDirectory(Path workDir) {
+        Builder workDirectory(Path workDir) {
             this.workDir = workDir;
             return this;
         }
 
-        public Builder addArg(String option, String value) {
+        Builder addArg(String option, String value) {
             addOption(option);
             addValue(value);
             return this;
         }
 
-        public Builder addOption(String option) {
+        Builder addOption(String option) {
             Strings.requireValid(option, "Provided option is not valid");
             if (!option.startsWith("--")) {
                 option = String.format("--%s", option);
@@ -322,7 +322,7 @@ public class CliFunctionalV2Test {
             args.add(Strings.requireValid(value, "Provided value is not valid"));
         }
 
-        public ProcessMonitor start() {
+        ProcessMonitor start() {
             List<String> cmdArgs = new LinkedList<>();
             if (mode == ExecutionMode.CLASSPATH) {
                 cmdArgs.addAll(FunctionalUtils.buildJavaCommand());
@@ -353,7 +353,7 @@ public class CliFunctionalV2Test {
             }
         }
 
-        public String start(long timeout, TimeUnit unit) {
+        String start(long timeout, TimeUnit unit) {
             try {
                 String output = start().waitForCompletion(timeout, unit).output();
                 return AnsiTextStyle.strip(output);
@@ -364,7 +364,7 @@ public class CliFunctionalV2Test {
             }
         }
 
-        public void execute(Path wd) {
+        void execute(Path wd) {
             args.add("--project");
             args.add(wd.toString());
             addResetUrl(args);
