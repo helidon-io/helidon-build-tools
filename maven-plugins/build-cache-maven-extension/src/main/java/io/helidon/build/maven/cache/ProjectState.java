@@ -39,6 +39,8 @@ import org.apache.maven.model.Model;
 import org.apache.maven.project.DefaultMavenProjectHelper;
 import org.apache.maven.project.MavenProject;
 
+import static java.util.function.Predicate.not;
+
 /**
  * Project state.
  */
@@ -333,13 +335,13 @@ final class ProjectState {
                 .stream()
                 .map(projectDir::resolve)
                 .map(Object::toString)
-                .filter(project.getCompileSourceRoots()::contains)
+                .filter(not(project.getCompileSourceRoots()::contains))
                 .forEach(project::addCompileSourceRoot);
         testCompileSourceRoots
                 .stream()
                 .map(projectDir::resolve)
                 .map(Object::toString)
-                .filter(project.getTestCompileSourceRoots()::contains)
+                .filter(not(project.getTestCompileSourceRoots()::contains))
                 .forEach(project::addTestCompileSourceRoot);
         attachedArtifacts
                 .stream()
