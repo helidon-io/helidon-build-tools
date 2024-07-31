@@ -17,6 +17,7 @@ package io.helidon.build.maven.cache;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import io.helidon.build.common.test.utils.BuildLog;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
+import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -60,5 +62,13 @@ class ProjectsTestIT {
 
         int index2 = buildLog.indexOf("Downstream state(s) not available, state is ignored", index1);
         assertThat(index2 > 0, is(true));
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test3(String basedir) {
+        Path apidocs = Path.of(basedir).resolve("target/apidocs");
+        Path greetings = apidocs.resolve("io/helidon/build/cache/test/Greeting.html");
+        assertThat(greetings, fileExists());
     }
 }
