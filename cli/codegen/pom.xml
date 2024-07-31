@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools.cli</groupId>
         <artifactId>helidon-cli-project</artifactId>
-        <version>4.0.8-SNAPSHOT</version>
+        <version>4.0.8</version>
     </parent>
     <artifactId>helidon-cli-codegen</artifactId>
     <name>Helidon Command Line Interface Code Generator</name>
