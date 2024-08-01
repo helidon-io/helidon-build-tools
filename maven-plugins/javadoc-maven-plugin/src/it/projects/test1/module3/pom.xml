@@ -46,6 +46,7 @@
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-javadoc-maven-plugin</artifactId>
+                <version>@project.version@</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -54,6 +55,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <fileExcludes>
+                        <exclude>*__*.java</exclude>
+                    </fileExcludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -38,6 +39,7 @@ class ProjectsTestIT {
         Path apidocsDir = Path.of(basedir).resolve("module3/target/apidocs");
         assertThat(apidocsDir.resolve("test.module1/com/acme1/Acme1.html"), fileExists());
         assertThat(apidocsDir.resolve("test.module2a/com/acme2a/Acme2a.html"), fileExists());
+        assertThat(apidocsDir.resolve("test.module2a/com/acme2a/Acme2a__Excluded.html"), not(fileExists()));
         assertThat(apidocsDir.resolve("test.module2b/com/acme2b/Acme2b.html"), fileExists());
     }
 }

@@ -465,6 +465,8 @@ public class JavadocMojo extends AbstractMojo {
         dependencyFilter = MavenFilters.artifactFilter(dependencyIncludes, dependencyExcludes);
         pomFilter = MavenFilters.pomFilter(pomIncludes, pomExcludes);
         sourceFilter = MavenFilters.pathFilter(sourceIncludes, sourceExcludes, projectRoot.toPath());
+        getLog().warn("fileExcludes = " + fileExcludes);
+        getLog().warn("fileIncludes = " + fileIncludes);
         filenameFilter = MavenFilters.stringFilter(fileIncludes, fileExcludes);
         pomIdentityFilter = MavenFilters.dirFilter(pomScanningIdentity);
         pomScanningFilter = MavenFilters.pathFilter(pomScanningIncludes, pomScanningExcludes, projectRoot.toPath());
