@@ -81,7 +81,6 @@ import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelector;
-import org.codehaus.plexus.util.DirectoryScanner;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.collection.CollectRequest;
@@ -242,14 +241,14 @@ public class JavadocMojo extends AbstractMojo {
      * List of include file names.
      */
     @Parameter(property = "helidon.javadoc.fileIncludes", defaultValue = "*.java")
-    private List<String> fileNameIncludes = List.of();
+    private List<String> fileIncludes = List.of();
 
     /**
      * File name patterns.
      * List of exclude file names.
      */
     @Parameter(property = "helidon.javadoc.fileExcludes")
-    private List<String> fileNameExcludes = List.of();
+    private List<String> fileExcludes = List.of();
 
     /**
      * Whether to fall back to {@code sources-jar} when unable to resolve dependency sources from workspace.
@@ -466,7 +465,7 @@ public class JavadocMojo extends AbstractMojo {
         dependencyFilter = MavenFilters.artifactFilter(dependencyIncludes, dependencyExcludes);
         pomFilter = MavenFilters.pomFilter(pomIncludes, pomExcludes);
         sourceFilter = MavenFilters.pathFilter(sourceIncludes, sourceExcludes, projectRoot.toPath());
-        filenameFilter = MavenFilters.stringFilter(fileNameIncludes, fileNameExcludes);
+        filenameFilter = MavenFilters.stringFilter(fileIncludes, fileExcludes);
         pomIdentityFilter = MavenFilters.dirFilter(pomScanningIdentity);
         pomScanningFilter = MavenFilters.pathFilter(pomScanningIncludes, pomScanningExcludes, projectRoot.toPath());
         moduleFilter = MavenFilters.stringFilter(moduleIncludes, moduleExcludes);
@@ -768,10 +767,6 @@ public class JavadocMojo extends AbstractMojo {
 
     private Set<SourceRoot> sourceRootsFromProjectFiles(Path dir) {
         List<Path> nested = Lists.filter(workspace.values(), it -> !it.equals(dir) && it.startsWith(dir));
-        DirectoryScanner ds = new DirectoryScanner();
-        ds.setBasedir(dir.toFile());
-        ds.setIncludes(fileNameIncludes.toArray(new String[0]));
-        ds.setExcludes(fileNameExcludes.toArray(new String[0]));
         List<Path> moduleSources = FileUtils.walk(
                 dir, (path, attrs) -> attrs.isDirectory() && !nested.contains(path) || filenameFilter.test(fileName(path)));
         return sourceRoots(moduleSources);
