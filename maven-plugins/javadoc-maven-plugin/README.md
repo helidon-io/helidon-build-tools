@@ -34,6 +34,8 @@ This goal binds to the `package` phase by default.
 | moduleExcludes      | List    | `[]`                                         | Java module exclude patterns.  List of Java module names to exclude, wildcards are supported            |
 | packageIncludes     | List    | `*`                                          | Java package include patterns.  List of Java package names to include, wildcards are supported          |
 | packageExcludes     | List    | `[]`                                         | Java package exclude patterns.  List of Java package names to exclude, wildcards are supported          |
+| fileIncludes        | List    | `*.java`                                     | File name include patterns. List of file names/patterns to include, wildcards are supported             |
+| fileExcludes        | List    | `[]`                                         | File name exclude patterns. List of file names/patterns to exclude, wildcards are supported             |
 | additionalOptions   | List    | `[]`                                         | Set additional options. You must take care of quoting and escaping                                      |
 | additionalOptions   | List    | `[]`                                         | Set additional options. You must take care of quoting and escaping                                      |
 | source              | String  | `${maven.compiler.source}`                   | See `javadoc --source`                                                                                  |
