@@ -42,8 +42,8 @@ class ProjectStateTest {
     @Test
     void testSave() throws IOException {
         ProjectState projectState = new ProjectState(Maps.toProperties(Map.of("prop1", "value1")),
-                new ArtifactEntry("artifact.jar", "jar", null, "java", false, true),
-                List.of(new ArtifactEntry("artifact-javadoc.jar", "jar", "javadoc", "java", false, false)),
+                new ArtifactEntry("artifact.jar", "jar", "jar", null, "java", false, true),
+                List.of(new ArtifactEntry("artifact-javadoc.jar", "javadoc", "jar", "javadoc", "java", false, false)),
                 List.of("src/main/java"),
                 List.of("src/test/java"),
                 new ProjectFiles(7, 1717820328080L, null, Map.of()),
@@ -80,9 +80,9 @@ class ProjectStateTest {
         assertThat(Maps.fromProperties(projectState.properties()), is(Map.of("prop1", "value1")));
 
         assertThat(projectState.artifact(),
-                is(new ArtifactEntry("artifact.jar", "jar", null, "java", false, true)));
+                is(new ArtifactEntry("artifact.jar", "jar", "jar", null, "java", false, true)));
         assertThat(projectState.attachedArtifacts(),
-                is(List.of(new ArtifactEntry("artifact-javadoc.jar", "jar", "javadoc", "java", false, false))));
+                is(List.of(new ArtifactEntry("artifact-javadoc.jar", "javadoc", "jar", "javadoc", "java", false, false))));
 
         assertThat(projectState.compileSourceRoots(), is(List.of("src/main/java")));
         assertThat(projectState.testCompileSourceRoots(), is(List.of("src/test/java")));

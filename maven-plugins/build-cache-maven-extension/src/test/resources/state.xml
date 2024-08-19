@@ -20,9 +20,9 @@
     <properties>
         <property name="prop1" value="value1"/>
     </properties>
-    <artifact file="artifact.jar" extension="jar" language="java" includesDependencies="false" addedToClasspath="true"/>
+    <artifact file="artifact.jar" type="jar" extension="jar" language="java" includesDependencies="false" addedToClasspath="true"/>
     <attached-artifacts>
-        <artifact file="artifact-javadoc.jar" extension="jar" classifier="javadoc" language="java" includesDependencies="false" addedToClasspath="false"/>
+        <artifact file="artifact-javadoc.jar" type="javadoc" extension="jar" classifier="javadoc" language="java" includesDependencies="false" addedToClasspath="false"/>
     </attached-artifacts>
     <compile-source-roots>
         <path>src/main/java</path>

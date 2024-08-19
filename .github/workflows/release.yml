@@ -28,6 +28,7 @@ env:
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
     -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}

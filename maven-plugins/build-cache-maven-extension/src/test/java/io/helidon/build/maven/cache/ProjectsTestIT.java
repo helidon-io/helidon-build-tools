@@ -17,12 +17,16 @@ package io.helidon.build.maven.cache;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.JUnitLauncher;
+import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -66,9 +70,47 @@ class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void test3(String basedir) {
-        Path apidocs = Path.of(basedir).resolve("target/apidocs");
+    void test3(String basedir) throws IOException {
+        Path basepath = Path.of(basedir);
+        Path apidocs = basepath.resolve("target/apidocs");
         Path greetings = apidocs.resolve("io/helidon/build/cache/test/Greeting.html");
         assertThat(greetings, fileExists());
+
+        Path stagingDir = basepath.resolve("staging");
+        Path artifactDir = stagingDir.resolve("io/helidon/build-tools/cache/tests/test3/4.0.0-SNAPSHOT");
+
+        Path mavenMetadataFile = artifactDir.resolve("maven-metadata.xml");
+        assertThat(mavenMetadataFile, fileExists());
+
+        XMLElement elt = XMLElement.parse(Files.newInputStream(mavenMetadataFile));
+        String timestamp = elt.childAt("versioning", "snapshot", "timestamp")
+                .map(XMLElement::value)
+                .orElseThrow(() -> new IllegalStateException("Unable to get timestamp"));
+
+        String version = "4.0.0-" + timestamp + "-1";
+
+        List<String> files;
+        try (Stream<Path> dirStream = Files.list(artifactDir)) {
+            files = dirStream.filter(Files::isRegularFile)
+                    .map(artifactDir::relativize)
+                    .map(Path::toString)
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        assertThat(files, is(List.of(
+                "maven-metadata.xml",
+                "maven-metadata.xml.md5",
+                "maven-metadata.xml.sha1",
+                "test3-" + version + "-javadoc.jar",
+                "test3-" + version + "-javadoc.jar.md5",
+                "test3-" + version + "-javadoc.jar.sha1",
+                "test3-" + version + ".jar",
+                "test3-" + version + ".jar.md5",
+                "test3-" + version + ".jar.sha1",
+                "test3-" + version + ".pom",
+                "test3-" + version + ".pom.md5",
+                "test3-" + version + ".pom.sha1"
+        )));
     }
 }

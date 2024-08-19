@@ -353,7 +353,7 @@ public final class CacheConfig {
         String enabledValue = stringProperty(sysProps, userProps, "cache.enabled");
         boolean enabled = parseBoolean(enabledValue, false);
         String recordValue = stringProperty(sysProps, userProps, "cache.record");
-        boolean record = parseBoolean(enabledValue, true);
+        boolean record = parseBoolean(recordValue, true);
         if (xmlElt != null) {
             if (enabledValue == null) {
                 enabled = booleanElement(xmlElt, "enabled", false);

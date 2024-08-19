@@ -96,6 +96,23 @@ public interface XMLElement {
     Optional<XMLElement> child(String name);
 
     /**
+     * Get a child by path.
+     *
+     * @param path path
+     * @return optional
+     */
+    default Optional<XMLElement> childAt(String... path) {
+        if (path.length == 0) {
+            return Optional.empty();
+        }
+        Stream<XMLElement> stream = Stream.of(this);
+        for (String p : path) {
+            stream = stream.flatMap(e -> e.children(p).stream());
+        }
+        return stream.findFirst();
+    }
+
+    /**
      * Get the attributes.
      *
      * @return attributes, never {@code null}
