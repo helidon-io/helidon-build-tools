@@ -38,7 +38,7 @@ class ArtifactEntryTest {
     void testToArtifact() {
         MavenProject project = mockMavenProject();
 
-        Artifact artifact = new ArtifactEntry("foo.zip","zip", null, "bar", false,  true).toArtifact(project);
+        Artifact artifact = new ArtifactEntry("foo.zip", "zip", "zip", null, "bar", false,  true).toArtifact(project);
         assertThat(artifact.getGroupId(), is("com.acme"));
         assertThat(artifact.getArtifactId(), is("foo"));
         assertThat(artifact.getVersion(), is("1.0"));
@@ -53,7 +53,7 @@ class ArtifactEntryTest {
         assertThat(artifactHandler.isIncludesDependencies(), is(false));
         assertThat(artifactHandler.isAddedToClasspath(), is(true));
 
-        artifact = new ArtifactEntry("foo.zip", "zip", "alice", "bar", true, false).toArtifact(project);
+        artifact = new ArtifactEntry("foo.zip", "zip", "zip", "alice", "bar", true, false).toArtifact(project);
         assertThat(artifact.getGroupId(), is("com.acme"));
         assertThat(artifact.getArtifactId(), is("foo"));
         assertThat(artifact.getVersion(), is("1.0"));

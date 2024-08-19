@@ -28,6 +28,7 @@ import org.apache.maven.project.MavenProject;
  */
 final class ArtifactEntry {
 
+    private final String type;
     private final String extension;
     private final String classifier;
     private final String file;
@@ -46,12 +47,14 @@ final class ArtifactEntry {
      * @param addedToClasspath     artifact handler added to classpath flag
      */
     ArtifactEntry(String file,
+                  String type,
                   String extension,
                   String classifier,
                   String language,
                   boolean includesDependencies,
                   boolean addedToClasspath) {
 
+        this.type = Objects.requireNonNull(type, "type is null");
         this.extension = Objects.requireNonNull(extension, "extension is null");
         this.classifier = classifier != null && classifier.isEmpty() ? null : classifier;
         this.file = Objects.requireNonNull(file, "file is null");
@@ -85,6 +88,15 @@ final class ArtifactEntry {
      */
     String extension() {
         return extension;
+    }
+
+    /**
+     * Get the artifact type.
+     *
+     * @return type, never {@code null}
+     */
+    String type() {
+        return type;
     }
 
     /**
@@ -129,8 +141,8 @@ final class ArtifactEntry {
         String file = project.getModel().getProjectDirectory().toPath()
                 .resolve(project.getModel().getBuild().getDirectory())
                 .relativize(artifact.getFile().toPath()).toString();
-        return new ArtifactEntry(file, artifact.getType(), artifact.getClassifier(), handler.getLanguage(),
-                handler.isIncludesDependencies(), handler.isAddedToClasspath());
+        return new ArtifactEntry(file, artifact.getType(), handler.getExtension(), artifact.getClassifier(),
+                handler.getLanguage(), handler.isIncludesDependencies(), handler.isAddedToClasspath());
     }
 
     /**
@@ -140,15 +152,14 @@ final class ArtifactEntry {
      * @return Artifact
      */
     Artifact toArtifact(MavenProject project) {
-        DefaultArtifactHandler handler = new DefaultArtifactHandler(extension);
-        if (language != null) {
-            handler.setLanguage(language);
-        }
+        DefaultArtifactHandler handler = new DefaultArtifactHandler(type);
+        handler.setExtension(extension);
+        handler.setLanguage(language);
         handler.setIncludesDependencies(includesDependencies);
         handler.setAddedToClasspath(addedToClasspath);
         Artifact artifact = new DefaultArtifact(
                 project.getGroupId(), project.getArtifactId(), project.getVersion(), "compile",
-                extension, classifier, handler);
+                type, classifier, handler);
         artifact.setFile(project.getModel().getProjectDirectory().toPath()
                 .resolve(project.getModel().getBuild().getDirectory())
                 .resolve(file)
@@ -167,6 +178,7 @@ final class ArtifactEntry {
         ArtifactEntry that = (ArtifactEntry) o;
         return includesDependencies == that.includesDependencies
                && addedToClasspath == that.addedToClasspath
+               && Objects.equals(type, that.type)
                && Objects.equals(extension, that.extension)
                && Objects.equals(classifier, that.classifier)
                && Objects.equals(file, that.file)
@@ -175,13 +187,14 @@ final class ArtifactEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(extension, classifier, file, includesDependencies, language, addedToClasspath);
+        return Objects.hash(type, extension, classifier, file, includesDependencies, language, addedToClasspath);
     }
 
     @Override
     public String toString() {
         return "ArtifactEntry{"
-               + "extension='" + (extension == null ? "" : extension) + '\''
+               + "type='" + type + '\''
+               + ", extension='" + extension + '\''
                + ", classifier='" + (classifier == null ? "" : classifier) + '\''
                + ", file='" + file + '\''
                + ", includesDependencies=" + includesDependencies

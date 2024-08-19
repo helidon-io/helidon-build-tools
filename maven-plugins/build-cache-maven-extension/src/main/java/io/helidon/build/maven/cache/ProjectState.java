@@ -170,7 +170,7 @@ final class ProjectState {
         for (XMLElement elt : rootElt.childrenAt("properties", "property")) {
             String name = elt.attribute("name", null);
             String value = elt.attribute("value", null);
-            if (name != null && !name.isEmpty() && value != null) {
+            if (Strings.isValid(name) && value != null) {
                 properties.setProperty(name, value);
             }
         }
@@ -293,6 +293,7 @@ final class ProjectState {
         Map<String, String> attributes = elt.attributes();
         return new ArtifactEntry(
                 attributes.get("file"),
+                attributes.get("type"),
                 attributes.get("extension"),
                 attributes.get("classifier"),
                 attributes.get("language"),
@@ -302,16 +303,14 @@ final class ProjectState {
 
     private static void writeArtifact(XMLWriter writer, ArtifactEntry artifact) {
         writer.startElement("artifact").attribute("file", artifact.file());
-        String extension = artifact.extension();
-        if (extension != null && !extension.isEmpty()) {
-            writer.attribute("extension", extension);
-        }
+        writer.attribute("type", artifact.type());
+        writer.attribute("extension", artifact.extension());
         String classifier = artifact.classifier();
-        if (classifier != null && !classifier.isEmpty()) {
+        if (Strings.isValid(classifier)) {
             writer.attribute("classifier", classifier);
         }
         String language = artifact.language();
-        if (language != null && !language.isEmpty()) {
+        if (Strings.isValid(language)) {
             writer.attribute("language", language);
         }
         writer.attribute("includesDependencies", artifact.includesDependencies());

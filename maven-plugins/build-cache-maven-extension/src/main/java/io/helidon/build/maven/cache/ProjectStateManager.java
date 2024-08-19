@@ -81,6 +81,9 @@ public class ProjectStateManager {
     }
 
     private Map<MavenProject, ProjectStateStatus> initStates() {
+        if (session.getGoals().contains("clean")) {
+            return Map.of();
+        }
         ProjectDependencyGraph pdg = session.getProjectDependencyGraph();
         Map<MavenProject, ProjectStateStatus> statusMap = new HashMap<>();
         Deque<MavenProject> stack = new ArrayDeque<>(session.getProjects());
