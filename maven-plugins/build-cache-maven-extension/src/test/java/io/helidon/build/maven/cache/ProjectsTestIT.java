@@ -77,7 +77,7 @@ class ProjectsTestIT {
         assertThat(greetings, fileExists());
 
         Path stagingDir = basepath.resolve("staging");
-        Path artifactDir = stagingDir.resolve("io/helidon/build-tools/cache/tests/test3/4.0.0-SNAPSHOT");
+        Path artifactDir = stagingDir.resolve("io/helidon/build-tools/cache/tests/test3/1.0.0-SNAPSHOT");
 
         Path mavenMetadataFile = artifactDir.resolve("maven-metadata.xml");
         assertThat(mavenMetadataFile, fileExists());
@@ -87,7 +87,7 @@ class ProjectsTestIT {
                 .map(XMLElement::value)
                 .orElseThrow(() -> new IllegalStateException("Unable to get timestamp"));
 
-        String version = "4.0.0-" + timestamp + "-1";
+        String version = "1.0.0-" + timestamp + "-1";
 
         List<String> files;
         try (Stream<Path> dirStream = Files.list(artifactDir)) {
