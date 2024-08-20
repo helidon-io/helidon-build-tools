@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools.cache.tests</groupId>
     <artifactId>test1</artifactId>
-    <version>@project.version@</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>Test State 1</name>
 
     <properties>
