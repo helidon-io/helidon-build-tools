@@ -18,6 +18,7 @@ package io.helidon.build.maven.cache;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import io.helidon.build.common.LazyValue;
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.xml.XMLException;
 
 import org.apache.maven.SessionScoped;
@@ -114,7 +116,8 @@ public class ProjectStateManager {
      * @param project Maven project
      */
     public void save(MavenProject project) {
-        if (configManager.cacheConfig().record()) {
+        CacheConfig cacheConfig = configManager.cacheConfig();
+        if (cacheConfig.record()) {
             try {
                 ProjectState projectState = null;
                 ProjectFiles projectFiles = null;
@@ -125,7 +128,9 @@ public class ProjectStateManager {
                 }
                 List<ExecutionEntry> newExecutions = executionManager.recordedExecutions(project);
                 ProjectState.merge(projectState, project, session, configManager, newExecutions, projectFiles)
-                        .save(project);
+                        .save(project, cacheConfig.recordSuffix()
+                                .map(suffix -> "state-" + suffix + ".xml")
+                                .orElse("state.xml"));
             } catch (IOException | UncheckedIOException ex) {
                 logger.error("Error while saving project state", ex);
             }
@@ -149,12 +154,31 @@ public class ProjectStateManager {
                     project.getGroupId(),
                     project.getArtifactId()));
         }
-        ProjectState state;
+        List<String> suffixes = cacheConfig.loadSuffixes();
+        List<String> stateFileNames = new ArrayList<>(Lists.map(suffixes, suffix -> "state-" + suffix + ".xml"));
+        stateFileNames.add("state.xml");
+        ProjectState state = null;
         try {
-            state = ProjectState.load(project);
+            for (String stateFileName : stateFileNames) {
+                ProjectState nextState = ProjectState.load(project, stateFileName);
+                if (nextState == null) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("[%s:%s] - state file not found: %s",
+                                project.getGroupId(),
+                                project.getArtifactId(),
+                                stateFileName));
+                    }
+                    continue;
+                }
+                if (state == null) {
+                    state = nextState;
+                } else {
+                    state = ProjectState.merge(state, nextState);
+                }
+            }
             if (state == null) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("[%s:%s] - state file not found",
+                    logger.debug(String.format("[%s:%s] - state file(s) not found",
                             project.getGroupId(),
                             project.getArtifactId()));
                 }

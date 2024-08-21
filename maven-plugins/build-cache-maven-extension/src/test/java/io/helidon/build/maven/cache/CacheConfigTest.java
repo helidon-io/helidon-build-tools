@@ -15,6 +15,7 @@
  */
 package io.helidon.build.maven.cache;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -44,12 +45,15 @@ class CacheConfigTest {
         CacheConfig config = new CacheConfig(elt, toProperties(Map.of()), toProperties(Map.of()));
 
         assertThat(config.enabled(), is(true));
+        assertThat(config.record(), is(true));
+        assertThat(config.loadSuffixes(), is(List.of("foo", "bar")));
+        assertThat(config.recordSuffix().orElse(null), is("foo"));
         assertThat(config.enableChecksums(), is(true));
         assertThat(config.includeAllChecksums(), is(true));
 
-        assertThat(config.lifecyleConfig().size(), is(2));
+        assertThat(config.lifecycleConfig().size(), is(2));
 
-        LifecycleConfig lifecycleConfig1 = config.lifecyleConfig().get(0);
+        LifecycleConfig lifecycleConfig1 = config.lifecycleConfig().get(0);
         assertThat(lifecycleConfig1.path(), is("a-path"));
         assertThat(lifecycleConfig1.glob(), is("a-glob"));
         assertThat(lifecycleConfig1.regex(), is("a-regex"));
@@ -58,7 +62,7 @@ class CacheConfigTest {
         assertThat(lifecycleConfig1.executionsIncludes(), is(List.of("exec-include")));
         assertThat(lifecycleConfig1.projectFilesExcludes(), is(List.of("project-exclude")));
 
-        LifecycleConfig lifecycleConfig2 = config.lifecyleConfig().get(1);
+        LifecycleConfig lifecycleConfig2 = config.lifecycleConfig().get(1);
         assertThat(lifecycleConfig2.glob(), is("foo/**"));
         assertThat(lifecycleConfig2.enabled(), is(false));
 
@@ -73,5 +77,22 @@ class CacheConfigTest {
         assertThat(moduleSet.name(), is("moduleSet1"));
         assertThat(moduleSet.includes(), is(List.of("module-include")));
         assertThat(moduleSet.excludes(), is(List.of("module-exclude")));
+    }
+
+    @Test
+    void testConfigOverride() throws IOException {
+        Path configFile = TestFiles.testResourcePath(CacheConfigTest.class, "cache-config.xml");
+        XMLElement elt = XMLElement.parse(Files.newInputStream(configFile));
+        CacheConfig config = new CacheConfig(elt, toProperties(Map.of(
+                "cache.enabled", "false",
+                "cache.record", "false",
+                "cache.loadSuffixes", "one,two",
+                "cache.recordSuffix", "three"
+        )), toProperties(Map.of()));
+
+        assertThat(config.enabled(), is(false));
+        assertThat(config.record(), is(false));
+        assertThat(config.loadSuffixes(), is(List.of("one", "two")));
+        assertThat(config.recordSuffix().orElse(null), is("three"));
     }
 }

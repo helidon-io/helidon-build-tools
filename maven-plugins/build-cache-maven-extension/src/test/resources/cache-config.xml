@@ -18,6 +18,12 @@
 -->
 <cacheConfig>
     <enabled>true</enabled>
+    <record>true</record>
+    <loadSuffixes>
+        <suffix>foo</suffix>
+        <suffix>bar</suffix>
+    </loadSuffixes>
+    <recordSuffix>foo</recordSuffix>
     <lifecycleConfig>
         <enableChecksums>true</enableChecksums>
         <includeAllChecksums>true</includeAllChecksums>
