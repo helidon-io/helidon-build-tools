@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-tools-project</artifactId>
-        <version>4.0.11-SNAPSHOT</version>
+        <version>4.0.11</version>
     </parent>
     <groupId>io.helidon.build-tools.cli</groupId>
     <artifactId>helidon-cli-project</artifactId>
