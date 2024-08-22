@@ -16,9 +16,13 @@
 package io.helidon.build.maven.cache;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Strings;
@@ -36,11 +40,13 @@ public final class CacheConfig {
 
     private final boolean enabled;
     private final boolean record;
+    private final String recordSuffix;
+    private final List<String> loadSuffixes;
     private final String reactorRule;
     private final String moduleSet;
     private final boolean enableChecksums;
     private final boolean includeAllChecksums;
-    private final List<LifecycleConfig> lifecyleConfig = new ArrayList<>();
+    private final List<LifecycleConfig> lifecycleConfig = new ArrayList<>();
     private final List<ReactorRule> reactorRules = new ArrayList<>();
 
     /**
@@ -354,12 +360,28 @@ public final class CacheConfig {
         boolean enabled = parseBoolean(enabledValue, false);
         String recordValue = stringProperty(sysProps, userProps, "cache.record");
         boolean record = parseBoolean(recordValue, true);
+        String loadSuffixesValue = stringProperty(sysProps, userProps, "cache.loadSuffixes");
+        List<String> loadSuffixes;
+        if (loadSuffixesValue != null) {
+            loadSuffixes = Arrays.stream(loadSuffixesValue.split(","))
+                    .filter(Strings::isValid)
+                    .collect(Collectors.toList());
+        } else {
+            loadSuffixes = List.of();
+        }
+        String recordSuffix = stringProperty(sysProps, userProps, "cache.recordSuffix");
         if (xmlElt != null) {
             if (enabledValue == null) {
                 enabled = booleanElement(xmlElt, "enabled", false);
             }
             if (recordValue == null) {
                 record = booleanElement(xmlElt, "record", true);
+            }
+            if (loadSuffixesValue == null) {
+                loadSuffixes = stringListElement(xmlElt, "loadSuffixes");
+            }
+            if (recordSuffix == null) {
+                recordSuffix = xmlElt.child("recordSuffix").map(XMLElement::value).orElse(null);
             }
             XMLElement lifecycleConfigElt = xmlElt.child("lifecycleConfig").orElse(null);
             if (lifecycleConfigElt != null) {
@@ -373,7 +395,7 @@ public final class CacheConfig {
                     List<String> executionsIncludes = stringListElement(projectElt, "executionsIncludes");
                     List<String> executionsExcludes = stringListElement(projectElt, "executionsExcludes");
                     List<String> projectFilesExcludes = stringListElement(projectElt, "projectFilesExcludes");
-                    lifecyleConfig.add(new LifecycleConfig(path, glob, regex, projectEnabled, executionsIncludes,
+                    lifecycleConfig.add(new LifecycleConfig(path, glob, regex, projectEnabled, executionsIncludes,
                             executionsExcludes, projectFilesExcludes));
                 }
             }
@@ -393,6 +415,8 @@ public final class CacheConfig {
         this.includeAllChecksums = includeAllChecksums;
         this.enabled = enabled;
         this.record = record;
+        this.recordSuffix = recordSuffix;
+        this.loadSuffixes = Collections.unmodifiableList(loadSuffixes);
         this.reactorRule = stringProperty(sysProps, userProps, "reactorRule");
         this.moduleSet = stringProperty(sysProps, userProps, "moduleSet");
     }
@@ -434,6 +458,24 @@ public final class CacheConfig {
     }
 
     /**
+     * Get the state file suffixes to load.
+     *
+     * @return list, never {@code null}
+     */
+    public List<String> loadSuffixes() {
+        return loadSuffixes;
+    }
+
+    /**
+     * Get suffix to use for the recorded state files.
+     *
+     * @return Optional, never {@code null}
+     */
+    public Optional<String> recordSuffix() {
+        return Optional.ofNullable(recordSuffix);
+    }
+
+    /**
      * Get the {@link ReactorRule} name.
      *
      * @return {@link ReactorRule} name, may be {@code null}
@@ -456,8 +498,8 @@ public final class CacheConfig {
      *
      * @return list
      */
-    List<LifecycleConfig> lifecyleConfig() {
-        return lifecyleConfig;
+    List<LifecycleConfig> lifecycleConfig() {
+        return lifecycleConfig;
     }
 
     /**

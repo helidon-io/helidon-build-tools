@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +47,6 @@ import static java.util.function.Predicate.not;
  */
 final class ProjectState {
 
-    private static final String STATE_FILE_NAME = "state.xml";
     private static final DefaultMavenProjectHelper PROJECT_HELPER = new DefaultMavenProjectHelper();
 
     private final Properties properties;
@@ -142,15 +142,16 @@ final class ProjectState {
     /**
      * Load the project state from file.
      *
-     * @param project maven project
+     * @param project       maven project
+     * @param stateFileName state file name
      * @return state if state file exists, or {@code null}
      * @throws IOException  if an IO error occurs
      * @throws XMLException if a parsing error occurs
      */
-    static ProjectState load(MavenProject project) throws IOException, XMLException {
+    static ProjectState load(MavenProject project, String stateFileName) throws IOException, XMLException {
         return load(project.getModel().getProjectDirectory().toPath()
                 .resolve(project.getModel().getBuild().getDirectory())
-                .resolve(STATE_FILE_NAME));
+                .resolve(stateFileName));
     }
 
     /**
@@ -206,16 +207,17 @@ final class ProjectState {
     /**
      * Save the project state.
      *
-     * @param project Maven project
+     * @param project       Maven project
+     * @param stateFileName state file name
      * @throws IOException if an IO error occurs
      */
-    void save(MavenProject project) throws IOException {
+    void save(MavenProject project, String stateFileName) throws IOException {
         Model model = project.getModel();
         Path buildDir = model.getProjectDirectory().toPath().resolve(model.getBuild().getDirectory());
         if (!Files.exists(buildDir)) {
             Files.createDirectories(buildDir);
         }
-        save(buildDir.resolve(STATE_FILE_NAME));
+        save(buildDir.resolve(stateFileName));
     }
 
     /**
@@ -375,6 +377,41 @@ final class ProjectState {
             }
             return Optional.empty();
         }).orElse(null);
+    }
+
+    /**
+     * Merge two project states.
+     *
+     * @param state1 state1, must be non {@code null}
+     * @param state2 state1, must be non {@code null}
+     * @return ProjectState
+     */
+    static ProjectState merge(ProjectState state1, ProjectState state2) {
+        Properties properties = new Properties();
+        properties.putAll(state1.properties);
+        properties.putAll(state2.properties);
+        ProjectFiles projectFiles1 = state1.projectFiles;
+        ProjectFiles projectFiles2 = state2.projectFiles;
+        return new ProjectState(
+                properties,
+                Optional.ofNullable(state1.artifact).orElse(state2.artifact),
+                Stream.of(state1.attachedArtifacts.stream(), state2.attachedArtifacts.stream())
+                        .flatMap(Function.identity())
+                        .distinct()
+                        .collect(Collectors.toList()),
+                Stream.of(state1.compileSourceRoots.stream(), state2.compileSourceRoots.stream())
+                        .flatMap(Function.identity())
+                        .distinct()
+                        .collect(Collectors.toList()),
+                Stream.of(state1.testCompileSourceRoots.stream(), state2.testCompileSourceRoots.stream())
+                        .flatMap(Function.identity())
+                        .distinct()
+                        .collect(Collectors.toList()),
+                projectFiles1.lastModified() > projectFiles2.lastModified() ? projectFiles1 : projectFiles2,
+                Stream.of(state1.executions.stream(), state2.executions.stream())
+                        .flatMap(Function.identity())
+                        .distinct()
+                        .collect(Collectors.toList()));
     }
 
     /**

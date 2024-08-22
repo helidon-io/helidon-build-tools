@@ -80,6 +80,23 @@ The configuration resides in `.mvn/cache-config.xml`.
         Can be overridden with -Dcache.enabled=true
      -->
     <enabled>false</enabled>
+    <!--
+        Enable state recording (target/state.xml).
+        Can be overridden with -Dcache.record=false
+    -->
+    <record>true</record>
+    <!--
+        Load additional state files (target/state-{suffix}.xml).
+        Can be overridden with -Dcache.loadSuffixes=foo,bar
+    -->
+    <loadSuffixes>
+        <suffix>foo</suffix>
+    </loadSuffixes>
+    <!--
+        Add a suffix to the state file name used for recording (target/state-{suffix}.xml).
+        Can be overridden with -Dcache.recordSuffix=bar
+    -->
+    <recordSuffix>foo</recordSuffix>
     <!-- Per project configuration -->
     <lifecycleConfig>
         <!-- Indicate if the project files checksum should be computed -->
@@ -156,12 +173,14 @@ The configuration resides in `.mvn/cache-config.xml`.
 
 ### Properties
 
-| Property      | Type    | Default<br/>Value | Description                              |
-|---------------|---------|-------------------|------------------------------------------|
-| cache.enabled | Boolean | `false`           | Enables the extension                    |
-| cache.record  | Boolean | `false`           | Update the recorded cache state          |
-| reactorRule   | String  | `null`            | The reactor rule to use                  |
-| moduleSet     | String  | `null`            | The moduleset in the reactor rule to use |
+| Property           | Type    | Default<br/>Value | Description                                    |
+|--------------------|---------|-------------------|------------------------------------------------|
+| cache.enabled      | Boolean | `false`           | Enables the extension                          |
+| cache.record       | Boolean | `false`           | Update the recorded cache state                |
+| cache.loadSuffixes | List    | `[]`              | List of additional state file suffixes to load |
+| cache.recordSuffix | String  | `null`            | State file suffix to use                       |
+| reactorRule        | String  | `null`            | The reactor rule to use                        |
+| moduleSet          | String  | `null`            | The moduleset in the reactor rule to use       |
 
 ## General usage
 

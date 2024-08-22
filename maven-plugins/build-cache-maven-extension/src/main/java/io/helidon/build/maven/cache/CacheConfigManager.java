@@ -77,7 +77,7 @@ public class CacheConfigManager {
     public LifecycleConfig lifecycleConfig(MavenProject project) {
         return lifecycleConfigCache.computeIfAbsent(project, p -> {
             String projectPath = normalizePath(root().relativize(p.getFile().toPath().toAbsolutePath()));
-            return cacheConfig().lifecyleConfig().stream()
+            return cacheConfig().lifecycleConfig().stream()
                     .filter(c -> c.matches(projectPath))
                     .findFirst()
                     .orElse(LifecycleConfig.EMPTY);
