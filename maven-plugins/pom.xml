@@ -42,5 +42,6 @@
         <module>sitegen-maven-plugin</module>
         <module>snakeyaml-codegen-maven-plugin</module>
         <module>stager-maven-plugin</module>
+        <module>shade-extensions</module>
     </modules>
 </project>
