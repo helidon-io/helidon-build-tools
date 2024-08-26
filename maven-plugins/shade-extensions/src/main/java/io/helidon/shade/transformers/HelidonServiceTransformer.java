@@ -16,11 +16,14 @@
 
 package io.helidon.shade.transformers;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -32,10 +35,12 @@ import jakarta.json.JsonValue;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ReproducibleResourceTransformer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Maven Shade plugin custom transformer for merging Helidon service-registry files.
  * Usage:
- * <pre>{@code
+ * <pre><![CDATA[{@code
  * <plugin>
  *    <groupId>org.apache.maven.plugins</groupId>
  *    <artifactId>maven-shade-plugin</artifactId>
@@ -62,17 +67,22 @@ import org.apache.maven.plugins.shade.resource.ReproducibleResourceTransformer;
  *        </dependency>
  *    </dependencies>
  * </plugin>
- * }</pre>
+ * }]]</pre>
  */
 public class HelidonServiceTransformer implements ReproducibleResourceTransformer {
 
-    private static final String PATH = "META-INF/helidon/service-registry.json";
-    private final JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
-    private JsonArray result = null;
+    static final String SERVICE_REGISTRY_PATH = "META-INF/helidon/service-registry.json";
+    static final String CONFIG_METADATA_PATH = "META-INF/helidon/config-metadata.json";
+    static final String SERVICE_LOADER_PATH = "META-INF/helidon/service.loader";
+
+    private final JsonArrayBuilder serviceRegistryArrayBuilder = Json.createArrayBuilder();
+    private final JsonArrayBuilder configMetadataArrayBuilder = Json.createArrayBuilder();
+    private final LinkedHashSet<String> serviceLoaderLines = new LinkedHashSet<>();
+    private boolean hasTransformedResource;
 
     @Override
     public boolean canTransformResource(String resource) {
-        return resource.equals(PATH);
+        return resource.equals(SERVICE_REGISTRY_PATH);
     }
 
     @Override
@@ -82,33 +92,65 @@ public class HelidonServiceTransformer implements ReproducibleResourceTransforme
 
     @Override
     public boolean hasTransformedResource() {
-        return getResult().isEmpty();
+        return hasTransformedResource;
     }
 
     @Override
     public void modifyOutputStream(JarOutputStream jarOutputStream) throws IOException {
-        JarEntry jarEntry = new JarEntry(PATH);
-        jarEntry.setTime(Long.MIN_VALUE);
-        jarOutputStream.putNextEntry(jarEntry);
-        Writer writer = new OutputStreamWriter(jarOutputStream, StandardCharsets.UTF_8);
-        Json.createWriter(writer).write(getResult());
-        writer.close();
+        writeJson(SERVICE_REGISTRY_PATH, serviceRegistryArrayBuilder.build(), jarOutputStream);
+        writeJson(CONFIG_METADATA_PATH, configMetadataArrayBuilder.build(), jarOutputStream);
+        writeLines(SERVICE_LOADER_PATH, serviceLoaderLines, jarOutputStream);
     }
 
     @Override
     public void processResource(String resource, InputStream is, List<Relocator> relocators, long time) throws IOException {
-        JsonArray array = Json.createReader(is).readArray();
-        for (JsonValue value : array) {
-            jsonArrayBuilder.add(value);
+        if (SERVICE_REGISTRY_PATH.equals(resource)) {
+            JsonArray array = Json.createReader(is).readArray();
+            for (JsonValue value : array) {
+                serviceRegistryArrayBuilder.add(value);
+            }
+        }
+
+        if (CONFIG_METADATA_PATH.equals(resource)) {
+            JsonArray array = Json.createReader(is).readArray();
+            for (JsonValue value : array) {
+                configMetadataArrayBuilder.add(value);
+            }
+        }
+
+        if (SERVICE_LOADER_PATH.equals(resource)) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8))) {
+                reader.lines().forEach(serviceLoaderLines::add);
+            }
         }
     }
 
-    private JsonArray getResult() {
-        if (result == null) {
-            result = jsonArrayBuilder.build();
+    private void writeLines(String path, HashSet<String> lines, JarOutputStream jos) throws IOException {
+        if (lines.isEmpty()) {
+            return;
         }
-
-        return result;
+        hasTransformedResource = true;
+        JarEntry entry = new JarEntry(path);
+        entry.setTime(Long.MIN_VALUE);
+        jos.putNextEntry(entry);
+        try (Writer writer = new OutputStreamWriter(jos, UTF_8)) {
+            for (String line : lines) {
+                writer.append(line);
+                writer.append('\n');
+            }
+        }
     }
 
+    private void writeJson(String path, JsonArray jsonArray, JarOutputStream jos) throws IOException {
+        if (jsonArray.isEmpty()) {
+            return;
+        }
+        hasTransformedResource = true;
+        JarEntry entry = new JarEntry(path);
+        entry.setTime(Long.MIN_VALUE);
+        jos.putNextEntry(entry);
+        Writer writer = new OutputStreamWriter(jos, UTF_8);
+            Json.createWriter(writer).write(jsonArray);
+        writer.flush();
+    }
 }

@@ -119,7 +119,10 @@
         <module name="JavadocVariable">
             <property name="scope" value="protected"/>
         </module>
-        <module name="JavadocStyle"/>
+        <module name="JavadocStyle">
+            <!-- https://github.com/checkstyle/checkstyle/issues/3351 -->
+            <property name="checkHtml" value="false"/>
+        </module>
 
         <!-- Checks for Naming Conventions.                  -->
         <!-- See http://checkstyle.sf.net/config_naming.html -->

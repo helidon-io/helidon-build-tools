@@ -1,7 +1,12 @@
 # Helidon Shade Maven Plugin Extensions
 
 Allows shading Helidon artefacts with[ Maven Shade plugin](https://maven.apache.org/plugins/maven-shade-plugin/) 
-by providing transformer for combining `META-INF/helidon/service-registry.json` files to single one.
+by providing transformer for aggregating service registry files.
+
+Aggregated files:
+ * `META-INF/helidon/service-registry.json`
+ * `META-INF/helidon/config-metadata.json`
+ * `META-INF/helidon/service.loader`
 
 ### General usage
 
