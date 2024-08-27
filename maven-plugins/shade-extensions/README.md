@@ -7,6 +7,8 @@ Aggregated files:
  * `META-INF/helidon/service-registry.json`
  * `META-INF/helidon/config-metadata.json`
  * `META-INF/helidon/service.loader`
+ * `META-INF/helidon/serial-config.properties`
+ * `META-INF/helidon/feature-metadata.properties`
 
 ### General usage
 
@@ -24,7 +26,7 @@ Aggregated files:
             <configuration>
                 <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                    <transformer implementation="io.helidon.shade.transformers.HelidonServiceTransformer"/>
+                    <transformer implementation="io.helidon.build.maven.shade.HelidonServiceTransformer"/>
                 </transformers>
             </configuration>
         </execution>

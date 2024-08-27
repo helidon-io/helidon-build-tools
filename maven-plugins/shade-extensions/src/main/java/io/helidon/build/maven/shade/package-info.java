@@ -17,4 +17,4 @@
 /**
  * Maven Shade plugin custom transformer for merging Helidon service-registry, config-metadata and service.loader files.
  */
-package io.helidon.shade.transformers;
+package io.helidon.build.maven.shade;

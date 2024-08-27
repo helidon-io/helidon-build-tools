@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.shade.transformers;
+package io.helidon.build.maven.shade;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -35,9 +35,10 @@ import jakarta.json.JsonWriterFactory;
 import jakarta.json.stream.JsonGenerator;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.shade.transformers.HelidonServiceTransformer.CONFIG_METADATA_PATH;
-import static io.helidon.shade.transformers.HelidonServiceTransformer.SERVICE_LOADER_PATH;
-import static io.helidon.shade.transformers.HelidonServiceTransformer.SERVICE_REGISTRY_PATH;
+import static io.helidon.build.maven.shade.HelidonServiceTransformer.CONFIG_METADATA_PATH;
+import static io.helidon.build.maven.shade.HelidonServiceTransformer.SERVICE_REGISTRY_PATH;
+import static io.helidon.build.maven.shade.SerialConfigAggregator.SERIAL_CONFIG_PATH;
+import static io.helidon.build.maven.shade.ServiceLoaderAggregator.SERVICE_LOADER_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -62,10 +63,19 @@ class HelidonServiceTransformerTest {
                                     ClassLoader.getSystemResourceAsStream("config-metadata-2.json"),
                                     null);
         transformer.processResource(SERVICE_LOADER_PATH,
-                                    ClassLoader.getSystemResourceAsStream("service.loader-1"),
+                                    ClassLoader.getSystemResourceAsStream("service-1.loader"),
                                     null);
         transformer.processResource(SERVICE_LOADER_PATH,
-                                    ClassLoader.getSystemResourceAsStream("service.loader-2"),
+                                    ClassLoader.getSystemResourceAsStream("service-2.loader"),
+                                    null);
+        transformer.processResource(SERIAL_CONFIG_PATH,
+                                    ClassLoader.getSystemResourceAsStream("serial-config-1.properties"),
+                                    null);
+        transformer.processResource(SERIAL_CONFIG_PATH,
+                                    ClassLoader.getSystemResourceAsStream("serial-config-2.properties"),
+                                    null);
+        transformer.processResource(SERIAL_CONFIG_PATH,
+                                    ClassLoader.getSystemResourceAsStream("serial-config-3.properties"),
                                     null);
 
         JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(jarName));
@@ -89,9 +99,14 @@ class HelidonServiceTransformerTest {
         assertEqualJson(Json.createArrayBuilder().add(cfgMetaObj2).build(), "config-metadata-2.json");
 
         // Resulting service.loader
-        String expected = new String(ClassLoader.getSystemResourceAsStream("service.loader-expected").readAllBytes());
-        String actual = readFromJar(jarName, SERVICE_LOADER_PATH);
-        assertEquals(expected, actual);
+        String expectedsl = new String(ClassLoader.getSystemResourceAsStream("service-expected.loader").readAllBytes());
+        String actualsl = readFromJar(jarName, SERVICE_LOADER_PATH);
+        assertEquals(expectedsl, actualsl);
+
+        // Resulting serial-config.properties
+        String expectedsc = new String(ClassLoader.getSystemResourceAsStream("serial-config-expected.properties").readAllBytes());
+        String actualsc = readFromJar(jarName, SERIAL_CONFIG_PATH);
+        assertEquals(expectedsc, actualsc);
     }
 
     @Test
@@ -105,7 +120,7 @@ class HelidonServiceTransformerTest {
                                     ClassLoader.getSystemResourceAsStream("config-metadata-1.json"),
                                     null);
         transformer.processResource(SERVICE_LOADER_PATH,
-                                    ClassLoader.getSystemResourceAsStream("service.loader-1"),
+                                    ClassLoader.getSystemResourceAsStream("service-1.loader"),
                                     null);
 
         JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(jarName));
@@ -123,7 +138,7 @@ class HelidonServiceTransformerTest {
         assertEqualJson(cfgMetaArray, "config-metadata-1.json");
 
         // Resulting service.loader
-        String expected = new String(ClassLoader.getSystemResourceAsStream("service.loader-1").readAllBytes());
+        String expected = new String(ClassLoader.getSystemResourceAsStream("service-1.loader").readAllBytes());
         String actual = readFromJar(jarName, SERVICE_LOADER_PATH);
         assertEquals(expected, actual);
     }
