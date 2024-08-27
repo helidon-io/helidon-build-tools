@@ -28,11 +28,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonWriterFactory;
-import jakarta.json.stream.JsonGenerator;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonWriterFactory;
+import javax.json.stream.JsonGenerator;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.maven.shade.HelidonServiceTransformer.CONFIG_METADATA_PATH;

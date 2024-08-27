@@ -23,16 +23,15 @@ import java.io.Writer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonValue;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonValue;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 class JsonArrayAggregator implements Aggregator {
 
-    private static final String REJECT_ALL_PATTERN = "!*";
     private final String path;
     private final JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
 
