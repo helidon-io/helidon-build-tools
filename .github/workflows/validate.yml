@@ -89,6 +89,7 @@ jobs:
           artifact-name: helidon-cli-dist
           artifact-path: cli/impl/target/helidon-cli.zip
           run: |
+            mvn --version
             mvn ${MAVEN_ARGS} build-cache:go-offline
             mvn ${MAVEN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \

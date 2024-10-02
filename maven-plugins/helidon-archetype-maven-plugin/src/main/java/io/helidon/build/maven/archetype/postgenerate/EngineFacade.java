@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.maven.archetype.postgenerate;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,12 +31,14 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.maven.archetype.ArchetypeGenerationRequest;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.eclipse.aether.RepositorySystemSession;
 
 import static java.util.Collections.emptyMap;
 
@@ -51,6 +54,69 @@ public final class EngineFacade {
     private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
 
     private static final String MAVEN_CORE_POM_PROPERTIES = "META-INF/maven/org.apache.maven/maven-core/pom.properties";
+
+    /**
+     * Generate a project.
+     *
+     * @param request   archetype generation request
+     * @param dependencies Maven coordinates to resolve for running the engine
+     */
+    @SuppressWarnings("unused")
+    public static void generate(ArchetypeGenerationRequest request, List<String> dependencies) {
+        checkMavenVersion();
+        checkJavaVersion();
+
+        Aether aether = EngineFacade.<RepositorySystemSession>invoke(request, "getRepositorySession")
+                // archetype-common >= 3.3.0
+                .map(repoSession -> new Aether(repoSession, request.getRemoteArtifactRepositories()))
+                // archetype-common < 3.3.0
+                .orElseGet(() -> {
+                    ProjectBuildingRequest pbr = EngineFacade.<ProjectBuildingRequest>invoke(request, "getProjectBuildingRequest")
+                            .orElseThrow(() -> new IllegalStateException("Unable to get project building request"));
+                    RepositorySystemSession repoSession = EngineFacade.<RepositorySystemSession>invoke(pbr,
+                                    "getRepositorySession")
+                            .orElseThrow(() -> new IllegalStateException("Unable to get repository system session"));
+                    List<ArtifactRepository> artifactRepos = EngineFacade.<List<ArtifactRepository>>invoke(request,
+                                    "getRemoteArtifactRepositories")
+                            .orElseThrow(() -> new IllegalStateException("Unable to get artifact repositories"));
+                    return new Aether(repoSession, artifactRepos, true);
+                });
+        File localRepo = aether.repoSession().getLocalRepository().getBasedir();
+
+        // enable mvn:// URL support
+        System.setProperty(MAVEN_URL_REPO_PROPERTY, localRepo.getAbsolutePath());
+
+        // create a class-loader with the engine dependencies
+        URL[] urls = aether.resolveDependencies(dependencies)
+                           .stream()
+                           .map(f -> {
+                               try {
+                                   return f.toURI().toURL();
+                               } catch (MalformedURLException e) {
+                                   throw new UncheckedIOException(e);
+                               }
+                           }).toArray(URL[]::new);
+
+        URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
+
+        Properties archetypeProps = request.getProperties();
+        Map<String, String> props = new HashMap<>();
+        archetypeProps.stringPropertyNames().forEach(k -> props.put(k, archetypeProps.getProperty(k)));
+
+        // resolve the archetype JAR from the local repository
+        File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
+                "jar", request.getArchetypeVersion());
+
+        try {
+            FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
+            Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
+            Files.delete(projectDir.resolve("pom.xml"));
+            boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
+            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), n -> projectDir).generate();
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+    }
 
     private static String getMavenVersion() {
         // see org.apache.maven.rtinfo.internal.DefaultRuntimeInformation
@@ -90,56 +156,15 @@ public final class EngineFacade {
         }
     }
 
-    /**
-     * Generate a project.
-     *
-     * @param request   archetype generation request
-     * @param dependencies Maven coordinates to resolve for running the engine
-     */
-    @SuppressWarnings("unused")
-    public static void generate(ArchetypeGenerationRequest request, List<String> dependencies) {
-        checkMavenVersion();
-        checkJavaVersion();
-
-        ProjectBuildingRequest mavenRequest = request.getProjectBuildingRequest();
-        File localRepo = mavenRequest.getRepositorySession().getLocalRepository().getBasedir();
-        List<ArtifactRepository> remoteRepos = mavenRequest.getRemoteRepositories();
-        Aether aether = new Aether(localRepo, remoteRepos, mavenRequest.getActiveProfileIds());
-
-        // enable mvn:// URL support
-        System.setProperty(MAVEN_URL_REPO_PROPERTY, localRepo.getAbsolutePath());
-
-        // create a class-loader with the engine dependencies
-        URL[] urls = aether.resolveDependencies(dependencies)
-                           .stream()
-                           .map(f -> {
-                               try {
-                                   return f.toURI().toURL();
-                               } catch (MalformedURLException e) {
-                                   throw new UncheckedIOException(e);
-                               }
-                           }).toArray(URL[]::new);
-
-        URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
-
-        Properties archetypeProps = request.getProperties();
-        Map<String, String> props = new HashMap<>();
-        archetypeProps.stringPropertyNames().forEach(k -> props.put(k, archetypeProps.getProperty(k)));
-        Properties userProps = request.getProjectBuildingRequest().getUserProperties();
-        userProps.stringPropertyNames().forEach(k -> props.putIfAbsent(k, userProps.getProperty(k)));
-
-        // resolve the archetype JAR from the local repository
-        File archetypeFile = aether.resolveArtifact(request.getArchetypeGroupId(), request.getArchetypeArtifactId(),
-                "jar", request.getArchetypeVersion());
-
+    @SuppressWarnings("unchecked")
+    private static <T> Optional<T> invoke(Object object, String methodName) {
         try {
-            FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
-            Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
-            Files.delete(projectDir.resolve("pom.xml"));
-            boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
-            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), n -> projectDir).generate();
-        } catch (IOException ioe) {
-            throw new IllegalStateException(ioe);
+            Method method =  object.getClass().getMethod(methodName);
+            return Optional.ofNullable((T) method.invoke(object));
+        } catch (NoSuchMethodException ex) {
+            return Optional.empty();
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new RuntimeException(ex);
         }
     }
 }
