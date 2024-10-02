@@ -49,6 +49,7 @@ import io.helidon.build.common.Maps;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 import io.helidon.build.maven.archetype.config.Validation;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -58,17 +59,17 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.artifact.ProjectArtifact;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.apache.maven.shared.transfer.artifact.install.ArtifactInstallerException;
-import org.apache.maven.shared.transfer.project.NoFileAssignedException;
-import org.apache.maven.shared.transfer.project.install.ProjectInstaller;
-import org.apache.maven.shared.transfer.project.install.ProjectInstallerRequest;
 import org.codehaus.plexus.PlexusContainer;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallationException;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.unique;
@@ -107,7 +108,6 @@ public class IntegrationTestMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
-
     /**
      * Skip the integration test.
      */
@@ -244,7 +244,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> invokerEnvVars;
 
     @Component
-    private ProjectInstaller installer;
+    private RepositorySystem repoSystem;
 
     @Component
     private PluginContainerManager pluginContainerManager;
@@ -495,11 +495,13 @@ public class IntegrationTestMojo extends AbstractMojo {
                                      Path basedir) throws MojoExecutionException {
 
         // pre-install the archetype JAR so that the post-generate script can resolve it
-        ProjectInstallerRequest projectInstallerRequest = new ProjectInstallerRequest().setProject(project);
         try {
-            installer.install(session.getProjectBuildingRequest(), projectInstallerRequest);
-        } catch (IOException | ArtifactInstallerException | NoFileAssignedException ex) {
-            throw new MojoExecutionException("Unable to pre-install archetype artifact", ex);
+            InstallRequest request = new InstallRequest();
+            request.addArtifact(RepositoryUtils.toArtifact(new ProjectArtifact(project)));
+            request.addArtifact(RepositoryUtils.toArtifact(project.getArtifact()));
+            repoSystem.install(session.getRepositorySession(), request);
+        } catch (InstallationException ex) {
+            throw new MojoExecutionException("Unable to pre-install project", ex);
         }
 
         PlexusContainer container = pluginContainerManager.create(MAVEN_ARCHETYPE_PLUGIN,
@@ -529,7 +531,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 .setUserSettingsFile(session.getRequest().getUserSettingsFile())
                 .setLocalRepositoryDirectory(localRepo)
                 .setBaseDirectory(basedir)
-                .setGoals(List.of(testGoal))
+                .addArgs(List.of(testGoal))
                 .setProfiles(testProfiles)
                 .setBatchMode(true)
                 .setShowErrors(true)
