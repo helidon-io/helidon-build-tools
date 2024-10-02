@@ -95,7 +95,7 @@ class CliMavenTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.1.1/bin");
         List<String> mavenArgs = List.of(
-                "archetype:generate",
+                "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
@@ -266,7 +266,7 @@ class CliMavenTest {
     private void missingArtifactGroupPackageValues(String mavenVersion) {
         List<String> args = List.of(
                 "-B",
-                "archetype:generate",
+                "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
@@ -281,7 +281,7 @@ class CliMavenTest {
     private void missingFlavorValue(String mavenVersion) {
         List<String> args = List.of(
                 "-B",
-                "archetype:generate",
+                "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
@@ -298,7 +298,7 @@ class CliMavenTest {
     private void missingBaseValue(String mavenVersion) {
         List<String> args = List.of(
                 "-B",
-                "archetype:generate",
+                "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
                 "-DinteractiveMode=false",
                 "-DarchetypeGroupId=io.helidon.archetypes",
                 "-DarchetypeArtifactId=helidon",
