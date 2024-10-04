@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -122,17 +122,17 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.apache-commons>3.10</version.lib.apache-commons>
-        <version.lib.archetype-common>3.2.0</version.lib.archetype-common>
-        <version.lib.asciidoctorj>2.5.2</version.lib.asciidoctorj>
-        <version.lib.asm>7.2</version.lib.asm>
-        <version.lib.checkstyle>9.1</version.lib.checkstyle>
+        <version.lib.archetype-common>3.3.0</version.lib.archetype-common>
+        <version.lib.asciidoctorj>2.5.11</version.lib.asciidoctorj>
+        <version.lib.asm>9.5</version.lib.asm>
+        <version.lib.checkstyle>10.12.6</version.lib.checkstyle>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.11.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
-        <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.gson>2.8.9</version.lib.gson>
+        <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.invoker>3.0.1</version.lib.invoker>
+        <version.lib.invoker>3.3.0</version.lib.invoker>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jansi>1.18</version.lib.jansi>
@@ -140,21 +140,21 @@
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
         <version.lib.jsonp-impl>1.1.4</version.lib.jsonp-impl>
-        <version.lib.junit>5.8.0-M1</version.lib.junit>
+        <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform>1.8.0-M1</version.lib.junit-platform>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.lsp4j>0.16.0</version.lib.lsp4j>
         <version.lib.lsp4mp>0.2.0</version.lib.lsp4mp>
-        <version.lib.maven>3.6.2</version.lib.maven>
+        <version.lib.maven>3.8.8</version.lib.maven>
         <version.lib.maven-annotations>3.5</version.lib.maven-annotations>
-        <version.lib.maven-archiver>3.5.0</version.lib.maven-archiver>
+        <version.lib.maven-archiver>3.6.1</version.lib.maven-archiver>
         <version.lib.maven-artifact-transfer>0.13.1</version.lib.maven-artifact-transfer>
         <version.lib.maven-embedder>3.6.2</version.lib.maven-embedder>
         <version.lib.maven-enforcer>3.4.0</version.lib.maven-enforcer>
-        <version.lib.maven-filtering>3.1.1</version.lib.maven-filtering>
+        <version.lib.maven-filtering>3.3.1</version.lib.maven-filtering>
         <version.lib.maven-plugin-testing-harness>3.3.0</version.lib.maven-plugin-testing-harness>
-        <version.lib.maven-resolver>1.4.1</version.lib.maven-resolver>
-        <version.lib.maven-settings>3.6.2</version.lib.maven-settings>
+        <version.lib.maven-resolver>1.6.3</version.lib.maven-resolver>
+        <version.lib.maven-settings>3.8.8</version.lib.maven-settings>
         <version.lib.mock-server>5.10.0</version.lib.mock-server>
         <version.lib.mustache>0.9.6</version.lib.mustache>
         <version.lib.mockito>3.10.0</version.lib.mockito>
@@ -166,9 +166,9 @@
         <version.lib.rhino>1.7.14</version.lib.rhino>
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
-        <version.lib.snakeyaml>1.32</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
-        <version.lib.wagon-http>3.3.4</version.lib.wagon-http>
+        <version.lib.wagon-http>3.5.3</version.lib.wagon-http>
         <version.lib.commons-text>1.10.0</version.lib.commons-text>
 
         <!--
@@ -179,10 +179,11 @@
         <version.plugin.assembly>3.3.0</version.plugin.assembly>
         <version.plugin.build-helper>3.2.0</version.plugin.build-helper>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
-        <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
+        <version.plugin.dependency-check>9.0.9</version.plugin.dependency-check>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -193,16 +194,16 @@
         <version.plugin.graalvm>0.9.23</version.plugin.graalvm>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jar>3.0.2</version.plugin.jar>
-        <version.plugin.javadoc>3.2.0</version.plugin.javadoc>
-        <version.plugin.invoker>3.2.2</version.plugin.invoker>
+        <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
+        <version.plugin.invoker>3.8.0</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>
-        <version.plugin.plugin-plugin>3.6.0</version.plugin.plugin-plugin>
+        <version.plugin.plugin-plugin>3.10.2</version.plugin.plugin-plugin>
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.7.1.1</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.surefire>3.1.2</version.plugin.surefire>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.toolchains>3.1.0</version.plugin.toolchains>
@@ -360,9 +361,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
                     <configuration>
-                        <sourceDirectories>
-                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                        </sourceDirectories>
+                        <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
+                        <suppressionsLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml</suppressionsLocation>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -375,6 +375,11 @@
                                     <artifactId>tools</artifactId>
                                 </exclusion>
                             </exclusions>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-core</artifactId>
+                            <version>1.9</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -397,23 +402,6 @@
                             </plugin>
                         </plugins>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>license-maven-plugin</artifactId>
-                    <version>${version.plugin.license}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-core</artifactId>
-                            <version>1.6</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.apache.maven.doxia</groupId>
-                            <artifactId>doxia-site-renderer</artifactId>
-                            <version>1.6</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -480,13 +468,6 @@
                             <goal>install</goal>
                         </goals>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy</artifactId>
-                            <version>${version.lib.groovy}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -507,6 +488,35 @@
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
                     <version>${version.plugin.graalvm}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${version.plugin.dependency-check}</version>
+                    <configuration>
+                        <skip>${dependency-check.skip}</skip>
+                        <skipTestScope>true</skipTestScope>
+                        <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                        <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <nvdApiKey>${nvd-api-key}</nvdApiKey>
+                        <excludes>
+                            <!-- Exclude stuff we do not deploy -->
+                            <!-- This should be excluded by above, but for some reason it persists -->
+                            <exclude>org.testng:testng</exclude>
+                        </excludes>
+                        <formats>
+                            <format>HTML</format>
+                        </formats>
+                        <suppressionFiles>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <suppressionFile>${maven.multiModuleProjectDirectory}/etc/dependency-check-suppression.xml</suppressionFile>
+                        </suppressionFiles>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-build-cache-maven-plugin</artifactId>
+                    <version>4.0.7</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -553,14 +563,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <configLocation>/etc/checkstyle.xml</configLocation>
-                    <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -615,6 +617,21 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-settings-builder</artifactId>
+                <version>${version.lib.maven}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-builder-support</artifactId>
                 <version>${version.lib.maven}</version>
             </dependency>
             <dependency>
@@ -756,6 +773,12 @@
                 <groupId>com.github.wumpz</groupId>
                 <artifactId>diffutils</artifactId>
                 <version>${version.lib.diffutils}</version>
+                <exclusions>
+                    <exclusion>
+                    <groupId>org.eclipse.jgit</groupId>
+                    <artifactId>org.eclipse.jgit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.github.spullara.mustache.java</groupId>
@@ -859,6 +882,12 @@
                 <version>${version.lib.gson}</version>
             </dependency>
             <dependency>
+                <!-- force upgrade trans dep of lsp4j and maven-core -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.lib.guava}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.shared</groupId>
                 <artifactId>maven-artifact-transfer</artifactId>
                 <version>${version.lib.maven-artifact-transfer}</version>
@@ -867,6 +896,13 @@
                 <groupId>org.apache.maven.archetype</groupId>
                 <artifactId>archetype-common</artifactId>
                 <version>${version.lib.archetype-common}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- not needed -->
+                        <groupId>org.apache.ivy</groupId>
+                        <artifactId>ivy</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -886,6 +922,11 @@
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
                 <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${version.lib.maven-resolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-util</artifactId>
                 <version>${version.lib.maven-resolver}</version>
             </dependency>
             <dependency>
@@ -930,8 +971,10 @@
                         <executions>
                             <execution>
                                 <goals>
-                                    <goal>check</goal>
+                                    <goal>spotbugs</goal>
+                                    <goal>verify</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -952,14 +995,6 @@
                                     <goal>check</goal>
                                 </goals>
                                 <phase>validate</phase>
-                                <configuration>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <configLocation>${maven.multiModuleProjectDirectory}/etc/checkstyle.xml</configLocation>
-                                    <!--suppress UnresolvedMavenProperty -->
-                                    <suppressionsLocation>
-                                        ${maven.multiModuleProjectDirectory}/etc/checkstyle-suppressions.xml
-                                    </suppressionsLocation>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -1087,26 +1122,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>build-cache</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-build-cache-maven-plugin</artifactId>
-                        <version>3.0.5</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <projectFilesExcludes>
-                                <exclude>.*/**</exclude>
-                                <exclude>etc/**</exclude>
-                                <exclude>**/vscode-extension/**</exclude>
-                            </projectFilesExcludes>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

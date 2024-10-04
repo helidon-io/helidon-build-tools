@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@ env:
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
     -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -45,7 +46,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -56,7 +57,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -66,19 +67,18 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
+          maven-cache: none
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
-    outputs:
-      test-matrix: ${{ steps.build.outputs.test-matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - id: build
@@ -86,47 +86,40 @@ jobs:
         with:
           build-cache: read-write
           maven-cache: read-write
-          artifact-name: helidon-cli
+          artifact-name: helidon-cli-dist
           artifact-path: cli/impl/target/helidon-cli.zip
           run: |
-            mvn ${MAVEN_ARGS} -T 8 \
+            mvn --version
+            mvn ${MAVEN_ARGS} build-cache:go-offline
+            mvn ${MAVEN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
-              -Pbuild-cache \
+              -P tests \
               install
-          test-matrix: |
-            {
-              "os": [ "ubuntu-20.04", "windows-2022" ],
-              "group": [ "cli", "cli-functional", "archetype", "linker" ],
-              "include": [
-                { "os": "ubuntu-20.04", "platform": "linux" },
-                { "os": "windows-2022", "platform": "windows" }
-              ],
-              "groups": {
-                "cli": [ "cli/**!(test)", "maven-plugins/*cli*" ],
-                "cli-functional": [ "cli/tests/**" ],
-                "archetype": [ "archetype/**", "maven-plugins/*archetype*" ],
-                "linker": [ "linker/**" ]
-              }
-            }
   tests:
     needs: build
     timeout-minutes: 15
     strategy:
-      matrix: ${{ fromJSON(needs.build.outputs.test-matrix) }}
+      matrix:
+        os: [ ubuntu-20.04, windows-2022 ]
+        moduleSet: [ cli, cli-functional, archetype, linker, others ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
+          - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
-    name: tests/${{ matrix.group }}-${{ matrix.platform }}
+    name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          archive-test-results: true
+          test-artifact-name: tests-${{ matrix.moduleSet }}
           run: |
             mvn ${MAVEN_ARGS} \
-              -pl ${{ matrix.modules }} \
-              -Pbuild-cache \
+              -DreactorRule=tests \
+              -DmoduleSet=${{ matrix.moduleSet }} \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
               verify
   spotbugs:
@@ -134,7 +127,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -150,7 +143,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -161,12 +154,12 @@ jobs:
               -DskipTests \
               -Pjavadoc,build-cache \
               package
-  vscode-extension:
+  vscode-ext:
     needs: build
     timeout-minutes: 15
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -176,7 +169,7 @@ jobs:
             mvn ${MAVEN_ARGS} \
               -pl ide-support/vscode-extension \
               -DskipTests \
-              -Pvscode \
+              -P vscode \
               install
   cli:
     needs: build
@@ -185,25 +178,21 @@ jobs:
       matrix:
         os: [ ubuntu-20.04, windows-2022, macos-12 ]
         include:
-          - os: ubuntu-20.04
-            platform: linux-amd64
-          - os: windows-2022
-            platform: windows-amd64
-            file-ext: .exe
-          - os: macos-12
-            platform: darwin-amd64
+          - { os: ubuntu-20.04, platform: linux-amd64 }
+          - { os: windows-2022, platform: windows-amd64, file-ext: .exe }
+          - { os: macos-12, platform: darwin-amd64 }
     runs-on: ${{ matrix.os }}
     name: cli/${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
           native-image: true
-          archive-test-results: true
-          artifact-name: helidon-cli
+          test-artifact-name: helidon-cli-smoketest-${{ matrix.platform }}
+          artifact-name: helidon-cli-bin-${{ matrix.platform }}
           artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
@@ -221,4 +210,30 @@ jobs:
               -Dnative.image.name=helidon-cli-${{ matrix.platform }} \
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
               -Dtest=CliFunctionalV2Test#*Native* \
+              -P tests \
               test
+  cli-binaries:
+    runs-on: ubuntu-20.04
+    needs: [ build, cli ]
+    name: cli/binaries
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: helidon-cli
+          pattern: "helidon-cli-{bin-*,dist}"
+  test-results:
+    runs-on: ubuntu-20.04
+    needs: [ tests, cli ]
+    name: tests/results
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: test-results
+          pattern: "*test*"
+  gate:
+    runs-on: ubuntu-20.04
+    needs: [ copyright, checkstyle, shellcheck, spotbugs, javadoc, vscode-ext, cli-binaries, test-results ]
+    steps:
+      - shell: bash
+        run: |
+          echo OK

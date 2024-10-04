@@ -47,37 +47,17 @@ Creates the site archive.
 The parameter `siteArchiveSkip` is mapped to a user property:
  `sitegen.siteArchiveSkip`.
 
-## Goal: `preprocess-adoc`
+## Goal: `serve`
 
-Pre-includes included text specified by AsciiDoc `include::` directives into
- an `.adoc` file, adding AsciiDoc comments to track where each snippet of
- included content is in the updated file and where it came from.
+Serve the site.
 
 ### Optional Parameters
 
-| Property        | Type    | Default<br/>Value    | Description                                                    |
-|-----------------|---------|----------------------|----------------------------------------------------------------|
-| inputDirectory  | File    | `${project.basedir}` | Directory containing the files to be processed                 |
-| outputDirectory | File    | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
-| checkPreprocess | Boolean | `false`              | Check that the input and output files are the same             |
-| includes        | List    | []                   | List of files to include                                       |
-| exclude         | List    | []                   | List of files to exclude                                       |
-
-All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
-
-## Goal: `naturalize-adoc`
-
-Converts a preprocessed `.adoc` file back into natural form with conventional
- `include::` directives.
-
-### Optional Parameters
-
-| Property        | Type | Default<br/>Value    | Description                                                    |
-|-----------------|------|----------------------|----------------------------------------------------------------|
-| inputDirectory  | File | `${project.basedir}` | Directory containing the files to be processed                 |
-| outputDirectory | File | `${project.basedir}` | Directory where the reformatted `.adoc` file should be written |
-| includes        | List | []                   | List of files to include                                       |
-| exclude         | List | []                   | List of files to exclude                                       |
+| Property            | Type    | Default<br/>Value                 | Description                                              |
+|---------------------|---------|-----------------------------------|----------------------------------------------------------|
+| siteOutputDirectory | File    | `${project.build.directory}/site` | Directory containing the generate site files to archive. |
+| sitePort            | int     | 8080                              | TCP port to use.                                         |
+| siteServeSkip       | Boolean | `false`                           | Skip this goal execution                                 |
 
 All parameters are mapped to user properties of the form `sitegen.PROPERTY`.
 

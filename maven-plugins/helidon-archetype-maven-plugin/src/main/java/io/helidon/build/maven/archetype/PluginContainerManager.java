@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package io.helidon.build.maven.archetype;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +31,7 @@ import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.PlexusContainerException;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
+import org.codehaus.plexus.classworlds.realm.NoSuchRealmException;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.configuration.PlexusConfigurationException;
@@ -74,15 +73,11 @@ public class PluginContainerManager {
             containerConfiguration.setClassPathScanning(PlexusConstants.SCANNING_INDEX);
             containerConfiguration.setRealm(classRealm);
             PlexusContainer container = new DefaultPlexusContainer(containerConfiguration);
-            Deque<ClassRealm> stack = new ArrayDeque<>();
-            stack.push(classRealm);
-            while (!stack.isEmpty()) {
-                ClassRealm realm = stack.pop();
-                container.discoverComponents(realm);
-                realm.getImportRealms().forEach(stack::push);
-            }
+            container.discoverComponents(classRealm);
+            container.discoverComponents(classRealm.getWorld().getRealm("maven.api"));
+            container.discoverComponents(classRealm.getWorld().getRealm("plexus.core"));
             return container;
-        } catch (PlexusContainerException | PlexusConfigurationException ex) {
+        } catch (PlexusContainerException | PlexusConfigurationException | NoSuchRealmException ex) {
             throw new RuntimeException(ex);
         }
     }

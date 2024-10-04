@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 readonly  RESULT_FILE
 
 die(){ echo "${1}" ; exit 1 ;}
+
+# Remove cache
+rm -f "${WS_DIR}"/target/checkstyle-*
 
 # shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \

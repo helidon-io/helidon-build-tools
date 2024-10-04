@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,6 +56,14 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>META-INF/services/com.sun.source.util.Plugin</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -72,25 +80,13 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>default-resources</id>
-                        <configuration>
-                            <resources>
-                                <resource>
-                                    <directory>src/main/resources</directory>
-                                    <excludes>
-                                        <exclude>META-INF/services/com.sun.source.util.Plugin</exclude>
-                                    </excludes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>javac-plugin</id>
                         <goals>
-                            <goal>resources</goal>
+                            <goal>copy-resources</goal>
                         </goals>
                         <phase>process-classes</phase>
                         <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>src/main/resources</directory>
