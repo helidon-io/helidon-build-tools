@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -434,7 +434,7 @@ public class Maps {
         return map.entrySet().stream()
                   .filter(entry-> keyFilter.test(entry.getKey()))
                   .collect(Collectors.toMap(
-                          entry->keyMapper.apply(entry.getKey()),
-                          entry->entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
+                          entry-> keyMapper.apply(entry.getKey()),
+                          entry-> entry.getValue().stream().map(valueMapper).collect(Collectors.toList())));
     }
 }
