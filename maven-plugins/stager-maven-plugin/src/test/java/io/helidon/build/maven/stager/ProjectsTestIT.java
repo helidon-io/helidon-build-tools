@@ -211,6 +211,18 @@ class ProjectsTestIT {
         assertThat(docsDir.resolve("2.0.0-RC1"), fileExists());
     }
 
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void testUnpack(String basedir) {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertThat(stageDir, fileExists());
+
+        Path docsDir = stageDir.resolve("docs");
+        assertThat(docsDir, fileExists());
+        assertThat(docsDir.resolve("3.2.10"), fileExists());
+        assertThat(docsDir.resolve("3.2.9"), fileExists());
+    }
+
     private String symlinkTarget(Path file) {
         try {
             assertThat(file + " is not a symbolic link", Files.isSymbolicLink(file), is(true));

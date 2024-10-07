@@ -55,12 +55,33 @@ The above parameters are mapped to user properties of the form `stager.PROPERTY`
         <!-- ... -->
     </unpack-artifacts>
 
+    <!-- unpacks is a container of unpack tasks -->
+    <unpacks>
+
+        <!-- a task to download and unpack a file (.jar, .zip) -->
+        <unpack-artifact
+                url="https://download.acme.com/{version}/acme-site.jar"
+                target="docs/{version}"
+        >
+            <!-- iterators can be nested under any task to create a loop -->
+            <iterators>
+                <variables>
+                    <!-- the version variable is referenced using {version} in the task definition -->
+                    <variable name="version">
+                        <value>1.2.3</value>
+                    </variable>
+                </variables>
+            </iterators>
+        </unpack-artifact>
+        <!-- ... -->
+    </unpacks>
+
     <!-- downloads is a container of download tasks -->
     <downloads>
 
         <!-- a task to download files -->
         <download
-                url="http://download.acme.com/{version}/cli-{platform}-amd64"
+                url="https://download.acme.com/{version}/cli-{platform}-amd64"
                 target="cli/{version}/{platform}/acme"
         >
             <iterators>

@@ -41,6 +41,7 @@ class StagingElementFactory {
             FileTask.ELEMENT_NAME,
             SymlinkTask.ELEMENT_NAME,
             TemplateTask.ELEMENT_NAME,
+            UnpackTask.ELEMENT_NAME,
             UnpackArtifactTask.ELEMENT_NAME,
             ListFilesTask.ELEMENT_NAME);
 
@@ -98,6 +99,8 @@ class StagingElementFactory {
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
                 return new StagingDirectory(filterChildren(children, StagingAction.class), attrs);
+            case UnpackTask.ELEMENT_NAME:
+                return new UnpackTask(iterators.get(), attrs);
             case UnpackArtifactTask.ELEMENT_NAME:
                 return new UnpackArtifactTask(iterators.get(), attrs);
             case CopyArtifactTask.ELEMENT_NAME:

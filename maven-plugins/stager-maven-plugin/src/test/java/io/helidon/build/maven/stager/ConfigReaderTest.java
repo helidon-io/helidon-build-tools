@@ -55,39 +55,39 @@ class ConfigReaderTest {
         StagingDirectory dir1 = (StagingDirectory) root.tasks().get(0);
         assertThat(dir1.target(), is("${project.build.directory}/site"));
         List<? extends StagingAction> dir1Tasks = dir1.tasks();
-        assertThat(dir1Tasks.size(), is(6));
+        assertThat(dir1Tasks.size(), is(7));
 
         dir1Tasks.forEach(c -> assertThat(c, is(instanceOf(StagingTasks.class))));
 
         List<? extends StagingAction> unpackArtifacts = ((StagingTasks) dir1Tasks.get(0)).tasks();
         assertThat(unpackArtifacts.size(), is(2));
 
-        UnpackArtifactTask unpack1 = (UnpackArtifactTask) unpackArtifacts.get(0);
-        assertThat(unpack1.gav().groupId(), is("io.helidon"));
-        assertThat(unpack1.gav().artifactId(), is("helidon-docs"));
-        assertThat(unpack1.gav().version(), is("{version}"));
-        assertThat(unpack1.excludes(), is("META-INF/**"));
-        assertThat(unpack1.includes(), is(nullValue()));
-        assertThat(unpack1.target(), is("docs/{version}"));
-        assertThat(unpack1.iterators().size(), is(1));
-        assertThat(unpack1.iterators().get(0).next().get("version"), is("${docs.1.version}"));
-        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.3"));
-        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.2"));
-        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.1"));
-        assertThat(unpack1.iterators().get(0).next().get("version"), is("1.4.0"));
-        assertThat(unpack1.iterators().get(0).hasNext(), is(false));
+        UnpackArtifactTask unpackGAV1 = (UnpackArtifactTask) unpackArtifacts.get(0);
+        assertThat(unpackGAV1.gav().groupId(), is("io.helidon"));
+        assertThat(unpackGAV1.gav().artifactId(), is("helidon-docs"));
+        assertThat(unpackGAV1.gav().version(), is("{version}"));
+        assertThat(unpackGAV1.excludes(), is("META-INF/**"));
+        assertThat(unpackGAV1.includes(), is(nullValue()));
+        assertThat(unpackGAV1.target(), is("docs/{version}"));
+        assertThat(unpackGAV1.iterators().size(), is(1));
+        assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("${docs.1.version}"));
+        assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("1.4.3"));
+        assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("1.4.2"));
+        assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("1.4.1"));
+        assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("1.4.0"));
+        assertThat(unpackGAV1.iterators().get(0).hasNext(), is(false));
 
-        UnpackArtifactTask unpack2 = (UnpackArtifactTask) unpackArtifacts.get(1);
-        assertThat(unpack2.gav().groupId(), is("io.helidon"));
-        assertThat(unpack2.gav().artifactId(), is("helidon-project"));
-        assertThat(unpack2.gav().version(), is("{version}"));
-        assertThat(unpack2.gav().classifier(), is("site"));
-        assertThat(unpack2.excludes(), is("META-INF/**"));
-        assertThat(unpack2.includes(), is(nullValue()));
-        assertThat(unpack2.target(), is("docs/{version}"));
-        assertThat(unpack2.iterators().size(), is(1));
-        assertThat(unpack2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
-        assertThat(unpack2.iterators().get(0).hasNext(), is(false));
+        UnpackArtifactTask unpackGAV2 = (UnpackArtifactTask) unpackArtifacts.get(1);
+        assertThat(unpackGAV2.gav().groupId(), is("io.helidon"));
+        assertThat(unpackGAV2.gav().artifactId(), is("helidon-project"));
+        assertThat(unpackGAV2.gav().version(), is("{version}"));
+        assertThat(unpackGAV2.gav().classifier(), is("site"));
+        assertThat(unpackGAV2.excludes(), is("META-INF/**"));
+        assertThat(unpackGAV2.includes(), is(nullValue()));
+        assertThat(unpackGAV2.target(), is("docs/{version}"));
+        assertThat(unpackGAV2.iterators().size(), is(1));
+        assertThat(unpackGAV2.iterators().get(0).next().get("version"), is("${docs.2.version}"));
+        assertThat(unpackGAV2.iterators().get(0).hasNext(), is(false));
 
         List<? extends StagingAction> symlinks = ((StagingTasks) dir1Tasks.get(1)).tasks();
         assertThat(symlinks.size(), is(4));
@@ -315,5 +315,13 @@ class ConfigReaderTest {
         assertThat(substitution.match(), is("^(?<path>([^/]+/)*)index.html$"));
         assertThat(substitution.replace(), is("{path}"));
         assertThat(substitution.isRegex(), is(true));
+
+        List<? extends StagingAction> unpacks = ((StagingTasks) dir1Tasks.get(6)).tasks();
+        assertThat(unpacks.size(), is(1));
+
+        UnpackTask unpack1 = (UnpackTask) unpacks.get(0);
+        assertThat(unpack1.url(), is("https://repo1.maven.org/maven2/io/helidon/helidon-project/3.2.10/helidon-project-3.2.10-site.jar"));
+        assertThat(unpack1.target(), is("3.2.10"));
+        assertThat(unpack1.tasks(), is(empty()));
     }
 }

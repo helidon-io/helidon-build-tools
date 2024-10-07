@@ -192,5 +192,9 @@
                 </list-files>
             </file>
         </files>
+        <unpacks>
+            <unpack url="https://repo1.maven.org/maven2/io/helidon/helidon-project/3.2.10/helidon-project-3.2.10-site.jar"
+                target="3.2.10"/>
+        </unpacks>
     </directory>
 </directories>
