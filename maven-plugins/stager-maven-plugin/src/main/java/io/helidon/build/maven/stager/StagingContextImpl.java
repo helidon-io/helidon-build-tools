@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,17 +80,17 @@ final class StagingContextImpl implements StagingContext {
         this.archiverManager = Objects.requireNonNull(archiverManager, "archiverManager is null");
         this.executor = executor;
         this.readTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.READ_TIMEOUT_PROP))
-                                   .map(Integer::parseInt)
-                                   .orElse(-1);
+                .map(Integer::parseInt)
+                .orElse(-1);
         this.connectTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.CONNECT_TIMEOUT_PROP))
-                                      .map(Integer::parseInt)
-                                      .orElse(-1);
+                .map(Integer::parseInt)
+                .orElse(-1);
         this.taskTimeout = Optional.ofNullable(propertyResolver.apply(StagingContext.TASK_TIMEOUT_PROP))
-                                   .map(Integer::parseInt)
-                                   .orElse(-1);
+                .map(Integer::parseInt)
+                .orElse(-1);
         this.maxRetries = Optional.ofNullable(propertyResolver.apply(StagingContext.MAX_RETRIES))
-                                  .map(Integer::parseInt)
-                                  .orElse(-1);
+                .map(Integer::parseInt)
+                .orElse(-1);
     }
 
     @Override
@@ -110,7 +110,7 @@ final class StagingContextImpl implements StagingContext {
         unArchiver.setSourceFile(archiveFile);
         unArchiver.setDestDirectory(target.toFile());
         if (StringUtils.isNotEmpty(excludes) || StringUtils.isNotEmpty(includes)) {
-            IncludeExcludeFileSelector[] selectors = new IncludeExcludeFileSelector[]{
+            IncludeExcludeFileSelector[] selectors = new IncludeExcludeFileSelector[] {
                     new IncludeExcludeFileSelector()
             };
             if (StringUtils.isNotEmpty(excludes)) {
@@ -175,6 +175,11 @@ final class StagingContextImpl implements StagingContext {
     @Override
     public Path createTempDirectory(String prefix) throws IOException {
         return Files.createTempDirectory(outputDir.toPath(), prefix);
+    }
+
+    @Override
+    public Path createTempFile(String suffix) throws IOException {
+        return Files.createTempFile(outputDir.toPath(), null, suffix);
     }
 
     @Override

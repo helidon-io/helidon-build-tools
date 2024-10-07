@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,13 +22,8 @@
     <groupId>io.helidon.build-tools.stager.tests</groupId>
     <artifactId>unpack</artifactId>
     <version>@project.version@</version>
-    <name>Test Stager Unpack Artifact task</name>
+    <name>Test Stager Unpack task</name>
     <packaging>pom</packaging>
-
-    <properties>
-        <docs.1.version>1.4.4</docs.1.version>
-        <docs.2.version>2.0.0-RC1</docs.2.version>
-    </properties>
 
     <build>
         <pluginManagement>
@@ -40,41 +35,20 @@
                     <configuration>
                         <directories>
                             <directory target="${project.build.directory}/stage">
-                                <unpack-artifacts>
-                                    <unpack-artifact
-                                            groupId="io.helidon"
-                                            artifactId="helidon-docs"
-                                            version="{version}"
+                                <unpacks>
+                                    <unpack url="https://repo1.maven.org/maven2/io/helidon/helidon-project/{version}/helidon-project-{version}-site.jar"
                                             excludes="META-INF/**"
                                             target="docs/{version}">
                                         <iterators>
                                             <variables>
                                                 <variable name="version">
-                                                    <value>${docs.1.version}</value>
-                                                    <value>1.4.3</value>
-                                                    <value>1.4.2</value>
-                                                    <value>1.4.1</value>
-                                                    <value>1.4.0</value>
+                                                    <value>3.2.10</value>
+                                                    <value>3.2.9</value>
                                                 </variable>
                                             </variables>
                                         </iterators>
-                                    </unpack-artifact>
-                                    <unpack-artifact
-                                            groupId="io.helidon"
-                                            artifactId="helidon-project"
-                                            version="{version}"
-                                            classifier="site"
-                                            excludes="META-INF/**"
-                                            target="docs/{version}">
-                                        <iterators>
-                                            <variables>
-                                                <variable name="version">
-                                                    <value>${docs.2.version}</value>
-                                                </variable>
-                                            </variables>
-                                        </iterators>
-                                    </unpack-artifact>
-                                </unpack-artifacts>
+                                    </unpack>
+                                </unpacks>
                             </directory>
                         </directories>
                     </configuration>

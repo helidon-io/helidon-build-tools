@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,17 @@ interface StagingContext {
      */
     default Path createTempDirectory(String prefix) throws IOException {
         return Files.createTempDirectory(prefix);
+    }
+
+    /**
+     * Create a temporary file.
+     *
+     * @param suffix suffix
+     * @return created file
+     * @throws IOException if an IO error occurs
+     */
+    default Path createTempFile(String suffix) throws IOException {
+        return Files.createTempFile(null, suffix);
     }
 
     /**

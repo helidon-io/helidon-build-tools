@@ -103,7 +103,7 @@ public final class FileUtils {
      */
     public static Path requiredDirectoryFromProperty(String systemPropertyName, boolean createIfRequired) {
         final String path = Requirements.requireNonNull(System.getProperty(systemPropertyName),
-                                                        "Required system property %s not set", systemPropertyName);
+                "Required system property %s not set", systemPropertyName);
         return requiredDirectory(path, createIfRequired);
     }
 
@@ -1006,7 +1006,16 @@ public final class FileUtils {
      * @return extension or {@code null}
      */
     public static String fileExt(Path file) {
-        String filename = file.getFileName().toString();
+        return fileExt(file.getFileName().toString());
+    }
+
+    /**
+     * Get the file extension for the given file name.
+     *
+     * @param filename file name
+     * @return extension or {@code null}
+     */
+    public static String fileExt(String filename) {
         int index = filename.lastIndexOf(".");
         return index < 0 ? null : filename.substring(index + 1);
     }
