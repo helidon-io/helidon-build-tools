@@ -494,10 +494,12 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${version.plugin.dependency-check}</version>
                     <configuration>
+                        <!--suppress MavenModelInspection -->
                         <skip>${dependency-check.skip}</skip>
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <!--suppress MavenModelInspection -->
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
