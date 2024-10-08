@@ -29,7 +29,6 @@ import io.helidon.build.common.Strings;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.util.DecoratedCollection;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -75,7 +74,7 @@ final class TemplateTask extends StagingTask {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
         Path targetFile = dir.resolve(resolvedTarget).normalize();
-        ensureDirectory(targetFile.getParent());
+        ctx.ensureDirectory(targetFile.getParent());
         try (Reader reader = Files.newBufferedReader(sourceFile);
              Writer writer = Files.newBufferedWriter(targetFile,
                      StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {

@@ -113,6 +113,15 @@ interface StagingContext {
     }
 
     /**
+     * Ensure a directory exists.
+     *
+     * @param directory directory
+     */
+    default void ensureDirectory(Path directory) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Log an info message.
      *
      * @param msg  message, can use format

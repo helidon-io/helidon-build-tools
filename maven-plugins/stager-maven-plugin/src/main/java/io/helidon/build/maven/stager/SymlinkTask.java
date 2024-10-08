@@ -22,8 +22,6 @@ import java.util.Map;
 
 import io.helidon.build.common.Strings;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Create a symlink.
  */
@@ -56,7 +54,7 @@ final class SymlinkTask extends StagingTask {
         Path link = dir.resolve(resolveVar(target(), vars));
         Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
         ctx.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
-        ensureDirectory(link.getParent());
+        ctx.ensureDirectory(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
     }
 }

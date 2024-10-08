@@ -28,7 +28,6 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.Strings;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.measuredSize;
 
 /**
@@ -63,7 +62,7 @@ final class DownloadTask extends StagingTask {
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         String path = resolveVar(target(), vars);
         Path file = dir.resolve(path).normalize();
-        ensureDirectory(file.getParent());
+        ctx.ensureDirectory(file.getParent());
         URL url = new URL(resolveVar(this.url, vars));
         download(ctx, url, file);
     }

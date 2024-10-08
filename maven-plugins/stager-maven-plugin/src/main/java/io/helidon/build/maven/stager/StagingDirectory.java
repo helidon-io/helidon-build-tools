@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Generate a directory using a set of actions.
  */
@@ -39,7 +37,7 @@ class StagingDirectory extends StagingTask {
         Path targetDir = dir.resolve(target());
         ctx.logInfo("Staging %s", targetDir);
         try {
-            ensureDirectory(targetDir);
+            ctx.ensureDirectory(targetDir);
         } catch (Throwable ex) {
             return CompletableFuture.failedFuture(ex);
         }
