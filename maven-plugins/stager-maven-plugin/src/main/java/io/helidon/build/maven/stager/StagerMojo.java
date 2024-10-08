@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.build.common.Proxies;
 import io.helidon.build.common.Unchecked;
 
 import org.apache.maven.execution.MavenSession;
@@ -168,6 +169,7 @@ public class StagerMojo extends AbstractMojo {
             factory = new StagingElementFactory();
         }
 
+        Proxies.setProxyPropertiesFromEnv();
         setProxyFromSettings();
         StagingTasks tasks = StagingAction.fromConfiguration(directories, factory);
         try {

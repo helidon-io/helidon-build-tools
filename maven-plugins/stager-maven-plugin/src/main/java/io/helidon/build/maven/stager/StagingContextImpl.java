@@ -23,7 +23,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+
+import io.helidon.build.common.FileUtils;
 
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.archiver.Archiver;
@@ -46,6 +50,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
  */
 final class StagingContextImpl implements StagingContext {
 
+    private final Lock lock = new ReentrantLock();
     private final Log log;
     private final File baseDir;
     private final File outputDir;
@@ -180,6 +185,20 @@ final class StagingContextImpl implements StagingContext {
     @Override
     public Path createTempFile(String suffix) throws IOException {
         return Files.createTempFile(outputDir.toPath(), null, suffix);
+    }
+
+    @Override
+    public void ensureDirectory(Path dir) {
+        try {
+            lock.lockInterruptibly();
+            try {
+                FileUtils.ensureDirectory(dir);
+            } finally {
+                lock.unlock();
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -22,8 +22,6 @@ import java.util.Map;
 
 import io.helidon.build.common.Maps;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Copy an artifact to a given target location.
  */
@@ -56,7 +54,7 @@ final class CopyArtifactTask extends StagingTask {
         ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
         Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
-        ensureDirectory(targetFile.getParent());
+        ctx.ensureDirectory(targetFile.getParent());
         Files.copy(artifact, targetFile);
     }
 

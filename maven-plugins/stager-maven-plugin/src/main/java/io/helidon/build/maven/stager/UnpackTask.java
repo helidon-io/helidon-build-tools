@@ -24,7 +24,6 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.build.common.Strings;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.fileExt;
 import static io.helidon.build.maven.stager.DownloadTask.download;
 
@@ -90,7 +89,7 @@ final class UnpackTask extends StagingTask {
         String resolvedTarget = resolveVar(target(), vars);
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", tempFile, targetDir);
-        ensureDirectory(targetDir);
+        ctx.ensureDirectory(targetDir);
         ctx.unpack(tempFile, targetDir, excludes, includes);
     }
 }

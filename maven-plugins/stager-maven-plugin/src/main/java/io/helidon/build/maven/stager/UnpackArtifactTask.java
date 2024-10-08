@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Unpack an artifact to a given target location.
  */
@@ -74,7 +72,7 @@ final class UnpackArtifactTask extends StagingTask {
         Path artifact = ctx.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
-        ensureDirectory(targetDir);
+        ctx.ensureDirectory(targetDir);
         ctx.unpack(artifact, targetDir, excludes, includes);
     }
 }

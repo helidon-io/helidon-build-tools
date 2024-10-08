@@ -22,8 +22,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-
 /**
  * Generate or copy a file to a given target location.
  */
@@ -70,7 +68,7 @@ final class FileTask extends StagingTask {
         String resolvedSource = resolveVar(source, vars);
         String resolvedContent = resolveVar(content, vars);
         Path targetFile = dir.resolve(resolvedTarget).normalize();
-        ensureDirectory(targetFile.getParent());
+        ctx.ensureDirectory(targetFile.getParent());
         if (resolvedSource != null && !resolvedSource.isEmpty()) {
             Path sourceFile = ctx.resolve(resolvedSource);
             if (!Files.exists(sourceFile)) {
