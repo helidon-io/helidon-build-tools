@@ -39,6 +39,7 @@ import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.RemoteRepository;
 
 import static java.util.Collections.emptyMap;
 
@@ -66,21 +67,32 @@ public final class EngineFacade {
         checkMavenVersion();
         checkJavaVersion();
 
-        Aether aether = EngineFacade.<RepositorySystemSession>invoke(request, "getRepositorySession")
-                // archetype-common >= 3.3.0
-                .map(repoSession -> new Aether(repoSession, request.getRemoteArtifactRepositories()))
-                // archetype-common < 3.3.0
-                .orElseGet(() -> {
-                    ProjectBuildingRequest pbr = EngineFacade.<ProjectBuildingRequest>invoke(request, "getProjectBuildingRequest")
-                            .orElseThrow(() -> new IllegalStateException("Unable to get project building request"));
-                    RepositorySystemSession repoSession = EngineFacade.<RepositorySystemSession>invoke(pbr,
-                                    "getRepositorySession")
-                            .orElseThrow(() -> new IllegalStateException("Unable to get repository system session"));
-                    List<ArtifactRepository> artifactRepos = EngineFacade.<List<ArtifactRepository>>invoke(request,
-                                    "getRemoteArtifactRepositories")
-                            .orElseThrow(() -> new IllegalStateException("Unable to get artifact repositories"));
-                    return new Aether(repoSession, artifactRepos, true);
-                });
+        // getRepositorySession only exists in archetype-common >= 3.3.0
+        RepositorySystemSession repoSession = EngineFacade.<RepositorySystemSession>invoke(request, "getRepositorySession")
+                // getProjectBuildingRequest was removed in archetype-common == 3.3.0
+                .or(() -> EngineFacade.<ProjectBuildingRequest>invoke(request, "getProjectBuildingRequest")
+                        .map(ProjectBuildingRequest::getRepositorySession))
+                .orElseThrow(() -> new IllegalStateException("Unable to get repository system session"));
+
+        // getRemoteRepositories only exists in archetype-common >= 3.3.1
+        Aether aether = EngineFacade.<List<RemoteRepository>>invoke(request, "getRemoteRepositories")
+                .map(remoteRepos -> new Aether(repoSession, remoteRepos))
+                .or(() -> EngineFacade.<List<?>>invoke(request, "getRemoteArtifactRepositories")
+                        .map(repos -> {
+                            Object repo = repos.isEmpty() ? null : repos.get(0);
+                            if (repo instanceof ArtifactRepository) {
+                                // getRemoteArtifactRepositories returns List<ArtifactRepository> in archetype-common != 3.3.0
+                                return new Aether(repoSession, asListOf(repos, ArtifactRepository.class), true);
+                            } else if (repo instanceof RemoteRepository) {
+                                // getRemoteArtifactRepositories returns List<RemoteRepository> in archetype-common == 3.3.0
+                                return new Aether(repoSession, asListOf(repos, RemoteRepository.class));
+                            } else {
+                                // empty repository, or unsupported repository type
+                                return new Aether(repoSession, List.of());
+                            }
+                        }))
+                .orElseThrow(() -> new IllegalStateException("Unable to initialize aether"));
+
         File localRepo = aether.repoSession().getLocalRepository().getBasedir();
 
         // enable mvn:// URL support
@@ -166,5 +178,10 @@ public final class EngineFacade {
         } catch (IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> List<T> asListOf(List<?> list, Class<T> type) {
+        return (List<T>) list;
     }
 }
