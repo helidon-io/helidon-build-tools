@@ -1,0 +1,118 @@
+[
+    {
+        "module": "io.helidon.scheduling",
+        "types": [
+            {
+                "type": "io.helidon.scheduling.TaskConfig",
+                "annotatedType": "io.helidon.scheduling.TaskConfig",
+                "producers": [
+                    "io.helidon.scheduling.TaskConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.scheduling.TaskConfig#builder()"
+                ],
+                "options": []
+            },
+            {
+                "type": "io.helidon.scheduling.Cron",
+                "annotatedType": "io.helidon.scheduling.CronConfig",
+                "inherits": [
+                    "io.helidon.scheduling.TaskConfig"
+                ],
+                "producers": [
+                    "io.helidon.scheduling.CronConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.scheduling.CronConfig#builder()",
+                    "io.helidon.scheduling.Cron#create(io.helidon.scheduling.CronConfig)"
+                ],
+                "options": [
+                    {
+                        "key": "concurrent",
+                        "type": "java.lang.Boolean",
+                        "description": "Allow concurrent execution if previous task didn't finish before next execution.\n Default value is `true`.\n\nTrue for allow concurrent execution.",
+                        "defaultValue": "true",
+                        "method": "io.helidon.scheduling.CronConfig.Builder#concurrentExecution(boolean)"
+                    },
+                    {
+                        "key": "expression",
+                        "description": "Cron expression for specifying period of execution.\n <p>\n <b>Examples:</b>\n <ul>\n <li>`0/2 * * * * ? *` - Every 2 seconds</li>\n <li>`0 45 9 ? * *` - Every day at 9:45</li>\n <li>`0 15 8 ? * MON-FRI` - Every workday at 8:15</li>\n </ul>\n\nCron expression",
+                        "required": true,
+                        "method": "io.helidon.scheduling.CronConfig.Builder#expression(java.lang.String)"
+                    }
+                ]
+            },
+            {
+                "type": "io.helidon.scheduling.FixedRate",
+                "annotatedType": "io.helidon.scheduling.FixedRateConfig",
+                "inherits": [
+                    "io.helidon.scheduling.TaskConfig"
+                ],
+                "producers": [
+                    "io.helidon.scheduling.FixedRateConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.scheduling.FixedRateConfig#builder()",
+                    "io.helidon.scheduling.FixedRate#create(io.helidon.scheduling.FixedRateConfig)"
+                ],
+                "options": [
+                    {
+                        "key": "delay",
+                        "type": "java.lang.Long",
+                        "description": "Fixed rate delay between each invocation. Time unit is by default java.util.concurrent.TimeUnit.SECONDS,\n can be specified with io.helidon.scheduling.FixedRateConfig.Builder.timeUnit(java.util.concurrent.TimeUnit).\n\nDelay between each invocation",
+                        "required": true,
+                        "method": "io.helidon.scheduling.FixedRateConfig.Builder#delay(long)"
+                    },
+                    {
+                        "key": "delay-type",
+                        "type": "io.helidon.scheduling.FixedRate.DelayType",
+                        "description": "Configure whether the delay between the invocations should be calculated from the time when previous task started or ended.\n Delay type is by default FixedRate.DelayType.SINCE_PREVIOUS_START.\n\nDelay type",
+                        "defaultValue": "DelayType.SINCE_PREVIOUS_START",
+                        "method": "io.helidon.scheduling.FixedRateConfig.Builder#delayType(io.helidon.scheduling.FixedRate.DelayType)",
+                        "allowedValues": [
+                            {
+                                "value": "SINCE_PREVIOUS_START",
+                                "description": "Next invocation delay is measured from the previous invocation task start."
+                            },
+                            {
+                                "value": "SINCE_PREVIOUS_END",
+                                "description": "Next invocation delay is measured from the previous invocation task end."
+                            }
+                        ]
+                    },
+                    {
+                        "key": "time-unit",
+                        "type": "java.util.concurrent.TimeUnit",
+                        "description": "java.util.concurrent.TimeUnit TimeUnit used for interpretation of values provided with\n io.helidon.scheduling.FixedRateConfig.Builder.delay(long)\n and io.helidon.scheduling.FixedRateConfig.Builder.initialDelay(long).\n\nTime unit for interpreting values\n         in io.helidon.scheduling.FixedRateConfig.Builder.delay(long)\n         and io.helidon.scheduling.FixedRateConfig.Builder.initialDelay(long)",
+                        "defaultValue": "TimeUnit.TimeUnit.SECONDS",
+                        "method": "io.helidon.scheduling.FixedRateConfig.Builder#timeUnit(java.util.concurrent.TimeUnit)",
+                        "allowedValues": [
+                            {
+                                "value": "NANOSECONDS"
+                            },
+                            {
+                                "value": "MICROSECONDS"
+                            },
+                            {
+                                "value": "MILLISECONDS"
+                            },
+                            {
+                                "value": "SECONDS"
+                            },
+                            {
+                                "value": "MINUTES"
+                            },
+                            {
+                                "value": "HOURS"
+                            },
+                            {
+                                "value": "DAYS"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "initial-delay",
+                        "type": "java.lang.Long",
+                        "description": "Initial delay of the first invocation. Time unit is by default java.util.concurrent.TimeUnit.SECONDS,\n can be specified with\n io.helidon.scheduling.FixedRateConfig.Builder.timeUnit(java.util.concurrent.TimeUnit) timeUnit().\n\nInitial delay value",
+                        "defaultValue": "0",
+                        "method": "io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)"
+                    }
+                ]
+            }
+        ]
+    }
+]
