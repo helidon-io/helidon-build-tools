@@ -1,5 +1,31 @@
 # Helidon CLI
 
+The Helidon CLI lets you easily create a Helidon project by picking from
+a set of archetypes.
+
+It also supports a developer loop that performs continuous compilation and
+application restart, so you can easily iterate over source code changes.
+
+## Create a New Project
+
+```
+helidon init
+```
+
+Then answer the questions.
+
+## Developer Loop
+
+```
+cd myproject
+helidon dev
+```
+
+As you make source code changes the project will automatically recompile and
+restart your application.
+
+## Implementation Notes
+
 * **impl**: implementation of the Helidon CLI. Uses `harness`, `codegen` and `plugin`
 * **harness**: a general purpose CLI harness
 * **codegen**: annotation processor for `harness`
