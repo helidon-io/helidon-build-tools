@@ -150,6 +150,11 @@ public final class FileUtils {
             return requireDirectory(path);
         } else {
             try {
+                if (Files.isSymbolicLink(path)) {
+                    // The File.exists check will follow symbolic links. If it returns false because
+                    // path is a broken link, then we want to catch that here.
+                    throw new IOException("Broken link: " + path);
+                }
                 return Files.createDirectories(path, attrs);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
