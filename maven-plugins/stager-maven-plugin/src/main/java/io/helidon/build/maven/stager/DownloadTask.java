@@ -78,32 +78,33 @@ final class DownloadTask extends StagingTask {
     static void download(StagingContext ctx, URL url, Path file)
             throws IOException {
 
-        try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx))) {
-            try (OutputStream fos = Files.newOutputStream(file)) {
-                int n;
-                long startTime = System.currentTimeMillis();
-                long progressTime = startTime;
-                long currentTime = startTime;
-                long totalSize = 0;
-                long totalTime = 1;
-                byte[] buffer = new byte[1024];
-                while ((n = bis.read(buffer, 0, buffer.length)) >= 0) {
-                    fos.write(buffer, 0, n);
-                    totalSize += n;
-                    currentTime = System.currentTimeMillis();
-                    if (currentTime - progressTime >= 1000) {
-                        totalTime = (currentTime - startTime) / 1000;
-                        progressTime = currentTime;
-                        ctx.logInfo("Downloading %s to %s (%s at %s/s)",
-                                url, file, measuredSize(totalSize), measuredSize(totalSize / totalTime));
-                    }
-                }
+        try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx));
+             OutputStream fos = Files.newOutputStream(file)) {
+            int n;
+            long startTime = System.currentTimeMillis();
+            long progressTime = startTime;
+            long currentTime = startTime;
+            long totalSize = 0;
+            long totalTime = 1;
+            byte[] buffer = new byte[1024];
+            while ((n = bis.read(buffer, 0, buffer.length)) >= 0) {
+                fos.write(buffer, 0, n);
+                totalSize += n;
+                currentTime = System.currentTimeMillis();
                 if (currentTime - progressTime >= 1000) {
                     totalTime = (currentTime - startTime) / 1000;
+                    progressTime = currentTime;
+                    ctx.logInfo("Downloading %s to %s (%s at %s/s)",
+                            url, file, measuredSize(totalSize), measuredSize(totalSize / totalTime));
                 }
-                ctx.logInfo("Downloaded %s to %s (%s at %s/s)",
-                        url, file, measuredSize(totalSize), measuredSize(totalSize / totalTime));
             }
+            if (currentTime - progressTime >= 1000) {
+                totalTime = (currentTime - startTime) / 1000;
+            }
+            ctx.logInfo("Downloaded %s to %s (%s at %s/s)",
+                    url, file, measuredSize(totalSize), measuredSize(totalSize / totalTime));
+        } catch (IOException ex) {
+            throw new IOException("Failed to download " + url + " to " + file, ex);
         }
     }
 
