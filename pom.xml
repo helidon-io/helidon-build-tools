@@ -126,6 +126,8 @@
         <version.lib.asciidoctorj>2.5.11</version.lib.asciidoctorj>
         <version.lib.asm>9.5</version.lib.asm>
         <version.lib.checkstyle>10.12.6</version.lib.checkstyle>
+        <version.lib.commons-io>2.14.0</version.lib.commons-io>
+        <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.11.1</version.lib.doxia>
         <version.lib.freemarker>2.3.23</version.lib.freemarker>
@@ -167,6 +169,7 @@
         <version.lib.site-plugin>3.8.2</version.lib.site-plugin>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
+        <version.lib.snappy>0.5</version.lib.snappy>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.wagon-http>3.5.3</version.lib.wagon-http>
         <version.lib.commons-text>1.10.0</version.lib.commons-text>
@@ -183,7 +186,7 @@
         <version.plugin.clean>3.1.0</version.plugin.clean>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.3.0</version.plugin.dependency>
-        <version.plugin.dependency-check>9.0.9</version.plugin.dependency-check>
+        <version.plugin.dependency-check>10.0.4</version.plugin.dependency-check>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.enforcer>3.4.0</version.plugin.enforcer>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
@@ -844,6 +847,24 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lib.apache-commons}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${version.lib.commons-compress}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>org.iq80.snappy</groupId>
+                <artifactId>snappy</artifactId>
+                <version>${version.lib.snappy}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.lsp4j</groupId>
