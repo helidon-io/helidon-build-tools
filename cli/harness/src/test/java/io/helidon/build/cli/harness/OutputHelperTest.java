@@ -25,7 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class OutputHelperTest {
 
     @Test
-    public void testTable() {
+    void testTable() {
         Map<String, String> map = Map.of(
                 "key1", "value1",
                 "key2", "value2"
@@ -35,7 +35,7 @@ class OutputHelperTest {
     }
 
     @Test
-    public void testTableWithMaxKeyWidth() {
+    void testTableWithMaxKeyWidth() {
         Map<String, String> map = Map.of(
                 "key1", "value1",
                 "key2", "value2"
@@ -45,7 +45,7 @@ class OutputHelperTest {
     }
 
     @Test
-    public void testMaxKeyWidth() {
+    void testMaxKeyWidth() {
         Map<String, String> map1 = Map.of(
                 "key1", "value1",
                 "longerKey", "value2"
