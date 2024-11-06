@@ -126,7 +126,7 @@
         <version.lib.asciidoctorj>2.5.11</version.lib.asciidoctorj>
         <version.lib.asm>9.5</version.lib.asm>
         <version.lib.checkstyle>10.12.6</version.lib.checkstyle>
-        <version.lib.commons-io>2.14.0</version.lib.commons-io>
+        <version.lib.commons-io>2.16.1</version.lib.commons-io>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.diffutils>2.2</version.lib.diffutils>
         <version.lib.doxia>1.11.1</version.lib.doxia>
@@ -849,13 +849,13 @@
                 <version>${version.lib.apache-commons}</version>
             </dependency>
             <dependency>
-                <!-- force upgrade -->
+                <!-- force upgrade. Must align with commons-compress -->
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
             </dependency>
             <dependency>
-                <!-- force upgrade -->
+                <!-- force upgrade. Must align with commons-io -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${version.lib.commons-compress}</version>
