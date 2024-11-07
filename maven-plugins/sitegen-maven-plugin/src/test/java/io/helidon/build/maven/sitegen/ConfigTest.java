@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ConfigTest {
 
     @Test
-    public void testNavConfig() {
+    void testNavConfig() {
         Config config = Config.create("/config/nav.yaml", ConfigTest.class, Map.of());
         verifyNav(Nav.create(config));
     }
 
     @Test
-    public void testSiteConfig() {
+    void testSiteConfig() {
         Config config = Config.create("/config/basic.yaml", ConfigTest.class, Map.of("basedir", "/ws"));
         Site site = Site.create(config);
 
@@ -98,7 +98,7 @@ class ConfigTest {
     }
 
     @Test
-    public void testVuetifyConfig() {
+    void testVuetifyConfig() {
         Config config = Config.create("/config/vuetify.yaml", ConfigTest.class, Map.of());
         Site site = Site.create(config);
 

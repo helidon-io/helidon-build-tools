@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author rgrecour
  */
-public abstract class TestHelper {
-
-    public static final String SOURCE_DIR_PREFIX = "src/test/resources/";
+abstract class TestHelper {
 
     /**
      * Get the base directory path of the project.
@@ -48,7 +46,7 @@ public abstract class TestHelper {
      * @param path a relative path within the project directory
      * @return the corresponding for the given path
      */
-    public static File getFile(String path) {
+    static File getFile(String path) {
         return new File(getBasedirPath(), path);
     }
 

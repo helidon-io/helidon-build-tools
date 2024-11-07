@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests {@link BasicBackend}.
  */
-public class BasicBackendTest {
+class BasicBackendTest {
 
     private static final Path OUTPUT_DIR = targetDir(BasicBackendTest.class).resolve("basic");
 
     @Test
-    public void testBasic1() throws Exception {
+    void testBasic1() throws Exception {
         Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic1");
 
         Site.builder()
@@ -57,7 +57,7 @@ public class BasicBackendTest {
     }
 
     @Test
-    public void testBasic2() throws Exception {
+    void testBasic2() throws Exception {
         Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic2");
 
         Site.builder()
@@ -69,7 +69,7 @@ public class BasicBackendTest {
     }
 
     @Test
-    public void testBasic3() throws Exception {
+    void testBasic3() throws Exception {
         Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic3");
 
         Site.builder()

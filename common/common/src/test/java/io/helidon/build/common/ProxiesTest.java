@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class ProxiesTest {
     }
 
     @BeforeAll
-    public static void beforeAllTests() {
+    static void beforeAllTests() {
         sysProps = System.getProperties();
         Properties copy = new Properties();
         copy.putAll(System.getProperties());
@@ -51,7 +51,7 @@ class ProxiesTest {
     }
 
     @AfterAll
-    public static void afterAllTests() {
+    static void afterAllTests() {
         System.setProperties(sysProps);
     }
 

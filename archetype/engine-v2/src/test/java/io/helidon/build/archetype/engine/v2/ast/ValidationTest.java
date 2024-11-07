@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for {@link Validation}.
  */
-public class ValidationTest {
+class ValidationTest {
 
     private final String VALIDATION_ALL_IN_ONE = "validation/validations-all-in-one.xml";
     private final String VALIDATION_EXEC =  "validation/archetype-base.xml";

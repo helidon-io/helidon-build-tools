@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * Unit test for class {@link FileUtils}.
  */
-public class FileUtilsTest {
+class FileUtilsTest {
 
     private static Path outputDir;
 
@@ -61,6 +61,7 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     void testZipPermissions() throws IOException {
         Path wd = unique(outputDir, "zip-permissions");
         Path zipDir = createZipDirectory(wd);
@@ -83,6 +84,7 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs(OS.WINDOWS)
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     void testZipPermissions2() throws IOException {
         Path wd = unique(outputDir, "zip-permissions");
         Path zipDir = createZipDirectory(wd);
@@ -94,6 +96,7 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     void testZipOriginalPermissions() throws IOException {
         Path wd = unique(outputDir, "original-permissions");
         Path zipDir = createZipDirectory(wd);
@@ -130,6 +133,7 @@ public class FileUtilsTest {
 
     @Test
     @EnabledOnOs({OS.LINUX, OS.MAC})
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     void testE2ePermissions() throws IOException {
         Path wd = unique(outputDir, "e2e-permissions");
         Path zipDir = createZipDirectory(wd);

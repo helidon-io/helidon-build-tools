@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  * Loader for {@link DevMojo} instances configured from a given project pom file.
  * Based on MavenPluginHelper.
  */
-@SuppressWarnings("UnconstructableJUnitTestCase")
+@SuppressWarnings({"UnconstructableJUnitTestCase", "JUnitMalformedDeclaration"})
 public final class DevMojoLoader extends AbstractMojoTestCase {
     private static final AtomicReference<DevMojoLoader> INSTANCE = new AtomicReference<>();
     private static final Path TARGET_DIR = TestFiles.targetDir(DevMojoLoader.class);

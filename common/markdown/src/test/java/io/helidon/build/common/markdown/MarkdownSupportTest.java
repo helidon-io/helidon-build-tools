@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ class MarkdownSupportTest {
     private static final HtmlRenderer RENDERER = HtmlRenderer.builder().extensions(EXTENSIONS).build();
 
     @Test
-    public void coloredTextNode() {
+    void coloredTextNode() {
         assertRendering("foo {::primary}This is an info colored text{:/} boo",
                 "<p>foo <div style=\"background-color:#cce5ff; color:#004085; border-color:#b8daff;\">This is an info colored " +
                         "text</div> boo</p>\n");
     }
 
     @Test
-    public void mixedMarkdownTextNode() {
+    void mixedMarkdownTextNode() {
         assertRendering("foo **bold text** {::primary}This is an info colored text{:/} boo _italic_ \n" +
                         "```java\n" +
                         "request.content().as(JsonObject.class).thenAccept(json -> {\n" +
@@ -64,7 +64,7 @@ class MarkdownSupportTest {
     }
 
     @Test
-    public void nonexistentKramdownNode() {
+    void nonexistentKramdownNode() {
         Exception e = assertThrows(IllegalArgumentException.class, () -> {
             render("foo {::nonexistent}This is an info colored text{:/} boo");
         });
@@ -73,7 +73,7 @@ class MarkdownSupportTest {
     }
 
     @Test
-    public void otherTextNode() {
+    void otherTextNode() {
         assertRendering("foo boo",
                 "<p>foo boo</p>\n");
     }

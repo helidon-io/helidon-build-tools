@@ -33,10 +33,10 @@ import static org.hamcrest.Matchers.is;
 /**
  * Tests for {@link ArchetypesData}
  */
-public class ArchetypesDataTest {
+class ArchetypesDataTest {
 
     @Test
-    public void testLoad() {
+    void testLoad() {
         Path versionsFile = testResourcePath(ArchetypesData.class, "versions/cli-data/versions.xml");
         ArchetypesData archetypesData = ArchetypesData.load(versionsFile);
         ArchetypesData.Version defaultVersion = archetypesData.rawVersions().stream()
@@ -55,7 +55,7 @@ public class ArchetypesDataTest {
     }
 
     @Test
-    public void testLatestVersion() {
+    void testLatestVersion() {
         assertThat(
                 data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT").latestVersion(),
                 is(toMavenVersion("4.0.1-SNAPSHOT")));
@@ -70,7 +70,7 @@ public class ArchetypesDataTest {
     }
 
     @Test
-    public void testLatestMajorVersions() {
+    void testLatestMajorVersions() {
         ArchetypesData data = data("2.1.3", "2.4.5", "2.0.5", "3.0.0", "3.9.8", "2.9", "4.0.0", "4.0.1-SNAPSHOT");
         assertThat(data.latestMajorVersions(), Matchers.contains("4.0.1-SNAPSHOT", "3.9.8", "2.9"));
 
@@ -85,7 +85,7 @@ public class ArchetypesDataTest {
     }
 
     @Test
-    public void testLatestMajorVersionsOrdering() {
+    void testLatestMajorVersionsOrdering() {
         ArchetypesData data = data(version("2.0.0", 100),
                 version("3.0.0", 100),
                 version("4.0.1-SNAPSHOT", 200));
@@ -100,7 +100,7 @@ public class ArchetypesDataTest {
     }
 
     @Test
-    public void testVersionOrdering() {
+    void testVersionOrdering() {
         assertThat(data(version("1.0.0", 100),
                         version("1.0.1", 100),
                         version("2.0.0", 100),
@@ -109,7 +109,7 @@ public class ArchetypesDataTest {
     }
 
     @Test
-    public void testVersionQualifierOrdering() {
+    void testVersionQualifierOrdering() {
         String version1;
         String version2;
         List<String> versions = List.of(

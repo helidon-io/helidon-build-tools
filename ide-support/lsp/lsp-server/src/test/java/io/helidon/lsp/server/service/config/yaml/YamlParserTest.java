@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class YamlParserTest {
 
     @Test
-    public void testIncorrectYaml() throws IOException {
+    void testIncorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
         List<String> strings = readFile("incorrect-yaml-file.yaml");
         Map<LineResult, String> result = yamlParser.parse(strings);
@@ -53,7 +53,7 @@ class YamlParserTest {
     }
 
     @Test
-    public void testCorrectYaml() throws IOException {
+    void testCorrectYaml() throws IOException {
         YamlParser yamlParser = new YamlParser();
         List<String> strings = readFile("correct-yaml-file.yaml");
         Map<LineResult, String> result = yamlParser.parse(strings);

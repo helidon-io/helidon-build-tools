@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,13 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests {@link IncludePreprocessor}.
  */
-public class IncludePreprocessorTest {
+class IncludePreprocessorTest {
 
-    public IncludePreprocessorTest() {
+    IncludePreprocessorTest() {
     }
 
     @Test
-    public void testSourceBlockHandling() {
+    void testSourceBlockHandling() {
         String includedContentText =
                 "public class A {\n" +
                 "  public void hi() {\n" +
@@ -76,7 +76,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testIncludeAnalysisFromNumberedInclude() {
+    void testIncludeAnalysisFromNumberedInclude() {
         String expectedIncludeTarget = "randomStuff.adoc";
         List<String> includedContent = asList(
                 "inc line 1\n" +
@@ -101,7 +101,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testIncludeAnalysisFromBracketedInclude() {
+    void testIncludeAnalysisFromBracketedInclude() {
         String expectedIncludeTarget = "randomStuff.adoc";
         List<String> includedContent = asList(
                 "inc 1\n" +
@@ -132,7 +132,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testOverallConversion() throws DiffException {
+    void testOverallConversion() throws DiffException {
         /*
          * Create content containing begin-end bracketed includes, both in and
          * outside [source] blocks.
@@ -247,7 +247,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testInitialProcessing() throws IOException, DiffException, URISyntaxException {
+    void testInitialProcessing() throws IOException, DiffException, URISyntaxException {
         String testFileDir = "preprocess-adoc";
         Path originalPath = Paths.get(testFileDir, "variousIncludes.adoc");
         List<String> originalLines = loadFromPath(originalPath);
@@ -281,7 +281,7 @@ public class IncludePreprocessorTest {
     }
 
     @Test
-    public void testSourceBlockIncludeBracketing() throws DiffException {
+    void testSourceBlockIncludeBracketing() throws DiffException {
         List<String> orig = asList(
                   "[source]\n"
                 + ".Title of the source block\n"

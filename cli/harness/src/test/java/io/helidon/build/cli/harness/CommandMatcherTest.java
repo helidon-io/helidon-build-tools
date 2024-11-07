@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test {@link CommandMatcher}.
  */
-public class CommandMatcherTest {
+class CommandMatcherTest {
 
     @Test
-    public void testClosestMatch() {
+    void testClosestMatch() {
         List<String> target = List.of("dev");
         assertThat(CommandMatcher.match("ddev", target), is("dev"));
         assertThat(CommandMatcher.match("deev", target), is("dev"));

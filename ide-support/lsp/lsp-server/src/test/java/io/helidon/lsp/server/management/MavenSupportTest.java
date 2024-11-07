@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class MavenSupportTest {
     }
 
     @Test
-    public void ignoreFakePomFileTest() throws URISyntaxException {
+    void ignoreFakePomFileTest() throws URISyntaxException {
         Path pom = getCurrentPom();
         Path testFile = Paths.get("src/test/resources/pomTests/withoutMain/src/test.txt");
         Path resolvedPom = MavenSupport.resolvePom(testFile);
@@ -48,7 +48,7 @@ class MavenSupportTest {
     }
 
     @Test
-    public void getPomFileForCorrectMavenStructureFolderTest() {
+    void getPomFileForCorrectMavenStructureFolderTest() {
         Path pom = Paths.get("src/test/resources/pomTests/withMain/pom.xml");
         Path testFile = Paths.get("src/test/resources/pomTests/withMain/src/main/test.txt");
         Path resolvedPom = MavenSupport.resolvePom(testFile);
@@ -56,13 +56,13 @@ class MavenSupportTest {
     }
 
     @Test
-    public void getPomForFileTest() throws URISyntaxException {
+    void getPomForFileTest() throws URISyntaxException {
         Path pom = getCurrentPom();
         assertThat(pom.getFileName().toString(), is("pom.xml"));
     }
 
     @Test
-    public void getDependenciesTest() throws URISyntaxException {
+    void getDependenciesTest() throws URISyntaxException {
         Path pom = getCurrentPom();
         Set<Dependency> dependencies = MavenSupport.instance().dependencies(pom, 10000,  LOCAL_REPO_ARG);
         assertThat(dependencies.isEmpty(), is(false));

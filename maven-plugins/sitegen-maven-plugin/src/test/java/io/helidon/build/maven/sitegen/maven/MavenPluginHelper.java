@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
      * @return MavenProject
      * @throws IOException if an IO error occurs
      */
-    public static <T> T mojo(String pom, Path dir, String execName, Class<T> clazz) throws Exception {
+    static <T> T mojo(String pom, Path dir, String execName, Class<T> clazz) throws Exception {
         return LazyHolder.INSTANCE.mojo0(pom, dir, execName, clazz);
     }
 
@@ -70,7 +70,7 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
      * @return MavenProject
      * @throws IOException if an IO error occurs
      */
-    public static MavenProject newMavenProject(String pom, Path dir) throws IOException {
+    static MavenProject newMavenProject(String pom, Path dir) throws IOException {
         return LazyHolder.INSTANCE.newMavenProject0(pom, dir);
     }
 

@@ -49,10 +49,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test {@link ArchetypeEngine}.
  */
-public class ArchetypeEngineTest extends ArchetypeBaseTest {
+class ArchetypeEngineTest extends ArchetypeBaseTest {
 
     @Test
-    public void testResolveProperties() {
+    void testResolveProperties() {
         Map<String, String> props = Map.of("foo", "bar", "bar", "foo");
         assertThat(PropertyEvaluator.evaluate("${foo}", props), is("bar"));
         assertThat(PropertyEvaluator.evaluate("${xxx}", props), is(""));
@@ -67,13 +67,13 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testTransformedProperties() {
+    void testTransformedProperties() {
         Map<String, String> props = Map.of("package", "com.example.myapp");
         assertThat(PropertyEvaluator.evaluate("${package/\\./\\/}", props), is("com/example/myapp"));
     }
 
     @Test
-    public void testTransform() {
+    void testTransform() {
         Map<String, String> props = Map.of("package", "com.example.myapp");
         List<Transformation> tfs = List.of(
                 new Transformation("mustache", List.of(new Replacement("\\.mustache$", ""))),
@@ -84,7 +84,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testEvaluateConditional() {
+    void testEvaluateConditional() {
         Map<String, String> props1 = Map.of("prop1", "true");
         Map<String, String> props2 = Map.of("prop1", "true", "prop2", "true");
 
@@ -109,7 +109,7 @@ public class ArchetypeEngineTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testGenerate() throws IOException {
+    void testGenerate() throws IOException {
         Map<String, String> properties = Map.of(
                 "groupId", "com.example",
                 "artifactId", "my-project",

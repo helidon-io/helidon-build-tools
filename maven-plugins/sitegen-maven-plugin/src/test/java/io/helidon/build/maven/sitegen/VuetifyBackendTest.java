@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests {@link VuetifyBackend}.
  */
-public class VuetifyBackendTest {
+class VuetifyBackendTest {
 
     @Test
-    public void testNav1() {
+    void testNav1() {
         try {
             Nav.builder()
                .title("root")
@@ -76,7 +76,7 @@ public class VuetifyBackendTest {
     }
 
     @Test
-    public void testNav2() {
+    void testNav2() {
         try {
             Nav.builder()
                .title("root")
@@ -97,7 +97,7 @@ public class VuetifyBackendTest {
     }
 
     @Test
-    public void testVuetify1() throws Exception {
+    void testVuetify1() throws Exception {
         Path targetDir = targetDir(VuetifyBackendTest.class);
         Path sourceDir = targetDir.resolve("test-classes/vuetify1");
         Path outputDir = targetDir.resolve("vuetify/testvuetify1");
@@ -160,7 +160,7 @@ public class VuetifyBackendTest {
     }
 
     @Test
-    public void testVuetify2() {
+    void testVuetify2() {
         Path targetDir = targetDir(VuetifyBackendTest.class);
         Path sourceDir = targetDir.resolve("test-classes/vuetify2");
         Path outputDir = targetDir.resolve("vuetify/testvuetify2");

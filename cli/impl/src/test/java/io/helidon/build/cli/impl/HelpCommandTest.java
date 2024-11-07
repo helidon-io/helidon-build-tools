@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * {@code helidon help} test.
  */
-public class HelpCommandTest {
+class HelpCommandTest {
 
     @Test
     void testCliHelp() throws Exception {
@@ -34,27 +34,27 @@ public class HelpCommandTest {
     }
 
     @Test
-    public void testBuildCommandHelp() throws Exception {
+    void testBuildCommandHelp() throws Exception {
         assertCommandHelp("build");
     }
 
     @Test
-    public void testDevCommandHelp() throws Exception {
+    void testDevCommandHelp() throws Exception {
         assertCommandHelp("dev");
     }
 
     @Test
-    public void testInfoCommandHelp() throws Exception {
+    void testInfoCommandHelp() throws Exception {
         assertCommandHelp("info");
     }
 
     @Test
-    public void testInitCommandHelp() throws Exception {
+    void testInitCommandHelp() throws Exception {
         assertCommandHelp("init");
     }
 
     @Test
-    public void testVersionCommandHelp() throws Exception {
+    void testVersionCommandHelp() throws Exception {
         assertCommandHelp("version");
     }
 

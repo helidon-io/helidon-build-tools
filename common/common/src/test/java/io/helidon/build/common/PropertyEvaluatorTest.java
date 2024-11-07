@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class PropertyEvaluatorTest {
 
     @Test
-    public void testResolveProperties() {
+    void testResolveProperties() {
         Map<String, String> props = Map.of("foo", "bar", "bar", "foo");
         assertThat(PropertyEvaluator.evaluate("${foo}", props), is("bar"));
         assertThat(PropertyEvaluator.evaluate("${xxx}", props), is(""));

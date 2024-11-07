@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class StartScriptTest {
         return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
     }
 
-    public static Matcher<String> containsString(String substring) {
+    static Matcher<String> containsString(String substring) {
         if (Constants.OS == Windows) {
             substring = substring.replace(Linux.escapedQuote(), Windows.escapedQuote());
         }

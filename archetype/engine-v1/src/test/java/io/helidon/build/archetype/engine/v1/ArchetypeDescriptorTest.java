@@ -43,10 +43,10 @@ import static org.hamcrest.Matchers.empty;
 /**
  * Tests {@link ArchetypeDescriptor}.
  */
-public class ArchetypeDescriptorTest {
+class ArchetypeDescriptorTest {
 
     @Test
-    public void testUnmarshall() {
+    void testUnmarshall() {
         InputStream is = getClass().getClassLoader().getResourceAsStream(ArchetypeEngine.DESCRIPTOR_RESOURCE_NAME);
         assertThat(is, is(notNullValue()));
 

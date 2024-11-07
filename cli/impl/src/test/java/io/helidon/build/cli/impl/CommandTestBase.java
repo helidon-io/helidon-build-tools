@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY
 /**
  * Base class for command tests.
  */
-public class CommandTestBase {
+class CommandTestBase {
 
     /**
      * Overrides version under test. This property must be propagated to all
      * forked processes.
      */
     @BeforeAll
-    public static void setHelidonVersion() {
+    static void setHelidonVersion() {
         System.setProperty(HELIDON_VERSION_PROPERTY, helidonTestVersion());
         System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonTestVersion());
     }

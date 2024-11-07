@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,47 +37,47 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SubstitutionVariablesTest {
 
     @Test
-    public void missingClosingBrace() {
+    void missingClosingBrace() {
         SubstitutionVariables variables = SubstitutionVariables.of(emptyMap());
         assertThrows(IllegalArgumentException.class, () -> variables.resolve("roses are ${color and violets are blue"));
     }
 
     @Test
-    public void notFoundCollapseStrategy() {
+    void notFoundCollapseStrategy() {
         SubstitutionVariables variables = SubstitutionVariables.of(Collapse, emptyMap());
         assertThat(variables, is(not(nullValue())));
         assertThat(variables.resolve("roses are ${color}"), is("roses are "));
     }
 
     @Test
-    public void notFoundAsIsStrategy() {
+    void notFoundAsIsStrategy() {
         SubstitutionVariables variables = SubstitutionVariables.of(AsIs, emptyMap());
         assertThat(variables, is(not(nullValue())));
         assertThat(variables.resolve("roses are ${color}"), is("roses are ${color}"));
     }
 
     @Test
-    public void notFoundFailStrategy() {
+    void notFoundFailStrategy() {
         SubstitutionVariables variables = SubstitutionVariables.of(Fail, emptyMap());
         assertThat(variables, is(not(nullValue())));
         assertThrows(IllegalArgumentException.class, () -> variables.resolve("roses are ${color}"));
     }
 
     @Test
-    public void maxRecursion() {
+    void maxRecursion() {
         assertMaxRecursion(AsIs);
         assertMaxRecursion(Collapse);
         assertMaxRecursion(Fail);
     }
 
     @Test
-    public void singleSubstitution() {
+    void singleSubstitution() {
         SubstitutionVariables variables = SubstitutionVariables.of(Map.of("color", "blue"));
         assertThat(variables.resolve("the sky is ${color}"), is("the sky is blue"));
     }
 
     @Test
-    public void escapedSubstitution() {
+    void escapedSubstitution() {
         SubstitutionVariables variables = SubstitutionVariables.of(Map.of("color", "red"));
         assertThat(variables.resolve("vars start with '\\${'"), is("vars start with '${'"));
 
@@ -86,14 +86,14 @@ class SubstitutionVariablesTest {
     }
 
     @Test
-    public void multipleSubstitution() {
+    void multipleSubstitution() {
         SubstitutionVariables variables = SubstitutionVariables.of(Map.of("color", "blue",
                                                                           "weather", "clear"));
         assertThat(variables.resolve("the sky is ${color} and ${weather}"), is("the sky is blue and clear"));
     }
 
     @Test
-    public void recursiveSubstitution() {
+    void recursiveSubstitution() {
         SubstitutionVariables v1 = SubstitutionVariables.of(Map.of("skyDescription", "${skyConditions}",
                                                                    "skyConditions", "${skyColor} and ${weather}",
                                                                    "skyColor", "grey",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 /**
  * Tests {@link ArchetypeCatalog}.
  */
-public class ArchetypeCatalogTest {
+class ArchetypeCatalogTest {
 
     @Test
-    public void testUnmarshall() {
+    void testUnmarshall() {
         InputStream is = ArchetypeCatalogTest.class.getResourceAsStream("catalog.xml");
         assertThat(is, is(notNullValue()));
 

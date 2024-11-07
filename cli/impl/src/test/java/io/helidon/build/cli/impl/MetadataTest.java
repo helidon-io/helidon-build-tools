@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Unit test for class {@link Metadata}.
  */
-public class MetadataTest {
+class MetadataTest {
 
     private static final String RC1_LAST_UPDATE = VERSION_RC1 + File.separator + LAST_UPDATE_FILE_NAME;
     private static final String RC2_LAST_UPDATE = VERSION_RC2 + File.separator + LAST_UPDATE_FILE_NAME;
@@ -91,17 +91,17 @@ public class MetadataTest {
     private MetadataTestServer testServer;
 
     @BeforeAll
-    public static void beforeAll() {
+    static void beforeAll() {
         LogWriter.addRecorder(LOG_RECORDER);
     }
 
     @AfterAll
-    public static void afterAll() {
+    static void afterAll() {
         LogWriter.removeRecorder(LOG_RECORDER);
     }
 
     @BeforeEach
-    public void beforeEach(TestInfo info) {
+    void beforeEach(TestInfo info) {
         String testClassName = info.getTestClass().orElseThrow().getSimpleName();
         String testName = info.getTestMethod().orElseThrow().getName();
         Log.info("%n--- %s $(bold %s) -------------------------------------------%n", testClassName, testName);

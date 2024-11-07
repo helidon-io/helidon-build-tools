@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class PageMetadataTest {
     private static final Site SITE = Site.create(new Backend("dummy") {});
 
     @Test
-    public void testPageWithNoTitle() {
+    void testPageWithNoTitle() {
         try {
             readMetadata("no_title.adoc");
             fail("no_title.adoc is not a valid document");
@@ -48,7 +48,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithNoDescription() {
+    void testPageWithNoDescription() {
         Metadata m = null;
         try {
             m = readMetadata("no_description.adoc");
@@ -61,7 +61,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithTitleAndH1() {
+    void testPageWithTitleAndH1() {
         Metadata m = null;
         try {
             m = readMetadata("title_and_h1.adoc");
@@ -73,7 +73,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithDescription() {
+    void testPageWithDescription() {
         Metadata m = null;
         try {
             m = readMetadata("with_description.adoc");
@@ -84,7 +84,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithKeywords() {
+    void testPageWithKeywords() {
         Metadata m = null;
         try {
             m = readMetadata("with_keywords.adoc");
@@ -95,7 +95,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithH1Prefix1() {
+    void testPageWithH1Prefix1() {
         Metadata m = null;
         try {
             m = readMetadata("with_h1prefix1.adoc");
@@ -107,7 +107,7 @@ class PageMetadataTest {
     }
 
     @Test
-    public void testPageWithH1Prefix2() {
+    void testPageWithH1Prefix2() {
         Metadata m = null;
         try {
             m = readMetadata("dir1/dir2/with_h1prefix_included.adoc");
