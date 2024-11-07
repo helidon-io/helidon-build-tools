@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests {@link GenerateMojo}.
  */
-public class GenerateMojoTest {
+class GenerateMojoTest {
 
     private static final Path OUTPUT_DIR = targetDir(GenerateMojoTest.class).resolve("generate-mojo");
 
     @Test
-    public void testBasicBackendConfiguration() throws Exception {
+    void testBasicBackendConfiguration() throws Exception {
         GenerateMojo mojo = mojo("generate-mojo/pom-basic-backend.xml", OUTPUT_DIR, "generate", GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();
@@ -49,7 +49,7 @@ public class GenerateMojoTest {
     }
 
     @Test
-    public void testVuetifyBackendConfiguration() throws Exception {
+    void testVuetifyBackendConfiguration() throws Exception {
         GenerateMojo mojo = mojo("generate-mojo/pom-vuetify-backend.xml", OUTPUT_DIR, "generate", GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();

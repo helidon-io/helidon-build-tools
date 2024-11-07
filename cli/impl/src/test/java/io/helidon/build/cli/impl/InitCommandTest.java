@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Class InitDefaultTest.
  */
-public class InitCommandTest extends InitCommandTestBase {
+class InitCommandTest extends InitCommandTestBase {
 
     @Override
     protected CommandInvoker.Builder commandInvoker() {
@@ -42,7 +42,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @BeforeEach
-    public void beforeEach(TestInfo info) {
+    void beforeEach(TestInfo info) {
         System.out.println("\n--- Running " + info.getDisplayName() + "----------------------------------------\n");
     }
 
@@ -83,7 +83,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testDefaults() throws Exception {
+    void testDefaults() throws Exception {
         commandInvoker()
                 .useProjectOption(true)
                 .invokeInit()
@@ -91,7 +91,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testFlavor() throws Exception {
+    void testFlavor() throws Exception {
         commandInvoker()
                 .flavor("MP")
                 .invokeInit()
@@ -99,7 +99,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testGroupId() throws Exception {
+    void testGroupId() throws Exception {
         commandInvoker()
                 .groupId("io.helidon.basicapp")
                 .invokeInit()
@@ -107,7 +107,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testArtifactId() throws Exception {
+    void testArtifactId() throws Exception {
         CommandInvoker invoker = commandInvoker()
                 .artifactId("foo-artifact")
                 .invokeInit()
@@ -116,7 +116,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testPackage() throws Exception {
+    void testPackage() throws Exception {
         commandInvoker()
                 .packageName("io.helidon.mypackage")
                 .invokeInit()
@@ -124,7 +124,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testName() throws Exception {
+    void testName() throws Exception {
         commandInvoker()
                 .projectName("mybasicproject")
                 .invokeInit()
@@ -132,7 +132,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testInteractiveSe() throws Exception {
+    void testInteractiveSe() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))
                 .invokeInit()
@@ -140,7 +140,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testInteractiveMp() throws Exception {
+    void testInteractiveMp() throws Exception {
         commandInvoker()
                 .input(getClass().getResource("input.txt"))
                 .flavor("MP")
@@ -149,7 +149,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testInteractiveAllHelidonVersions() throws Exception {
+    void testInteractiveAllHelidonVersions() throws Exception {
         String helidonProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
         String cliDataUrl = testResourcePath(getClass(), "versions")
@@ -176,7 +176,7 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    public void testInteractiveLatestHelidonVersions() throws Exception {
+    void testInteractiveLatestHelidonVersions() throws Exception {
         String helidonVersionProperty = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
         String cliDataUrl = testResourcePath(getClass(), "versions")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * Unit test for class {@link SourcePath}.
  */
-public class SourcePathTest {
+class SourcePathTest {
 
+    @SuppressWarnings("SameParameterValue")
     private static void assertPath(boolean equals, String path1, String path2) {
         SourcePath s1 = new SourcePath(path1);
         SourcePath s2 = new SourcePath(path2);
@@ -45,7 +46,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testEmptyPath() {
+    void testEmptyPath() {
         assertThat(new SourcePath("./").matches("*"), is(true));
         assertThat(new SourcePath("./").matches("**"), is(true));
         assertThat(new SourcePath("").matches("*"), is(true));
@@ -53,7 +54,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testNormalization() {
+    void testNormalization() {
         assertPath(true, "./abc/def/index.html", "abc/def/index.html");
         assertPath(false, "../abc/def/index.html", "abc/def/index.html");
         assertPath(true, "/abc/def/index.html", "abc/def/index.html");
@@ -64,7 +65,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testSinglePathMatching() {
+    void testSinglePathMatching() {
         SourcePath path = new SourcePath("abc/def/ghi/index.html");
         assertThat("empty pattern", path.matches(""), is(false));
         assertThat("identical pattern", path.matches("abc/def/ghi/index.html"), is(true));
@@ -105,7 +106,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testFiltering() {
+    void testFiltering() {
         List<SourcePath> paths = new ArrayList<>();
         paths.add(new SourcePath("abc/def/ghi/index.html"));
         paths.add(new SourcePath("abc/def/ghi/foo.html"));
@@ -183,7 +184,7 @@ public class SourcePathTest {
     }
 
     @Test
-    public void testMatchSegment() {
+    void testMatchSegment() {
 
         // empty string, identical, wildcard only
         assertWildcardMatch(true, "", "", "both empty");

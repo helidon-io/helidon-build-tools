@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class CommandAPTest {
             "-Werror");
 
     @Test
-    public void testCli1() throws IOException {
+    void testCli1() throws IOException {
         e2e("com/acme/cli/TestOptions.java",
                 "com/acme/cli/TestCommand1.java",
                 "com/acme/cli/TestCommand2.java",
@@ -56,12 +56,12 @@ class CommandAPTest {
     }
 
     @Test
-    public void testCliWithNestedCommandClasses() throws IOException {
+    void testCliWithNestedCommandClasses() throws IOException {
         e2e("com/acme/cli/TestCliNested.java");
     }
 
     @Test
-    public void testCommandWithoutExecution() throws IOException {
+    void testCommandWithoutExecution() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("CommandWithoutExecution", ""
                         + "package com.acme.cli;\n"
@@ -80,7 +80,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testCommandWithoutCreator() throws IOException {
+    void testCommandWithoutCreator() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("CommandWithoutCreator", ""
                         + "package com.acme.cli;\n"
@@ -102,7 +102,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testMissingCommandAnnotation() throws IOException {
+    void testMissingCommandAnnotation() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("MissingCommandAnnotation", ""
                         + "package com.acme.cli;\n"
@@ -129,7 +129,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testMissingFragmentAnnotation() throws IOException {
+    void testMissingFragmentAnnotation() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("MissingFragmentAnnotation", ""
                         + "package com.acme.cli;\n"
@@ -169,7 +169,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testFragmentDuplicatedOptions() throws IOException {
+    void testFragmentDuplicatedOptions() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("FragmentDuplicatedOptions", ""
                         + "package com.acme.cli;\n"
@@ -210,7 +210,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testOptionAlreadyDefined() throws IOException {
+    void testOptionAlreadyDefined() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("OptionAlreadyDefined", ""
                         + "package com.acme.cli;\n"
@@ -235,7 +235,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidArgumentType() throws IOException {
+    void testInvalidArgumentType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidArgumentType", ""
                         + "package com.acme.cli;\n"
@@ -260,7 +260,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidFlagType() throws IOException {
+    void testInvalidFlagType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidFlagType", ""
                         + "package com.acme.cli;\n"
@@ -283,7 +283,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidKeyValueType() throws IOException {
+    void testInvalidKeyValueType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidKeyValueType", ""
                         + "package com.acme.cli;\n"
@@ -308,7 +308,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEnumKeyValue() throws IOException {
+    void testEnumKeyValue() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EnumKeyValue", ""
                         + "package com.acme.cli;\n"
@@ -335,7 +335,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidKeyValuesTypeParam() throws IOException {
+    void testInvalidKeyValuesTypeParam() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidKeyValuesTypeParam", ""
                         + "package com.acme.cli;\n"
@@ -361,7 +361,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidKeyValuesType() throws IOException {
+    void testInvalidKeyValuesType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidKeyValuesType", ""
                         + "package com.acme.cli;\n"
@@ -386,7 +386,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyOptionName() throws IOException {
+    void testEmptyOptionName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyOptionName", ""
                         + "package com.acme.cli;\n"
@@ -409,7 +409,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidOptionName() throws IOException {
+    void testInvalidOptionName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidOptionName", ""
                         + "package com.acme.cli;\n"
@@ -432,7 +432,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyOptionDescription() throws IOException {
+    void testEmptyOptionDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyOptionDescription", ""
                         + "package com.acme.cli;\n"
@@ -455,7 +455,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyCommandName() throws IOException {
+    void testEmptyCommandName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyCommandName", ""
                         + "package com.acme.cli;\n"
@@ -478,7 +478,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidCommandName() throws IOException {
+    void testInvalidCommandName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidCommandName", ""
                         + "package com.acme.cli;\n"
@@ -501,7 +501,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyCommandDescription() throws IOException {
+    void testEmptyCommandDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyCommandDescription", ""
                         + "package com.acme.cli;\n"
@@ -524,7 +524,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyCliName() throws IOException {
+    void testEmptyCliName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyCliName", ""
                         + "package com.acme.cli;\n"
@@ -539,7 +539,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testInvalidCliName() throws IOException {
+    void testInvalidCliName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("InvalidCliName", ""
                         + "package com.acme.cli;\n"
@@ -554,7 +554,7 @@ class CommandAPTest {
     }
 
     @Test
-    public void testEmptyCliDescription() throws IOException {
+    void testEmptyCliDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
                 new JavaSourceFromString("EmptyCliDescription", ""
                         + "package com.acme.cli;\n"

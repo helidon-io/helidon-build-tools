@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Class ArchetypeLoaderTest.
  */
-public class ArchetypeLoaderTest extends ArchetypeBaseTest {
+class ArchetypeLoaderTest extends ArchetypeBaseTest {
 
     /**
      * Creates simple JAR file to test archetype loader.
@@ -46,7 +46,7 @@ public class ArchetypeLoaderTest extends ArchetypeBaseTest {
      * @throws IOException If an IO error occurs.
      */
     @BeforeAll
-    public static void createSimpleJar() throws IOException {
+    static void createSimpleJar() throws IOException {
         Manifest manifest = new Manifest();
         File file = unique(targetDir().toPath(), "test", ".jar").toFile();
         JarOutputStream os = new JarOutputStream(new FileOutputStream(file), manifest);
@@ -57,7 +57,7 @@ public class ArchetypeLoaderTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testLoadFromJar() throws IOException {
+    void testLoadFromJar() throws IOException {
         File file = new File(ArchetypeLoader.class.getResource("/test.jar").getFile());
         ArchetypeLoader loader = new ArchetypeLoader(file);
         try (InputStream is = loader.loadResourceAsStream("META-INF/helidon-archetype.xml")) {
@@ -74,7 +74,7 @@ public class ArchetypeLoaderTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testLoadFromDir() throws IOException {
+    void testLoadFromDir() throws IOException {
         ArchetypeLoader loader = new ArchetypeLoader(targetDir());
         try (InputStream is = loader.loadResourceAsStream("META-INF/helidon-archetype.xml")) {
             StringBuilder sb = new StringBuilder();
@@ -90,7 +90,7 @@ public class ArchetypeLoaderTest extends ArchetypeBaseTest {
     }
 
     @Test
-    public void testBadFile() {
+    void testBadFile() {
         Path targetDirPath = targetDir().toPath().resolve("test.properties");
         assertThrows(IOException.class, () -> new ArchetypeLoader(targetDirPath.toFile()));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Test {@link CommandParser}.
  */
-public class CommandParserTest {
+class CommandParserTest {
 
     @Test
-    public void testTrim() {
+    void testTrim() {
         CommandParser parser;
         CommandParser.Resolver resolver;
         CommandParameters cmd = new CommandParameters(
@@ -65,7 +65,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testCase() {
+    void testCase() {
         CommandParser parser;
         CommandParser.Resolver resolver;
 
@@ -102,7 +102,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testCommandNames() {
+    void testCommandNames() {
         CommandParser parser;
 
         parser = CommandParser.create("-command", "--help");
@@ -131,7 +131,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testOptionNames() {
+    void testOptionNames() {
         CommandParser parser;
         CommandParser.Resolver resolver;
 
@@ -160,7 +160,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testKeyValues() {
+    void testKeyValues() {
         CommandParameters cmd = new CommandParameters(
                 new CommandModel.KeyValuesInfo<>(String.class, "foo", "Foo", true));
 
@@ -193,7 +193,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testProperties() {
+    void testProperties() {
         CommandParser parser;
         CommandParser.Resolver resolver;
 
@@ -235,7 +235,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testResolve() {
+    void testResolve() {
         KeyValueInfo<DAY> param = new KeyValueInfo<>(DAY.class, "day", "day of the week", null, false);
         CommandParameters cmd = new CommandParameters(param);
 
@@ -248,7 +248,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testGlobalOptions() throws IOException {
+    void testGlobalOptions() throws IOException {
         CommandParser parser;
         CommandParser.Resolver resolver;
         GlobalOptions options;
@@ -268,13 +268,13 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testVersionFlag() {
+    void testVersionFlag() {
         CommandParser parser = CommandParser.create("--version");
         assertThat(parser.commandName().get(), is("version"));
     }
 
     @Test
-    public void testDuplicateOptions() {
+    void testDuplicateOptions() {
         FlagInfo verboseFlag1 = new FlagInfo("verbose", "Verbose log level", false);
         FlagInfo verboseFlag2 = new FlagInfo("verbose", "Verbose log level", false);
         CommandParameters cmd = new CommandParameters(verboseFlag1, verboseFlag2);
@@ -291,7 +291,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testArgsFileOptionWithExistingFile() throws URISyntaxException {
+    void testArgsFileOptionWithExistingFile() throws URISyntaxException {
         KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "flavor", "flavor", null, false);
         CommandParameters cmd = new CommandParameters(param);
 
@@ -308,7 +308,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testArgsFileOptionWithIncorrectFile() {
+    void testArgsFileOptionWithIncorrectFile() {
         UncheckedIOException e = assertThrows(
                 UncheckedIOException.class,
                 () -> CommandParser.create("command", "--args-file", "not_existing_file.txt")
@@ -317,7 +317,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testPropsFileOptionWithExistingFile() {
+    void testPropsFileOptionWithExistingFile() {
         String packagePath = getClass().getPackageName().replaceAll("\\.", "/");
         String argsFilePath = testResourcePath(getClass(), packagePath + "/test-props-file.properties").toString();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
@@ -333,7 +333,7 @@ public class CommandParserTest {
     }
 
     @Test
-    public void testPropsFileOptionWithIncorrectFile() {
+    void testPropsFileOptionWithIncorrectFile() {
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
         CommandParameters cmd = new CommandParameters(propsFileOption);
 

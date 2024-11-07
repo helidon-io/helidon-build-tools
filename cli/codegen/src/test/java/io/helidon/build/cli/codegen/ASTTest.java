@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,14 +55,14 @@ class ASTTest {
     }
 
     @Test
-    public void testValidArgumentDeclarationModifiers() {
+    void testValidArgumentDeclarationModifiers() {
         assertThat(argument(DEFAULT, FINAL).modifiers(), arrayContaining(DEFAULT, FINAL));
         assertThat(argument(DEFAULT).modifiers(), arrayContaining(DEFAULT));
         assertThat(argument(FINAL).modifiers(), arrayContaining(FINAL));
     }
 
     @Test
-    public void testInvalidArgumentDeclarationModifiers(){
+    void testInvalidArgumentDeclarationModifiers(){
         IllegalArgumentException ex;
 
         ex = assertThrows(IllegalArgumentException.class,  () -> argument(FINAL, FINAL));
@@ -82,7 +82,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidArgumentDeclaration(){
+    void testInvalidArgumentDeclaration(){
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> ArgumentDeclaration.builder().type(TestClassWithSuperClass.class).name(null).build());
@@ -93,7 +93,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidTypeDeclaration() {
+    void testInvalidTypeDeclaration() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> ClassDeclaration.builder().type(null).build());
@@ -101,7 +101,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidRefCast() {
+    void testInvalidRefCast() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> refCast((TypeInfo) null, valueRef("foo")));
@@ -113,7 +113,7 @@ class ASTTest {
 
     @Test
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void testInvalidStaticRef() {
+    void testInvalidStaticRef() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> staticRef((TypeInfo) null));
@@ -121,7 +121,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidMethodDeclaration() {
+    void testInvalidMethodDeclaration() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> MethodDeclaration.builder().name(null).build());
@@ -129,7 +129,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidMethodInvocation() {
+    void testInvalidMethodInvocation() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> methodInvocation(null));
@@ -137,7 +137,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidConstructorInvocation() {
+    void testInvalidConstructorInvocation() {
         NullPointerException ex;
 
         ex = assertThrows(NullPointerException.class,  () -> constructorInvocation((TypeInfo) null));
@@ -145,7 +145,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidArrayLiteral() {
+    void testInvalidArrayLiteral() {
         NullPointerException ex1;
 
         ex1 = assertThrows(NullPointerException.class,  () -> arrayLiteral(null));
@@ -161,7 +161,7 @@ class ASTTest {
     }
 
     @Test
-    public void testInvalidAccessModifiers(){
+    void testInvalidAccessModifiers(){
         IllegalArgumentException ex;
 
         ex = assertThrows(IllegalArgumentException.class,  () -> field(PUBLIC, DEFAULT, PROTECTED, PRIVATE));
@@ -178,7 +178,7 @@ class ASTTest {
     }
 
     @Test
-    public void testArrayValueRefNegativeIndex(){
+    void testArrayValueRefNegativeIndex(){
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> arrayValueRef("bars", -1));
         assertThat(ex.getMessage(), is("Negative array index"));
@@ -186,14 +186,14 @@ class ASTTest {
 
     @Test
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void testConstructorDeclarationWithoutType() {
+    void testConstructorDeclarationWithoutType() {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> ConstructorDeclaration.builder().build().type());
         assertThat(ex.getMessage(), is("type is not set"));
     }
 
     @Test
-    public void testFieldGroup() {
+    void testFieldGroup() {
         assertThat(FieldGroup.find(field(PUBLIC, STATIC, FINAL)), is(PUBLIC_STATIC_FINAL_FIELDS));
         assertThat(FieldGroup.find(field(PUBLIC, STATIC)), is(PUBLIC_STATIC_FIELDS));
         assertThat(FieldGroup.find(field(PROTECTED, STATIC, FINAL)), is(PROTECTED_STATIC_FINAL_FIELDS));
@@ -212,7 +212,7 @@ class ASTTest {
     }
 
     @Test
-    public void testModifierDuplicates() {
+    void testModifierDuplicates() {
         assertThat(Modifiers.distinct(PUBLIC, PUBLIC), is(false));
         assertThat(Modifiers.distinct(PUBLIC, STATIC, FINAL), is(true));
         assertThat(Modifiers.distinct(PUBLIC, STATIC, STATIC), is(false));
@@ -222,7 +222,7 @@ class ASTTest {
     }
 
     @Test
-    public void testModifierContainsAny() {
+    void testModifierContainsAny() {
         assertThat(Modifiers.containsAny(Modifiers.of(DEFAULT, FINAL), DEFAULT, FINAL), is(true));
         assertThat(Modifiers.containsAny(Modifiers.of(DEFAULT), DEFAULT, FINAL), is(true));
         assertThat(Modifiers.containsAny(Modifiers.of(FINAL), DEFAULT, FINAL), is(true));
@@ -236,7 +236,7 @@ class ASTTest {
     }
 
     @Test
-    public void testModifierValidAccess() {
+    void testModifierValidAccess() {
         assertThat(Modifiers.validAccess(DEFAULT), is(true));
         assertThat(Modifiers.validAccess(DEFAULT, STATIC, FINAL), is(true));
         assertThat(Modifiers.validAccess(PRIVATE), is(true));

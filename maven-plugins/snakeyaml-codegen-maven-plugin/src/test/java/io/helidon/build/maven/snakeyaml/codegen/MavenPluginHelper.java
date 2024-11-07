@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ import org.apache.maven.project.MavenProject;
 /**
  * Maven plugin helper.
  */
-public final class MavenPluginHelper extends AbstractMojoTestCase {
+@SuppressWarnings("JUnitMalformedDeclaration")
+final class MavenPluginHelper extends AbstractMojoTestCase {
 
-    private MavenPluginHelper(){
+    private MavenPluginHelper() {
         try {
             this.setUp();
         } catch(Exception ex){
@@ -43,12 +44,11 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
         static final MavenPluginHelper INSTANCE = new MavenPluginHelper();
     }
 
-    public static MavenPluginHelper getInstance() {
+    static MavenPluginHelper getInstance() {
         return LazyHolder.INSTANCE;
     }
 
-    public MavenProject newMavenProject(String pom, File dir)
-            throws IOException {
+    MavenProject newMavenProject(String pom, File dir) throws IOException {
 
         File pomFile = getTestFile("src/test/resources/" + pom);
         org.apache.maven.model.Model model = new DefaultModelReader()
@@ -60,7 +60,7 @@ public final class MavenPluginHelper extends AbstractMojoTestCase {
         return project;
     }
 
-    public <T> T getMojo (String pom, File dir, String execName, Class<T> clazz) throws Exception {
+    <T> T getMojo (String pom, File dir, String execName, Class<T> clazz) throws Exception {
         MavenProject project = newMavenProject(pom, dir);
         MavenSession session = newMavenSession(project);
         MojoExecution execution = newMojoExecution(execName);

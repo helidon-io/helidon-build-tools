@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.lsp.server.service.config.properties;
 
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
-public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
+class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
 
     private final PropertiesTextDocumentHandler handler = PropertiesTextDocumentHandler.instance();
 
@@ -71,7 +70,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionForAllowedValues() {
+    void testCompletionForAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(25, 31), "test-config.properties");
         assertThat(completion.size(), is(3));
         assertThat(completion.stream()
@@ -88,7 +87,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testInsertText() {
+    void testInsertText() {
         List<CompletionItem> completion = completionItems(new Position(21, 37), "test-config.properties");
         CompletionItem completionItem =
                 completion.stream()
@@ -105,7 +104,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testDefaultValues() {
+    void testDefaultValues() {
         List<CompletionItem> completion = completionItems(new Position(24, 14), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.private-key.pem.key.resource.content-plain",
                 completion);
@@ -117,7 +116,7 @@ public class PropertiesTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testAllowedValues() {
+    void testAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(25, 26), "test-config.properties");
         CompletionItem completionItem = completionItemByLabel("server.sockets.tls.client-auth", completion);
         assertThat(completion.size(), is(1));

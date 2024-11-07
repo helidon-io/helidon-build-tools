@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ import java.util.Set;
 import static io.helidon.build.maven.snakeyaml.codegen.TestHelper.getFile;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestSnakeYAMLMojo {
+class TestSnakeYAMLMojo {
 
     private static final File OUTPUT_DIR = getFile("target/test/generate-mojo");
 
     @Test
-    public void testSimple() throws Exception {
+    void testSimple() throws Exception {
         SnakeYAMLMojo mojo = MavenPluginHelper.getInstance().getMojo("simpleTest/pom-one-class.xml",
                 OUTPUT_DIR, "generate", SnakeYAMLMojo.class);
         mojo.execute();
@@ -51,7 +51,7 @@ public class TestSnakeYAMLMojo {
     }
 
     @Test
-    public void testPropSub() throws Exception {
+    void testPropSub() throws Exception {
         SnakeYAMLMojo mojo = MavenPluginHelper.getInstance().getMojo("simpleTest/pom-prop-sub.xml",
                 OUTPUT_DIR, "generate", SnakeYAMLMojo.class);
         mojo.execute();
@@ -79,7 +79,7 @@ public class TestSnakeYAMLMojo {
     }
 
     @Test
-    public void testPropName() {
+    void testPropName() {
         String setterMethodName = "setMyProperty";
         assertEquals("myProperty", SnakeYAMLMojo.EndpointScanner.propertyName(setterMethodName));
 

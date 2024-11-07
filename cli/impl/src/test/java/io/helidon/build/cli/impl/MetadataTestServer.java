@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static org.mockserver.model.NottableString.not;
 /**
  * Metadata server that serves local test data.
  */
-public class MetadataTestServer {
+class MetadataTestServer {
     private static final String USAGE = "Usage: [--port <port>] [--rc1 | --rc2] [--quiet] [--help]";
     private static final int DEFAULT_MAIN_PORT = 8080;
     private static final String VERBOSE_LEVEL = "INFO";
@@ -86,7 +86,7 @@ public class MetadataTestServer {
      *
      * @param args The arguments.
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
         int port = DEFAULT_MAIN_PORT;
         TestVersion defaultVersion = TestVersion.RC1;
         boolean verbose = true;
@@ -122,7 +122,7 @@ public class MetadataTestServer {
      * @param defaultVersion default version
      * @param verbose Whether to do verbose logging.
      */
-    public MetadataTestServer(TestVersion defaultVersion, boolean verbose) {
+    MetadataTestServer(TestVersion defaultVersion, boolean verbose) {
         this(freePort(), defaultVersion, verbose);
     }
 
@@ -134,7 +134,7 @@ public class MetadataTestServer {
      * @param defaultVersion default version
      */
     @SuppressWarnings("ConstantConditions")
-    public MetadataTestServer(int port, TestVersion defaultVersion, boolean verbose) {
+    MetadataTestServer(int port, TestVersion defaultVersion, boolean verbose) {
         if (MockServer.class.getClassLoader() != ClassLoader.getSystemClassLoader()) {
             final String reason = "MockServer must be in system class loader";
             Log.info("$(italic,yellow Skipping: %s)", reason);
@@ -152,7 +152,7 @@ public class MetadataTestServer {
      * @return This instance, for chaining.
      */
     @SuppressWarnings("BusyWait")
-    public MetadataTestServer start() {
+    MetadataTestServer start() {
         mockServer = ClientAndServer.startClientAndServer(port);
 
         // Set the response for "/versions.xml"
@@ -189,7 +189,7 @@ public class MetadataTestServer {
      *
      * @return The url.
      */
-    public String url() {
+    String url() {
         return url;
     }
 
@@ -198,14 +198,14 @@ public class MetadataTestServer {
      *
      * @param defaultVersion defaultVersion
      */
-    public void defaultVersion(TestVersion defaultVersion) {
+    void defaultVersion(TestVersion defaultVersion) {
         this.defaultVersion = defaultVersion;
     }
 
     /**
      * Set up the {@code /versions.xml} request.
      */
-    public void setupVersions() {
+    void setupVersions() {
         String versionElements = Stream.concat(Stream.ofNullable(defaultVersion), Arrays.stream(TestVersion.values()))
                 .distinct()
                 .map(v -> "        <version" + (defaultVersion == v ? " default=\"true\"" : "") + ">" + v + "</version>")
@@ -226,7 +226,7 @@ public class MetadataTestServer {
      * @param version The version.
      * @param data    The zip data.
      */
-    public void setupCliData(TestVersion version, byte[] data) {
+    void setupCliData(TestVersion version, byte[] data) {
         final String etag = etag(version, data);
         mockServer.upsert(zipRequestWithoutEtag(version).thenRespond(response().withHeader(ETAG_HEADER, etag)
                 .withBody(data)));
@@ -239,7 +239,7 @@ public class MetadataTestServer {
     /**
      * Stop the server.
      */
-    public void stop() {
+    void stop() {
         mockServer.stop();
     }
 

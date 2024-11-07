@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 /**
  * Base class for command tests that require the {@link Metadata}.
  */
-public class MetadataAccessTestBase extends CommandTestBase {
+class MetadataAccessTestBase extends CommandTestBase {
 
     private static final boolean DEBUG_PLUGIN = false;
 
@@ -44,7 +44,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * Start the metadata server.
      */
     @BeforeAll
-    public static void startMetadataAccess() {
+    static void startMetadataAccess() {
         Path userHome = unique(TestFiles.targetDir(MetadataAccessTestBase.class), "alice");
         Config.setUserHome(userHome);
         USER_CONFIG = UserConfig.create(userHome);
@@ -74,7 +74,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * Stop the metadata server.
      */
     @AfterAll
-    public static void stopMetadataAccess() {
+    static void stopMetadataAccess() {
         if (SERVER != null) {
             SERVER.stop();
         }
@@ -84,7 +84,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * Get the metadata URL.
      * @return metadata URL, never {@code null}
      */
-    public String metadataUrl() {
+    String metadataUrl() {
         return METADATA_URL;
     }
 
@@ -92,7 +92,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * Get the metadata.
      * @return metadata, never {@code null}
      */
-    public Metadata metadata() {
+    Metadata metadata() {
         return METADATA;
     }
 
@@ -100,7 +100,7 @@ public class MetadataAccessTestBase extends CommandTestBase {
      * Get the user config.
      * @return config, never {@code null}
      */
-    public UserConfig userConfig() {
+    UserConfig userConfig() {
         return USER_CONFIG;
     }
 }

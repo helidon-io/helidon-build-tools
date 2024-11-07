@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,19 +35,19 @@ import static org.hamcrest.Matchers.is;
  * Class CliConfigTest.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CliConfigTest {
+class CliConfigTest {
 
     static File configFile;
 
     @BeforeAll
-    public static void configFile() {
+    static void configFile() {
         configFile = new File(Objects.requireNonNull(
                 CliConfigTest.class.getClassLoader().getResource("helidon.properties")).getFile());
     }
 
     @Test
     @Order(1)
-    public void testCliConfigLoad1() {
+    void testCliConfigLoad1() {
         CliConfig config = new CliConfig(configFile);
         List<String> features = config.listFeatures();
         features.forEach(f -> {
@@ -59,7 +59,7 @@ public class CliConfigTest {
 
     @Test
     @Order(2)
-    public void testCliConfigLoadStore1() {
+    void testCliConfigLoadStore1() {
         CliConfig config = new CliConfig(configFile);
         config.projectDir(Path.of("/usr/tmp"));
         assertThat(pathOf(config.projectDir().get()), is("/usr/tmp"));
@@ -68,7 +68,7 @@ public class CliConfigTest {
 
     @Test
     @Order(3)
-    public void testCliConfigLoadStore2() {
+    void testCliConfigLoadStore2() {
         CliConfig config = new CliConfig(configFile);
         assertThat(pathOf(config.projectDir().get()), is("/usr/tmp"));
         config.clearProjectDir();

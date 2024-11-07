@@ -44,7 +44,7 @@ class ConfigReaderTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testConverter() throws Exception {
+    void testConverter() throws Exception {
         InputStream is = ConfigReaderTest.class.getResourceAsStream("/test-config.xml");
         assertThat(is, is(not(nullValue())));
         Reader reader = new InputStreamReader(is);

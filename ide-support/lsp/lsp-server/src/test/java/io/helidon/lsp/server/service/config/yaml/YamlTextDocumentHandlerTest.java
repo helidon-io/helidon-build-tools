@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionForAllowedValues() {
+    void testCompletionForAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(34, 19), "test-config.yaml");
         assertThat(completion.size(), is(3));
         assertThat(completion.stream()
@@ -84,7 +84,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testInsertText() {
+    void testInsertText() {
         List<CompletionItem> completion = completionItems(new Position(25, 4), "test-config.yaml");
         CompletionItem completionItem = completion.stream().filter(item -> item.getLabel().equals("host")).findFirst()
                                                   .orElse(null);
@@ -100,7 +100,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testDefaultValues() {
+    void testDefaultValues() {
         List<CompletionItem> completion = completionItems(new Position(19, 2), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("default-authorization-provider", completion);
         assertThat(completionItem.getDocumentation().getLeft().contains("Default value"), is(false));
@@ -115,7 +115,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testAllowedValues() {
+    void testAllowedValues() {
         List<CompletionItem> completion = completionItems(new Position(44, 6), "test-config.yaml");
         CompletionItem completionItem = completionItemByLabel("client-auth", completion);
         assertThat(completion.size(), is(6));//7-1
@@ -126,7 +126,7 @@ class YamlTextDocumentHandlerTest extends CompletionTestBase {
     }
 
     @Test
-    public void testCompletionIncorrectConfig() {
+    void testCompletionIncorrectConfig() {
         List<CompletionItem> completion = completionItems(new Position(19, 0), "test-incorrect-config.yaml");
         assertThat(completion.size(), is(2));
 

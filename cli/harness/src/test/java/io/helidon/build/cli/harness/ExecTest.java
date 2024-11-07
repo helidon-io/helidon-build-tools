@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test the built-in commands and options.
  */
-public class ExecTest {
+class ExecTest {
 
     static final CommandRegistry REGISTRY = new TestCommandRegistry();
     static final String CLI_USAGE = resourceAsString("cli-usage.txt");
@@ -92,14 +92,14 @@ public class ExecTest {
     }
 
     @Test
-    public void testUsage() {
+    void testUsage() {
         assertThat(exec("--help"), is(CLI_USAGE));
         assertThat(exec("help"), is(CLI_USAGE));
         assertThat(exec(), is(CLI_USAGE));
     }
 
     @Test
-    public void testHelp() {
+    void testHelp() {
         assertThat(exec("help", "--help"), is(HELP_CMD_HELP));
         assertThat(exec("help", "help"), is(HELP_CMD_HELP));
         assertThat(exec("help", "simple"), is(SIMPLE_CMD_HELP));
@@ -107,14 +107,14 @@ public class ExecTest {
     }
 
     @Test
-    public void testCmd() {
+    void testCmd() {
         assertThat(exec("simple"), is("noop\n"));
         assertThat(exec("simple", "--foo"), is("foo\n"));
         assertThat(exec("simple", "--bar"), is("bar\n"));
     }
 
     @Test
-    public void testCommonOptions() {
+    void testCommonOptions() {
         assertThat(exec("common", "--key", "value"), is("value\n"));
         assertThat(exec("common", "--foo", "--key", "value"), is(equalTo("foo: value\n")));
         CommandContext context = context();
@@ -126,7 +126,7 @@ public class ExecTest {
 
     private static final class TestCommandRegistry extends CommandRegistry {
 
-        public TestCommandRegistry() {
+        TestCommandRegistry() {
             super("", "test-cli", "A test cli");
             register(new CommandWithCommonOptions());
             register(new SimpleCommand());
