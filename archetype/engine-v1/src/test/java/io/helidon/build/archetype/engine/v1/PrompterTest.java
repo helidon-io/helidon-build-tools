@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.is;
 
 class PrompterTest {
 
@@ -31,7 +32,7 @@ class PrompterTest {
         String input = "\n";
         System.setIn(new ByteArrayInputStream(input.getBytes()));
         String result = Prompter.prompt("Enter your name", "defaultName");
-        assertEquals("defaultName", result);
+        assertThat(result, is("defaultName"));
     }
 
     @Test
@@ -40,7 +41,7 @@ class PrompterTest {
         System.setIn(new ByteArrayInputStream(input.getBytes()));
         Predicate<String> validator = s -> s.equals("validInput");
         String result = Prompter.prompt("Enter valid input", null, validator);
-        assertEquals("validInput", result);
+        assertThat(result, is("validInput"));
     }
 
     @Test
@@ -48,7 +49,7 @@ class PrompterTest {
         String input = "\n";
         System.setIn(new ByteArrayInputStream(input.getBytes()));
         String result = Prompter.prompt("Enter your name", Optional.of("defaultName"));
-        assertEquals("defaultName", result);
+        assertThat(result, is("defaultName"));
     }
 
     @Test
@@ -57,7 +58,7 @@ class PrompterTest {
         System.setIn(new ByteArrayInputStream(input.getBytes()));
         List<String> options = List.of("Option 1", "Option 2", "Option 3");
         int result = Prompter.prompt("Choose an option", options, 0);
-        assertEquals(1, result);
+        assertThat(result, is(1));
     }
 
     @Test
@@ -65,7 +66,7 @@ class PrompterTest {
         String input = "y\n";
         System.setIn(new ByteArrayInputStream(input.getBytes()));
         boolean result = Prompter.promptYesNo("Do you agree?", false);
-        assertTrue(result);
+        assertThat(result, is(true));
     }
 
 }
