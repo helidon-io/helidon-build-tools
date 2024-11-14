@@ -32,7 +32,6 @@ import com.github.difflib.algorithm.DiffException;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -94,10 +93,10 @@ class IncludePreprocessorTest {
 
         Include ia = Include.fromNumberedInclude(content, 2,
                 String.format("// _include::%d-%d:%s", expectedStartWithinBlock, expectedEndWithinBlock, expectedIncludeTarget));
-        assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected starting line number");
-        assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected ending line number");
-        assertEquals(includedContent, ia.body(), "unexpected body");
-        assertEquals(expectedIncludeTarget, ia.includeTarget(), "unexpected include target");
+        assertThat("unexpected starting line number", ia.startWithinBlock(), is(expectedStartWithinBlock));
+        assertThat("unexpected ending line number", ia.endWithinBlock(), is(expectedEndWithinBlock));
+        assertThat("unexpected body", ia.body(), is(includedContent));
+        assertThat("unexpected include target", ia.includeTarget(), is(expectedIncludeTarget));
     }
 
     @Test
@@ -124,11 +123,11 @@ class IncludePreprocessorTest {
         List<String> result = new ArrayList<>();
         Include ia = Include.consumeBracketedInclude(content, lineNumber, result, result.size());
 
-        assertEquals(expectedStartWithinBlock, ia.startWithinBlock(), "unexpected start within block");
-        assertEquals(expectedEndWithinBlock, ia.endWithinBlock(), "unexpected end within block");
-        assertEquals(includedContent, ia.body(), "unexpected body");
-        assertEquals(expectedIncludeTarget, ia.includeTarget(), "unexpected include target");
-        assertEquals(expectedFinalLineAfterConsuming, lineNumber.get(), "unexpected final line number");
+        assertThat("unexpected start within block", ia.startWithinBlock(), is(expectedStartWithinBlock));
+        assertThat("unexpected end within block", ia.endWithinBlock(), is(expectedEndWithinBlock));
+        assertThat("unexpected body", ia.body(), is(includedContent));
+        assertThat("unexpected include target", ia.includeTarget(), is(expectedIncludeTarget));
+        assertThat("unexpected final line number", lineNumber.get(), is(expectedFinalLineAfterConsuming));
     }
 
     @Test
@@ -242,8 +241,8 @@ class IncludePreprocessorTest {
 
         List<String> numberedContent = IncludePreprocessor.convertBracketedToNumbered(content);
 
-        assertEquals(expectedNumberedContent, numberedContent, "overall resulting content did not match; " +
-                DiffUtils.diff(expectedNumberedContent, numberedContent));
+        assertThat("overall resulting content did not match; " +
+                DiffUtils.diff(expectedNumberedContent, numberedContent), numberedContent, is(expectedNumberedContent));
     }
 
     @Test
@@ -260,10 +259,11 @@ class IncludePreprocessorTest {
         List<String> actualAfterInitialPreprocessingLines =
                 IncludePreprocessor.convertHybridToBracketed(originalLines);
 
-        assertEquals(expectedAfterInitialPreprocessingLines,
-                actualAfterInitialPreprocessingLines,
+        assertThat("overall resulting content did not match; " +
                 DiffUtils.diff(expectedAfterInitialPreprocessingLines,
-                        actualAfterInitialPreprocessingLines).toString());
+                        actualAfterInitialPreprocessingLines),
+                actualAfterInitialPreprocessingLines,
+                is(expectedAfterInitialPreprocessingLines));
     }
 
     private List<String> loadFromPath(Path path) throws URISyntaxException, IOException {
@@ -320,8 +320,7 @@ class IncludePreprocessorTest {
         Block sba = Block.consumeBlock(orig, lineNumber);
 
         List<String> bracketed = sba.asBracketedBlock();
-        assertEquals(expectedBracketed, bracketed,
-                DiffUtils.diff(orig, bracketed).toString());
+        assertThat("overall resulting content did not match; " + DiffUtils.diff(orig, bracketed).toString(), bracketed, is(expectedBracketed));
     }
 
     private static List<String> asList(String text) {
