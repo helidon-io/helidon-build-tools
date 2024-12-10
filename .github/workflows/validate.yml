@@ -176,11 +176,11 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022, macos-12 ]
+        os: [ ubuntu-20.04, windows-2022, macos-13 ]
         include:
           - { os: ubuntu-20.04, platform: linux-amd64 }
           - { os: windows-2022, platform: windows-amd64, file-ext: .exe }
-          - { os: macos-12, platform: darwin-amd64 }
+          - { os: macos-13, platform: darwin-amd64 }
     runs-on: ${{ matrix.os }}
     name: cli/${{ matrix.platform }}
     steps:
