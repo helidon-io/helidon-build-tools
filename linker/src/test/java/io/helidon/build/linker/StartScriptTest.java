@@ -30,6 +30,8 @@ import org.hamcrest.Matcher;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.ensureFile;
@@ -108,6 +110,16 @@ class StartScriptTest {
         script = builder().defaultJvmOptions(List.of("-verbose:class", "-Xms32")).build().toString();
         assertThat(script, containsString("DEFAULT_APP_JVM     Overrides "));
         assertThat(script, containsString("defaultJvm=\"-verbose:class -Xms32\""));
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    void testCustomDefaultJvmOptions() {
+        String script = builder().defaultJvmOptions(List.of("-Dfoo.foo=foo")).build().toString();
+        assertThat(script, containsString("defaultJvm=\"`\"-Dfoo.foo=foo`\"\""));
+
+        script = builder().defaultJvmOptions(List.of("-Dfoo=foo", "-Dbar=bar")).build().toString();
+        assertThat(script, containsString("defaultJvm=\"`\"-Dfoo=foo`\" `\"-Dbar=bar`\"\""));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.build.linker;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.helidon.build.linker.StartScript.TemplateConfig;
 import io.helidon.build.linker.util.Constants;
@@ -79,14 +80,14 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
 
         final String name = fileName(config.mainJar());
 
-        final String jvm = String.join(" ", config.defaultJvmOptions());
+        final String jvm = joinOptions(config.defaultJvmOptions());
         final String jvmDesc = description(config.defaultJvmOptions(), "JVM options", "Jvm");
 
         final String args = String.join(" ", config.defaultArgs());
         final String argsDesc = description(config.defaultArgs(), "arguments", "Args");
 
         final List<String> debugOptions = config.debugInstalled() ? config.defaultDebugOptions() : emptyList();
-        final String debug = String.join(" ", debugOptions);
+        final String debug = joinOptions(debugOptions);
         final String debugDesc = description(debugOptions, "debug options", "Debug");
 
         final String hasCds = config.cdsInstalled() ? "yes" : "";
@@ -125,6 +126,20 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
             final String escapedQuote = Constants.OS.escapedQuote();
             return String.format(OVERRIDES, escapedQuote, varName, escapedQuote);
         }
+    }
+
+    private String joinOptions(List<String> options) {
+        if (Windows == Constants.OS) {
+            return options.stream()
+                    .map(option -> {
+                        if (option.startsWith("-D")) {
+                            return String.format("`\"%s`\"", option);
+                        }
+                        return option;
+                    })
+                    .collect(Collectors.joining(" "));
+        }
+        return String.join(" ", options);
     }
 
     private void removeFunction(String functionName) {
