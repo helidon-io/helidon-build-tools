@@ -16,12 +16,11 @@
 
 package io.helidon.build.maven.sitegen;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import freemarker.template.TemplateException;
@@ -50,12 +49,20 @@ public class RenderingException extends RuntimeException {
     }
 
     private static String allErrorInfo(List<RenderingException> errors) {
-        StringWriter sw = new StringWriter();
-        try (PrintWriter pw = new PrintWriter(sw)) {
-            errors.forEach(t -> t.printStackTrace(pw));
-            return sw.toString();
-        }
+        return errors.stream()
+                .map(RenderingException::cascadeMessages)
+                .collect(Collectors.joining());
     }
+
+    private static String cascadeMessages(Throwable error){
+        StringJoiner result = new StringJoiner(System.lineSeparator());
+        while (error != null) {
+            result.add(error.getMessage());
+            error = error.getCause();
+        }
+        return result.toString();
+    }
+
     /**
      * Create a new instance.
      *
