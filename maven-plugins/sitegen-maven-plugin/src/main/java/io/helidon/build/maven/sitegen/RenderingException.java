@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.build.maven.sitegen;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -23,9 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import freemarker.template.TemplateException;
-
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
 
 /**
  * An exception to represent any error occurring as part of site processing.
@@ -47,11 +46,16 @@ public class RenderingException extends RuntimeException {
      * @param errors exceptions to aggregate
      */
     public RenderingException(List<RenderingException> errors) {
-        this(errors.stream()
-                   .map(Throwable::getMessage)
-                   .collect(joining(lineSeparator())));
+        this(allErrorInfo(errors));
     }
 
+    private static String allErrorInfo(List<RenderingException> errors) {
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            errors.forEach(t -> t.printStackTrace(pw));
+            return sw.toString();
+        }
+    }
     /**
      * Create a new instance.
      *

@@ -1,5 +1,5 @@
 <#--
-  Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+  Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,8 +50,14 @@ TODO:
 <tr>
 <#list row.cells as cell>
 <#if cell.content?is_enumerable>
-<#list cell.content as cellcontent><td class="${cell_classes}">${cellcontent}</td></#list>
-<#else><td class="${cell_classes}">${cell.content}</td>
+<#list cell.content as cellcontent><td class="${cell_classes}"
+<#if cell.rowspan??> rowspan="${cell.rowspan}"</#if>
+<#if cell.colspan??> colspan="${cell.colspan}"</#if>
+>${cellcontent}</td></#list>
+<#else><td class="${cell_classes}"
+<#if cell.rowspan??> rowspan="${cell.rowspan}"</#if>
+<#if cell.colspan??> colspan="${cell.colspan}"</#if>
+>${cell.content}</td>
 </#if>
 </#list>
 </tr>
