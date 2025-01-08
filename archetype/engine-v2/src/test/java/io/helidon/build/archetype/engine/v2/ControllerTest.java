@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -141,6 +142,41 @@ class ControllerTest {
 
         values = modelValues(script, context);
         assertThat(values.size(), is(0));
+    }
+
+    @Test
+    void testOutput() {
+        Script script = load("controller/output.xml");
+        Context context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .build();
+        List<String> values = modelValues(script, context);
+        Iterator<String> iterator = values.iterator();
+
+        assertThat(values.size(), is(12));
+        assertThat(iterator.next(), is("script1"));
+        assertThat(iterator.next(), is("script2"));
+        assertThat(iterator.next(), is("step1"));
+        assertThat(iterator.next(), is("step2"));
+        assertThat(iterator.next(), is("inputs1"));
+        assertThat(iterator.next(), is("inputs2"));
+        assertThat(iterator.next(), is("boolean1"));
+        assertThat(iterator.next(), is("boolean2"));
+        assertThat(iterator.next(), is("enum1"));
+        assertThat(iterator.next(), is("enum2"));
+        assertThat(iterator.next(), is("method1"));
+        assertThat(iterator.next(), is("method2"));
+    }
+
+    @Test
+    void testCall() {
+        Script script = load("controller/call.xml");
+        Context context = Context.builder()
+                .cwd(script.scriptPath().getParent())
+                .build();
+        List<String> values = modelValues(script, context);
+
+        assertThat(values, contains("blue"));
     }
 
     private static List<String> modelValues(Block block, Context context) {
