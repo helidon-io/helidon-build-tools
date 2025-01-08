@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,10 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import freemarker.template.TemplateException;
-
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
 
 /**
  * An exception to represent any error occurring as part of site processing.
@@ -47,9 +45,22 @@ public class RenderingException extends RuntimeException {
      * @param errors exceptions to aggregate
      */
     public RenderingException(List<RenderingException> errors) {
-        this(errors.stream()
-                   .map(Throwable::getMessage)
-                   .collect(joining(lineSeparator())));
+        this(allErrorInfo(errors));
+    }
+
+    private static String allErrorInfo(List<RenderingException> errors) {
+        return errors.stream()
+                .map(RenderingException::cascadeMessages)
+                .collect(Collectors.joining());
+    }
+
+    private static String cascadeMessages(Throwable error){
+        StringJoiner result = new StringJoiner(System.lineSeparator());
+        while (error != null) {
+            result.add(error.getMessage());
+            error = error.getCause();
+        }
+        return result.toString();
     }
 
     /**
