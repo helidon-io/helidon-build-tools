@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="glob-type">
@@ -788,6 +789,7 @@
                 <xs:element name="inputs" type="a:input-types"/>
                 <xs:element name="step" type="a:step-type"/>
                 <xs:element name="validations" type="a:validations-type"/>
+                <xs:element name="output" type="a:output-type"/>
             </xs:choice>
         </xs:sequence>
     </xs:group>
@@ -843,7 +845,6 @@
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:input-group"/>
         <xs:attributeGroup ref="a:name-group"/>
@@ -869,7 +870,6 @@
                         <xs:sequence>
                             <xs:element name="help" type="a:help-type" minOccurs="0"/>
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
                         <xs:attribute name="value" type="xs:string" use="required">
                             <xs:annotation>
@@ -910,7 +910,6 @@
                         <xs:sequence>
                             <xs:element name="help" type="a:help-type" minOccurs="0"/>
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                            <xs:element name="output" type="a:output-type" minOccurs="0"/>
                         </xs:sequence>
                         <xs:attribute name="value" type="xs:string" use="required">
                             <xs:annotation>
@@ -1004,7 +1003,6 @@
                 <xs:element name="list" type="a:list-input-type"/>
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -1024,8 +1022,8 @@
                 <xs:element name="source" type="a:source-type"/>
                 <xs:element name="call" type="a:call-type"/>
                 <xs:element name="inputs" type="a:input-types"/>
+                <xs:element name="output" type="a:output-type"/>
             </xs:choice>
-            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="a:if-group"/>
         <xs:attributeGroup ref="a:name-group"/>
@@ -1344,7 +1342,6 @@
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="output" type="a:output-type" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute type="xs:string" name="name" use="required">
             <xs:annotation>
@@ -1368,7 +1365,6 @@
                 <xs:element name="help" type="a:help-type" minOccurs="0"/>
                 <xs:element name="methods" type="a:method-types" minOccurs="0" />
                 <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="output" type="a:output-type" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
