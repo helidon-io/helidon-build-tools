@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,7 +242,6 @@ public class JarMojo extends AbstractMojo {
                 throw new MojoExecutionException("Cannot generate custom entry-point, main.xml already exists");
             }
             Converter.convert(entrypoint, main);
-            validateSchema(outputDir, "main.xml").ifPresent(getLog()::error);
         }
     }
 
@@ -250,6 +249,7 @@ public class JarMojo extends AbstractMojo {
         System.setProperty(MAVEN_URL_REPO_PROPERTY, session.getLocalRepository().getBasedir());
         Path script = VirtualFileSystem.create(outputDir).getPath("/").resolve("main.xml");
         List<String> errors = Validator.validateArchetype(script);
+        validateSchema(outputDir, "main.xml").ifPresent(errors::add);
         if (!errors.isEmpty()) {
             errors.forEach(getLog()::error);
             throw new MojoExecutionException("Validation failed");
