@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ inputs:
     required: false
     default: ''
   test-artifact-name:
-    description: Name of the test artifact to create (excluded on windows), if non empty tests are archived
+    description: Name of the test artifact to create, if non empty tests are archived
     required: false
     default: ''
   free-space:
@@ -157,8 +157,7 @@ runs:
       run: ${{ inputs.run }}
       shell: bash
     - name: Archive test results
-      # https://github.com/actions/upload-artifact/issues/240
-      if: ${{ inputs.test-artifact-name != '' && runner.os != 'Windows' && always() }}
+      if: ${{ inputs.test-artifact-name != '' && always() }}
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
