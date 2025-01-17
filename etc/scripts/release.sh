@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ exec 6>&1 1>&2
 
 current_version() {
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -q \
+    mvn ${MVN_ARGS} -q \
         -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
@@ -133,7 +133,7 @@ update_version(){
     fi
 
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+    mvn ${MVN_ARGS} "${ARGS[@]}" \
         -f "${WS_DIR}"/pom.xml versions:set versions:set-property \
         -DgenerateBackupPoms="false" \
         -DnewVersion="${version}" \
@@ -176,7 +176,7 @@ release_build(){
     if [ -n "${MAVEN_SETTINGS}" ] ; then
         tmpfile=$(mktemp XXXXXXsettings.xml)
         echo "${MAVEN_SETTINGS}" > "${tmpfile}"
-        MAVEN_ARGS="${MAVEN_ARGS} -s ${tmpfile}"
+        MVN_ARGS="${MVN_ARGS} -s ${tmpfile}"
     fi
     if [ -n "${GPG_PRIVATE_KEY}" ] ; then
         tmpfile=$(mktemp XXXXXX.key)
@@ -193,7 +193,7 @@ release_build(){
 
     # Perform local deployment
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+    mvn ${MVN_ARGS} "${ARGS[@]}" \
         deploy \
         -Prelease \
         -DskipTests \
@@ -202,7 +202,7 @@ release_build(){
     # Upload all artifacts to nexus
     version=$(release_version)
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
+    mvn ${MVN_ARGS} -N nexus-staging:deploy-staged \
         -DstagingDescription="Helidon Build Tools v${version}"
 }
 
