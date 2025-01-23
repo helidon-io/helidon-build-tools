@@ -52,7 +52,10 @@ $(basename "${0}") [ --build-number=N ] CMD
         Print the release version
 
     create_tag
-        Create and and push a release tag
+        Create and push a release tag
+
+    create_cli_tag
+        Create and push a CLI release tag
 
     release_build
         Perform a release build
@@ -72,7 +75,7 @@ while (( ${#} > 0 )); do
         usage
         exit 0
         ;;
-    "update_version"|"release_version"|"create_tag"|"release_build")
+    "update_version"|"release_version"|"create_tag"|"release_build"|"create_cli_tag")
         COMMAND="${1}"
         shift
         ;;
@@ -107,7 +110,7 @@ readonly WS_DIR
 # this allows us to use fd 6 for returning data
 exec 6>&1 1>&2
 
-current_version() {
+current_version(){
     # shellcheck disable=SC2086
     mvn ${MVN_ARGS} -q \
         -f "${WS_DIR}"/pom.xml \
@@ -117,7 +120,7 @@ current_version() {
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
 }
 
-release_version() {
+release_version(){
     local current_version
     current_version=$(current_version)
     echo "${current_version%-*}"
@@ -142,7 +145,7 @@ update_version(){
         -DupdateMatchingVersions="false"
 }
 
-create_tag() {
+create_tag(){
     local git_branch version
 
     version=$(release_version)
@@ -167,6 +170,34 @@ create_tag() {
     git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 
     echo "tag=refs/tags/${version}" >&6
+}
+
+create_cli_tag(){
+  local git_branch version cli_tag
+
+  version=$(release_version)
+  cli_tag="cli/${version}"
+  git_branch="release/${cli_tag}"
+
+  # Use a separate branch
+  git branch -D "${git_branch}" > /dev/null 2>&1 || true
+  git checkout -b "${git_branch}"
+
+  # Invoke update_version
+  update_version "${version}"
+
+  # Git user info
+  git config user.email || git config --global user.email "info@helidon.io"
+  git config user.name || git config --global user.name "Helidon Robot"
+
+  # Commit version changes
+  git commit -a -m "Release ${cli_tag}"
+
+  # Create and push a git tag
+  git tag -f "${cli_tag}"
+  git push --force origin refs/tags/"${cli_tag}":refs/tags/"${cli_tag}"
+
+  echo "tag=refs/tags/${cli_tag}" >&6
 }
 
 release_build(){
