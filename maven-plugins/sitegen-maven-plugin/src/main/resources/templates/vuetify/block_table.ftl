@@ -51,12 +51,12 @@ TODO:
 <#list row.cells as cell>
 <#if cell.content?is_enumerable>
 <#list cell.content as cellcontent><td class="${cell_classes}"
-<#if cell.rowspan??> rowspan="${cell.rowspan}"</#if>
-<#if cell.colspan??> colspan="${cell.colspan}"</#if>
+<#if (cell.rowspan!0) != 0> rowspan="${cell.rowspan}"</#if>
+<#if (cell.colspan!0) != 0> colspan="${cell.colspan}"</#if>
 >${cellcontent}</td></#list>
 <#else><td class="${cell_classes}"
-<#if cell.rowspan??> rowspan="${cell.rowspan}"</#if>
-<#if cell.colspan??> colspan="${cell.colspan}"</#if>
+<#if (cell.rowspan!0) != 0> rowspan="${cell.rowspan}"</#if>
+<#if (cell.colspan!0) != 0> colspan="${cell.colspan}"</#if>
 >${cell.content}</td>
 </#if>
 </#list>
