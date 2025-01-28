@@ -54,9 +54,6 @@ $(basename "${0}") [ --build-number=N ] CMD
     create_tag
         Create and push a release tag
 
-    create_cli_tag
-        Create and push a CLI release tag
-
     release_build
         Perform a release build
 
@@ -75,7 +72,7 @@ while (( ${#} > 0 )); do
         usage
         exit 0
         ;;
-    "update_version"|"release_version"|"create_tag"|"release_build"|"create_cli_tag")
+    "update_version"|"release_version"|"create_tag"|"release_build")
         COMMAND="${1}"
         shift
         ;;
@@ -170,34 +167,6 @@ create_tag(){
     git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 
     echo "tag=refs/tags/${version}" >&6
-}
-
-create_cli_tag(){
-  local git_branch version cli_tag
-
-  version=$(release_version)
-  cli_tag="cli/${version}"
-  git_branch="release/${cli_tag}"
-
-  # Use a separate branch
-  git branch -D "${git_branch}" > /dev/null 2>&1 || true
-  git checkout -b "${git_branch}"
-
-  # Invoke update_version
-  update_version "${version}"
-
-  # Git user info
-  git config user.email || git config --global user.email "info@helidon.io"
-  git config user.name || git config --global user.name "Helidon Robot"
-
-  # Commit version changes
-  git commit -a -m "Release ${cli_tag}"
-
-  # Create and push a git tag
-  git tag -f "${cli_tag}"
-  git push --force origin refs/tags/"${cli_tag}":refs/tags/"${cli_tag}"
-
-  echo "tag=refs/tags/${cli_tag}" >&6
 }
 
 release_build(){

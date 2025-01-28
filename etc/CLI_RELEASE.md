@@ -1,8 +1,13 @@
-## CLI release checklist
+# CLI release checklist
 
 This documentation aims to describe the steps to release the Helidon CLI.
 
-# SDKMan
+## Create CLI release tag
+
+Push a new branch `release-cli-*` to make a usual release and then create a specific cli release tag with this
+shape `cli/${version}`.
+
+## SDKMan
 
 Helidon team possesses credentials to access `SDKMan` REST API to do the following actions:
 
@@ -50,11 +55,11 @@ curl -X POST \
 https://vendors.sdkman.io/announce/struct
 ```
 
-# HomeBrew
+## HomeBrew
 
 Update the `HomeBrew` formula from `homebrew/homebrew-core` to release a new Helidon CLI version.
 
-## Useful links
+# Useful links
 
 * SDKMan: https://sdkman.io/vendors
 * HomeBrew: https://docs.brew.sh/
