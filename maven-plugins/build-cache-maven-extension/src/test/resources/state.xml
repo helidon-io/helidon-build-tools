@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,9 +20,20 @@
     <properties>
         <property name="prop1" value="value1"/>
     </properties>
-    <artifact file="artifact.jar" type="jar" extension="jar" language="java" includesDependencies="false" addedToClasspath="true"/>
+    <artifact file="artifact.jar"
+              type="jar"
+              extension="jar"
+              language="java"
+              includesDependencies="false"
+              addedToClasspath="true"/>
     <attached-artifacts>
-        <artifact file="artifact-javadoc.jar" type="javadoc" extension="jar" classifier="javadoc" language="java" includesDependencies="false" addedToClasspath="false"/>
+        <artifact file="artifact-javadoc.jar"
+                  type="javadoc"
+                  extension="jar"
+                  classifier="javadoc"
+                  language="java"
+                  includesDependencies="false"
+                  addedToClasspath="false"/>
     </attached-artifacts>
     <compile-source-roots>
         <path>src/main/java</path>
@@ -32,7 +43,11 @@
     </test-compile-source-roots>
     <project-files count="7" last-modified="1717820328080"/>
     <executions>
-        <execution groupId="groupId1" artifactId="artifactId1" version="version1" goal="goal1" id="id1">
+        <execution groupId="groupId1"
+                   artifactId="artifactId1"
+                   version="version1"
+                   goal="goal1"
+                   id="id1">
             <configuration>
                 <includes>
                     <include>**/*</include>

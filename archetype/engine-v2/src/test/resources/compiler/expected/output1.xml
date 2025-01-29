@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <output>
+        <transformation id="file-blobs-1">
+            <replace regex="\Q1C1C96FD2CF8330DB0BFA936CE82F3B9\E" replacement="file2"/>
+            <replace regex="\Q826E8142E6BAABE8AF779F5F490CF5F5\E" replacement="file1"/>
+            <replace regex="\QA3F257DC17DAE4716E0B2B681B1118CB\E" replacement="file1.properties"/>
+        </transformation>
+        <transformation id="file-blobs-2">
+            <replace regex="\Q1C1C96FD2CF8330DB0BFA936CE82F3B9\E" replacement="file3"/>
+        </transformation>
+        <transformation id="file-blobs-3">
+            <replace regex="\Q1C1C96FD2CF8330DB0BFA936CE82F3B9\E" replacement="file4"/>
+        </transformation>
+        <files transformations="file-blobs-1">
+            <directory>blobs</directory>
+            <includes>
+                <include>1C1C96FD2CF8330DB0BFA936CE82F3B9</include>
+                <include>826E8142E6BAABE8AF779F5F490CF5F5</include>
+                <include>A3F257DC17DAE4716E0B2B681B1118CB</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </files>
+        <!-- file3 is a duplicate of file2 -->
+        <files transformations="file-blobs-2">
+            <directory>blobs</directory>
+            <includes>
+                <include>1C1C96FD2CF8330DB0BFA936CE82F3B9</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </files>
+        <!-- file4 is a duplicate of file2 -->
+        <files transformations="file-blobs-3">
+            <directory>blobs</directory>
+            <includes>
+                <include>1C1C96FD2CF8330DB0BFA936CE82F3B9</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </files>
+        <transformation id="template-blobs-1">
+            <replace regex="\Q062DF908BA2F10FB56D20B74A2706F78\E" replacement="template2"/>
+            <replace regex="\Q7AC5FAB18C76C18DB005F049D9F3561A\E"
+                     replacement="${module-dir}/${groupId/\./\/}/Main.java"/>
+            <replace regex="\QD5C52BC22C00687FF133AA1047F310E2\E" replacement="template1"/>
+        </transformation>
+        <transformation id="template-blobs-2">
+            <replace regex="\Q062DF908BA2F10FB56D20B74A2706F78\E" replacement="template3"/>
+        </transformation>
+        <transformation id="template-blobs-3">
+            <replace regex="\Q062DF908BA2F10FB56D20B74A2706F78\E" replacement="template4"/>
+        </transformation>
+        <templates engine="mustache" transformations="template-blobs-1">
+            <directory>blobs</directory>
+            <includes>
+                <include>062DF908BA2F10FB56D20B74A2706F78</include>
+                <include>7AC5FAB18C76C18DB005F049D9F3561A</include>
+                <include>D5C52BC22C00687FF133AA1047F310E2</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="template-blobs-2">
+            <directory>blobs</directory>
+            <includes>
+                <include>062DF908BA2F10FB56D20B74A2706F78</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="template-blobs-3">
+            <directory>blobs</directory>
+            <includes>
+                <include>062DF908BA2F10FB56D20B74A2706F78</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+    </output>
+</archetype-script>

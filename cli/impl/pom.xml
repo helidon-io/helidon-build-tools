@@ -99,11 +99,13 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

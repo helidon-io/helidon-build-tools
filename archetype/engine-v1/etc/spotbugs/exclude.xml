@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,12 +32,6 @@
         <!-- Found reliance on default encoding -->
         <Class name="io.helidon.build.archetype.engine.v1.MustacheHelper"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
-    </Match>
-
-    <Match>
-        <!-- Possible null pointer due to return value of called method -->
-        <Class name="io.helidon.build.archetype.engine.v1.MustacheHelper"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
     <Match>

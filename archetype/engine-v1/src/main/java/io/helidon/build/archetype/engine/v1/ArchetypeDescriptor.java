@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,10 +52,10 @@ public final class ArchetypeDescriptor {
         modelVersion = elt.attribute("modelVersion");
         name = elt.attribute("name");
         properties = elt.child("properties")
-                .map(e -> Maps.from(e.children("property"), Property::id, Property::new))
+                .map(e -> Maps.from(e.children("property"), c -> c.attribute("id"), Property::new))
                 .orElse(Map.of());
         transformations = elt.child("transformations")
-                .map(e -> Maps.from(e.children("transformation"), Transformation::id, Transformation::new))
+                .map(e -> Maps.from(e.children("transformation"), c -> c.attribute("id"), Transformation::new))
                 .orElse(Map.of());
         templateSets = elt.child("template-sets")
                 .map(e -> new TemplateSets(e, transformations, properties))

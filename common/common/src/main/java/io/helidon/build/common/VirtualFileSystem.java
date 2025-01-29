@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -28,6 +29,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -62,7 +64,6 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 /**
  * Virtual file system that provides a pseudo chroot.
  */
-@SuppressWarnings("NullableProblems")
 public class VirtualFileSystem extends FileSystem {
 
     private static final ProviderImpl PROVIDER = new ProviderImpl();
@@ -88,6 +89,20 @@ public class VirtualFileSystem extends FileSystem {
      */
     public static FileSystem create() {
         return new VirtualFileSystem(null);
+    }
+
+    /**
+     * Create a random virtual path.
+     *
+     * @param path path
+     * @return Path
+     */
+    public static Path randomPath(String path) {
+        try (FileSystem fs = VirtualFileSystem.create()) {
+            return fs.getPath("/").resolve(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -256,7 +271,6 @@ public class VirtualFileSystem extends FileSystem {
         FileSystemProvider internalProvider() {
             return internal.getFileSystem().provider();
         }
-
 
         @Override
         public VPath getFileName() {
@@ -594,16 +608,14 @@ public class VirtualFileSystem extends FileSystem {
         }
 
         @Override
-        public DirectoryStream<Path> newDirectoryStream(Path path,
-                                                        DirectoryStream.Filter<? super Path> filter) throws IOException {
+        public DirectoryStream<Path> newDirectoryStream(Path path, Filter<? super Path> filter) throws IOException {
             VPath vpath = unwrap0(path);
             Iterator<Path> it = vpath.internalProvider().newDirectoryStream(vpath.internalAbsolute(), filter).iterator();
             Stream<Path> stream = StreamSupport.stream(spliteratorUnknownSize(it, Spliterator.ORDERED), false);
             return new DirectoryStream<>() {
                 @Override
                 public Iterator<Path> iterator() {
-                    return stream.map(p -> (Path) new VPath(vpath.fs, p))
-                                 .iterator();
+                    return stream.map(p -> (Path) new VPath(vpath.fs, p)).iterator();
                 }
 
                 @Override

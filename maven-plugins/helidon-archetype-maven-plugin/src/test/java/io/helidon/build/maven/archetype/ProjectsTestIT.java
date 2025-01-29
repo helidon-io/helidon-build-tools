@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package io.helidon.build.maven.archetype;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
@@ -92,7 +92,9 @@ class ProjectsTestIT {
     void test5(String basedir) throws IOException {
         BuildLog log = new BuildLog(new File(basedir, "build.log"));
         List<String> diffs = log.containsLines(
-                List.of("[ERROR] Regular expression 'foo' at validation 'dummyregex' is not JavaScript compatible"));
+                List.of("Regular expression 'foo' at validation 'dummyregex' is not JavaScript compatible"),
+                String::contains,
+                0);
         assertDiffs(diffs);
     }
 
@@ -118,19 +120,22 @@ class ProjectsTestIT {
         if (prefix != null) {
             projectsDir = projectsDir.resolve(prefix);
         }
-        projectsDir = projectsDir.resolve("target/projects");
+        projectsDir = projectsDir.resolve("target/tests");
         assertThat(Files.exists(projectsDir), is(true));
         return projectsDir;
     }
 
     private static void assertProjectCount(Path projectsDir, int expectedCount) throws IOException {
         int projectCount = 0;
-        for (Path projectDir : Files.newDirectoryStream(projectsDir)) {
-            assertThat(Files.isDirectory(projectDir), is(true));
-            assertThat(projectDir.getFileName().toString(), endsWith("-project"));
-            projectCount++;
+        try (DirectoryStream<Path> paths = Files.newDirectoryStream(projectsDir)) {
+            for (Path path : paths) {
+                if (path.getFileName().toString().endsWith("-project")) {
+                    assertThat(Files.isDirectory(path), is(true));
+                    projectCount++;
+                }
+            }
+            assertThat(projectCount, is(expectedCount));
         }
-        assertThat(projectCount, is(expectedCount));
     }
 
     private static void assertProjectShape(Path projectsDir, String shape) throws IOException {
@@ -158,7 +163,7 @@ class ProjectsTestIT {
 
     private static void assertContains(Path file, List<String> expected) throws IOException {
         assertThat(Files.exists(file), is(true));
-        List<String> lines = Files.lines(file).collect(Collectors.toList());
+        List<String> lines = Files.readAllLines(file);
         for (String expectedLine : expected) {
             assertThat(lines.stream()
                             .filter(line -> line.contains(expectedLine))

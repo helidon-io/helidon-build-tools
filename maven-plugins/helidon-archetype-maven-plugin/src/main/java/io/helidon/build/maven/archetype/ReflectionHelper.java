@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ class ReflectionHelper {
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
             byte[] bytes = classBytes(name);
-            if (bytes != null && bytes.length > 0) {
+            if (bytes.length > 0) {
                 return defineClass(name, bytes, 0, bytes.length);
             }
             return super.findClass(name);

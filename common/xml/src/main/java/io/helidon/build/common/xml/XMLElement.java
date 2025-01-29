@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +47,13 @@ import static java.util.Collections.unmodifiableMap;
 public interface XMLElement {
 
     /**
+     * Get the parent.
+     *
+     * @return parent or {@code null} if root element
+     */
+    XMLElement parent();
+
+    /**
      * Get the name.
      *
      * @return name, never {@code null}
@@ -49,11 +61,26 @@ public interface XMLElement {
     String name();
 
     /**
-     * Get the parent.
+     * Get the value.
      *
-     * @return parent or {@code null} if root element
+     * @return value, never {@code null}
      */
-    XMLElement parent();
+    String value();
+
+    /**
+     * Set the value.
+     *
+     * @param value value
+     * @return this instance
+     */
+    XMLElement value(String value);
+
+    /**
+     * Get the attributes.
+     *
+     * @return attributes, never {@code null}
+     */
+    Map<String, String> attributes();
 
     /**
      * Get the children.
@@ -68,7 +95,11 @@ public interface XMLElement {
      * @param name name
      * @return XMLElement, or {@code null} if not found
      */
-    List<XMLElement> children(String name);
+    default List<XMLElement> children(String name) {
+        return children().stream()
+                .filter(e -> e.name().equals(name))
+                .collect(Collectors.toList());
+    }
 
     /**
      * Get children by path.
@@ -93,7 +124,9 @@ public interface XMLElement {
      * @param name name
      * @return optional
      */
-    Optional<XMLElement> child(String name);
+    default Optional<XMLElement> child(String name) {
+        return children(name).stream().findFirst();
+    }
 
     /**
      * Get a child by path.
@@ -113,11 +146,55 @@ public interface XMLElement {
     }
 
     /**
-     * Get the attributes.
+     * Traverse this element.
      *
-     * @return attributes, never {@code null}
+     * @return Iterable
      */
-    Map<String, String> attributes();
+    default Iterable<XMLElement> traverse() {
+        return traverse(n -> true);
+    }
+
+    /**
+     * Traverse this element.
+     *
+     * @param predicate predicate
+     * @return Iterable
+     */
+    default Iterable<XMLElement> traverse(Predicate<XMLElement> predicate) {
+        XMLElement self = this;
+        return () -> {
+            Deque<XMLElement> stack = new ArrayDeque<>();
+            stack.push(self);
+            return new Iterator<>() {
+                private XMLElement next;
+
+                @Override
+                public boolean hasNext() {
+                    while (next == null && !stack.isEmpty()) {
+                        XMLElement node = stack.pop();
+                        List<XMLElement> children = node.children();
+                        for (int i = children.size() - 1; i >= 0; i--) {
+                            stack.push(children.get(i));
+                        }
+                        if (predicate.test(node)) {
+                            next = node;
+                        }
+                    }
+                    return next != null;
+                }
+
+                @Override
+                public XMLElement next() {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                    XMLElement node = next;
+                    next = null;
+                    return node;
+                }
+            };
+        };
+    }
 
     /**
      * Get an attribute value.
@@ -187,25 +264,36 @@ public interface XMLElement {
     }
 
     /**
-     * Get the value.
-     *
-     * @return value, never {@code null}
-     */
-    String value();
-
-    /**
-     * Set the value.
-     *
-     * @param value value
-     */
-    void value(String value);
-
-    /**
      * Traverse this element.
      *
      * @param visitor visitor
+     * @param <T>     visitor type
+     * @return visitor
      */
-    void visit(Visitor visitor);
+    default <T extends Visitor> T visit(T visitor) {
+        Deque<XMLElement> stack = new ArrayDeque<>();
+        stack.push(this);
+        XMLElement parent = this.parent();
+        while (!stack.isEmpty()) {
+            XMLElement elt = stack.peek();
+            if (elt == parent) {
+                visitor.postVisitElement(elt);
+                parent = elt.parent();
+                stack.pop();
+            } else {
+                visitor.visitElement(elt);
+                List<XMLElement> children = elt.children();
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    stack.push(children.get(i));
+                }
+                if (parent != elt.parent()) {
+                    throw new IllegalStateException("Parent mismatch");
+                }
+                parent = elt;
+            }
+        }
+        return visitor;
+    }
 
     /**
      * Create a detached copy where this element is the root.
@@ -213,6 +301,20 @@ public interface XMLElement {
      * @return XMLElement
      */
     XMLElement detach();
+
+    /**
+     * Render an element to a string.
+     *
+     * @param pretty {@code true} for newlines and indentation
+     * @return String
+     */
+    default String toString(boolean pretty) {
+        StringWriter buf = new StringWriter();
+        try (XMLGenerator writer = new XMLGenerator(buf, pretty)) {
+            writer.append(this);
+        }
+        return buf.toString();
+    }
 
     /**
      * Visitor.
@@ -244,65 +346,42 @@ public interface XMLElement {
      * @throws XMLException if a parsing error occurs
      */
     static XMLElement parse(InputStream is) throws IOException {
-        ReaderImpl reader = new ReaderImpl();
-        new XMLParser(is, reader).parse();
-        if (!reader.stack.isEmpty()) {
-            return reader.stack.pop().build();
+        try (XMLReader reader = new XMLReader(is)) {
+            return reader.readElement();
         }
-        throw new XMLException("document is empty");
     }
 
-    final class UnmodifiableXMLElement extends XMLElementImpl {
+    /**
+     * Create a new builder.
+     *
+     * @return Builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * {@link XMLElementImpl} implementation.
+     */
+    final class XMLElementImpl implements XMLElement {
 
         private final Map<String, List<XMLElement>> names = new HashMap<>();
-
-        private UnmodifiableXMLElement(XMLElement parent, List<XMLElement> children, Builder builder) {
-            super(parent, unmodifiableList(children), unmodifiableMap(builder.attributes), builder.name, builder.value);
-        }
-
-        @Override
-        public void value(String value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<XMLElement> children(String name) {
-            return names.computeIfAbsent(name, super::children);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return super.equals(o);
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode();
-        }
-    }
-
-    class XMLElementImpl implements XMLElement {
-
-        private final XMLElement parent;
-        private final List<XMLElement> children;
-        private final Map<String, String> attributes;
+        private final XMLElementImpl parent;
         private final String name;
+        private final Map<String, String> attributes;
+        private final List<XMLElement> children;
         private String value;
 
-        private XMLElementImpl(XMLElement parent,
-                               List<XMLElement> children,
-                               Map<String, String> attributes,
-                               String name,
-                               String value) {
+        XMLElementImpl(XMLElementImpl parent, Builder builder) {
             this.parent = parent;
-            this.children = children;
-            this.attributes = attributes;
-            this.name = Objects.requireNonNull(name, "name is null!");
-            this.value = value;
+            this.name = Objects.requireNonNull(builder.name, "name is null!");
+            this.attributes = unmodifiableMap(builder.attributes);
+            this.children = unmodifiableList(builder.children);
         }
 
-        private XMLElementImpl(XMLElement parent, List<XMLElement> children, Builder builder) {
-            this(parent, children, builder.attributes, builder.name, builder.value);
+        @Override
+        public XMLElementImpl parent() {
+            return parent;
         }
 
         @Override
@@ -311,8 +390,17 @@ public interface XMLElement {
         }
 
         @Override
-        public XMLElement parent() {
-            return parent;
+        public String value() {
+            return value != null ? value : "";
+        }
+
+        @Override
+        public XMLElement value(String value) {
+            if (this.value != null) {
+                throw new IllegalStateException("Value already set");
+            }
+            this.value = value;
+            return this;
         }
 
         @Override
@@ -321,77 +409,26 @@ public interface XMLElement {
         }
 
         @Override
-        public List<XMLElement> children(String name) {
-            return children.stream().filter(e -> e.name().equals(name)).collect(Collectors.toList());
-        }
-
-        @Override
-        public Optional<XMLElement> child(String name) {
-            return children(name).stream().findFirst();
-        }
-
-        @Override
         public Map<String, String> attributes() {
             return attributes;
         }
 
         @Override
-        public String value() {
-            return value;
-        }
-
-        @Override
-        public void value(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public void visit(Visitor visitor) {
-            Deque<XMLElement> stack = new ArrayDeque<>();
-            stack.push(this);
-            XMLElement parent = this.parent;
-            while (!stack.isEmpty()) {
-                XMLElement elt = stack.peek();
-                if (elt == parent) {
-                    visitor.postVisitElement(elt);
-                    parent = elt.parent();
-                    stack.pop();
-                } else {
-                    visitor.visitElement(elt);
-                    parent = elt;
-                    List<XMLElement> children = elt.children();
-                    for (int i = children.size() - 1; i >= 0; i--) {
-                        stack.push(children.get(i));
-                    }
-                }
-            }
+        public List<XMLElement> children(String name) {
+            return names.computeIfAbsent(name, XMLElement.super::children);
         }
 
         @Override
         public XMLElement detach() {
-            Deque<XMLElement.Builder> stack = new ArrayDeque<>();
-            visit(new Visitor() {
-                @Override
-                public void visitElement(XMLElement elt) {
-                    Builder builder = XMLElement.builder()
-                            .modifiable(!(elt instanceof UnmodifiableXMLElement))
-                            .name(elt.name())
-                            .attributes(elt.attributes())
-                            .value(elt.value());
-                    if (!stack.isEmpty()) {
-                        stack.peek().child(builder);
-                    }
-                    stack.push(builder);
-                }
+            if (parent == null) {
+                return this;
+            }
+            return visit(new CopyVisitor<>(XMLElementImpl::new, XMLElementImpl::parent)).element();
+        }
 
-                @Override
-                public void postVisitElement(XMLElement elt) {
-                    if (stack.size() > 1) {
-                        stack.pop();
-                    }
-                }
-            });
-            return stack.pop().build();
+        @Override
+        public String toString() {
+            return toString(true);
         }
 
         @Override
@@ -413,40 +450,78 @@ public interface XMLElement {
         public int hashCode() {
             return Objects.hash(children, attributes, name, value);
         }
-
-        @Override
-        public String toString() {
-            StringWriter buf = new StringWriter();
-            XMLWriter writer = new XMLWriter(buf);
-            writer.append(this);
-            writer.close();
-            return buf.toString();
-        }
-    }
-
-    /**
-     * Create a new builder.
-     *
-     * @return Builder
-     */
-    static Builder builder() {
-        return new Builder();
     }
 
     /**
      * Builder of {@link XMLElement}.
      */
-    final class Builder {
+    final class Builder implements XMLElement {
 
+        private final List<XMLElement> children = new ArrayList<>();
+        private final Map<String, String> attributes = new LinkedHashMap<>();
         private Builder parent;
         private String name;
-        private final List<Builder> childBuilders = new ArrayList<>();
-        private Map<String, String> attributes = Map.of();
-        private String value = "";
-        private boolean modifiable;
+        private String value;
 
-        private XMLElement elt;
-        private List<XMLElement> childElements = List.of();
+        private Builder() {
+        }
+
+        @Override
+        public Builder parent() {
+            return parent;
+        }
+
+        /**
+         * Set the parent.
+         *
+         * @param parent parent
+         * @return this builder
+         */
+        public Builder parent(Builder parent) {
+            this.parent = parent;
+            return this;
+        }
+
+        @Override
+        public String name() {
+            return String.valueOf(name);
+        }
+
+        @Override
+        public String value() {
+            return value != null ? value : "";
+        }
+
+        @Override
+        public Builder value(String value) {
+            if (value != null) {
+                this.value = value;
+            }
+            return this;
+        }
+
+        @Override
+        public List<XMLElement> children() {
+            return children;
+        }
+
+        @Override
+        public Map<String, String> attributes() {
+            return attributes;
+        }
+
+        @Override
+        public Builder detach() {
+            if (parent == null) {
+                return this;
+            }
+            return visit(new CopyVisitor<Builder>((p, b) -> b, Builder::parent)).element();
+        }
+
+        @Override
+        public String toString() {
+            return toString(true);
+        }
 
         /**
          * Set the element name.
@@ -460,38 +535,13 @@ public interface XMLElement {
         }
 
         /**
-         * Set the element attributes.
+         * Add element attributes.
          *
          * @param attributes attributes
          * @return this builder
          */
         public Builder attributes(Map<String, String> attributes) {
-            this.attributes = new HashMap<>(attributes);
-            return this;
-        }
-
-        /**
-         * Set the element value.
-         *
-         * @param value value
-         * @return this builder
-         */
-        public Builder value(String value) {
-            if (value != null) {
-                this.value = value;
-            }
-            return this;
-        }
-
-        /**
-         * Add a child.
-         *
-         * @param child child builder
-         * @return this builder
-         */
-        public Builder child(Builder child) {
-            childBuilders.add(child);
-            child.parent = this;
+            this.attributes.putAll(attributes);
             return this;
         }
 
@@ -502,19 +552,10 @@ public interface XMLElement {
          * @return this builder
          */
         public Builder child(Consumer<Builder> consumer) {
-            Builder child = new Builder().modifiable(modifiable);
-            consumer.accept(child);
-            return child(child);
-        }
-
-        /**
-         * Configure whether to create a modifiable element.
-         *
-         * @param modifiable {@code} true to create a modifiable element
-         * @return this builder
-         */
-        public Builder modifiable(boolean modifiable) {
-            this.modifiable = modifiable;
+            Builder builder = new Builder();
+            consumer.accept(builder);
+            children.add(builder);
+            builder.parent(this);
             return this;
         }
 
@@ -524,65 +565,65 @@ public interface XMLElement {
          * @return XMLElement
          */
         public XMLElement build() {
-            Deque<Builder> builders = new ArrayDeque<>(childBuilders);
-            elt = build0();
-            while (!builders.isEmpty()) {
-                Builder builder = builders.pop();
-                builder.elt = builder.build0();
-                builder.parent.childElements.add(builder.elt);
-                for (int i = builder.childBuilders.size() - 1; i >= 0; i--) {
-                    builders.push(builder.childBuilders.get(i));
-                }
-            }
-            return elt;
-        }
-
-        private XMLElement build0() {
-            childElements = new ArrayList<>();
-            XMLElement parentElt = parent != null ? parent.elt : null;
-            if (modifiable) {
-                return new XMLElementImpl(parentElt, childElements, this);
-            }
-            return new UnmodifiableXMLElement(parentElt, childElements, this);
+            return visit(new CopyVisitor<>(XMLElementImpl::new, XMLElementImpl::parent)).element();
         }
     }
 
-    final class ReaderImpl implements XMLReader {
+    /**
+     * Copy visitor.
+     *
+     * @param <T> output element type
+     */
+    final class CopyVisitor<T extends XMLElement> implements Visitor {
 
-        private final Deque<Builder> stack = new ArrayDeque<>();
+        private Builder builder = null;
+        private T node;
+        private T last = null;
+        private final BiFunction<T, Builder, T> pushFunc;
+        private final Function<T, T> popFunc;
 
-        @Override
-        public void startElement(String name, Map<String, String> attributes) {
-            Builder ctx = new Builder();
-            ctx.parent = stack.peek();
-            ctx.name = name;
-            ctx.attributes = attributes;
-            stack.push(ctx);
+        CopyVisitor(BiFunction<T, Builder, T> pushFunc, Function<T, T> popFunc) {
+            this.pushFunc = pushFunc;
+            this.popFunc = popFunc;
         }
 
         @Override
-        public void endElement(String name) {
-            Builder ctx = peek();
-            if (ctx.parent != null) {
-                ctx.parent.childBuilders.add(ctx);
-            }
-            if (stack.size() > 1) {
-                stack.pop();
+        public void visitElement(XMLElement elt) {
+            builder = XMLElement.builder()
+                    .parent(builder)
+                    .name(elt.name())
+                    .value(elt.value())
+                    .attributes(elt.attributes());
+            node = pushFunc.apply(node, builder);
+            node.value(elt.value());
+            if (builder.parent != null) {
+                builder.parent.children.add(node);
             }
         }
 
         @Override
-        public void elementText(String data) {
-            Builder ctx = peek();
-            ctx.value = data;
+        public void postVisitElement(XMLElement elt) {
+            if (node != null) {
+                T parent = popFunc.apply(node);
+                if (parent != null) {
+                    last = parent;
+                }
+                node = parent;
+                builder = builder.parent;
+            }
         }
 
-        private Builder peek() {
-            Builder ctx = stack.peek();
-            if (ctx == null) {
-                throw new IllegalStateException("context is null");
+        /**
+         * Get the copy.
+         *
+         * @return copy
+         * @throws NoSuchElementException if the element is {@code null}
+         */
+        public T element() {
+            if (last == null) {
+                throw new NoSuchElementException("No element found");
             }
-            return ctx;
+            return last;
         }
     }
 }

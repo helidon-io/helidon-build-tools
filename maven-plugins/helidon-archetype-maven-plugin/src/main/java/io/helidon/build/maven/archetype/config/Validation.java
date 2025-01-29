@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,22 +99,16 @@ public class Validation {
         String error = String.format("Validation failed in directory %s", basedir);
         boolean isMatch;
         Predicate<SourcePath> matches = path -> path.matches(patterns);
-        switch (match) {
-            case "all":
-                isMatch = paths.stream().allMatch(matches);
-                break;
-            case "any":
-                isMatch = paths.stream().anyMatch(matches);
-                break;
-            case "none":
-                isMatch = paths.stream().noneMatch(matches);
-                break;
-            default:
-                throw new MojoExecutionException("Wrong validation match value: " + match);
-        }
+        isMatch = switch (match) {
+            case "all" -> paths.stream().allMatch(matches);
+            case "any" -> paths.stream().anyMatch(matches);
+            case "none" -> paths.stream().noneMatch(matches);
+            default -> throw new MojoExecutionException("Wrong validation match value: " + match);
+        };
         if (isMatch == fail) {
-            throw new MojoExecutionException(
-                    String.format("%s with patterns: %s match: %s, fail: %s", error, patterns, match, fail));
+            throw new MojoExecutionException(String.format(
+                    "%s with patterns: %s match: %s, fail: %s",
+                    error, patterns, match, fail));
         }
     }
 }

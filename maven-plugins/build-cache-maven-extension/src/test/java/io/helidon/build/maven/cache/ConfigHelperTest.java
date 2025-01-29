@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.build.maven.cache;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.List;
 
 import io.helidon.build.common.xml.XMLElement;
 
@@ -52,7 +51,7 @@ class ConfigHelperTest {
 
     @Test
     void testSiblings() throws Exception {
-        List<XMLElement> nodes = parse("<a><b><c>d</c><c>e</c></b></a>").children().get(0).children();
+        var nodes = parse("<a><b><c>d</c><c>e</c></b></a>").children().get(0).children();
         XMLElement node0 = nodes.get(0);
         assertThat(ConfigHelper.index(node0), is(0));
         assertThat(ConfigHelper.path(node0), is("a/b/c[0]"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,24 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.InputStreams;
+import io.helidon.build.common.LazyValue;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.logging.LogLevel;
+import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
-import static io.helidon.build.cli.tests.FunctionalUtils.getProperty;
-import static io.helidon.build.cli.tests.FunctionalUtils.setMavenLocalRepoUrl;
+import static io.helidon.build.cli.tests.FunctionalUtils.EXECUTABLE_DIR;
+import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
+import static io.helidon.build.cli.tests.FunctionalUtils.requiredProperty;
 import static io.helidon.build.common.FileUtils.list;
+import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.unzip;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -48,35 +53,36 @@ import static org.hamcrest.Matchers.not;
  */
 class CliDistributionTest {
 
-    private static final Logger LOGGER = Logger.getLogger(CliDistributionTest.class.getName());
-    private static Path distDir;
+    private static final LazyValue<Path> DIST_ZIP = new LazyValue<>(CliDistributionTest::helidonCliZip);
+    private static final LazyValue<Path> DIST_DIR = new LazyValue<>(CliDistributionTest::distDir);
     private static final String CLI_VERSION_KEY = "cli.version";
-    private static final String DIST_BASE_DIR = "helidon-" + getProperty(CLI_VERSION_KEY);
+    private static final String DIST_BASE_DIR = "helidon-" + requiredProperty(CLI_VERSION_KEY);
+
+    static {
+        LogLevel.set(LogLevel.DEBUG);
+    }
 
     @BeforeAll
-    static void setup() throws IOException {
-        setMavenLocalRepoUrl();
-        distDir = Files.createTempDirectory("dist");
-        Path targetDir = Path.of(getProperty("helidon.executable.directory"));
-        LOGGER.info("targetDir - " + targetDir.toRealPath());
-        Path cliZip = targetDir.resolve("target/helidon-cli.zip");
-        LOGGER.info("cliZip - " + cliZip.toRealPath());
-        unzip(cliZip, distDir);
+    static void setup() {
+        System.setProperty("io.helidon.build.common.maven.url.localRepo", MAVEN_LOCAL_REPO.get());
+        Log.debug("Unzipping " + DIST_ZIP);
+        unzip(DIST_ZIP.get(), DIST_DIR.get());
     }
 
     @Test
     void testCliContent() {
-        List<String> content = list(distDir, 4).stream()
+        List<String> content = list(DIST_DIR.get(), 4).stream()
                 .peek(p -> assertThat(Files.exists(p), is(true)))
-                .map(p -> distDir.relativize(p))
+                .map(DIST_DIR.get()::relativize)
                 .map(Path::toString)
                 .map(s -> s.replace("\\", "/"))
                 .collect(Collectors.toList());
 
-        //Ensure main directory are present
+        // ensure the main directories are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/libs"));
-        //Ensure main files are present
+
+        // ensure the main files are present
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/bin/helidon.bat"));
         assertThat(content, hasItems(DIST_BASE_DIR + "/helidon-cli.jar"));
@@ -86,29 +92,29 @@ class CliDistributionTest {
     @Test
     @EnabledOnOs(value = {OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellCreateProject() throws IOException {
-        runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
+        runCreateProjectTest(DIST_DIR.get().resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
     @EnabledOnOs(value = {OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testBatchCreateProject() throws IOException {
-        runCreateProjectTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
+        runCreateProjectTest(DIST_DIR.get().resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
 
     @Test
     @EnabledOnOs(value = {OS.LINUX, OS.MAC}, disabledReason = "Run only on Mac or Linux")
     void testShellVersion() throws IOException {
-        runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon").toString());
+        runVersionTest(DIST_DIR.get().resolve(DIST_BASE_DIR + "/bin/helidon").toString());
     }
 
     @Test
     @EnabledOnOs(value = {OS.WINDOWS}, disabledReason = "Run only on Windows")
     void testVersion() throws IOException {
-        runVersionTest(distDir.resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
+        runVersionTest(DIST_DIR.get().resolve(DIST_BASE_DIR + "/bin/helidon.bat").toString());
     }
 
-    private void runVersionTest(String cliExecutable) throws IOException {
-        String expectedVersion = getProperty(CLI_VERSION_KEY);
+    void runVersionTest(String cliExecutable) throws IOException {
+        String expectedVersion = requiredProperty(CLI_VERSION_KEY);
         Process process = new ProcessBuilder()
                 .command(cliExecutable, "version")
                 .start();
@@ -121,7 +127,7 @@ class CliDistributionTest {
         assertThat(versionLine.contains(expectedVersion), is(true));
     }
 
-    private void runCreateProjectTest(String cliExecutable) throws IOException {
+    void runCreateProjectTest(String cliExecutable) throws IOException {
         try {
             Path dir = Files.createTempDirectory("project");
             Process process = new ProcessBuilder()
@@ -130,15 +136,27 @@ class CliDistributionTest {
                     .start()
                     .onExit()
                     .get(5, TimeUnit.MINUTES);
-            String result = String.join("", InputStreams.toLines(process.getInputStream()));
-            LOGGER.info("errors - " + InputStreams.toLines(process.getErrorStream()));
+            String result = InputStreams.toString(process.getInputStream());
+            Log.debug("errors - " + InputStreams.toString(process.getErrorStream()));
             process.destroy();
-            LOGGER.info("exitValue - " + process.exitValue());
-            LOGGER.info(result);
+            Log.debug("exitValue - " + process.exitValue());
+            Log.debug(result);
             assertThat(result, containsString("Switch directory to"));
             assertThat(list(dir).size(), is(not(0)));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static Path distDir() {
+        Path workDir = TestFiles.targetDir(CliDistributionTest.class).resolve("cli-distribution-test");
+        return unique(workDir, "helidon-cli");
+    }
+
+    static Path helidonCliZip() {
+        return EXECUTABLE_DIR.get()
+                .resolve("target/helidon-cli.zip")
+                .toAbsolutePath()
+                .normalize();
     }
 }

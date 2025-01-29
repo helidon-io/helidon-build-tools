@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ final class FileHeaderJavacPluginTest {
                         + "package com.acme.test;\n"
                         + "class HeaderTest1 {\n"
                         + "}"));
-        assertThat(compiler.call(true), is(true));
+        assertThat(compiler.call(), is(true));
         assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest1"), is(normalizeNewLines(header)));
     }
 
@@ -69,7 +69,7 @@ final class FileHeaderJavacPluginTest {
                         + "    static final class Nested {\n"
                         + "    }\n"
                         + "}"));
-        assertThat(compiler.call(true), is(true));
+        assertThat(compiler.call(), is(true));
         assertThat(FileHeaderJavacPlugin.header("com.acme.test.HeaderTest2.Nested"),
                 is(normalizeNewLines(header)));
     }

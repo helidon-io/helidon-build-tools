@@ -1,0 +1,759 @@
+{
+    "expressions": {
+        "1": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            }
+        ],
+        "2": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "operator",
+                "value": "!"
+            }
+        ],
+        "3": [
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "!"
+            }
+        ],
+        "4": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "!"
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            }
+        ],
+        "5": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "!"
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            }
+        ],
+        "6": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            }
+        ],
+        "7": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "8": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": "foo"
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "9": [
+            {
+                "kind": "literal",
+                "value": "aaa"
+            },
+            {
+                "kind": "literal",
+                "value": "aaa"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": ""
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "10": [
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": "bar"
+            },
+            {
+                "kind": "literal",
+                "value": "foo1"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            }
+        ],
+        "11": [
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": "bar"
+            },
+            {
+                "kind": "literal",
+                "value": "foo1"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            }
+        ],
+        "12": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def1"
+            },
+            {
+                "kind": "operator",
+                "value": "!="
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "13": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def1"
+            },
+            {
+                "kind": "operator",
+                "value": "!="
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "14": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def1"
+            },
+            {
+                "kind": "operator",
+                "value": "!="
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            }
+        ],
+        "15": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def1"
+            },
+            {
+                "kind": "operator",
+                "value": "!="
+            }
+        ],
+        "16": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ],
+        "17": [
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "!="
+            }
+        ],
+        "18": [
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ],
+        "19": [
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ],
+        "20": [
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            },
+            {
+                "kind": "literal",
+                "value": false
+            },
+            {
+                "kind": "operator",
+                "value": "&&"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ],
+        "21": [
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ],
+        "22": [
+            {
+                "kind": "literal",
+                "value": "true"
+            },
+            {
+                "kind": "literal",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "||"
+            }
+        ],
+        "23": [
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "literal",
+                "value": [
+                    "",
+                    "adc",
+                    "def"
+                ]
+            },
+            {
+                "kind": "operator",
+                "value": "contains"
+            }
+        ],
+        "24": [
+            {
+                "kind": "literal",
+                "value": true
+            },
+            {
+                "kind": "variable",
+                "value": "def"
+            },
+            {
+                "kind": "operator",
+                "value": "=="
+            }
+        ]
+    },
+    "methods": {},
+    "children": [
+        {
+            "kind": "step",
+            "id": "1",
+            "name": "Step1",
+            "if": "1"
+        },
+        {
+            "kind": "step",
+            "id": "2",
+            "name": "Step2",
+            "if": "2"
+        },
+        {
+            "kind": "step",
+            "id": "3",
+            "name": "Step3",
+            "if": "3"
+        },
+        {
+            "kind": "step",
+            "id": "4",
+            "name": "Step4",
+            "if": "4"
+        },
+        {
+            "kind": "step",
+            "id": "5",
+            "name": "Step5",
+            "if": "5"
+        },
+        {
+            "kind": "step",
+            "id": "6",
+            "name": "Step6",
+            "if": "6"
+        },
+        {
+            "kind": "step",
+            "id": "7",
+            "name": "Step7",
+            "if": "7"
+        },
+        {
+            "kind": "step",
+            "id": "8",
+            "name": "Step8",
+            "if": "8"
+        },
+        {
+            "kind": "step",
+            "id": "9",
+            "name": "Step9",
+            "if": "9"
+        },
+        {
+            "kind": "step",
+            "id": "10",
+            "name": "Step10",
+            "if": "10"
+        },
+        {
+            "kind": "step",
+            "id": "11",
+            "name": "Step11",
+            "if": "11"
+        },
+        {
+            "kind": "step",
+            "id": "12",
+            "name": "Step12",
+            "if": "12"
+        },
+        {
+            "kind": "step",
+            "id": "13",
+            "name": "Step13",
+            "if": "13"
+        },
+        {
+            "kind": "step",
+            "id": "14",
+            "name": "Step14",
+            "if": "14"
+        },
+        {
+            "kind": "step",
+            "id": "15",
+            "name": "Step15",
+            "if": "15"
+        },
+        {
+            "kind": "step",
+            "id": "16",
+            "name": "Step16",
+            "if": "16"
+        },
+        {
+            "kind": "step",
+            "id": "17",
+            "name": "Step17",
+            "if": "17"
+        },
+        {
+            "kind": "step",
+            "id": "18",
+            "name": "Step18",
+            "if": "18"
+        },
+        {
+            "kind": "step",
+            "id": "19",
+            "name": "Step19",
+            "if": "19"
+        },
+        {
+            "kind": "step",
+            "id": "20",
+            "name": "Step20",
+            "if": "20"
+        },
+        {
+            "kind": "step",
+            "id": "21",
+            "name": "Step21",
+            "if": "21"
+        },
+        {
+            "kind": "step",
+            "id": "22",
+            "name": "Step22",
+            "if": "22"
+        },
+        {
+            "kind": "step",
+            "id": "23",
+            "name": "Step23",
+            "if": "23"
+        },
+        {
+            "kind": "step",
+            "id": "24",
+            "name": "Step24",
+            "if": "24"
+        }
+    ]
+}

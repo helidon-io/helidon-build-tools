@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,57 +15,259 @@
  */
 package io.helidon.build.common.xml;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Predicate;
+
+import io.helidon.build.common.xml.XMLElement.XMLElementImpl;
+import io.helidon.build.common.xml.XMLParser.Event;
 
 /**
- * XML Reader.
+ * XML reader.
  */
-public interface XMLReader {
+public class XMLReader implements AutoCloseable {
+
+    private final XMLParser parser;
+    private final String source;
 
     /**
-     * Receive notification of the start of an element.
+     * Create a new instance.
      *
-     * @param name       the element name
-     * @param attributes the element attributes
-     * @throws io.helidon.build.common.xml.XMLReaderException if any error occurs
+     * @param is     input stream
+     * @param source source
      */
-    default void startElement(String name, Map<String, String> attributes) {
+    public XMLReader(InputStream is, String source) {
+        this.parser = new XMLParser(is);
+        this.source = source;
     }
 
     /**
-     * Receive notification of the end of an element.
+     * Create a new instance.
      *
-     * @param name the element name
-     * @throws io.helidon.build.common.xml.XMLReaderException if any error occurs
+     * @param is input stream
      */
-    default void endElement(String name) {
+    public XMLReader(InputStream is) {
+        this(is, "unknown");
     }
 
     /**
-     * Receive notification of text data inside an element.
+     * Get the current line number.
      *
-     * @param data the text data
-     * @throws io.helidon.build.common.xml.XMLReaderException if any error occurs
+     * @return line number
      */
-    default void elementText(String data) {
+    public int lineNumber() {
+        return parser.lineNumber();
     }
 
     /**
-     * Continue action, can be overridden to stop parsing.
+     * Get the current column number.
      *
-     * @return {@code true} to keep parsing, {@code false} to stop parsing
+     * @return column number
      */
-    default boolean keepParsing() {
-        return true;
+    public int colNumber() {
+        return parser.colNumber();
+    }
+
+    @Override
+    public void close() throws IOException {
+        parser.close();
     }
 
     /**
-     * Receive notification of content data inside a processing instruction element.
+     * Read a DOM element.
      *
-     * @param data   the content data of a processing instruction
-     * @param target the name of an application to which the instruction is directed
-     * @throws io.helidon.build.common.xml.XMLReaderException if any error occurs
+     * @return XMLElement, never null
+     * @throws XMLException if an error occurs
      */
-    default void processingInstruction(String target, String data) {
+    public XMLElement readElement() {
+        XMLElement.Builder builder = null;
+        XMLElementImpl node = null;
+        XMLElementImpl first = null;
+        XMLElementImpl last = null;
+        StringBuilder sb = new StringBuilder();
+        while (parser.hasNext()) {
+            Event event = parser.next();
+            switch (event) {
+                case ELT_START:
+                    sb.setLength(0);
+                    builder = XMLElement.builder()
+                            .parent(builder)
+                            .name(parser.value())
+                            .attributes(readAttributes());
+                    node = new XMLElementImpl(node, builder);
+                    if (first == null) {
+                        first = node;
+                    }
+                    if (builder.parent() != null) {
+                        builder.parent().children().add(node);
+                    }
+                    break;
+                case SELF_CLOSE:
+                case ELT_CLOSE:
+                    if (event == Event.ELT_CLOSE) {
+                        String name = parser.value();
+                        if (node == null || !name.equals(node.name())) {
+                            throw unexpectedElement(name);
+                        }
+                    }
+                    if (node != null) {
+                        node.value(sb.toString());
+                        sb.setLength(0);
+                        XMLElementImpl parent = node.parent();
+                        if (parent == null) {
+                            last = node;
+                        }
+                        node = parent;
+                        builder = builder.parent();
+                    }
+                    break;
+                case CDATA:
+                    sb.append(parser.value());
+                    break;
+                case TEXT:
+                    String value = parser.value();
+                    if (!value.isBlank()) {
+                        sb.append(value);
+                    }
+                    break;
+                default:
+            }
+        }
+        if (last == null || first != last) {
+            throw new XMLException("Invalid element");
+        }
+        return last;
+    }
+
+    /**
+     * Read attributes.
+     *
+     * @return attributes
+     */
+    public Map<String, String> readAttributes() {
+        Map<String, String> attributes = new LinkedHashMap<>();
+        String key = null;
+        while (parser.hasNext()) {
+            Event next = parser.peek();
+            switch (next) {
+                case ATTR_NAME:
+                    key = parser.value();
+                    parser.skip();
+                    break;
+                case ATTR_VALUE:
+                    attributes.put(key, parser.value());
+                    key = null;
+                    parser.skip();
+                    break;
+                default:
+                    return attributes;
+            }
+        }
+        throw new XMLException("Unexpected EOF");
+    }
+
+    /**
+     * Read the next element name.
+     *
+     * @return name
+     */
+    public String readName() {
+        while (parser.hasNext()) {
+            Event event = parser.next();
+            if (event == Event.ELT_START) {
+                return parser.value();
+            }
+        }
+        throw new XMLException("Unexpected EOF");
+    }
+
+    /**
+     * Read.
+     *
+     * @param predicate predicate
+     */
+    public void read(Predicate<String> predicate) {
+        Deque<String> names = new ArrayDeque<>();
+        while (parser.hasNext()) {
+            Event event = parser.peek();
+            String name;
+            switch (event) {
+                case ELT_START:
+                    parser.skip();
+                    name = parser.value();
+                    names.push(name);
+                    if (!predicate.test(name)) {
+                        return;
+                    }
+                    break;
+                case SELF_CLOSE:
+                case ELT_CLOSE:
+                    if (names.isEmpty()) {
+                        return;
+                    }
+                    name = parser.value();
+                    String expected = names.pop();
+                    if (event == Event.ELT_CLOSE) {
+                        if (!name.equals(expected)) {
+                            throw unexpectedElement(name);
+                        }
+                    }
+                    parser.skip();
+                    break;
+                default:
+                    parser.skip();
+            }
+        }
+    }
+
+    /**
+     * Read text.
+     *
+     * @return text or {@code null} if empty
+     */
+    public String readText() {
+        boolean cdata = false;
+        StringBuilder sb = null;
+        while (parser.hasNext()) {
+            Event event = parser.peek();
+            String value;
+            switch (event) {
+                case TEXT:
+                    parser.skip();
+                    value = parser.value();
+                    if (!value.isEmpty() && !cdata) {
+                        if (sb == null) {
+                            sb = new StringBuilder();
+                        }
+                        sb.append(value);
+                    }
+                    break;
+                case CDATA:
+                    parser.skip();
+                    value = parser.value();
+                    if (!cdata) {
+                        sb = new StringBuilder();
+                        cdata = true;
+                    }
+                    sb.append(value);
+                    break;
+                case SELF_CLOSE:
+                case ELT_CLOSE:
+                    return sb != null ? sb.toString() : null;
+                default:
+                    // ignore
+            }
+        }
+        throw new IllegalStateException("Unexpected EOF");
+    }
+
+    private XMLException unexpectedElement(String elt) {
+        return new XMLException(String.format(
+                "Unexpected element: %s, location=%s:%d:%d",
+                elt, source, parser.lineNumber(), parser.colNumber()));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ class JavaParser {
      * @param is input stream
      * @return package name, never {@code null}
      */
-    static String packge(InputStream is) {
+    static String pkg(InputStream is) {
         return new JavaParser(is).parsePackage();
     }
 
@@ -71,9 +71,9 @@ class JavaParser {
      * @param path file
      * @return package name, never {@code null}
      */
-    static String packge(Path path) {
+    static String pkg(Path path) {
         try {
-            return packge(Files.newInputStream(path));
+            return pkg(Files.newInputStream(path));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ public final class EngineFacade {
     }
 
     private static final String MAVEN_URL_REPO_PROPERTY = "io.helidon.build.common.maven.url.localRepo";
-
     private static final String MAVEN_CORE_POM_PROPERTIES = "META-INF/maven/org.apache.maven/maven-core/pom.properties";
 
     /**
@@ -124,7 +123,7 @@ public final class EngineFacade {
             Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
             Files.delete(projectDir.resolve("pom.xml"));
             boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
-            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), n -> projectDir).generate();
+            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), () -> projectDir).generate();
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }

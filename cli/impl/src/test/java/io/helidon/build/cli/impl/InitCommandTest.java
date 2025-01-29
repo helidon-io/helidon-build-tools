@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.build.cli.impl;
 
 import java.io.File;
+import java.net.URL;
 
 import io.helidon.build.common.ProcessMonitor;
 
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
+import static io.helidon.build.cli.impl.TestUtils.execWithDirAndInput;
 import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -49,7 +51,7 @@ class InitCommandTest extends InitCommandTestBase {
     @Test
     void testProjectOptionAndArgumentMatch() throws Exception {
         String projectDir = uniqueProjectDir("bare-se-match").toString();
-        String output = TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+        String output = execWithDirAndInput(TARGET_DIR.toFile(), null,
                                                       "init",
                                                       "--url", metadataUrl(),
                                                       "--batch",
@@ -67,7 +69,7 @@ class InitCommandTest extends InitCommandTestBase {
         String projectDir1 = uniqueProjectDir("bare-se-mismatch").toString();
         String projectDir2 = uniqueProjectDir("bare-se-mismatch2").toString();
         Exception e = assertThrows(ProcessMonitor.ProcessFailedException.class, () ->
-                TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
+                execWithDirAndInput(TARGET_DIR.toFile(), null,
                                               "init",
                                               "--url", metadataUrl(),
                                               "--batch",
@@ -156,9 +158,9 @@ class InitCommandTest extends InitCommandTestBase {
                 .resolve("cli-data").toUri().toURL().toString();
         String projectDir = uniqueProjectDir("quickstart-se").toString();
 
-        String output = TestUtils.execWithDirAndInput(
+        String output = execWithDirAndInput(
                 TARGET_DIR.toFile(),
-                new File(getClass().getResource("input-full-version-list.txt").getFile()),
+                resourceFile("input-full-version-list.txt"),
                 "init",
                 "--reset",
                 "--url", cliDataUrl,
@@ -183,9 +185,9 @@ class InitCommandTest extends InitCommandTestBase {
                 .resolve("cli-data").toUri().toURL().toString();
         String projectDir = uniqueProjectDir("quickstart-se").toString();
 
-        String output = TestUtils.execWithDirAndInput(
+        String output = execWithDirAndInput(
                 TARGET_DIR.toFile(),
-                new File(getClass().getResource("input-latest-version-list.txt").getFile()),
+                resourceFile("input-latest-version-list.txt"),
                 "init",
                 "--reset",
                 "--url", cliDataUrl,
@@ -202,5 +204,13 @@ class InitCommandTest extends InitCommandTestBase {
         if ( helidonVersionProperty != null) {
             System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);
         }
+    }
+
+    private static File resourceFile(String path) {
+        URL url = InitCommandTest.class.getResource(path);
+        if (url == null) {
+            throw new IllegalStateException("Resource not found: " + path);
+        }
+        return new File(url.getFile());
     }
 }

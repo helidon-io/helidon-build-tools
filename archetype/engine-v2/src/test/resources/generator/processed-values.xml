@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,23 +18,19 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <template engine="mustache" source="shapes/shapes.mustache" target="shapes.txt" />
+        <template engine="mustache" source="shapes/shapes.hbs" target="shapes.txt" />
         <model>
             <value key="circle-color">red</value>
             <value key="rectangle-color">yellow</value>
             <list key="shapes">
-                <value template="mustache">
-                    <![CDATA[Here is a {{circle-color}} circle
-]]>
-                </value>
-                <value>
-                    <![CDATA[Here is a blue triangle
-]]>
-                </value>
+                <value template="mustache"><![CDATA[Here is a {{circle-color}} circle
+]]></value>
+                <value><![CDATA[Here is a blue triangle
+]]></value>
                 <value file="shapes/square.txt"/>
-                <value file="shapes/rectangle.mustache" template="mustache"/>
+                <value file="shapes/rectangle.hbs" template="mustache"/>
             </list>
         </model>
     </output>

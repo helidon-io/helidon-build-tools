@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -327,7 +327,7 @@ class TypeInfoTest {
     private static TestAP ap(String... path) throws IOException {
         TestAP ap = new TestAP();
         CompilerHelper compilerHelper = new CompilerHelper(ap, null, path);
-        assertThat(compilerHelper.call(true), is(true));
+        assertThat(compilerHelper.call(), is(true));
         assertThat(ap.types, is(notNullValue()));
         assertThat(ap.elements, is(notNullValue()));
         assertThat(ap.elements.isEmpty(), is(false));

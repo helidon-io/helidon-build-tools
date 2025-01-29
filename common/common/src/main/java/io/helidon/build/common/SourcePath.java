@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,11 +286,11 @@ public class SourcePath {
 
     /**
      * Matches the given value with a pattern that may contain wildcard(s)
-     * character that can filter any sub-sequence in the value.
+     * character that can filter any subsequence in the value.
      *
      * @param val     the string to filter
      * @param pattern the pattern to use for matching
-     * @return returns {@code true} if pattern matches, {@code false} otherwise
+     * @return returns {@code true} if the pattern matches, {@code false} otherwise
      */
     public static boolean wildcardMatch(String val, String pattern) {
 
@@ -312,19 +312,19 @@ public class SourcePath {
                 // pattern has unprocessed wildcard(s)
                 int patternOffset = wildcardIdx - patternIdx;
                 if (patternOffset > 0) {
-                    // filter the sub pattern before the wildcard
+                    // filter the subpattern before the wildcard
                     String subPattern = pattern.substring(patternIdx, wildcardIdx);
                     int idx = val.indexOf(subPattern, valIdx);
                     if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD_CHAR) {
-                        // if expanding a wildcard
-                        // the sub-segment needs to contain the sub-pattern
+                        // when expanding a wildcard,
+                        // the subsegment needs to contain the subpattern
                         if (idx < valIdx) {
                             matched = false;
                             break;
                         }
                     } else if (idx != valIdx) {
-                        // not expanding a wildcard
-                        // the sub-segment needs to start with the sub-pattern
+                        // when not expanding a wildcard,
+                        // the subsegment needs to start with the subpattern
                         matched = false;
                         break;
                     }
@@ -335,14 +335,14 @@ public class SourcePath {
                 String subPattern = pattern.substring(patternIdx);
                 String subSegment = val.substring(valIdx);
                 if (patternIdx > 0 && pattern.charAt(patternIdx - 1) == WILDCARD_CHAR) {
-                    // if expanding a wildcard
-                    // sub-segment needs to end with sub-pattern
+                    // when expanding a wildcard,
+                    // subsegment needs to end with subpattern
                     if (!subSegment.endsWith(subPattern)) {
                         matched = false;
                     }
                 } else if (!subSegment.equals(subPattern)) {
-                    // not expanding a wildcard
-                    // the sub-segment needs to strictly filter the sub-pattern
+                    // when not expanding a wildcard,
+                    // the subsegment needs to strictly filter the subpattern
                     matched = false;
                 }
                 break;

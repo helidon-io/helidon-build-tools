@@ -1,0 +1,23 @@
+{
+    "expressions": {
+    },
+    "methods": {
+    },
+    "children": [
+        {
+            "kind": "validations",
+            "children": [
+                {
+                    "kind": "validation",
+                    "id": "validation1",
+                    "children": [
+                        {
+                            "kind": "regex",
+                            "value": "^foo"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

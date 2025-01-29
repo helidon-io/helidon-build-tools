@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,5 +40,12 @@ class PropertyEvaluatorTest {
         assertThat(PropertyEvaluator.evaluate("${foo", props), is("${foo"));
         assertThat(PropertyEvaluator.evaluate("${ foo}", props), is(""));
         assertThat(PropertyEvaluator.evaluate("${foo }", props), is(""));
+    }
+
+    @Test
+    void testSearchAndReplace() {
+        Map<String, String> props = Map.of("pkg", "com.acme", "foo", "com");
+        assertThat(PropertyEvaluator.evaluate("${pkg/\\.//}", props), is("com/acme"));
+        assertThat(PropertyEvaluator.evaluate("${pkg/${foo}//}", props), is("//}"));
     }
 }

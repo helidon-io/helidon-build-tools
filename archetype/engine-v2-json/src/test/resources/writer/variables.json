@@ -1,0 +1,35 @@
+{
+    "expressions": {
+    },
+    "methods": {
+    },
+    "children": [
+        {
+            "kind": "variables",
+            "children": [
+                {
+                    "kind": "boolean",
+                    "path": "variable-boolean1",
+                    "value": true
+                },
+                {
+                    "kind": "enum",
+                    "path": "variable-enum1",
+                    "value": "value1"
+                },
+                {
+                    "kind": "text",
+                    "path": "variable-text1",
+                    "value": "value1"
+                },
+                {
+                    "kind": "list",
+                    "path": "variable-list1",
+                    "value": [
+                        "value1"
+                    ]
+                }
+            ]
+        }
+    ]
+}

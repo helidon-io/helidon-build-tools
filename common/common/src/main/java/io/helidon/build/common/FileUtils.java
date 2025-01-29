@@ -152,7 +152,7 @@ public final class FileUtils {
             try {
                 if (Files.isSymbolicLink(path)) {
                     // The File.exists check will follow symbolic links. If it returns false because
-                    // path is a broken link, then we want to catch that here.
+                    // the path is a broken link, then we want to catch that here.
                     throw new IOException("Broken link: " + path);
                 }
                 return Files.createDirectories(path, attrs);
@@ -170,28 +170,38 @@ public final class FileUtils {
      * @return The absolute, normalized destination directory.
      * @throws IllegalArgumentException If the destination exists.
      */
-    @SuppressWarnings({"CaughtExceptionImmediatelyRethrown", "unused"})
+    @SuppressWarnings("unused")
     public static Path copyDirectory(Path source, Path destination) {
-        requireNonExistent(destination);
+        return copyDirectory(source, destination, p -> true);
+    }
+
+    /**
+     * Copies the source directory to the destination.
+     *
+     * @param source      The source directory.
+     * @param destination The destination directory.
+     * @param predicate   predicate
+     * @return The absolute, normalized destination directory.
+     */
+    public static Path copyDirectory(Path source, Path destination, Predicate<Path> predicate) {
+        ensureDirectory(destination);
         try (Stream<Path> stream = Files.walk(source)) {
-            stream.forEach(src -> {
+            stream.filter(predicate).forEach(src -> {
                 try {
-                    final Path dst = destination.resolve(source.relativize(src));
-                    if (Files.isDirectory(src)) {
+                    Path dst = destination.resolve(source.relativize(src));
+                    if (Files.isDirectory(src) && !Files.exists(dst)) {
                         Files.createDirectory(dst);
                     } else {
-                        Files.copy(src, dst, COPY_ATTRIBUTES);
+                        Files.copy(src, dst, COPY_ATTRIBUTES, REPLACE_EXISTING);
                     }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
             });
-        } catch (UncheckedIOException e) {
-            throw e;
+            return destination.toAbsolutePath().normalize();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return destination.toAbsolutePath().normalize();
     }
 
     /**
@@ -217,7 +227,7 @@ public final class FileUtils {
     }
 
     /**
-     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     * List all files in the given directory that matches the given filter recursively if {@code maxDepth > 1}.
      *
      * @param directory      The directory.
      * @param fileNameFilter The filter.
@@ -229,7 +239,7 @@ public final class FileUtils {
     }
 
     /**
-     * List all files in the given directory that match the given filter, recursively if maxDepth > 1.
+     * List all files in the given directory that matches the given filter recursively if {@code maxDepth > 1}.
      *
      * @param directory  The directory.
      * @param pathFilter The filter.
@@ -272,7 +282,7 @@ public final class FileUtils {
 
     /**
      * Walk the directory and return the files that match the given predicate.
-     * If a directory is filtered out by the predicate its subtree is skipped.
+     * If a directory is filtered out by the predicate, its subtree is skipped.
      *
      * @param directory The directory
      * @param predicate predicate used to filter files and directories
@@ -285,7 +295,7 @@ public final class FileUtils {
 
     /**
      * Walk the directory and return the files that match the given predicate.
-     * If a directory is filtered out by the predicate its subtree is skipped.
+     * If a directory is filtered out by the predicate, its subtree is skipped.
      *
      * @param directory The directory
      * @param options   options to configure the traversal
@@ -387,7 +397,7 @@ public final class FileUtils {
      * @return The normalized, absolute path.
      * @throws IllegalArgumentException If the path exists.
      */
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings({"UnusedReturnValue", "unused"})
     public static Path requireNonExistent(Path path) {
         if (Files.exists(requireNonNull(path))) {
             throw new IllegalArgumentException(path + " exists");
@@ -718,7 +728,7 @@ public final class FileUtils {
     }
 
     /**
-     * Ensure that the given file exists, and update the modified time if it does.
+     * Ensure that the given file exists and update the modified time if it does.
      *
      * @param file The file.
      * @return The file.
@@ -745,7 +755,7 @@ public final class FileUtils {
      * followed by the {@code JAVA_HOME} environment variable.
      *
      * @return Java's home directory.
-     * @throws RuntimeException If unable to find home directory.
+     * @throws RuntimeException If unable to find the home directory.
      */
     public static String javaHome() {
         String javaHome = System.getProperty("java.home");
@@ -913,6 +923,18 @@ public final class FileUtils {
     }
 
     /**
+     * Set a file as executable.
+     *
+     * @param file       file
+     * @param executable executable
+     * @param owner      owner
+     * @return {@code true} if succeeded
+     */
+    public static boolean setExecutable(Path file, boolean executable, boolean owner) {
+        return file.toFile().setExecutable(executable, owner);
+    }
+
+    /**
      * Get the path for the given URI.
      *
      * @param uri uri
@@ -1005,6 +1027,23 @@ public final class FileUtils {
     }
 
     /**
+     * Get the root of the given path.
+     *
+     * @param path path
+     * @return Path, never {@code null}
+     */
+    public static Path root(Path path) {
+        Path root = path.getRoot();
+        if (root == null) {
+            root = path;
+            while (root.getParent() != null) {
+                root = root.getParent();
+            }
+        }
+        return root;
+    }
+
+    /**
      * Get the file extension for the given path.
      *
      * @param file path
@@ -1060,7 +1099,7 @@ public final class FileUtils {
     private static final DecimalFormat DF = new DecimalFormat("0.00");
 
     /**
-     * Get a size in bytes in units (E.g. 1024 bytes is "1 KB").
+     * Get a size in bytes in units (E.g., 1024 bytes is "1 KB").
      *
      * @param size size in bytes
      * @return size in units
@@ -1082,20 +1121,36 @@ public final class FileUtils {
     }
 
     /**
-     * Get the text file content as a list of strings by its URI.
+     * Read all lines of the text file at the given URI.
      *
      * @param fileUri file URI
      * @return content of the file
-     * @throws IOException        IOException
-     * @throws URISyntaxException URISyntaxException
      */
-    public static List<String> readAllLines(URI fileUri) throws IOException, URISyntaxException {
-        Path path = pathOf(fileUri);
-        return Files.readAllLines(path);
+    public static List<String> readAllLines(URI fileUri) {
+        try {
+            Path path = pathOf(fileUri);
+            return Files.readAllLines(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
-     * Load content of the properties file.
+     * Read all bytes of the given file.
+     *
+     * @param path path
+     * @return bytes
+     */
+    public static byte[] readAllBytes(Path path) {
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Load the content of the given properties file.
      *
      * @param filePath path to file
      * @return content of the properties file
@@ -1111,7 +1166,7 @@ public final class FileUtils {
     }
 
     /**
-     * Save data that is stored in Map {@code values} to properties file.
+     * Save the given data that is stored in Map {@code values} in a properties file.
      *
      * @param values   data to store
      * @param filePath path to file
@@ -1130,7 +1185,7 @@ public final class FileUtils {
      * Convert Path to URL.
      *
      * @param path path to convert
-     * @return URL of path
+     * @return URL
      */
     public static URL urlOf(Path path) {
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,19 @@ package io.helidon.build.maven.archetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.function.Supplier;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import static io.helidon.build.common.Unchecked.unchecked;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 /**
@@ -42,105 +37,73 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  */
 class Schema {
 
-    /**
-     * Schema location.
-     */
-    static final String LOCATION = "https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd";
+    private static final String RESOURCE_NAME = "schema-2.0.xsd";
+
+    private final javax.xml.validation.Schema schema;
 
     /**
-     * Schema namespace.
+     * Create a new instance.
      */
-    static final String NAMESPACE = "https://helidon.io/archetype/2.0";
-
-    /**
-     * XML root element.
-     */
-    static final String ROOT_ELEMENT = "archetype-script";
-
-    /**
-     * Archetype 2.0 schema.
-     */
-    static final String RESOURCE_NAME = "schema-2.0.xsd";
-
-    private final Validator validator;
-
-    /**
-     * Create a new validator.
-     *
-     * @param is schema input stream, must be non {@code null}
-     */
-    Schema(InputStream is) {
-        Objects.requireNonNull(is, "schema input stream is null");
-        SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
+    Schema() {
         try {
-            javax.xml.validation.Schema schema = factory.newSchema(new StreamSource(is));
-            validator = schema.newValidator();
+            URL url = getClass().getClassLoader().getResource(RESOURCE_NAME);
+            if (url == null) {
+                throw new IllegalStateException("Unable to resolve resource: " + RESOURCE_NAME);
+            }
+            InputStream is = url.openStream();
+            SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
+            schema = factory.newSchema(new StreamSource(is));
         } catch (SAXException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     /**
-     * Validate the XML file at the given input stream.
+     * Validate the given XML file.
      *
-     * @param file file to validate
+     * @param is       input stream
+     * @param sourceId source id
+     * @return errors
      */
-    @SuppressWarnings("unchecked")
-    void validate(Path file) {
-        validate(unchecked(() -> Files.newInputStream(file)));
-    }
-
-    /**
-     * Validate the XML file at the given input stream.
-     *
-     * @param supplier input stream supplier
-     */
-    void validate(Supplier<InputStream> supplier) throws ValidationException {
+    List<String> validate(InputStream is, String sourceId) {
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(supplier.get());
-            if (doc.getDocumentElement().getNodeName().equals(ROOT_ELEMENT)) {
-                validator.validate(new StreamSource(supplier.get()));
-            }
-        } catch (SAXParseException ex) {
-            throw new ValidationException(ex);
-        } catch (SAXException | IOException | ParserConfigurationException e) {
+            Validator validator = schema.newValidator();
+            List<String> errors = new ArrayList<>();
+            validator.setErrorHandler(new ErrorHandlerImpl(errors, sourceId));
+            validator.validate(new StreamSource(is));
+            return errors;
+        } catch (SAXException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    /**
-     * Validation exception.
-     */
-    static final class ValidationException extends RuntimeException {
+    private record ErrorHandlerImpl(List<String> errors, String file) implements ErrorHandler {
 
-        private final int lineNo;
-        private final int colNo;
-
-        private ValidationException(SAXParseException cause) {
-            super(cause.getMessage(), cause);
-            lineNo = cause.getLineNumber();
-            colNo = cause.getColumnNumber();
+        @Override
+        public void warning(SAXParseException ex) {
+            errors.add(toString(ex));
         }
 
-        /**
-         * Get the column number.
-         *
-         * @return column number
-         */
-        public int colNo() {
-            return colNo;
+        @Override
+        public void error(SAXParseException ex) {
+            errors.add(toString(ex));
         }
 
-        /**
-         * Get the line number.
-         *
-         * @return line number
-         */
-        public int lineNo() {
-            return lineNo;
+        @Override
+        public void fatalError(SAXParseException ex) {
+            errors.add(toString(ex));
+        }
+
+        String toString(SAXParseException ex) {
+            return String.format("Schema validation error: file=%s, position=%s:%s, error=%s",
+                    file,
+                    ex.getLineNumber(),
+                    ex.getColumnNumber(),
+                    ex.getMessage());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
 import io.helidon.build.common.xml.XMLElement;
-import io.helidon.build.common.xml.XMLReaderException;
 
 import static io.helidon.build.cli.common.SemVer.sortVersions;
 
@@ -46,7 +45,7 @@ public class ArchetypesData {
 
     private ArchetypesData(XMLElement elt) {
         if (!"data".equals(elt.name())) {
-            throw new XMLReaderException(String.format("Invalid root element: " + elt.name()));
+            throw new IllegalStateException("Invalid root element: " + elt.name());
         }
         versions = sortVersions(Lists.map(elt.childrenAt("archetypes", "version"), Version::new));
         rules = Lists.map(elt.childrenAt("rules", "rule"), Rule::new);

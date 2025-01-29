@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import io.helidon.build.common.Lists;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.common.xml.XMLException;
-import io.helidon.build.common.xml.XMLWriter;
+import io.helidon.build.common.xml.XMLGenerator;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
@@ -198,7 +198,9 @@ final class ProjectState {
                     attributes.get("id"),
                     e.child("configuration")
                             .map(XMLElement::detach)
-                            .orElseGet(() -> XMLElement.builder().build()));
+                            .orElseGet(() -> XMLElement.builder()
+                                    .name("configuration")
+                                    .build()));
         });
         return new ProjectState(properties, artifact, attachedArtifacts, compileSourceRoots, testCompileSourceRoots,
                 projectFiles, executions);
@@ -227,68 +229,69 @@ final class ProjectState {
      * @throws IOException if an IO error occurs
      */
     void save(Path stateFile) throws IOException {
-        XMLWriter writer = new XMLWriter(Files.newBufferedWriter(stateFile));
-        writer.prolog().startElement("project-state");
+        try (XMLGenerator writer = new XMLGenerator(Files.newBufferedWriter(stateFile), true)) {
+            writer.prolog();
+            writer.startElement("project-state");
 
-        writer.startElement("properties");
-        properties.forEach((k, v) -> writer
-                .startElement("property")
-                .attribute("name", k.toString())
-                .attribute("value", v.toString())
-                .endElement());
-        writer.endElement();
+            writer.startElement("properties");
+            properties.forEach((k, v) -> writer
+                    .startElement("property")
+                    .attribute("name", k.toString())
+                    .attribute("value", v.toString())
+                    .endElement());
+            writer.endElement();
 
-        if (artifact != null) {
-            writeArtifact(writer, artifact);
-        }
+            if (artifact != null) {
+                writeArtifact(writer, artifact);
+            }
 
-        writer.startElement("attached-artifacts");
-        for (ArtifactEntry artifact : attachedArtifacts) {
-            writeArtifact(writer, artifact);
-        }
-        writer.endElement();
+            writer.startElement("attached-artifacts");
+            for (ArtifactEntry artifact : attachedArtifacts) {
+                writeArtifact(writer, artifact);
+            }
+            writer.endElement();
 
-        writer.startElement("compile-source-roots");
-        for (String path : compileSourceRoots) {
-            writer.startElement("path").value(path).endElement();
-        }
-        writer.endElement();
+            writer.startElement("compile-source-roots");
+            for (String path : compileSourceRoots) {
+                writer.startElement("path").value(path).endElement();
+            }
+            writer.endElement();
 
-        writer.startElement("test-compile-source-roots");
-        for (String path : testCompileSourceRoots) {
-            writer.startElement("path").value(path).endElement();
-        }
-        writer.endElement();
+            writer.startElement("test-compile-source-roots");
+            for (String path : testCompileSourceRoots) {
+                writer.startElement("path").value(path).endElement();
+            }
+            writer.endElement();
 
-        writer.startElement("project-files");
-        writer.attribute("count", projectFiles.filesCount());
-        writer.attribute("last-modified", projectFiles.lastModified());
-        String checksum = projectFiles.checksum();
-        if (checksum != null) {
-            writer.attribute("checksum", checksum);
-        }
-        projectFiles.allChecksums().forEach((k, v) -> writer
-                .startElement("file")
-                .attribute("checksum", v)
-                .value(k)
-                .endElement());
+            writer.startElement("project-files");
+            writer.attribute("count", projectFiles.filesCount());
+            writer.attribute("last-modified", projectFiles.lastModified());
+            String checksum = projectFiles.checksum();
+            if (checksum != null) {
+                writer.attribute("checksum", checksum);
+            }
+            projectFiles.allChecksums().forEach((k, v) -> writer
+                    .startElement("file")
+                    .attribute("checksum", v)
+                    .value(k)
+                    .endElement());
 
-        writer.endElement();
+            writer.endElement();
 
-        writer.startElement("executions");
-        for (ExecutionEntry execution : executions) {
-            writer.startElement("execution")
-                    .attribute("groupId", execution.groupId())
-                    .attribute("artifactId", execution.artifactId())
-                    .attribute("version", execution.version())
-                    .attribute("goal", execution.goal())
-                    .attribute("id", execution.executionId());
-            writer.append(execution.config());
+            writer.startElement("executions");
+            for (ExecutionEntry execution : executions) {
+                writer.startElement("execution")
+                        .attribute("groupId", execution.groupId())
+                        .attribute("artifactId", execution.artifactId())
+                        .attribute("version", execution.version())
+                        .attribute("goal", execution.goal())
+                        .attribute("id", execution.executionId());
+                writer.append(execution.config());
+                writer.endElement();
+            }
+            writer.endElement();
             writer.endElement();
         }
-        writer.endElement();
-        writer.endElement();
-        writer.close();
     }
 
     private static ArtifactEntry readArtifact(XMLElement elt) {
@@ -303,7 +306,7 @@ final class ProjectState {
                 Boolean.parseBoolean(attributes.get("addedToClasspath")));
     }
 
-    private static void writeArtifact(XMLWriter writer, ArtifactEntry artifact) {
+    private static void writeArtifact(XMLGenerator writer, ArtifactEntry artifact) {
         writer.startElement("artifact").attribute("file", artifact.file());
         writer.attribute("type", artifact.type());
         writer.attribute("extension", artifact.extension());

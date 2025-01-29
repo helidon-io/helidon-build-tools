@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,10 +75,9 @@ final class CompilerHelper {
     /**
      * Call the compilation task.
      *
-     * @param printDiagnostics {@code true} if the diagnostics should be printed in STDERR.
      * @return {@code true} if the task was successful, {@code false} otherwise
      */
-    boolean call(boolean printDiagnostics) throws IOException {
+    boolean call() throws IOException {
         if (!called) {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             StandardJavaFileManager manager = compiler.getStandardFileManager(diagnostics, null, null);
@@ -88,21 +87,10 @@ final class CompilerHelper {
             task.setProcessors(processors);
             success = task.call();
             called = true;
-            if (printDiagnostics) {
-                for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
-                    System.err.println(diagnostic);
-                }
+            for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                System.err.println(diagnostic);
             }
         }
-        return success;
-    }
-
-    /**
-     * Get the result.
-     *
-     * @return {@code true} if the task was successful, {@code false} otherwise
-     */
-    boolean success() {
         return success;
     }
 
@@ -120,10 +108,10 @@ final class CompilerHelper {
      *
      * @return list of messages
      */
-    List<String> diagnostics(Diagnostic.Kind kind) {
+    List<String> diagnostics() {
         return diagnostics.getDiagnostics()
                           .stream()
-                          .filter(d -> d.getKind() == kind)
+                          .filter(d -> d.getKind() == Diagnostic.Kind.ERROR)
                           .map(d -> d.getMessage(null))
                           .collect(toList());
     }

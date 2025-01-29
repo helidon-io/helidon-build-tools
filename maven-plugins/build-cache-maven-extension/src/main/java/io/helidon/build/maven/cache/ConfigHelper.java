@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ class ConfigHelper {
                 }
             }
         }
-        return converter.stack.pop().build();
+        return converter.stack.pop();
     }
 
     private static final class Xpp3Converter {
@@ -127,13 +127,13 @@ class ConfigHelper {
 
         void visitElement(Xpp3Dom elt) {
             XMLElement.Builder builder = XMLElement.builder()
-                    .modifiable(true)
+                    .parent(stack.peek())
                     .name(elt.getName())
                     .attributes(attributes(elt))
                     .value(elt.getValue());
 
             if (!stack.isEmpty()) {
-                stack.peek().child(builder);
+                stack.peek().children().add(builder);
             }
             stack.push(builder);
         }

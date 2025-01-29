@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import io.helidon.build.common.ansi.AnsiConsoleInstaller;
 import io.helidon.build.common.logging.Log;
 
 import static io.helidon.build.common.FileUtils.findExecutableInPath;
+import static io.helidon.build.common.FileUtils.javaHome;
 import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
@@ -57,7 +58,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class MavenCommand {
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
     private static final PrintStream RED_STDERR = PrintStreams.apply(STDERR, Red::apply);
     private static final OSType OS = OSType.currentOS();
     private static final String MAVEN_BINARY_NAME = OS.mavenExec();
@@ -105,6 +106,14 @@ public class MavenCommand {
         this.transform = builder.transform;
         this.beforeShutdown = builder.beforeShutdown;
         this.afterShutdown = builder.afterShutdown;
+    }
+
+    /**
+     * Get the command.
+     * @return command
+     */
+    public List<String> command() {
+        return processBuilder.command();
     }
 
     /**
@@ -187,14 +196,14 @@ public class MavenCommand {
     }
 
     /**
-     * Find implementation version from manifest file.
+     * Find the implementation version from the manifest file.
      *
      * @param jarFilePath Jar file to look for version in
      * @return version or empty optional
      */
     public static Optional<String> jarVersion(Path jarFilePath) {
-        try {
-            return Optional.of(new JarFile(jarFilePath.toFile())
+        try (JarFile jarFile = new JarFile(jarFilePath.toFile())) {
+            return Optional.of(jarFile
                     .getManifest()
                     .getMainAttributes()
                     .getValue("Implementation-Version"));
@@ -204,7 +213,7 @@ public class MavenCommand {
     }
 
     /**
-     * Check that then installed Maven version is at least the given minimum.
+     * Check that thee installed Maven version is at least the given minimum.
      *
      * @param requiredMinimumVersion The required minimum version.
      * @throws IllegalStateException If the installed version does not meet the requirement.
@@ -286,9 +295,11 @@ public class MavenCommand {
     /**
      * {@link MavenCommand} builder.
      */
+    @SuppressWarnings("unused")
     public static class Builder {
         private static final String DEFAULT_MAVEN_EXEC = OS.mavenExec();
         private static final String PATH_VAR = "PATH";
+        private static final String JAVA_HOME_VAR = "JAVA_HOME";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";
         private static final String MAVEN_DEBUG_OPTS_VAR = "MAVEN_DEBUG_OPTS";
         private static final int SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
@@ -512,7 +523,7 @@ public class MavenCommand {
         }
 
         /**
-         * Sets the maximum number of seconds to wait for command to complete.
+         * Sets the maximum number of seconds to wait for the command to complete.
          *
          * @param maxWaitSeconds The seconds.
          * @return This instance, for chaining.
@@ -558,12 +569,13 @@ public class MavenCommand {
             // Ensure we use the current Maven version
 
             Map<String, String> env = processBuilder.environment();
+            env.computeIfAbsent(JAVA_HOME_VAR, key -> javaHome());
             String mavenPath = mavenExecutable().getParent().toString();
             env.entrySet().stream()
                     .filter(e -> e.getKey().equalsIgnoreCase(PATH_VAR))
                     .forEach(e -> env.put(e.getKey(), mavenPath + pathSeparatorChar + e.getValue()));
 
-            // Setup MAVEN_OPTS with debugger, if needed
+            // Add debug options to MAVEN_OPTS, if needed
             env.computeIfPresent(MAVEN_DEBUG_OPTS_VAR, (k, v) -> "");
             String mavenOpts = removeDebugOption(env.get(MAVEN_OPTS_VAR));
             if (debugPort > 0) {

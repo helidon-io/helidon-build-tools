@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
-import javax.tools.Diagnostic.Kind;
+import java.util.stream.Stream;
 
 import io.helidon.build.cli.codegen.CompilerHelper.JavaSourceFromString;
 
@@ -41,7 +41,9 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 class CommandAPTest {
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static final List<String> COMPILER_OPTS = List.of(
+            "--release", "17",
             "-implicit:class",
             "-Xlint:unchecked",
             "-Xplugin:file-header",
@@ -63,522 +65,522 @@ class CommandAPTest {
     @Test
     void testCommandWithoutExecution() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("CommandWithoutExecution", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class CommandWithoutExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    CommandWithoutExecution(@Option.Argument(description = \"xxx\") String arg) {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.MISSING_COMMAND_EXECUTION));
+                new JavaSourceFromString("CommandWithoutExecution", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class CommandWithoutExecution {
+                        
+                            @Creator
+                            CommandWithoutExecution(@Option.Argument(description = "xxx") String arg) {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.MISSING_COMMAND_EXECUTION));
     }
 
     @Test
     void testCommandWithoutCreator() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("CommandWithoutCreator", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class CommandWithoutCreator implements CommandExecution {\n"
-                        + "\n"
-                        + "    CommandWithoutCreator(@Option.Argument(description = \"xxx\") String arg) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.MISSING_CREATOR_ANNOTATION));
+                new JavaSourceFromString("CommandWithoutCreator", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class CommandWithoutCreator implements CommandExecution {
+                        
+                            CommandWithoutCreator(@Option.Argument(description = "xxx") String arg) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.MISSING_CREATOR_ANNOTATION));
     }
 
     @Test
     void testMissingCommandAnnotation() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("MissingCommandAnnotation", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(\n"
-                        + "        name = \"xxx\",\n"
-                        + "        description = \"xxx\",\n"
-                        + "        commands = {\n"
-                        + "                MissingCommandAnnotation.Cmd.class,\n"
-                        + "        })\n"
-                        + "class MissingCommandAnnotation {\n"
-                        + "\n"
-                        + "    static class Cmd implements CommandExecution {\n"
-                        + "\n"
-                        + "        @Override\n"
-                        + "        public void execute(CommandContext context) throws Exception {\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.MISSING_COMMAND_ANNOTATION));
+                new JavaSourceFromString("MissingCommandAnnotation", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(
+                                name = "xxx",
+                                description = "xxx",
+                                commands = {
+                                        MissingCommandAnnotation.Cmd.class,
+                                })
+                        class MissingCommandAnnotation {
+                        
+                            static class Cmd implements CommandExecution {
+                        
+                                @Override
+                                public void execute(CommandContext context) throws Exception {
+                                }
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.MISSING_COMMAND_ANNOTATION));
     }
 
     @Test
     void testMissingFragmentAnnotation() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("MissingFragmentAnnotation", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(\n"
-                        + "        name = \"xxx\",\n"
-                        + "        description = \"xxx\",\n"
-                        + "        commands = {\n"
-                        + "                MissingFragmentAnnotation.Cmd.class,\n"
-                        + "        })\n"
-                        + "class MissingFragmentAnnotation {\n"
-                        + "\n"
-                        + "    static class MyOptions {\n"
-                        + "\n"
-                        + "        @Creator\n"
-                        + "        MyOptions(@Option.KeyValue(name = \"name\", description = \"xxx\") String name) {\n"
-                        + "\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "    static class Cmd implements CommandExecution {\n"
-                        + "\n"
-                        + "        @Creator\n"
-                        + "        Cmd(@Option.KeyValue(name = \"name\", description = \"xxx\") String name, MyOptions options) {\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        @Override\n"
-                        + "        public void execute(CommandContext context) throws Exception {\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.MISSING_FRAGMENT_ANNOTATION));
+                new JavaSourceFromString("MissingFragmentAnnotation", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(
+                                name = "xxx",
+                                description = "xxx",
+                                commands = {
+                                        MissingFragmentAnnotation.Cmd.class,
+                                })
+                        class MissingFragmentAnnotation {
+                        
+                            static class MyOptions {
+                        
+                                @Creator
+                                MyOptions(@Option.KeyValue(name = "name", description = "xxx") String name) {
+                        
+                                }
+                            }
+                        
+                            @Command(name = "xxx", description = "xxx")
+                            static class Cmd implements CommandExecution {
+                        
+                                @Creator
+                                Cmd(@Option.KeyValue(name = "name", description = "xxx") String name, MyOptions options) {
+                                }
+                        
+                                @Override
+                                public void execute(CommandContext context) throws Exception {
+                                }
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.MISSING_FRAGMENT_ANNOTATION));
     }
 
     @Test
     void testFragmentDuplicatedOptions() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("FragmentDuplicatedOptions", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(\n"
-                        + "        name = \"xxx\",\n"
-                        + "        description = \"xxx\",\n"
-                        + "        commands = {\n"
-                        + "                FragmentDuplicatedOptions.Cmd.class,\n"
-                        + "        })\n"
-                        + "class FragmentDuplicatedOptions {\n"
-                        + "\n"
-                        + "    @CommandFragment\n"
-                        + "    static class MyOptions {\n"
-                        + "\n"
-                        + "        @Creator\n"
-                        + "        MyOptions(@Option.KeyValue(name = \"name\", description = \"xxx\") String name) {\n"
-                        + "\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "    static class Cmd implements CommandExecution {\n"
-                        + "\n"
-                        + "        @Creator\n"
-                        + "        Cmd(@Option.KeyValue(name = \"name\", description = \"xxx\") String name, MyOptions options) {\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        @Override\n"
-                        + "        public void execute(CommandContext context) throws Exception {\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.FRAGMENT_OPTION_DUPLICATES));
+                new JavaSourceFromString("FragmentDuplicatedOptions", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(
+                                name = "xxx",
+                                description = "xxx",
+                                commands = {
+                                        FragmentDuplicatedOptions.Cmd.class,
+                                })
+                        class FragmentDuplicatedOptions {
+                        
+                            @CommandFragment
+                            static class MyOptions {
+                        
+                                @Creator
+                                MyOptions(@Option.KeyValue(name = "name", description = "xxx") String name) {
+                        
+                                }
+                            }
+                        
+                            @Command(name = "xxx", description = "xxx")
+                            static class Cmd implements CommandExecution {
+                        
+                                @Creator
+                                Cmd(@Option.KeyValue(name = "name", description = "xxx") String name, MyOptions options) {
+                                }
+                        
+                                @Override
+                                public void execute(CommandContext context) throws Exception {
+                                }
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.FRAGMENT_OPTION_DUPLICATES));
     }
 
     @Test
     void testOptionAlreadyDefined() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("OptionAlreadyDefined", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class OptionAlreadyDefined implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    OptionAlreadyDefined(\n"
-                        + "            @Option.KeyValue(name = \"name\", description = \"xxx\") String name1,\n"
-                        + "            @Option.KeyValue(name = \"name\", description = \"xxx\") String name2) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.OPTION_ALREADY_DEFINED));
+                new JavaSourceFromString("OptionAlreadyDefined", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class OptionAlreadyDefined implements CommandExecution {
+                        
+                            @Creator
+                            OptionAlreadyDefined(
+                                    @Option.KeyValue(name = "name", description = "xxx") String name1,
+                                    @Option.KeyValue(name = "name", description = "xxx") String name2) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.OPTION_ALREADY_DEFINED));
     }
 
     @Test
     void testInvalidArgumentType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidArgumentType", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import java.util.Date;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidArgumentType implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidArgumentType(@Option.Argument(description = \"xxx\") Date date) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_ARGUMENT_TYPE));
+                new JavaSourceFromString("InvalidArgumentType", """
+                        package com.acme.cli;
+                        
+                        import java.util.Date;
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidArgumentType implements CommandExecution {
+                        
+                            @Creator
+                            InvalidArgumentType(@Option.Argument(description = "xxx") Date date) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_ARGUMENT_TYPE));
     }
 
     @Test
     void testInvalidFlagType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidFlagType", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidFlagType implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidFlagType(@Option.Flag(name = \"dry-run\", description = \"xxx\") String dryRun) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_FLAG_TYPE));
+                new JavaSourceFromString("InvalidFlagType", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidFlagType implements CommandExecution {
+                        
+                            @Creator
+                            InvalidFlagType(@Option.Flag(name = "dry-run", description = "xxx") String dryRun) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_FLAG_TYPE));
     }
 
     @Test
     void testInvalidKeyValueType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidKeyValueType", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import java.util.Date;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidKeyValueType implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidKeyValueType(@Option.KeyValue(name = \"date\", description = \"xxx\") Date date) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_KEY_VALUE_TYPE));
+                new JavaSourceFromString("InvalidKeyValueType", """
+                        package com.acme.cli;
+                        
+                        import java.util.Date;
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidKeyValueType implements CommandExecution {
+                        
+                            @Creator
+                            InvalidKeyValueType(@Option.KeyValue(name = "date", description = "xxx") Date date) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_KEY_VALUE_TYPE));
     }
 
     @Test
     void testEnumKeyValue() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EnumKeyValue", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import java.util.Date;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class EnumKeyValue implements CommandExecution {\n"
-                        + "\n"
-                        + "    enum Color { RED, BLUE }\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    EnumKeyValue(@Option.KeyValue(name = \"color\", description = \"xxx\") Color color) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(true));
-        assertThat(compiler.diagnostics(Kind.ERROR), is(empty()));
+                new JavaSourceFromString("EnumKeyValue", """
+                        package com.acme.cli;
+                        
+                        import java.util.Date;
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class EnumKeyValue implements CommandExecution {
+                        
+                            enum Color { RED, BLUE }
+                        
+                            @Creator
+                            EnumKeyValue(@Option.KeyValue(name = "color", description = "xxx") Color color) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(true));
+        assertThat(compiler.diagnostics(), is(empty()));
     }
 
     @Test
     void testInvalidKeyValuesTypeParam() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidKeyValuesTypeParam", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import java.util.Date;\n"
-                        + "import java.util.Collection;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidKeyValuesTypeParam implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidKeyValuesTypeParam(@Option.KeyValues(name = \"dates\", description = \"xxx\") Collection<Date> dates) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_KEY_VALUES_TYPE_PARAMETER));
+                new JavaSourceFromString("InvalidKeyValuesTypeParam", """
+                        package com.acme.cli;
+                        
+                        import java.util.Date;
+                        import java.util.Collection;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidKeyValuesTypeParam implements CommandExecution {
+                        
+                            @Creator
+                            InvalidKeyValuesTypeParam(@Option.KeyValues(name = "dates", description = "xxx") Collection<Date> dates) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_KEY_VALUES_TYPE_PARAMETER));
     }
 
     @Test
     void testInvalidKeyValuesType() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidKeyValuesType", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import java.util.Set;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidKeyValuesType implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidKeyValuesType(@Option.KeyValues(name = \"names\", description = \"xxx\") Set<String> names) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_KEY_VALUES_TYPE));
+                new JavaSourceFromString("InvalidKeyValuesType", """
+                        package com.acme.cli;
+                        
+                        import java.util.Set;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidKeyValuesType implements CommandExecution {
+                        
+                            @Creator
+                            InvalidKeyValuesType(@Option.KeyValues(name = \
+                        "names", description = "xxx") Set<String> names) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws \
+                        Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_KEY_VALUES_TYPE));
     }
 
     @Test
     void testEmptyOptionName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyOptionName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class EmptyOptionName implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    EmptyOptionName(@Option.KeyValue(name = \"\", description = \"xxx\") String name) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("EmptyOptionName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class EmptyOptionName implements CommandExecution {
+                        
+                            @Creator
+                            EmptyOptionName(@Option.KeyValue(name = "", description = "xxx") String name) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testInvalidOptionName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidOptionName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class InvalidOptionName implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidOptionName(@Option.KeyValue(name = \"-opt-\", description = \"xxx\") String name) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("InvalidOptionName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class InvalidOptionName implements CommandExecution {
+                        
+                            @Creator
+                            InvalidOptionName(@Option.KeyValue(name = "-opt-", description = "xxx") String name) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testEmptyOptionDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyOptionDescription", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"xxx\")\n"
-                        + "class EmptyOptionDescription implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    EmptyOptionDescription(@Option.KeyValue(name = \"xxx\", description = \"\") String name) {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_DESCRIPTION));
+                new JavaSourceFromString("EmptyOptionDescription", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "xxx")
+                        class EmptyOptionDescription implements CommandExecution {
+                        
+                            @Creator
+                            EmptyOptionDescription(@Option.KeyValue(name = "xxx", description = "") String name) {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_DESCRIPTION));
     }
 
     @Test
     void testEmptyCommandName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyCommandName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"\", description = \"xxx\")\n"
-                        + "class EmptyCommandName implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    EmptyCommandName() {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("EmptyCommandName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "", description = "xxx")
+                        class EmptyCommandName implements CommandExecution {
+                        
+                            @Creator
+                            EmptyCommandName() {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testInvalidCommandName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidCommandName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"-cmd-\", description = \"xxx\")\n"
-                        + "class InvalidCommandName implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    InvalidCommandName() {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("InvalidCommandName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "-cmd-", description = "xxx")
+                        class InvalidCommandName implements CommandExecution {
+                        
+                            @Creator
+                            InvalidCommandName() {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testEmptyCommandDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyCommandDescription", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@Command(name = \"xxx\", description = \"\")\n"
-                        + "class EmptyCommandDescription implements CommandExecution {\n"
-                        + "\n"
-                        + "    @Creator\n"
-                        + "    EmptyCommandDescription() {\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    @Override\n"
-                        + "    public void execute(CommandContext context) throws Exception {\n"
-                        + "    }\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_DESCRIPTION));
+                new JavaSourceFromString("EmptyCommandDescription", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @Command(name = "xxx", description = "")
+                        class EmptyCommandDescription implements CommandExecution {
+                        
+                            @Creator
+                            EmptyCommandDescription() {
+                            }
+                        
+                            @Override
+                            public void execute(CommandContext context) throws Exception {
+                            }
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_DESCRIPTION));
     }
 
     @Test
     void testEmptyCliName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyCliName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(name = \"\", description = \"xxx\", commands = {})\n"
-                        + "class EmptyCliName {\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("EmptyCliName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(name = "", description = "xxx", commands = {})
+                        class EmptyCliName {
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testInvalidCliName() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("InvalidCliName", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(name = \"-cli-\", description = \"xxx\", commands = {})\n"
-                        + "class InvalidCliName {\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_NAME));
+                new JavaSourceFromString("InvalidCliName", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(name = "-cli-", description = "xxx", commands = {})
+                        class InvalidCliName {
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_NAME));
     }
 
     @Test
     void testEmptyCliDescription() throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS,
-                new JavaSourceFromString("EmptyCliDescription", ""
-                        + "package com.acme.cli;\n"
-                        + "\n"
-                        + "import io.helidon.build.cli.harness.*;\n"
-                        + "\n"
-                        + "@CommandLineInterface(name = \"xxx\", description = \"\", commands = {})\n"
-                        + "class EmptyCliDescription {\n"
-                        + "}"));
-        assertThat(compiler.call(true), is(false));
-        assertThat(compiler.diagnostics(Kind.ERROR), contains(Visitor.INVALID_DESCRIPTION));
+                new JavaSourceFromString("EmptyCliDescription", """
+                        package com.acme.cli;
+                        
+                        import io.helidon.build.cli.harness.*;
+                        
+                        @CommandLineInterface(name = "xxx", description = "", commands = {})
+                        class EmptyCliDescription {
+                        }"""));
+        assertThat(compiler.call(), is(false));
+        assertThat(compiler.diagnostics(), contains(Visitor.INVALID_DESCRIPTION));
     }
 
     private static void e2e(String... resources) throws IOException {
         CompilerHelper compiler = new CompilerHelper(new CommandAP(), COMPILER_OPTS, resources);
-        assertThat(compiler.call(true), is(true));
+        assertThat(compiler.call(), is(true));
         Path outputDir = compiler.outputDir();
-        list(outputDir.resolve("com/acme/cli"))
-             .filter(path -> path.getFileName().toString().endsWith(".java"))
-             .forEach(unchecked(path -> {
-                 String resourcePath = outputDir.relativize(path).toString();
-                 InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
-                 assertThat(inputStream, is(notNullValue()));
-                 assertThat(readString(path), is(normalizeNewLines(read(inputStream))));
-             }));
+        try (Stream<Path> stream = list(outputDir.resolve("com/acme/cli"))) {
+            stream.filter(path -> path.getFileName().toString().endsWith(".java"))
+                    .forEach(unchecked(path -> {
+                        String resourcePath = outputDir.relativize(path).toString();
+                        InputStream inputStream = CommandAPTest.class.getClassLoader().getResourceAsStream(resourcePath);
+                        assertThat(inputStream, is(notNullValue()));
+                        assertThat(readString(path), is(normalizeNewLines(read(inputStream))));
+                    }));
+        }
     }
 }

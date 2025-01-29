@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class PrintStreams {
         // cannot be instantiated
     }
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
     private static final String FAST_STREAMS_PROP = "io.helidon.build.fast.streams";
     private static final boolean FAST_STREAMS = Boolean.parseBoolean(System.getProperty(FAST_STREAMS_PROP, "true"));
 
@@ -108,7 +108,6 @@ public final class PrintStreams {
      *     <li>{@link #flush()}</li>
      * </ul>
      */
-    @SuppressWarnings("NullableProblems")
     public abstract static class PrintStreamAdapter extends PrintStream {
 
         protected PrintStreamAdapter() {

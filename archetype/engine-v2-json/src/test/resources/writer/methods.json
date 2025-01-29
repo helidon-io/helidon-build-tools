@@ -1,0 +1,30 @@
+{
+    "expressions": {
+    },
+    "methods": {
+        "method1": [
+            {
+                "kind": "output",
+                "children": [
+                    {
+                        "kind": "model",
+                        "children": [
+                            {
+                                "kind": "list",
+                                "key": "model-list1",
+                                "children": [
+                                    {
+                                        "kind": "value",
+                                        "value": "value1"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "children": [
+    ]
+}

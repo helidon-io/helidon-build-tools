@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,24 +18,29 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <methods>
         <method name="module-dir-noop-transformation">
             <output>
-                <transformation id="module-dir" if="${foo}">
+                <transformation id="module-dir" if="!${multi-module}">
                     <replace regex="" replacement=""/>
                 </transformation>
             </output>
         </method>
         <method name="module-dir-transformation">
-            <output if="!${foo}">
+            <output if="!${multi-module}">
                 <transformation id="module-dir">
                     <replace regex="^(.*)$" replacement="${module-dir}/$1"/>
                 </transformation>
             </output>
         </method>
     </methods>
+    <step name="Step1">
+        <inputs>
+            <boolean id="multi-module" name="Multi-Module" />
+        </inputs>
+    </step>
     <call method="module-dir-noop-transformation"/>
     <call method="module-dir-transformation"/>
     <output>

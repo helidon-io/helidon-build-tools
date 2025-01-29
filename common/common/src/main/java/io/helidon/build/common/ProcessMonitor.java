@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,10 @@ public final class ProcessMonitor {
         private PrintStream stdErr;
         private Predicate<String> filter = line -> true;
         private Function<String, String> transform = Function.identity();
-        private Runnable beforeShutdown = () -> {};
-        private Runnable afterShutdown = () -> {};
+        private Runnable beforeShutdown = () -> {
+        };
+        private Runnable afterShutdown = () -> {
+        };
         private boolean autoEol = true;
 
         private Builder() {
@@ -122,7 +124,7 @@ public final class ProcessMonitor {
         }
 
         /**
-         * Sets the input for process.
+         * Sets the process input.
          *
          * @param stdIn The input.
          * @return This builder.
@@ -136,7 +138,7 @@ public final class ProcessMonitor {
         }
 
         /**
-         * Sets the input for process.
+         * Set the process input.
          *
          * @param stdIn The input.
          * @return This builder.
@@ -274,6 +276,15 @@ public final class ProcessMonitor {
     }
 
     /**
+     * Get the executed command.
+     *
+     * @return command
+     */
+    public List<String> command() {
+        return List.copyOf(builder.command());
+    }
+
+    /**
      * Starts the process and waits for completion.
      *
      * @param timeout The maximum time to wait.
@@ -403,7 +414,7 @@ public final class ProcessMonitor {
     /**
      * Returns the combined captured output.
      *
-     * @return The output. Empty if capture not enabled.
+     * @return The output. Empty if the capture is not enabled.
      */
     public String output() {
         return recorder.capturedOutput();
@@ -412,7 +423,7 @@ public final class ProcessMonitor {
     /**
      * Returns any captured stderr output.
      *
-     * @return The output. Empty if capture not enabled.
+     * @return The output. Empty if the capture is not enabled.
      */
     public String stdOut() {
         return recorder.capturedStdOut();
@@ -421,7 +432,7 @@ public final class ProcessMonitor {
     /**
      * Returns any captured stderr output.
      *
-     * @return The output. Empty if capture not enabled.
+     * @return The output. Empty if the capture is not enabled.
      */
     public String stdErr() {
         return recorder.capturedStdErr();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.io.File;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-import io.helidon.build.archetype.engine.v2.ast.Script;
-import io.helidon.build.archetype.engine.v2.context.Context;
-import io.helidon.build.archetype.engine.v2.context.ContextSerializer;
-import io.helidon.build.common.FileUtils;
+import io.helidon.build.archetype.engine.v2.InputResolver.BatchResolver;
+import io.helidon.build.archetype.engine.v2.InputResolver.InteractiveResolver;
 
+import static io.helidon.build.common.FileUtils.saveToPropertiesFile;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -34,70 +33,22 @@ import static java.util.Objects.requireNonNull;
  */
 public class ArchetypeEngineV2 {
 
-    private static final String ENTRYPOINT = "main.xml";
-    private static final String ARTIFACT_ID = "artifactId";
-
     private final Path cwd;
-    private final InputResolver inputResolver;
+    private final boolean batch;
     private final Map<String, String> externalValues;
     private final Map<String, String> externalDefaults;
     private final Runnable onResolved;
-    private final Function<String, Path> directorySupplier;
-    private final File outputPropsFile;
+    private final Function<Context, Path> outputResolver;
+    private final String outputPropsFile;
 
     private ArchetypeEngineV2(Builder builder) {
         this.cwd = builder.cwd;
-        this.inputResolver = builder.inputResolver;
+        this.batch = builder.batch;
         this.externalValues = builder.externalValues;
         this.externalDefaults = builder.externalDefaults;
         this.onResolved = builder.onResolved;
-        this.directorySupplier = builder.directorySupplier;
+        this.outputResolver = builder.outputResolver;
         this.outputPropsFile = builder.outputPropsFile;
-    }
-
-    /**
-     * Generate a project.
-     *
-     * @param externalValues external values
-     * @param externalDefaults external defaults
-     * @param directorySupplier directory supplier
-     * @return output directory
-     */
-    public Path generate(Map<String, String> externalValues,
-                         Map<String, String> externalDefaults,
-                         Function<String, Path> directorySupplier) {
-
-        Context context = Context.builder()
-                                 .cwd(cwd)
-                                 .externalValues(externalValues)
-                                 .externalDefaults(externalDefaults)
-                                 .build();
-
-        Script script = ScriptLoader.load(cwd.resolve(ENTRYPOINT));
-
-        // resolve inputs (full traversal)
-        Controller.walk(inputResolver, script, context);
-        onResolved.run();
-
-        // resolve output directory
-        // TODO use a Function<ContextScope, Path> instead of hard-coding artifactId here...
-        String artifactId = requireNonNull(context.getValue(ARTIFACT_ID), ARTIFACT_ID + " is null").asString();
-        Path directory = directorySupplier.apply(artifactId);
-
-        // resolve model  (full traversal)
-        MergedModel model = MergedModel.resolveModel(script, context);
-
-        //  generate output  (full traversal)
-        OutputGenerator outputGenerator = new OutputGenerator(model, directory);
-        Controller.walk(outputGenerator, script, context);
-
-        if (outputPropsFile != null) {
-            Map<String, String> userInputsMap = ContextSerializer.serialize(context);
-            Path path = outputPropsFile.isAbsolute() ? outputPropsFile.toPath() : directory.resolve(outputPropsFile.toPath());
-            FileUtils.saveToPropertiesFile(userInputsMap, path);
-        }
-
-        return directory;
     }
 
     /**
@@ -106,7 +57,38 @@ public class ArchetypeEngineV2 {
      * @return output directory
      */
     public Path generate() {
-        return generate(externalValues, externalDefaults, directorySupplier);
+
+        Context context = new Context()
+                .externalValues(externalValues)
+                .externalDefaults(externalDefaults)
+                .pushCwd(cwd);
+
+        // entrypoint
+        Node node = Script.load(cwd.resolve("main.xml"));
+
+        // resolve inputs (full traversal)
+        ScriptInvoker.invoke(node, context, batch ? new BatchResolver(context) : new InteractiveResolver(context));
+
+        // resolve model (full traversal)
+        TemplateModel model = new TemplateModel(context);
+        ScriptInvoker.invoke(node, context, new BatchResolver(context), model);
+
+        if (onResolved != null) {
+            onResolved.run();
+        }
+
+        // resolve output directory
+        Path directory = outputResolver.apply(context);
+
+        // generate output  (full traversal)
+        Generator generator = new Generator(model, context, outputResolver.apply(context));
+        ScriptInvoker.invoke(node, context, new BatchResolver(context), generator);
+
+        if (outputPropsFile != null) {
+            Path propsFile = Path.of(outputPropsFile);
+            saveToPropertiesFile(context.toMap(), propsFile.isAbsolute() ? propsFile : directory.resolve(propsFile));
+        }
+        return directory;
     }
 
     /**
@@ -124,12 +106,12 @@ public class ArchetypeEngineV2 {
     public static final class Builder {
 
         private Path cwd;
-        private InputResolver inputResolver;
+        private boolean batch;
         private Map<String, String> externalValues = Map.of();
         private Map<String, String> externalDefaults = Map.of();
-        private Runnable onResolved = () -> {};
-        private Function<String, Path> directorySupplier;
-        private File outputPropsFile;
+        private Function<Context, Path> outputResolver;
+        private Runnable onResolved;
+        private String outputPropsFile;
 
         private Builder() {
         }
@@ -137,22 +119,34 @@ public class ArchetypeEngineV2 {
         /**
          * Set the output properties file to save user inputs.
          *
-         * @param outputPropsFile output properties file
+         * @param propsFile properties file-path
          * @return this builder
          */
-        public Builder outputPropsFile(File outputPropsFile) {
-            this.outputPropsFile = outputPropsFile;
+        public Builder outputPropsFile(String propsFile) {
+            this.outputPropsFile = propsFile;
             return this;
         }
 
         /**
-         * Set the output directory supplier.
+         * Set the output directory resolver.
          *
-         * @param directorySupplier output directory supplier
+         * @param function resolver function
          * @return this builder
          */
-        public Builder directorySupplier(Function<String, Path> directorySupplier) {
-            this.directorySupplier = requireNonNull(directorySupplier, "directorySupplier is null");
+        public Builder output(Function<Context, Path> function) {
+            this.outputResolver = requireNonNull(function, "function is null");
+            return this;
+        }
+
+        /**
+         * Set the output directory resolver.
+         *
+         * @param supplier supplier
+         * @return this builder
+         */
+        public Builder output(Supplier<Path> supplier) {
+            requireNonNull(supplier, "supplier is null");
+            this.outputResolver = c -> supplier.get();
             return this;
         }
 
@@ -163,7 +157,7 @@ public class ArchetypeEngineV2 {
          * @return this builder
          */
         public Builder onResolved(Runnable onResolved) {
-            this.onResolved = requireNonNull(onResolved, "onResolved is null");
+            this.onResolved = onResolved;
             return this;
         }
 
@@ -190,13 +184,13 @@ public class ArchetypeEngineV2 {
         }
 
         /**
-         * Set the input resolver.
+         * Use a batch input resolver.
          *
-         * @param inputResolver input resolver
+         * @param batch batch
          * @return this builder
          */
-        public Builder inputResolver(InputResolver inputResolver) {
-            this.inputResolver = requireNonNull(inputResolver, "inputResolver is null");
+        public Builder batch(boolean batch) {
+            this.batch = batch;
             return this;
         }
 
