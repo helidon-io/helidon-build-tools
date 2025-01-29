@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,9 +218,7 @@ public class Header implements Model {
                   .map(WebResource::create)
                   .forEach(scripts::add);
 
-            meta.putAll(config.get("meta")
-                              .asMap(String.class)
-                              .orElseGet(Map::of));
+            meta.putAll(config.get("meta").asMap().orElseGet(Map::of));
             return this;
         }
 

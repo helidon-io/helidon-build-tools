@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,15 +382,11 @@ public class VuetifyBackend extends Backend {
          * @return this builder
          */
         public Builder config(Config config) {
-            theme.putAll(config.get("theme")
-                               .asMap(String.class)
-                               .orElseGet(Map::of));
+            theme.putAll(config.get("theme").asMap().orElseGet(Map::of));
             home = config.get("homePage")
                          .asString()
                          .orElse(null);
-            releases.addAll(config.get("releases")
-                                  .asList(String.class)
-                                  .orElseGet(List::of));
+            releases.addAll(config.get("releases").asList().orElseGet(List::of));
             nav = config.get("navigation")
                         .asOptional()
                         .map(Nav::create)
