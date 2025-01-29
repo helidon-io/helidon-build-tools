@@ -51,24 +51,6 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
       - id: create-tag
         run: ./etc/scripts/release.sh create_tag >> "${GITHUB_OUTPUT}"
-  create-cli-tag:
-    if: ${{ startsWith(github.ref_name, 'release-cli') }}
-    needs: create-tag
-    runs-on: ubuntu-20.04
-    environment: release
-    outputs:
-      cli-tag: ${{ steps.create-cli-tag.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
-      - uses: ./.github/actions/common
-        with:
-          run: |
-            version=$(echo '${{ needs.create-tag.outputs.tag }}' | cut -d '/' -f 3)
-            cli_tag="cli/${version}"
-            git tag -f "${cli_tag}"
-            git push --force origin refs/tags/"${cli_tag}":refs/tags/"${cli_tag}"
   validate:
     needs: create-tag
     uses: ./.github/workflows/validate.yml
@@ -92,3 +74,21 @@ jobs:
           artifact-name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
           artifact-path: target/nexus-staging/
           run: etc/scripts/release.sh release_build
+  create-cli-tag:
+    if: ${{ startsWith(github.ref_name, 'release-cli') }}
+    needs: release
+    runs-on: ubuntu-20.04
+    environment: release
+    outputs:
+      cli-tag: ${{ steps.create-cli-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - uses: ./.github/actions/common
+        with:
+          run: |
+            version=$(echo '${{ needs.create-tag.outputs.tag }}' | cut -d '/' -f 3)
+            cli_tag="cli/${version}"
+            git tag -f "${cli_tag}"
+            git push --force origin refs/tags/"${cli_tag}":refs/tags/"${cli_tag}"
