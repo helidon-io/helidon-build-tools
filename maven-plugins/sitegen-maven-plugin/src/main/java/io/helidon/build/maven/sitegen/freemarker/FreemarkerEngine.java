@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,12 +215,8 @@ public class FreemarkerEngine {
          * @return this builder
          */
         public Builder config(Config config) {
-            directives.putAll(config.get("directives")
-                                    .asMap(String.class)
-                                    .orElseGet(Map::of));
-            model.putAll(config.get("model")
-                               .asMap(String.class)
-                               .orElseGet(Map::of));
+            directives.putAll(config.get("directives").asMap().orElseGet(Map::of));
+            model.putAll(config.get("model").asMap().orElseGet(Map::of));
             return this;
         }
 

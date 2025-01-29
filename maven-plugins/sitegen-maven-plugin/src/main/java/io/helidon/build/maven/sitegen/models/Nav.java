@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -749,7 +749,7 @@ public final class Nav extends SourcePathFilter {
             title = config.get("title").asString().orElse(title);
             glyph = config.get("glyph").asOptional().map(Glyph::create).orElse(glyph);
             source = config.get("source").asString().orElse(source);
-            sources.addAll(config.get("sources").asList(String.class).orElse(List.of()));
+            sources.addAll(config.get("sources").asList().orElse(List.of()));
             href = config.get("href").asString().orElse(href);
             target = config.get("target").asString().orElse(target);
             dir = config.get("dir").asString().orElse(dir);

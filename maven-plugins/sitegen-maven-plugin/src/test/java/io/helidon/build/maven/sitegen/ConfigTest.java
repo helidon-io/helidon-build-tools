@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.build.maven.sitegen;
 
+import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.build.maven.sitegen.asciidoctor.AsciidocEngine;
@@ -37,9 +39,154 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests config loading.
+ * Tests config.
  */
 class ConfigTest {
+
+    @Test
+    void testAsMap() {
+        Config config = Config.create("/config/map.yaml", ConfigTest.class, Map.of(
+                "alice", "alice1",
+                "key", "some-key"));
+
+        assertThat(config.get("strings").asMap().orElseThrow(), is(Map.of(
+                "foo", "foo",
+                "bar", "bar")));
+        assertThat(config.get("numbers").asMap(byte.class).orElseThrow(), is(Map.of(
+                "one", (byte) 1,
+                "two", (byte) 2,
+                "three",
+                (byte) 3)));
+        assertThat(config.get("numbers").asMap(short.class).orElseThrow(), is(Map.of(
+                "one", (short) 1,
+                "two", (short) 2,
+                "three", (short) 3)));
+        assertThat(config.get("numbers").asMap(int.class).orElseThrow(), is(Map.of(
+                "one", 1,
+                "two", 2,
+                "three", 3)));
+        assertThat(config.get("numbers").asMap(long.class).orElseThrow(), is(Map.of(
+                "one", 1L,
+                "two", 2L,
+                "three", 3L)));
+        assertThat(config.get("numbers").asMap(double.class).orElseThrow(), is(Map.of(
+                "one", 1d,
+                "two", 2d,
+                "three", 3d)));
+        assertThat(config.get("numbers").asMap(float.class).orElseThrow(), is(Map.of(
+                "one", 1f,
+                "two", 2f,
+                "three", 3f)));
+        assertThat(config.get("booleans").asMap(boolean.class).orElseThrow(), is(Map.of(
+                "t", true,
+                "f", false)));
+        assertThat(config.get("chars").asMap(char.class).orElseThrow(), is(Map.of(
+                "a", 'a',
+                "b", 'b',
+                "c", 'c')));
+
+        assertThat(config.get("complex-map").asMap().orElseThrow(), is(Map.of(
+                "foo.0.bar.bar1.0", "bar1a",
+                "foo.0.bar.bar1.1", "bar1b",
+                "foo.0.bar.bar2.0", "bar2a",
+                "foo.0.bar.bar2.1", "bar2b",
+                "foo.1.bob.bob1.0", "bob1a",
+                "foo.1.bob.bob1.1", "bob1b",
+                "foo.1.bob.bob2.0", "bob2a",
+                "foo.1.bob.bob2.1", "bob2b",
+                "alice", "alice1",
+                "some-key", "some-value"
+        )));
+    }
+
+    @Test
+    void testAsList() {
+        Config config = Config.create("/config/list.yaml", ConfigTest.class, Map.of(
+                "foo1", "foo1",
+                "foo2", "foo2"));
+
+        assertThat(config.get("strings").asList().orElseThrow(), is(List.of("foo", "bar")));
+        assertThat(config.get("numbers").asList(byte.class).orElseThrow(), is(List.of((byte) 1, (byte) 2, (byte) 3)));
+        assertThat(config.get("numbers").asList(short.class).orElseThrow(), is(List.of((short) 1, (short) 2, (short) 3)));
+        assertThat(config.get("numbers").asList(int.class).orElseThrow(), is(List.of(1, 2, 3)));
+        assertThat(config.get("numbers").asList(long.class).orElseThrow(), is(List.of(1L, 2L, 3L)));
+        assertThat(config.get("numbers").asList(double.class).orElseThrow(), is(List.of(1d, 2d, 3d)));
+        assertThat(config.get("numbers").asList(float.class).orElseThrow(), is(List.of(1f, 2f, 3f)));
+        assertThat(config.get("booleans").asList(boolean.class).orElseThrow(), is(List.of(true, false)));
+        assertThat(config.get("chars").asList(char.class).orElseThrow(), is(List.of('a', 'b', 'c')));
+
+        assertThat(config.get("simple-list").asList().orElseThrow(), is(List.of("foo1", "foo2")));
+        assertThat(config.get("complex-list").asList().orElseThrow(), is(List.of(
+                "foo1",
+                "foo2",
+                "bar1",
+                "bar2"
+        )));
+    }
+
+    @Test
+    void testAsBoolean() {
+        Config config = Config.create(new StringReader("value: true"), Map.of());
+        assertThat(config.get("value").asBoolean().orElseThrow(), is(true));
+        assertThat(config.get("value").as(Boolean.class).orElseThrow(), is(true));
+        assertThat(config.get("value").as(boolean.class).orElseThrow(), is(true));
+    }
+
+    @Test
+    void testAsString() {
+        Config config = Config.create(new StringReader("value: str"), Map.of());
+        assertThat(config.get("value").asString().orElseThrow(), is("str"));
+        assertThat(config.get("value").as(String.class).orElseThrow(), is("str"));
+    }
+
+    @Test
+    void testAsCharacter() {
+        Config config = Config.create(new StringReader("value: a"), Map.of());
+        assertThat(config.get("value").as(Character.class).orElseThrow(), is('a'));
+        assertThat(config.get("value").as(char.class).orElseThrow(), is('a'));
+    }
+
+    @Test
+    void testAsInteger() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Integer.class).orElseThrow(), is(2));
+        assertThat(config.get("value").as(int.class).orElseThrow(), is(2));
+    }
+
+    @Test
+    void testAsLong() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Long.class).orElseThrow(), is(2L));
+        assertThat(config.get("value").as(long.class).orElseThrow(), is(2L));
+    }
+
+    @Test
+    void testAsByte() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Byte.class).orElseThrow(), is((byte) 2));
+        assertThat(config.get("value").as(byte.class).orElseThrow(), is((byte) 2));
+    }
+
+    @Test
+    void testAsShort() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Short.class).orElseThrow(), is((short) 2));
+        assertThat(config.get("value").as(short.class).orElseThrow(), is((short) 2));
+    }
+
+    @Test
+    void testAsFloat() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Float.class).orElseThrow(), is(2f));
+        assertThat(config.get("value").as(float.class).orElseThrow(), is(2f));
+    }
+
+    @Test
+    void testAsDouble() {
+        Config config = Config.create(new StringReader("value: 2"), Map.of());
+        assertThat(config.get("value").as(Double.class).orElseThrow(), is(2d));
+        assertThat(config.get("value").as(double.class).orElseThrow(), is(2d));
+    }
 
     @Test
     void testNavConfig() {
@@ -209,7 +356,6 @@ class ConfigTest {
         assertThat(nav.href(), is("https://amazon.com"));
         assertThat(nav.target(), is("_blank"));
         assertThat(nav.items().size(), is(0));
-
 
         stack.pop();
         assertThat(stack.isEmpty(), is(false));
