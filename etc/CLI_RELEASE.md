@@ -2,11 +2,6 @@
 
 This documentation aims to describe the steps to release the Helidon CLI.
 
-## Create CLI release tag
-
-Push a new branch `release-cli-*` to make a usual release and then create a specific cli release tag with this
-shape `cli/${version}`.
-
 ## SDKMan
 
 Helidon team possesses credentials to access `SDKMan` REST API to do the following actions:
