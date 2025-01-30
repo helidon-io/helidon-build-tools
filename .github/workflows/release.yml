@@ -75,6 +75,7 @@ jobs:
           artifact-path: target/nexus-staging/
           run: etc/scripts/release.sh release_build
   release-cli:
+    if: ${{ startsWith(github.ref_name, 'release-cli') }}
     needs: release
     uses: ./.github/workflows/release-cli.yml
     with:
