@@ -52,7 +52,7 @@ $(basename "${0}") [ --build-number=N ] CMD
         Print the release version
 
     create_tag
-        Create and and push a release tag
+        Create and push a release tag
 
     release_build
         Perform a release build
@@ -107,7 +107,7 @@ readonly WS_DIR
 # this allows us to use fd 6 for returning data
 exec 6>&1 1>&2
 
-current_version() {
+current_version(){
     # shellcheck disable=SC2086
     mvn ${MVN_ARGS} -q \
         -f "${WS_DIR}"/pom.xml \
@@ -117,7 +117,7 @@ current_version() {
         org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
 }
 
-release_version() {
+release_version(){
     local current_version
     current_version=$(current_version)
     echo "${current_version%-*}"
@@ -142,7 +142,7 @@ update_version(){
         -DupdateMatchingVersions="false"
 }
 
-create_tag() {
+create_tag(){
     local git_branch version
 
     version=$(release_version)
