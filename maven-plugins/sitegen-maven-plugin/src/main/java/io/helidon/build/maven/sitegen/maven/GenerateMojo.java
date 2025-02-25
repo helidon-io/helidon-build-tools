@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.build.common.Maps;
-import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
+import io.helidon.build.common.maven.logging.PlexusLoggerHolder;
 import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.Site;

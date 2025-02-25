@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,9 +51,9 @@ import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenModel;
+import io.helidon.build.common.maven.logging.PlexusLoggerHolder;
 import io.helidon.build.common.maven.plugin.MavenArtifact;
 import io.helidon.build.common.maven.plugin.MavenFilters;
-import io.helidon.build.common.maven.plugin.PlexusLoggerHolder;
 import io.helidon.build.javadoc.JavadocModule.CompositeJavadocModule;
 import io.helidon.build.javadoc.JavadocModule.JarModule;
 import io.helidon.build.javadoc.JavadocModule.SourceModule;

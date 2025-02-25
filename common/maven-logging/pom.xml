@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,12 +24,8 @@
         <artifactId>helidon-build-common-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-build-common-maven-plugin</artifactId>
-    <name>Helidon Build Tools Common Maven Plugin</name>
-
-    <properties>
-        <maven.compiler.release>17</maven.compiler.release>
-    </properties>
+    <artifactId>helidon-build-common-maven-logging</artifactId>
+    <name>Helidon Build Tools Common Maven Logging</name>
 
     <dependencies>
         <dependency>
@@ -39,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
-            <artifactId>helidon-build-common-maven</artifactId>
+            <artifactId>helidon-build-common-ansi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -47,15 +43,21 @@
             <artifactId>maven-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-component-metadata</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate-metadata</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
