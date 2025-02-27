@@ -1,0 +1,25 @@
+[
+    {
+        "module": "io.helidon.integrations.oci.authentication.instance",
+        "services": [
+            {
+                "weight": 60.0,
+                "descriptor": "io.helidon.integrations.oci.authentication.instance.AuthenticationMethodInstancePrincipal__ServiceDescriptor",
+                "contracts": [
+                    "io.helidon.integrations.oci.authentication.instance.AuthenticationMethodInstancePrincipal",
+                    "io.helidon.integrations.oci.spi.OciAuthenticationMethod"
+                ]
+            },
+            {
+                "descriptor": "io.helidon.integrations.oci.authentication.instance.InstancePrincipalBuilderProvider__ServiceDescriptor",
+                "contracts": [
+                    "com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder",
+                    "com.oracle.bmc.auth.AbstractRequestingAuthenticationDetailsProvider.Builder",
+                    "com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder",
+                    "io.helidon.integrations.oci.authentication.instance.InstancePrincipalBuilderProvider",
+                    "java.util.function.Supplier"
+                ]
+            }
+        ]
+    }
+]
