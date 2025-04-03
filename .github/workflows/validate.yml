@@ -44,7 +44,7 @@ concurrency:
 jobs:
   copyright:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,7 +55,7 @@ jobs:
           run: etc/scripts/copyright.sh
   checkstyle:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +65,7 @@ jobs:
           run: etc/scripts/checkstyle.sh
   shellcheck:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,7 +76,7 @@ jobs:
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,10 +101,10 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022 ]
+        os: [ ubuntu-22.04, windows-2022 ]
         moduleSet: [ cli, cli-functional, archetype, linker, others ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}
@@ -125,7 +125,7 @@ jobs:
   spotbugs:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,7 +141,7 @@ jobs:
   javadoc:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -157,7 +157,7 @@ jobs:
   vscode-ext:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -176,9 +176,9 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022, macos-13 ]
+        os: [ ubuntu-22.04, windows-2022, macos-13 ]
         include:
-          - { os: ubuntu-20.04, platform: linux-amd64 }
+          - { os: ubuntu-22.04, platform: linux-amd64 }
           - { os: windows-2022, platform: windows-amd64, file-ext: .exe }
           - { os: macos-13, platform: darwin-amd64 }
     runs-on: ${{ matrix.os }}
@@ -213,7 +213,7 @@ jobs:
               -P tests \
               test
   cli-binaries:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ build, cli ]
     name: cli/binaries
     steps:
@@ -222,7 +222,7 @@ jobs:
           name: helidon-cli
           pattern: "helidon-cli-{bin-*,dist}"
   test-results:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ tests, cli ]
     name: tests/results
     steps:
@@ -231,7 +231,7 @@ jobs:
           name: test-results
           pattern: "*test*"
   gate:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ copyright, checkstyle, shellcheck, spotbugs, javadoc, vscode-ext, cli-binaries, test-results ]
     steps:
       - shell: bash
