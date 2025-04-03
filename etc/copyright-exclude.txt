@@ -42,3 +42,4 @@ expected
 expected-config
 .helidon
 jvm.config
+.loader
