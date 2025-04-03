@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import io.helidon.build.common.logging.Log;
 
 /**
  * Utility class for git commands.
@@ -68,7 +70,7 @@ public final class GitCommands {
      * Get all files in a directory tracked by the repository.
      * This may return files that were locally deleted.
      *
-     * @param root root of the repository
+     * @param root      root of the repository
      * @param checkPath path to check (within the repository)
      * @return list of files tracked within the checkPath
      */
@@ -98,22 +100,27 @@ public final class GitCommands {
                 String relativePath = stripGitOp(line);
 
                 switch (gitOp) {
-                case DELETE:
-                    fileToYear.remove(relativePath);
-                    break;
-                case RENAME:
-                    rename(fileToYear, relativePath, lastYear);
-                    break;
-                case COPY:
-                    copy(fileToYear, relativePath, lastYear);
-                    break;
-                case ADD:
-                case MODIFY:
-                default:
-                    // any other type modifies the timestamp
-                    fileToYear.put(relativePath, lastYear);
-                    // do nothing, it is already in
-                    break;
+                    case DELETE:
+                        fileToYear.remove(relativePath);
+                        break;
+                    case RENAME:
+                        rename(fileToYear, relativePath, lastYear);
+                        break;
+                    case COPY:
+                        copy(fileToYear, relativePath, lastYear);
+                        break;
+                    case UNKNOWN:
+                        Log.warn(String.format("Unknown git operation for file: %s, ignored.", root.resolve(relativePath)));
+                        break;
+                    case CHANGED:
+                    case UNMERGED:
+                    case ADD:
+                    case MODIFY:
+                    default:
+                        // any other type modifies the timestamp
+                        fileToYear.put(relativePath, lastYear);
+                        // do nothing, it is already in
+                        break;
                 }
             }
         } catch (IOException e) {
@@ -137,10 +144,10 @@ public final class GitCommands {
      * Files locally modified.
      * Ignores deleted files - the user of these methods must consider files that no longer exist to be locally deleted.
      *
-     * @param root the root directory
-     * @param checkPath directory of interest
+     * @param root        the root directory
+     * @param checkPath   directory of interest
      * @param currentYear current year
-     * @param renamed a list to which this method adds the original paths of files that were renamed
+     * @param renamed     a list to which this method adds the original paths of files that were renamed
      * @return set of files in the directory of interest that were locally modified
      */
     static Set<FileRequest> locallyModified(Path root, Path checkPath, String currentYear, List<Path> renamed) {
@@ -326,7 +333,15 @@ public final class GitCommands {
         if (line.startsWith("R")) {
             return GitOperation.RENAME;
         }
-
+        if (line.startsWith("T\t")) {
+            return GitOperation.CHANGED;
+        }
+        if (line.startsWith("U\t")) {
+            return GitOperation.UNMERGED;
+        }
+        if (line.startsWith("X\t")) {
+            return GitOperation.UNKNOWN;
+        }
         throw new EnforcerException("Could not parse line " + line);
     }
 
@@ -335,6 +350,9 @@ public final class GitCommands {
         DELETE,
         MODIFY,
         RENAME,
-        COPY
+        COPY,
+        CHANGED,
+        UNMERGED,
+        UNKNOWN
     }
 }
