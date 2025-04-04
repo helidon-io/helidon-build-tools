@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package io.helidon.build.common;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -1137,6 +1140,23 @@ public final class FileUtils {
             return path.toUri().toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Check if file is a submodule.
+     *
+     * @param path tested file path
+     * @return {@code true} if the file is a submodule, {@code false} otherwise
+     */
+    public static boolean isSubModule(Path path) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile(), StandardCharsets.UTF_8))) {
+            String line = reader.readLine();
+            return line == null
+                    ? false
+                    : line.startsWith("[submodule");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }
