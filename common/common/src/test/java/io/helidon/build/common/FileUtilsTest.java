@@ -32,13 +32,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+import static io.helidon.build.common.FileUtils.containsLine;
 import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.list;
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.unzip;
 import static io.helidon.build.common.FileUtils.zip;
-import static io.helidon.build.common.FileUtils.isSubModule;
 import static io.helidon.build.common.Unchecked.unchecked;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
@@ -158,13 +158,13 @@ class FileUtilsTest {
     }
 
     @Test
-    void testIsSubmodule() throws IOException {
+    void testContainsLine() throws IOException {
         Path blue = TestFiles.targetDir(FileUtilsTest.class).resolve("test-classes/vfs/blue");
         Path submodule = ensureFile(outputDir.resolve("submodule"));
         Files.write(submodule, "[submodule ...".getBytes());
 
-        assertThat(isSubModule(submodule), is(true));
-        assertThat(isSubModule(blue), is(false));
+        assertThat(containsLine(submodule, line -> line.startsWith("[submodule")), is(true));
+        assertThat(containsLine(blue, line -> false), is(false));
     }
 
     private static void readZipFileContent(Path zip, Consumer<Path> consumer) {

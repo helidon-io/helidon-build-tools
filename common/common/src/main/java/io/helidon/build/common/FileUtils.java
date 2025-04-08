@@ -15,9 +15,7 @@
  */
 package io.helidon.build.common;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,7 +24,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -1144,17 +1141,15 @@ public final class FileUtils {
     }
 
     /**
-     * Check if file is a submodule.
+     * Check if a line of that file matches predicate.
      *
-     * @param path tested file path
-     * @return {@code true} if the file is a submodule, {@code false} otherwise
+     * @param path file path
+     * @param predicate predicate
+     * @return {@code true} if matches, {@code false} otherwise
      */
-    public static boolean isSubModule(Path path) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile(), StandardCharsets.UTF_8))) {
-            String line = reader.readLine();
-            return line == null
-                    ? false
-                    : line.startsWith("[submodule");
+    public static boolean containsLine(Path path, Predicate<String> predicate) {
+        try (Stream<String> lines = Files.lines(path)){
+            return lines.anyMatch(predicate);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

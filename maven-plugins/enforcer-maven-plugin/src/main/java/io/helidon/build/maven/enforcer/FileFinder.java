@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.logging.Log;
 
+import static io.helidon.build.common.FileUtils.containsLine;
 import static io.helidon.build.maven.enforcer.GitIgnore.create;
 
 /**
@@ -177,7 +177,7 @@ public class FileFinder {
             return false;
         }
 
-        if (FileUtils.isSubModule(file.path())) {
+        if (containsLine(file.path(), line -> line.startsWith("[submodule"))) {
             Log.debug("File " + file.relativePath() + " is a submodule, ignoring.");
             return false;
         }

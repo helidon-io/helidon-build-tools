@@ -18,6 +18,7 @@ package io.helidon.build.maven.enforcer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -78,54 +79,7 @@ public final class GitCommands {
 
         Process process = startProcess(root, "log", "--pretty=%cd", "--date=short", "--name-status", "--reverse");
 
-        Map<String, Integer> fileToYear = new HashMap<>();
-        int lastYear = -1;
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
-                }
-                Matcher matcher = DATE_PATTERN.matcher(line);
-                if (matcher.matches()) {
-                    lastYear = Integer.parseInt(matcher.group(1));
-                    continue;
-                }
-                if (lastYear == -1) {
-                    throw new EnforcerException("Failed to parse output, expecting date to be present");
-                }
-
-                GitOperation gitOp = gitOp(line);
-                String relativePath = stripGitOp(line);
-
-                switch (gitOp) {
-                    case DELETE:
-                        fileToYear.remove(relativePath);
-                        break;
-                    case RENAME:
-                        rename(fileToYear, relativePath, lastYear);
-                        break;
-                    case COPY:
-                        copy(fileToYear, relativePath, lastYear);
-                        break;
-                    case UNKNOWN:
-                        Log.warn(String.format("Unknown git operation for file: %s, ignored.", root.resolve(relativePath)));
-                        break;
-                    case CHANGED:
-                    case UNMERGED:
-                    case ADD:
-                    case MODIFY:
-                    default:
-                        // any other type modifies the timestamp
-                        fileToYear.put(relativePath, lastYear);
-                        // do nothing, it is already in
-                        break;
-                }
-            }
-        } catch (IOException e) {
-            throw new EnforcerException("Failed to read output when getting tracked files", e);
-        }
+        Map<String, Integer> fileToYear = gitLog(root, process.getInputStream());
 
         waitFor(process, String.valueOf(List.of()));
 
@@ -343,6 +297,65 @@ public final class GitCommands {
             return GitOperation.UNKNOWN;
         }
         throw new EnforcerException("Could not parse line " + line);
+    }
+
+    /**
+     * Return all files read from inputStream.
+     *
+     * @param root root path
+     * @param inputStream git log process input
+     * @return file name with year
+     */
+    static Map<String, Integer> gitLog(Path root, InputStream inputStream) {
+        Map<String, Integer> fileToYear = new HashMap<>();
+        int lastYear = -1;
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                Matcher matcher = DATE_PATTERN.matcher(line);
+                if (matcher.matches()) {
+                    lastYear = Integer.parseInt(matcher.group(1));
+                    continue;
+                }
+                if (lastYear == -1) {
+                    throw new EnforcerException("Failed to parse output, expecting date to be present");
+                }
+
+                GitOperation gitOp = gitOp(line);
+                String relativePath = stripGitOp(line);
+
+                switch (gitOp) {
+                    case DELETE:
+                        fileToYear.remove(relativePath);
+                        break;
+                    case RENAME:
+                        rename(fileToYear, relativePath, lastYear);
+                        break;
+                    case COPY:
+                        copy(fileToYear, relativePath, lastYear);
+                        break;
+                    case UNKNOWN:
+                        Log.warn(String.format("Unknown git operation for file: %s, ignored.", root.resolve(relativePath)));
+                        break;
+                    case CHANGED:
+                    case UNMERGED:
+                    case ADD:
+                    case MODIFY:
+                    default:
+                        // any other type modifies the timestamp
+                        fileToYear.put(relativePath, lastYear);
+                        // do nothing, it is already in
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            throw new EnforcerException("Failed to read output when getting tracked files", e);
+        }
+        return fileToYear;
     }
 
     private enum GitOperation {
