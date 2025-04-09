@@ -159,12 +159,11 @@ class FileUtilsTest {
 
     @Test
     void testContainsLine() throws IOException {
-        Path blue = TestFiles.targetDir(FileUtilsTest.class).resolve("test-classes/vfs/blue");
         Path submodule = ensureFile(outputDir.resolve("submodule"));
         Files.write(submodule, "[submodule ...".getBytes());
 
         assertThat(containsLine(submodule, line -> line.startsWith("[submodule")), is(true));
-        assertThat(containsLine(blue, line -> false), is(false));
+        assertThat(containsLine(submodule, line -> false), is(false));
     }
 
     private static void readZipFileContent(Path zip, Consumer<Path> consumer) {
