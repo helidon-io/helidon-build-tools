@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1137,6 +1137,21 @@ public final class FileUtils {
             return path.toUri().toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Check if a line of that file matches predicate.
+     *
+     * @param path file path
+     * @param predicate predicate
+     * @return {@code true} if matches, {@code false} otherwise
+     */
+    public static boolean containsLine(Path path, Predicate<String> predicate) {
+        try (Stream<String> lines = Files.lines(path)){
+            return lines.anyMatch(predicate);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

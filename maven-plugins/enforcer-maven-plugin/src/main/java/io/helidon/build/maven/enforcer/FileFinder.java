@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
 
+import static io.helidon.build.common.FileUtils.containsLine;
 import static io.helidon.build.maven.enforcer.GitIgnore.create;
 
 /**
@@ -168,6 +169,16 @@ public class FileFinder {
 
         if (renamedPaths.contains(file.path())) {
             Log.debug("File " + file.relativePath() + " has been renamed, ignoring.");
+            return false;
+        }
+
+        if (Files.isSymbolicLink(file.path())) {
+            Log.debug("File " + file.relativePath() + " is a symbolic link, ignoring.");
+            return false;
+        }
+
+        if (containsLine(file.path(), line -> line.startsWith("[submodule"))) {
+            Log.debug("File " + file.relativePath() + " is a submodule, ignoring.");
             return false;
         }
 

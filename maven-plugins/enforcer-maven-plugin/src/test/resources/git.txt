@@ -1,0 +1,23 @@
+2000-00-00
+R	foo/foo		foo/bar
+
+2000-00-00
+D	foo/foo
+
+2000-00-00
+A	foo/foo1
+
+2000-00-00
+T	foo/foo2
+
+2000-00-00
+M	foo/foo3
+
+2000-00-00
+C	foo/foo		bar/foo
+
+2000-00-00
+U	foo/foo4
+
+2000-00-00
+X	foo/foo5

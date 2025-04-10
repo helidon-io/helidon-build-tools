@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+import static io.helidon.build.common.FileUtils.containsLine;
+import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.list;
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
 import static io.helidon.build.common.FileUtils.unique;
@@ -153,6 +155,15 @@ class FileUtilsTest {
         Path wd = unique(outputDir, "e2e-permissions");
         Path zipDir = createZipDirectory(wd);
         zipAndUnzip(zipDir);
+    }
+
+    @Test
+    void testContainsLine() throws IOException {
+        Path submodule = ensureFile(outputDir.resolve("submodule"));
+        Files.write(submodule, "[submodule ...".getBytes());
+
+        assertThat(containsLine(submodule, line -> line.startsWith("[submodule")), is(true));
+        assertThat(containsLine(submodule, line -> false), is(false));
     }
 
     private static void readZipFileContent(Path zip, Consumer<Path> consumer) {
