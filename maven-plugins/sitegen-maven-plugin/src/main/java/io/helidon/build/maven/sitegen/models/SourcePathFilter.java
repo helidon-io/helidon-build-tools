@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,8 +177,8 @@ public abstract class SourcePathFilter implements Model {
          * @return this builder
          */
         public T config(Config config) {
-            includes.addAll(config.get("includes").asList(String.class).orElseGet(List::of));
-            excludes.addAll(config.get("excludes").asList(String.class).orElseGet(List::of));
+            includes.addAll(config.get("includes").asList().orElseGet(List::of));
+            excludes.addAll(config.get("excludes").asList().orElseGet(List::of));
             return (T) this;
         }
 
