@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.build.maven.sitegen.Config;
 import io.helidon.build.maven.sitegen.RenderingException;
 import io.helidon.build.maven.sitegen.Site;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
@@ -46,6 +47,9 @@ public class GenerateMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
+
+    @Parameter(defaultValue = "${session}", readonly = true, required = true)
+    private MavenSession session;
 
     /**
      * Directory containing the generated site files.
@@ -88,6 +92,7 @@ public class GenerateMojo extends AbstractMojo {
         project.addCompileSourceRoot(siteSourceDirectory.getAbsolutePath());
 
         Map<String, String> properties = new HashMap<>(Maps.fromProperties(project.getProperties()));
+        properties.putAll(Maps.fromProperties(session.getUserProperties()));
         properties.put("project.groupId", project.getGroupId());
         properties.put("project.artifactId", project.getArtifactId());
         properties.put("project.version", project.getVersion());
