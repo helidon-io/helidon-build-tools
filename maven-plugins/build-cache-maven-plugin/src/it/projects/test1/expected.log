@@ -8,6 +8,6 @@
 [INFO] Cached | org.apache.maven.plugins:maven-jar-plugin:2.4:jar@default-jar
 [INFO] Cached | org.apache.maven.plugins:maven-install-plugin:2.4:install@default-install
 [INFO] 
-[INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ test1 ---
+[INFO] --- surefire:2.12.4:test (default-test) @ test1 ---
 [INFO] No tests to run.
 [INFO] ------------------------------------------------------------------------

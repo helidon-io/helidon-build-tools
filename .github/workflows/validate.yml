@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ env:
   JAVA_VERSION: 17
   JAVA_DISTRO: oracle
   GRAALVM_VERSION: 21.3.3.1
-  MAVEN_ARGS: |
+  MVN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
@@ -44,7 +44,7 @@ concurrency:
 jobs:
   copyright:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,7 +55,7 @@ jobs:
           run: etc/scripts/copyright.sh
   checkstyle:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +65,7 @@ jobs:
           run: etc/scripts/checkstyle.sh
   shellcheck:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,7 +76,7 @@ jobs:
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,8 +90,8 @@ jobs:
           artifact-path: cli/impl/target/helidon-cli.zip
           run: |
             mvn --version
-            mvn ${MAVEN_ARGS} build-cache:go-offline
-            mvn ${MAVEN_ARGS} -T8 \
+            mvn ${MVN_ARGS} build-cache:go-offline
+            mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
               -P tests \
@@ -101,10 +101,10 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022 ]
+        os: [ ubuntu-24.04, windows-2022 ]
         moduleSet: [ cli, cli-functional, archetype, linker, others ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-24.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}
@@ -115,9 +115,9 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.os }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -DreactorRule=tests \
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
@@ -125,7 +125,7 @@ jobs:
   spotbugs:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -134,14 +134,14 @@ jobs:
         with:
           build-cache: read-only
           run: |
-            mvn ${MAVEN_ARGS} -T 8 \
+            mvn ${MVN_ARGS} -T 8 \
               -DskipTests \
               -Pspotbugs,build-cache \
               verify
   javadoc:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -150,14 +150,14 @@ jobs:
         with:
           build-cache: read-only
           run: |
-            mvn ${MAVEN_ARGS} -T 8 \
+            mvn ${MVN_ARGS} -T 8 \
               -DskipTests \
               -Pjavadoc,build-cache \
               package
   vscode-ext:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -166,7 +166,7 @@ jobs:
         with:
           build-cache: read-write
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -pl ide-support/vscode-extension \
               -DskipTests \
               -P vscode \
@@ -176,11 +176,11 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022, macos-12 ]
+        os: [ ubuntu-24.04, windows-2022, macos-13 ]
         include:
-          - { os: ubuntu-20.04, platform: linux-amd64 }
+          - { os: ubuntu-24.04, platform: linux-amd64 }
           - { os: windows-2022, platform: windows-amd64, file-ext: .exe }
-          - { os: macos-12, platform: darwin-amd64 }
+          - { os: macos-13, platform: darwin-amd64 }
     runs-on: ${{ matrix.os }}
     name: cli/${{ matrix.platform }}
     steps:
@@ -196,7 +196,7 @@ jobs:
           artifact-path: cli/impl/target/helidon-cli-${{ matrix.platform }}${{ matrix.file-ext }}
           run: |
             # build the executable
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -pl cli/impl \
               -DskipTests \
               -Pnative-image,!toolchain \
@@ -204,7 +204,7 @@ jobs:
               package
 
             # smoke test
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -pl cli/tests/functional \
               -Pnative-image \
               -Dnative.image.name=helidon-cli-${{ matrix.platform }} \
@@ -213,7 +213,7 @@ jobs:
               -P tests \
               test
   cli-binaries:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ build, cli ]
     name: cli/binaries
     steps:
@@ -222,7 +222,7 @@ jobs:
           name: helidon-cli
           pattern: "helidon-cli-{bin-*,dist}"
   test-results:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ tests, cli ]
     name: tests/results
     steps:
@@ -231,7 +231,7 @@ jobs:
           name: test-results
           pattern: "*test*"
   gate:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [ copyright, checkstyle, shellcheck, spotbugs, javadoc, vscode-ext, cli-binaries, test-results ]
     steps:
       - shell: bash
