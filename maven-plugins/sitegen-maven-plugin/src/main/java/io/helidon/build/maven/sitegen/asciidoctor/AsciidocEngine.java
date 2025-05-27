@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -295,17 +295,9 @@ public class AsciidocEngine {
          * @return this builder
          */
         public Builder config(Config config) {
-            libraries.addAll(config.get("libraries")
-                                   .asList(String.class)
-                                   .orElseGet(List::of));
-
-            attributes.putAll(config.get("attributes")
-                                    .asMap()
-                                    .orElseGet(Map::of));
-
-            imagesDir = config.get("images-dir")
-                              .asString()
-                              .orElse(null);
+            libraries.addAll(config.get("libraries").asList().orElseGet(List::of));
+            attributes.putAll(config.get("attributes").asMap().orElseGet(Map::of));
+            imagesDir = config.get("images-dir").asString().orElse(null);
             return this;
         }
 
