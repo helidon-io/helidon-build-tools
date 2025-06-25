@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,14 +65,15 @@ public class HelidonServiceTransformer implements ReproducibleResourceTransforme
 
     static final String SERVICE_REGISTRY_PATH = "META-INF/helidon/service-registry.json";
     static final String CONFIG_METADATA_PATH = "META-INF/helidon/config-metadata.json";
+    static final String FEATURE_METADATA_PATH = "META-INF/helidon/feature-registry.json";
 
     private final Map<String, Aggregator> aggregators = Stream
             .of(
                     new JsonArrayAggregator(SERVICE_REGISTRY_PATH),
                     new JsonArrayAggregator(CONFIG_METADATA_PATH),
+                    new JsonArrayAggregator(FEATURE_METADATA_PATH),
                     new ServiceLoaderAggregator(),
-                    new SerialConfigAggregator(),
-                    new FeatureMetadataAggregator()
+                    new SerialConfigAggregator()
             )
             .collect(toMap(Aggregator::path, Function.identity()));
 

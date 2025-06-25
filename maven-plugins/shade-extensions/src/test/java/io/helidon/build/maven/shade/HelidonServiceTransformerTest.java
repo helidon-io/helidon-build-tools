@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,11 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGenerator;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.maven.shade.HelidonServiceTransformer.CONFIG_METADATA_PATH;
+import static io.helidon.build.maven.shade.HelidonServiceTransformer.FEATURE_METADATA_PATH;
 import static io.helidon.build.maven.shade.HelidonServiceTransformer.SERVICE_REGISTRY_PATH;
 import static io.helidon.build.maven.shade.SerialConfigAggregator.SERIAL_CONFIG_PATH;
 import static io.helidon.build.maven.shade.ServiceLoaderAggregator.SERVICE_LOADER_PATH;
@@ -61,6 +63,12 @@ class HelidonServiceTransformerTest {
                                     null);
         transformer.processResource(CONFIG_METADATA_PATH,
                                     ClassLoader.getSystemResourceAsStream("config-metadata-2.json"),
+                                    null);
+        transformer.processResource(FEATURE_METADATA_PATH,
+                                    ClassLoader.getSystemResourceAsStream("feature-registry-1.json"),
+                                    null);
+        transformer.processResource(FEATURE_METADATA_PATH,
+                                    ClassLoader.getSystemResourceAsStream("feature-registry-2.json"),
                                     null);
         transformer.processResource(SERVICE_LOADER_PATH,
                                     ClassLoader.getSystemResourceAsStream("service-1.loader"),
@@ -98,6 +106,14 @@ class HelidonServiceTransformerTest {
         assertEqualJson(Json.createArrayBuilder().add(cfgMetaObj1).build(), "config-metadata-1.json");
         assertEqualJson(Json.createArrayBuilder().add(cfgMetaObj2).build(), "config-metadata-2.json");
 
+        // Resulting feature-metadata.json
+        JsonArray featureMetaArray = Json.createReader(new StringReader(readFromJar(jarName, FEATURE_METADATA_PATH))).readArray();
+        JsonObject featureMetaObj1 = featureMetaArray.getJsonObject(0);
+        JsonObject featureMetaObj2 = featureMetaArray.getJsonObject(1);
+
+        assertEqualJson(Json.createArrayBuilder().add(featureMetaObj1).build(), "feature-registry-1.json");
+        assertEqualJson(Json.createArrayBuilder().add(featureMetaObj2).build(), "feature-registry-2.json");
+
         // Resulting service.loader
         String expectedsl = new String(ClassLoader.getSystemResourceAsStream("service-expected.loader").readAllBytes());
         String actualsl = readFromJar(jarName, SERVICE_LOADER_PATH);
@@ -119,6 +135,9 @@ class HelidonServiceTransformerTest {
         transformer.processResource(CONFIG_METADATA_PATH,
                                     ClassLoader.getSystemResourceAsStream("config-metadata-1.json"),
                                     null);
+        transformer.processResource(FEATURE_METADATA_PATH,
+                                    ClassLoader.getSystemResourceAsStream("feature-registry-1.json"),
+                                    null);
         transformer.processResource(SERVICE_LOADER_PATH,
                                     ClassLoader.getSystemResourceAsStream("service-1.loader"),
                                     null);
@@ -136,6 +155,11 @@ class HelidonServiceTransformerTest {
         JsonArray cfgMetaArray = Json.createReader(new StringReader(readFromJar(jarName, CONFIG_METADATA_PATH))).readArray();
 
         assertEqualJson(cfgMetaArray, "config-metadata-1.json");
+
+        // Resulting feature-metadata.json
+        JsonArray featureMetaArray = Json.createReader(new StringReader(readFromJar(jarName, FEATURE_METADATA_PATH))).readArray();
+
+        assertEqualJson(featureMetaArray, "feature-registry-1.json");
 
         // Resulting service.loader
         String expected = new String(ClassLoader.getSystemResourceAsStream("service-1.loader").readAllBytes());
