@@ -1,0 +1,20 @@
+[
+    {
+        "module": "io.helidon.config",
+        "services": [
+            {
+                "descriptor": "io.helidon.config.ConfigProvider__ServiceDescriptor",
+                "contracts": [
+                    "io.helidon.common.config.Config",
+                    "io.helidon.config.ConfigProvider"
+                ]
+            },
+            {
+                "descriptor": "io.helidon.config.MetaConfig__ServiceDescriptor",
+                "contracts": [
+                    "io.helidon.config.MetaConfig"
+                ]
+            }
+        ]
+    }
+]
