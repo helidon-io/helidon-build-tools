@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
  *        <dependency>
  *            <groupId>io.helidon.build-tools</groupId>
  *            <artifactId>helidon-shade-extensions</artifactId>
- *            <version>4.0.0-SNAPSHOT</version>
+ *            <version>4.0.0</version>
  *        </dependency>
  *    </dependencies>
  * </plugin>

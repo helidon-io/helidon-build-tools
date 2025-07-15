@@ -35,12 +35,14 @@
             <groupId>io.helidon.build-tools.assembly.extensions.tests</groupId>
             <artifactId>helidon-build-tools-assembly-extensions-tests-bundle</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
             <type>pom</type>
         </dependency>
 
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
