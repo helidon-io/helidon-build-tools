@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,28 +21,21 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.build-tools</groupId>
-        <artifactId>helidon-build-tools-project</artifactId>
+        <artifactId>helidon-assembly-extensions-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>helidon-build-maven-plugins-project</artifactId>
+
+    <groupId>io.helidon.build-tools.assembly.extensions.tests</groupId>
+    <artifactId>helidon-build-tools-assembly-extensions-tests-project</artifactId>
+    <name>Helidon Assembly Maven Plugin Extensions Tests Project</name>
     <packaging>pom</packaging>
-    <name>Helidon Build Tools Maven Plugins Project</name>
-    <description>Build Aggregator for the Maven Plugins</description>
 
     <modules>
-        <module>build-cache-maven-extension</module>
-        <module>build-cache-maven-plugin</module>
-        <module>javadoc-maven-plugin</module>
-        <module>enforcer-maven-plugin</module>
-        <module>helidon-archetype-maven-plugin</module>
-        <module>helidon-cli-maven-plugin</module>
-        <module>helidon-maven-plugin</module>
-        <module>services-maven-plugin</module>
-        <module>sitegen-maven-plugin</module>
-        <module>snakeyaml-codegen-maven-plugin</module>
-        <module>stager-maven-plugin</module>
-        <module>shade-extensions</module>
-        <module>assembly-extensions</module>
+        <module>archive-1</module>
+        <module>archive-2</module>
+        <module>bundle</module>
+        <module>tests</module>
     </modules>
 
 </project>
