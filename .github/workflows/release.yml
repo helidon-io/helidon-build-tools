@@ -69,7 +69,8 @@ jobs:
         with:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           build-cache: read-only
           artifact-name: io-helidon-build-tools-artifacts-${{ github.ref_name }}
           artifact-path: target/nexus-staging/
