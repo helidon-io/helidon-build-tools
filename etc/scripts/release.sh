@@ -191,19 +191,19 @@ release_build(){
         /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
     fi
 
-    # Perform local deployment
+    # Perform local deployment to filesystem
     # shellcheck disable=SC2086
     mvn ${MVN_ARGS} "${ARGS[@]}" \
         deploy \
         -Prelease \
         -DskipTests \
-        -DskipRemoteStaging=true
+        -DaltDeploymentRepository=":::file://${PWD}/staging"
 
-    # Upload all artifacts to nexus
+    # Upload artifacts to Sonatype Central Publishing Portal
     version=$(release_version)
-    # shellcheck disable=SC2086
-    mvn ${MVN_ARGS} -N nexus-staging:deploy-staged \
-        -DstagingDescription="Helidon Build Tools v${version}"
+    "${WS_DIR}/etc/scripts/upload.sh" upload_release \
+                --dir="staging" \
+                --description="Helidon Build Tools v${version}"
 }
 
 # Invoke command
