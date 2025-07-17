@@ -202,7 +202,6 @@
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.1.0</version.plugin.plexus>
         <version.plugin.plugin-plugin>3.10.2</version.plugin.plugin-plugin>
-        <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
         <version.plugin.release-plugin>2.5.3</version.plugin.release-plugin>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.source>3.0.1</version.plugin.source>
@@ -410,19 +409,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
                     <version>${version.plugin.gpg}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${version.plugin.nexus-staging}</version>
-                    <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>false</autoReleaseAfterClose>
-                        <skipStagingRepositoryClose>false</skipStagingRepositoryClose>
-                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
-                        <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1082,11 +1068,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
@@ -1181,73 +1162,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>ossrh-releases</id>
-            <repositories>
-                <repository>
-                    <id>ossrh-releases</id>
-                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>ossrh-releases</id>
-                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-        <profile>
-            <id>ossrh-staging</id>
-            <activation>
-                <property>
-                    <name>ossrh</name>
-                </property>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>ossrh-staging</id>
-                    <name>OSS Sonatype Staging</name>
-                    <url>https://oss.sonatype.org/content/groups/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>ossrh-staging</id>
-                    <name>OSS Sonatype Staging</name>
-                    <url>https://oss.sonatype.org/content/groups/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
     </profiles>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh-snapshots</id>
-            <name>Internal Helidon Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <name>Internal Helidon Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 </project>
