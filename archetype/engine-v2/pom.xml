@@ -79,6 +79,31 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/schema</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/schema/</directory>
+                                    <includes>
+                                        <include>*.xsd</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
@@ -91,7 +116,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>src/main/schema/archetype.xsd</file>
+                                    <file>${project.build.directory}/schema/archetype.xsd</file>
                                     <type>xsd</type>
                                     <classifier>schema-2.0</classifier>
                                 </artifact>

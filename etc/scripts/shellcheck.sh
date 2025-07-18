@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 BASE_URL="https://github.com/koalaman/shellcheck/releases/download"
 readonly BASE_URL
 
-VERSION=0.9.0
+VERSION=0.10.0
 readonly VERSION
 
 CACHE_DIR="${HOME}/.shellcheck"
@@ -29,6 +29,10 @@ mkdir -p "${CACHE_DIR}"
 if [ ! -e "${CACHE_DIR}/${VERSION}/shellcheck" ] ; then
     ARCH=$(uname -m | tr "[:upper:]" "[:lower:]")
     PLATFORM=$(uname -s | tr "[:upper:]" "[:lower:]")
+    # if using Mac with a silicon chip, use aarch64 as the architecture
+    if [[ "${PLATFORM}" == "darwin" && "${ARCH}" == "arm64" ]]; then
+        ARCH=aarch64
+    fi
     curl -Lso "${CACHE_DIR}/sc.tar.xz" "${BASE_URL}/v${VERSION}/shellcheck-v${VERSION}.${PLATFORM}.${ARCH}.tar.xz"
     tar -xf "${CACHE_DIR}/sc.tar.xz" -C "${CACHE_DIR}"
     mkdir "${CACHE_DIR}/${VERSION}"
