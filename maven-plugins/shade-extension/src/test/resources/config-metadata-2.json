@@ -1,0 +1,304 @@
+[
+    {
+        "module": "io.helidon.webclient.api",
+        "types": [
+            {
+                "type": "io.helidon.webclient.api.WebClient",
+                "annotatedType": "io.helidon.webclient.api.WebClientConfig",
+                "standalone": true,
+                "prefix": "clients",
+                "inherits": [
+                    "io.helidon.webclient.api.HttpClientConfig"
+                ],
+                "producers": [
+                    "io.helidon.webclient.api.WebClientConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.webclient.api.WebClientConfig#builder()",
+                    "io.helidon.webclient.api.WebClient#create(io.helidon.webclient.api.WebClientConfig)"
+                ],
+                "options": [
+                    {
+                        "key": "protocol-configs",
+                        "type": "io.helidon.webclient.spi.ProtocolConfig",
+                        "description": "Configuration of client protocols.\n\nClient protocol configurations",
+                        "kind": "LIST",
+                        "provider": true,
+                        "providerType": "io.helidon.webclient.spi.ProtocolConfigProvider",
+                        "method": "io.helidon.webclient.api.WebClientConfig.Builder#protocolConfigs(java.util.List<io.helidon.webclient.spi.ProtocolConfig>)"
+                    }
+                ]
+            },
+            {
+                "type": "io.helidon.webclient.api.HttpClientConfig",
+                "annotatedType": "io.helidon.webclient.api.HttpClientConfig",
+                "inherits": [
+                    "io.helidon.webclient.api.HttpConfigBase"
+                ],
+                "producers": [
+                    "io.helidon.webclient.api.HttpClientConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.webclient.api.HttpClientConfig#builder()"
+                ],
+                "options": [
+                    {
+                        "key": "relative-uris",
+                        "type": "java.lang.Boolean",
+                        "description": "Can be set to `true` to force the use of relative URIs in all requests,\n regardless of the presence or absence of proxies or no-proxy lists.\n\nRelative URIs flag",
+                        "defaultValue": "false",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#relativeUris(boolean)"
+                    },
+                    {
+                        "key": "default-headers",
+                        "description": "Default headers to be used in every request from configuration.\n\nDefault headers",
+                        "kind": "MAP",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#defaultHeadersMap(java.util.Map<java.lang.String, java.lang.String>)"
+                    },
+                    {
+                        "key": "content-encoding",
+                        "type": "io.helidon.http.encoding.ContentEncodingContext",
+                        "description": "Configure the listener specific io.helidon.http.encoding.ContentEncodingContext.\n This method discards all previously registered ContentEncodingContext.\n If no content encoding context is registered, default encoding context is used.\n\nContent encoding context",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#contentEncoding(io.helidon.http.encoding.ContentEncodingContext)"
+                    },
+                    {
+                        "key": "connection-cache-size",
+                        "type": "java.lang.Integer",
+                        "description": "Maximal size of the connection cache.\n For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).\n This option limits the size. Setting this number lower than the \"usual\" number of target services will cause connections\n to be closed and reopened frequently.",
+                        "defaultValue": "256",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#connectionCacheSize(int)"
+                    },
+                    {
+                        "key": "services",
+                        "type": "io.helidon.webclient.spi.WebClientService",
+                        "description": "WebClient services.\n\nServices to use with this web client",
+                        "kind": "LIST",
+                        "provider": true,
+                        "providerType": "io.helidon.webclient.spi.WebClientServiceProvider",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#services(java.util.List<io.helidon.webclient.spi.WebClientService>)"
+                    },
+                    {
+                        "key": "media-context",
+                        "type": "io.helidon.http.media.MediaContext",
+                        "description": "Configure the listener specific io.helidon.http.media.MediaContext.\n This method discards all previously registered MediaContext.\n If no media context is registered, default media context is used.\n\nMedia context",
+                        "defaultValue": "create()",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#mediaContext(io.helidon.http.media.MediaContext)"
+                    },
+                    {
+                        "key": "cookie-manager",
+                        "type": "io.helidon.webclient.api.WebClientCookieManager",
+                        "description": "WebClient cookie manager.\n\nCookie manager to use",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#cookieManager(java.util.Optional<io.helidon.webclient.api.WebClientCookieManager>)"
+                    },
+                    {
+                        "key": "max-in-memory-entity",
+                        "type": "java.lang.Integer",
+                        "description": "If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance.\n If bigger, streaming will be used.\n <p>\n Note that for some entity types we cannot use streaming, as they are already fully in memory (String, byte[]), for such\n cases, this option is ignored. Default is 128Kb.\n\nMaximal number of bytes to buffer in memory for supported writers",
+                        "defaultValue": "131072",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#maxInMemoryEntity(int)"
+                    },
+                    {
+                        "key": "send-expect-continue",
+                        "type": "java.lang.Boolean",
+                        "description": "Whether Expect-100-Continue header is sent to verify server availability before sending an entity.\n <p>\n Defaults to `true`.\n </p>\n\nWhether Expect:100-Continue header should be sent on streamed transfers",
+                        "defaultValue": "true",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#sendExpectContinue(boolean)"
+                    },
+                    {
+                        "key": "socket-options",
+                        "type": "io.helidon.common.socket.SocketOptions",
+                        "description": "Socket options for connections opened by this client.\n If there is a value explicitly configured on this type and on the socket options,\n the one configured on this type's builder will win:\n <ul>\n     <li>readTimeout()</li>\n     <li>connectTimeout()</li>\n </ul>\n\nSocket options",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#socketOptions(io.helidon.common.socket.SocketOptions)"
+                    },
+                    {
+                        "key": "share-connection-cache",
+                        "type": "java.lang.Boolean",
+                        "description": "Whether to share connection cache between all the WebClient instances in JVM.\n\nTrue if connection cache is shared",
+                        "defaultValue": "true",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#shareConnectionCache(boolean)"
+                    },
+                    {
+                        "key": "media-type-parser-mode",
+                        "type": "io.helidon.common.media.type.ParserMode",
+                        "description": "Configure media type parsing mode for HTTP `Content-Type` header.\n\nMedia type parsing mode",
+                        "defaultValue": "ParserMode.STRICT",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#mediaTypeParserMode(io.helidon.common.media.type.ParserMode)",
+                        "allowedValues": [
+                            {
+                                "value": "STRICT"
+                            },
+                            {
+                                "value": "RELAXED"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "base-uri",
+                        "type": "io.helidon.webclient.api.ClientUri",
+                        "description": "Base uri used by the client in all requests.\n\nBase uri of the client requests",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#baseUri(java.util.Optional<io.helidon.webclient.api.ClientUri>)"
+                    },
+                    {
+                        "key": "read-continue-timeout",
+                        "type": "java.time.Duration",
+                        "description": "Socket 100-Continue read timeout. Default is 1 second.\n This read timeout is used when 100-Continue is sent by the client, before it sends an entity.\n\nRead 100-Continue timeout duration",
+                        "defaultValue": "PT1S",
+                        "method": "io.helidon.webclient.api.HttpClientConfig.Builder#readContinueTimeout(java.time.Duration)"
+                    }
+                ]
+            },
+            {
+                "type": "io.helidon.webclient.api.WebClientCookieManager",
+                "annotatedType": "io.helidon.webclient.api.WebClientCookieManagerConfig",
+                "producers": [
+                    "io.helidon.webclient.api.WebClientCookieManagerConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.webclient.api.WebClientCookieManagerConfig#builder()",
+                    "io.helidon.webclient.api.WebClientCookieManager#create(io.helidon.webclient.api.WebClientCookieManagerConfig)"
+                ],
+                "options": [
+                    {
+                        "key": "automatic-store-enabled",
+                        "type": "java.lang.Boolean",
+                        "description": "Whether automatic cookie store is enabled or not.\n\nStatus of cookie store",
+                        "defaultValue": "false",
+                        "method": "io.helidon.webclient.api.WebClientCookieManagerConfig.Builder#automaticStoreEnabled(boolean)"
+                    },
+                    {
+                        "key": "cookie-policy",
+                        "type": "java.net.CookiePolicy",
+                        "description": "Current cookie policy for this client.\n\nThe cookie policy",
+                        "defaultValue": "java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER",
+                        "method": "io.helidon.webclient.api.WebClientCookieManagerConfig.Builder#cookiePolicy(java.net.CookiePolicy)"
+                    },
+                    {
+                        "key": "default-cookies",
+                        "description": "Map of default cookies to include in all requests if cookies enabled.\n\nMap of default cookies",
+                        "kind": "MAP",
+                        "method": "io.helidon.webclient.api.WebClientCookieManagerConfig.Builder#defaultCookies(java.util.Map<java.lang.String, java.lang.String>)"
+                    }
+                ]
+            },
+            {
+                "type": "io.helidon.webclient.api.HttpConfigBase",
+                "annotatedType": "io.helidon.webclient.api.HttpConfigBase",
+                "producers": [
+                    "io.helidon.webclient.api.HttpConfigBase#create(io.helidon.common.config.Config)",
+                    "io.helidon.webclient.api.HttpConfigBase#builder()"
+                ],
+                "options": [
+                    {
+                        "key": "read-timeout",
+                        "type": "java.time.Duration",
+                        "description": "Read timeout.\n\nRead timeout\n See io.helidon.common.socket.SocketOptions.readTimeout()",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#readTimeout(java.util.Optional<java.time.Duration>)"
+                    },
+                    {
+                        "key": "keep-alive",
+                        "type": "java.lang.Boolean",
+                        "description": "Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use\n the same connection for multiple requests).\n\nKeep alive for this connection\n See io.helidon.common.socket.SocketOptions.socketKeepAlive()",
+                        "defaultValue": "true",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#keepAlive(boolean)"
+                    },
+                    {
+                        "key": "proxy",
+                        "type": "io.helidon.webclient.api.Proxy",
+                        "description": "Proxy configuration to be used for requests.\n\nProxy to use, defaults to Proxy.noProxy()",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#proxy(io.helidon.webclient.api.Proxy)"
+                    },
+                    {
+                        "key": "follow-redirects",
+                        "type": "java.lang.Boolean",
+                        "description": "Whether to follow redirects.\n\nWhether to follow redirects",
+                        "defaultValue": "true",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#followRedirects(boolean)"
+                    },
+                    {
+                        "key": "connect-timeout",
+                        "type": "java.time.Duration",
+                        "description": "Connect timeout.\n\nConnect timeout\n See io.helidon.common.socket.SocketOptions.connectTimeout()",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#connectTimeout(java.util.Optional<java.time.Duration>)"
+                    },
+                    {
+                        "key": "max-redirects",
+                        "type": "java.lang.Integer",
+                        "description": "Max number of followed redirects.\n This is ignored if followRedirects() option is `false`.\n\nMax number of followed redirects",
+                        "defaultValue": "10",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#maxRedirects(int)"
+                    },
+                    {
+                        "key": "tls",
+                        "type": "io.helidon.common.tls.Tls",
+                        "description": "TLS configuration for any TLS request from this client.\n TLS can also be configured per request.\n TLS is used when the protocol is set to `https`.\n\nTLS configuration to use",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#tls(io.helidon.common.tls.Tls)"
+                    },
+                    {
+                        "key": "properties",
+                        "description": "Properties configured for this client. These properties are propagated through client request, to be used by\n services (and possibly for other purposes).\n\nMap of client properties",
+                        "kind": "MAP",
+                        "method": "io.helidon.webclient.api.HttpConfigBase.Builder#properties(java.util.Map<java.lang.String, java.lang.String>)"
+                    }
+                ]
+            },
+            {
+                "type": "io.helidon.webclient.api.Proxy",
+                "annotatedType": "io.helidon.webclient.api.Proxy.Builder",
+                "producers": [
+                    "io.helidon.webclient.api.Proxy.Builder#build()",
+                    "io.helidon.webclient.api.Proxy#create(io.helidon.common.config.Config)"
+                ],
+                "options": [
+                    {
+                        "key": "password",
+                        "description": "Sets a new password for the proxy.",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#password(char[])"
+                    },
+                    {
+                        "key": "port",
+                        "type": "java.lang.Integer",
+                        "description": "Sets a port value.",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#port(int)"
+                    },
+                    {
+                        "key": "host",
+                        "description": "Sets a new host value.",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#host(java.lang.String)"
+                    },
+                    {
+                        "key": "force-http-connect",
+                        "type": "java.lang.Boolean",
+                        "description": "Forces HTTP CONNECT with the proxy server.\n Otherwise it will not execute HTTP CONNECT when the request is\n plain HTTP with no authentication.",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#forceHttpConnect(boolean)"
+                    },
+                    {
+                        "key": "username",
+                        "description": "Sets a new username for the proxy.",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#username(java.lang.String)"
+                    },
+                    {
+                        "key": "type",
+                        "type": "io.helidon.webclient.api.Proxy.ProxyType",
+                        "description": "Sets a new proxy type.",
+                        "defaultValue": "HTTP",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#type(io.helidon.webclient.api.Proxy.ProxyType)",
+                        "allowedValues": [
+                            {
+                                "value": "NONE",
+                                "description": "No proxy."
+                            },
+                            {
+                                "value": "SYSTEM",
+                                "description": "Proxy obtained from system."
+                            },
+                            {
+                                "value": "HTTP",
+                                "description": "HTTP proxy."
+                            }
+                        ]
+                    },
+                    {
+                        "key": "no-proxy",
+                        "description": "Configure a host pattern that is not going through a proxy.\n <p>\n Options are:\n <ul>\n     <li>IP Address, such as `192.168.1.1`</li>\n     <li>IP V6 Address, such as `[2001:db8:85a3:8d3:1319:8a2e:370:7348]`</li>\n     <li>Hostname, such as `localhost`</li>\n     <li>Domain name, such as `helidon.io`</li>\n     <li>Domain name and all sub-domains, such as `.helidon.io` (leading dot)</li>\n     <li>Combination of all options from above with a port, such as `.helidon.io:80`</li>\n </ul>",
+                        "kind": "LIST",
+                        "method": "io.helidon.webclient.api.Proxy.Builder#addNoProxy(java.lang.String)"
+                    }
+                ]
+            }
+        ]
+    }
+]
