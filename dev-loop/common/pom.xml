@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.helidon.build-tools.devloop</groupId>
         <artifactId>helidon-build-devloop-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.20-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-build-devloop-common</artifactId>
     <name>Helidon Dev Loop Common</name>
