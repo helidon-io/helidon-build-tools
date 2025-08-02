@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.Log;
 
-import static io.helidon.build.common.FileUtils.containsLine;
 import static io.helidon.build.maven.enforcer.GitIgnore.create;
 
 /**
@@ -174,11 +173,6 @@ public class FileFinder {
 
         if (Files.isSymbolicLink(file.path())) {
             Log.debug("File " + file.relativePath() + " is a symbolic link, ignoring.");
-            return false;
-        }
-
-        if (containsLine(file.path(), line -> line.startsWith("[submodule"))) {
-            Log.debug("File " + file.relativePath() + " is a submodule, ignoring.");
             return false;
         }
 
