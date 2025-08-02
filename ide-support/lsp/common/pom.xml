@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.build-tools.ide-support.lsp</groupId>
         <artifactId>helidon-lsp-project</artifactId>
-        <version>4.0.19-SNAPSHOT</version>
+        <version>4.0.19</version>
     </parent>
     <artifactId>helidon-lsp-common</artifactId>
     <name>Helidon LSP Common</name>
