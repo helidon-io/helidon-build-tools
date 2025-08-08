@@ -25,6 +25,11 @@ and `helidon` as configured `containerDescriptorHandler`.
         <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
         </descriptors>
+        <archive>
+            <manifest>
+                <mainClass>${mainClass}</mainClass>
+            </manifest>
+        </archive>
     </configuration>
     <executions>
         <execution>
@@ -68,6 +73,9 @@ and `helidon` as configured `containerDescriptorHandler`.
     <containerDescriptorHandlers>
         <containerDescriptorHandler>
             <handlerName>helidon</handlerName>
+        </containerDescriptorHandler>
+        <containerDescriptorHandler>
+            <handlerName>metaInf-services</handlerName>
         </containerDescriptorHandler>
     </containerDescriptorHandlers>
 
