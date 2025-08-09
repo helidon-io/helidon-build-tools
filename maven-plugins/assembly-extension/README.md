@@ -17,6 +17,8 @@ and `helidon` as configured `containerDescriptorHandler`.
 
 #### Plugin configuration in `pom.xml`
 
+You must add the `helidon-assembly-extension` as a dependency to the `maven-assembly-plugin`.
+
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -25,6 +27,11 @@ and `helidon` as configured `containerDescriptorHandler`.
         <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
         </descriptors>
+        <archive>
+            <manifest>
+                <mainClass>${mainClass}</mainClass>
+            </manifest>
+        </archive>
     </configuration>
     <executions>
         <execution>
@@ -45,6 +52,11 @@ and `helidon` as configured `containerDescriptorHandler`.
 ```
 
 #### Assembly descriptor
+
+The assembly descriptor must specify the `helidon` handler which knows how to merge Helidon specific meta-data.
+Helidon also uses `META-INF/services` and therefore you should specify the built-in `metaInf-services` handler for merging those files.
+See the [Apache Maven Assembly Plugin Documentation](https://maven.apache.org/plugins/maven-assembly-plugin/examples/single/using-container-descriptor-handlers.html).
+
 
 ```xml
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
@@ -68,6 +80,9 @@ and `helidon` as configured `containerDescriptorHandler`.
     <containerDescriptorHandlers>
         <containerDescriptorHandler>
             <handlerName>helidon</handlerName>
+        </containerDescriptorHandler>
+        <containerDescriptorHandler>
+            <handlerName>metaInf-services</handlerName>
         </containerDescriptorHandler>
     </containerDescriptorHandlers>
 
