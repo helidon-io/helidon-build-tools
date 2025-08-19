@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <presets>
         <boolean path="metrics" model="true">true</boolean>
         <boolean path="section1">false</boolean>
@@ -33,9 +33,9 @@
             <text path="test4" model="true">test variable 4</text>
         </variables>
         <inputs>
-            <boolean id="bool1" name="test-bool1" default="true" global="true" optional="true">
+            <boolean id="bool1" name="test-bool1" default="true" optional="true">
                 <inputs>
-                    <boolean id="bool2" name="test-bool2" default="true" global="true" optional="true" model="true"/>
+                    <boolean id="bool2" name="test-bool2" default="true" optional="true" model="true"/>
                 </inputs>
             </boolean>
             <enum id="flavor"
@@ -50,7 +50,7 @@
         </inputs>
     </step>
     <output>
-        <template engine="mustache" source="context-values.mustache" target="context-values.txt">
+        <template engine="mustache" source="context-values.hbs" target="context-values.txt">
             <model>
                 <value key="foo">bar</value>
             </model>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package io.helidon.build.common.test.utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.BiPredicate;
 
 /**
  * Compare file content.
@@ -34,8 +34,8 @@ public class BuildLog {
     /**
      * Creates an instance of {@link BuildLog}.
      *
-     * @param log   logging file
-     * @throws IOException  if an error occurs during file reading
+     * @param log logging file
+     * @throws IOException if an error occurs during file reading
      */
     public BuildLog(File log) throws IOException {
         actualLines = Files.readAllLines(log.toPath()).toArray(new String[0]);
@@ -44,7 +44,7 @@ public class BuildLog {
     /**
      * Find index of provided string into file.
      *
-     * @param str   string to find
+     * @param str       string to find
      * @param fromIndex the index to start from
      * @return the position of string into the file
      */
@@ -60,14 +60,14 @@ public class BuildLog {
     /**
      * Look for differences between provided file and this file.
      *
-     * @param expectedLog   provided file
-     * @param fromIndex     the index to start from
-     * @return  list of errors found
-     * @throws IOException  if an error occurs during reading
+     * @param expectedLog provided file
+     * @param fromIndex   the index to start from
+     * @return list of errors found
+     * @throws IOException if an error occurs during reading
      */
     public List<String> diff(File expectedLog, int fromIndex) throws IOException {
         String[] expectedLines = Files.readAllLines(expectedLog.toPath()).toArray(new String[0]);
-        List<String> diffs = new LinkedList<>();
+        List<String> diffs = new ArrayList<>();
         int actualIndex = fromIndex;
         while (actualIndex < actualLines.length - 1) {
             // seek
@@ -93,12 +93,13 @@ public class BuildLog {
         }
         return diffs;
     }
+
     /**
      * Check that the lines within provided file are contained in this file.
      *
-     * @param expectedFile  provided file
-     * @return  list of errors found
-     * @throws IOException  if an error occurs during reading
+     * @param expectedFile provided file
+     * @return list of errors found
+     * @throws IOException if an error occurs during reading
      */
     public List<String> containsLines(File expectedFile) throws IOException {
         return containsLines(Files.readAllLines(expectedFile.toPath()), 0);
@@ -107,22 +108,24 @@ public class BuildLog {
     /**
      * Check that the provided lines are contained in this file.
      *
-     * @param expectedFile  provided file
-     * @return  list of errors found
+     * @param expectedLines expected lines
+     * @param fromIndex     the index to start from
+     * @return list of errors found
      */
-    public List<String> containsLines(List<String> expectedFile) {
-        return containsLines(expectedFile, 0);
+    public List<String> containsLines(List<String> expectedLines, int fromIndex) {
+        return containsLines(expectedLines, String::endsWith, fromIndex);
     }
 
     /**
      * Check that the provided lines are contained in this file.
      *
-     * @param expectedLines provided lines
+     * @param expectedLines expected lines
+     * @param predicate     predicate
      * @param fromIndex     the index to start from
-     * @return  list of errors found
+     * @return list of errors found
      */
-    public List<String> containsLines(List<String> expectedLines, int fromIndex) {
-        List<String> errors = new LinkedList<>();
+    public List<String> containsLines(List<String> expectedLines, BiPredicate<String, String> predicate, int fromIndex) {
+        List<String> errors = new ArrayList<>();
         long finalIndex = fromIndex + expectedLines.size();
         if (finalIndex > actualLines.length) {
             errors.add(String.format("Trying to read out of file, fromIndex + expectedLine : %d, log lines: %d",
@@ -133,7 +136,7 @@ public class BuildLog {
         for (String expectedLine : expectedLines) {
             if (Arrays.stream(actualLines)
                     .skip(fromIndex)
-                    .noneMatch(line -> line.endsWith(expectedLine))) {
+                    .noneMatch(line -> predicate.test(line, expectedLine))) {
                 errors.add(String.format("line: %s is not found into log", expectedLine));
                 break;
             }
@@ -151,7 +154,7 @@ public class BuildLog {
         int actualIndex = 0;
         while (actualIndex < actualLines.length && counter < skip) {
             if (actualLines[actualIndex].contains("BUILD SUCCESS")
-                    || actualLines[actualIndex].contains("BUILD FAILURE")) {
+                || actualLines[actualIndex].contains("BUILD FAILURE")) {
                 counter++;
             }
             actualIndex++;
@@ -171,9 +174,8 @@ public class BuildLog {
      */
     public static void assertDiffs(List<String> diffs) {
         if (!diffs.isEmpty()) {
-            throw new AssertionError("diffs: "
-                    + System.lineSeparator()
-                    + diffs.stream().collect(Collectors.joining(System.lineSeparator())));
+            throw new AssertionError(String.format("diffs: %n%s",
+                    String.join(System.lineSeparator(), diffs)));
         }
     }
 

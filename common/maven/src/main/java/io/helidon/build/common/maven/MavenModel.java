@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
-import java.util.Map;
-
-import io.helidon.build.common.xml.XMLParser;
-import io.helidon.build.common.xml.XMLReader;
 
 import static io.helidon.build.common.Strings.isValid;
 import static io.helidon.build.common.Strings.requireValid;
@@ -43,21 +38,18 @@ public final class MavenModel {
     private final String description;
     private final String packaging;
 
-    private MavenModel(ModelReader reader) {
-        if (reader.hasParent) {
-            this.parent = new Parent(reader.parentGroupId, reader.parentArtifactId, reader.parentVersion);
+    private MavenModel(Builder builder) {
+        if (isValid(builder.parentGroupId) && isValid(builder.parentArtifactId) && isValid(builder.parentVersion)) {
+            this.parent = new Parent(builder.parentGroupId, builder.parentArtifactId, builder.parentVersion);
         } else {
             this.parent = null;
         }
-        String groupId = isValid(reader.groupId) ? reader.groupId : reader.parentGroupId;
-        this.groupId = requireValid(groupId, "groupId is not valid");
-        this.artifactId = requireValid(reader.artifactId, "artifactId is not valid");
-        String version = isValid(reader.version) ? reader.version : reader.parentVersion;
-        this.version = requireValid(version, "version is not valid");
-        this.name = reader.name;
-        this.description = reader.description;
-        String packaging = isValid(reader.packaging) ? reader.packaging : "jar";
-        this.packaging = requireValid(packaging, "packaging is not valid");
+        this.groupId = requireValid(isValid(builder.groupId) ? builder.groupId : builder.parentGroupId, "groupId is not valid");
+        this.artifactId = requireValid(builder.artifactId, "artifactId is not valid");
+        this.version = requireValid(isValid(builder.version) ? builder.version : builder.parentVersion, "version is not valid");
+        this.packaging = requireValid(isValid(builder.packaging) ? builder.packaging : "jar", "packaging is not valid");
+        this.name = builder.name;
+        this.description = builder.description;
     }
 
     /**
@@ -83,13 +75,20 @@ public final class MavenModel {
      * @throws RuntimeException on error.
      */
     public static MavenModel read(InputStream is) {
-        ModelReader reader = new ModelReader();
-        try {
-            XMLParser.parse(is, reader);
-            return new MavenModel(reader);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        try (MavenModelReader reader = new MavenModelReader(is)) {
+            return reader.read();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Create a new builder.
+     *
+     * @return Builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -158,7 +157,7 @@ public final class MavenModel {
     /**
      * Parent POM definition.
      */
-    public static class Parent {
+    public static final class Parent {
 
         private final String groupId;
         private final String artifactId;
@@ -198,12 +197,10 @@ public final class MavenModel {
         }
     }
 
-    private static final class ModelReader implements XMLReader {
-
-        private static final int STOP = (1 << 9) - 1;
-
-        private final LinkedList<String> stack = new LinkedList<>();
-        private boolean hasParent;
+    /**
+     * MavenModel builder.
+     */
+    public static final class Builder {
         private String parentGroupId;
         private String parentArtifactId;
         private String parentVersion;
@@ -213,90 +210,113 @@ public final class MavenModel {
         private String name;
         private String description;
         private String packaging;
-        private int mask = 0;
 
-        @Override
-        public boolean keepParsing() {
-            return mask != STOP;
+        /**
+         * Set the parent groupId.
+         *
+         * @param parentGroupId groupId
+         * @return this builder
+         */
+        public Builder parentGroupId(String parentGroupId) {
+            this.parentGroupId = parentGroupId;
+            return this;
         }
 
-        @Override
-        public void startElement(String qName, Map<String, String> attributes) {
-            String parentQName = stack.peek();
-            if (parentQName == null) {
-                if (!"project".equals(qName)) {
-                    throw new IllegalStateException("Invalid root element '" + qName + "'");
-                }
-            }
-            stack.push(qName);
+        /**
+         * Set the parent artifactId.
+         *
+         * @param parentArtifactId artifactId
+         * @return this builder
+         */
+        public Builder parentArtifactId(String parentArtifactId) {
+            this.parentArtifactId = parentArtifactId;
+            return this;
         }
 
-        @Override
-        public void endElement(String name) {
-            stack.pop();
-            if (stack.isEmpty()) {
-                mask = STOP;
-            } else if ("parent".equals(name)) {
-                mask |= 7;
-            }
+        /**
+         * Set the parent version.
+         *
+         * @param parentVersion version
+         * @return this builder
+         */
+        public Builder parentVersion(String parentVersion) {
+            this.parentVersion = parentVersion;
+            return this;
         }
 
-        @Override
-        public void elementText(String data) {
-            if (stack.size() >= 2) {
-                String qName = stack.get(0);
-                String parentQName = stack.get(1);
-                if ("project".equals(parentQName)) {
-                    switch (qName) {
-                    case "groupId":
-                        groupId = data;
-                        mask |= (1 << 3);
-                        break;
-                    case "artifactId":
-                        artifactId = data;
-                        mask |= (1 << 4);
-                        break;
-                    case "version":
-                        version = data;
-                        mask |= (1 << 5);
-                        break;
-                    case "name":
-                        name = data;
-                        mask |= (1 << 6);
-                        break;
-                    case "description":
-                        description = data;
-                        mask |= (1 << 7);
-                        break;
-                    case "packaging":
-                        packaging = data;
-                        mask |= (1 << 8);
-                        break;
-                    default:
-                        // do nothing
-                    }
-                } else if ("parent".equals(parentQName)) {
-                    switch (qName) {
-                    case "groupId":
-                        hasParent = true;
-                        parentGroupId = data;
-                        mask |= (1 << 1);
-                        break;
-                    case "artifactId":
-                        hasParent = true;
-                        parentArtifactId = data;
-                        mask |= (1 << 2);
-                        break;
-                    case "version":
-                        hasParent = true;
-                        parentVersion = data;
-                        mask |= (1 << 3);
-                        break;
-                    default:
-                        // do nothing
-                    }
-                }
-            }
+        /**
+         * Set the groupId.
+         *
+         * @param groupId groupId
+         * @return this builder
+         */
+        public Builder groupId(String groupId) {
+            this.groupId = groupId;
+            return this;
+        }
+
+        /**
+         * Set the artifactId.
+         *
+         * @param artifactId artifactId
+         * @return this builder
+         */
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        /**
+         * Set the version.
+         *
+         * @param version version
+         * @return this builder
+         */
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        /**
+         * Set the packaging.
+         *
+         * @param packaging packaging
+         * @return this builder
+         */
+        public Builder packaging(String packaging) {
+            this.packaging = packaging;
+            return this;
+        }
+
+        /**
+         * Set the name.
+         *
+         * @param name name
+         * @return this builder
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Set the description.
+         *
+         * @param description description
+         * @return this builder
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Build the instance.
+         *
+         * @return MavenModel
+         */
+        public MavenModel build() {
+            return new MavenModel(this);
         }
     }
 }

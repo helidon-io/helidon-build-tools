@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public class AnsiTextStyle implements RichTextStyle {
      *     <li>{@code negative}</li>
      * </ul>
      * <br><br>
-     * See Portability below for more on {@code default}, {@code bold} and {@code negative}.
+     * See the portability section below for more on {@code default}, {@code bold} and {@code negative}.
      * <br><br>
      * <h4>Background Color Names</h4>
      * <ul>
@@ -183,7 +183,7 @@ public class AnsiTextStyle implements RichTextStyle {
      *  </ul>
      * <br><br>
      * Finally, {@code strikethrough}, (the really annoying) {@code blink} and {@code conceal} may not be enabled or supported in
-     * every terminal and may do nothing. For {@code conceal}, presumably you can just leave out whatever you don't want shown; for
+     * every terminal and may do nothing. For {@code conceal}, presumably you can leave out whatever you don't want shown; for
      * the other two best to assume they don't work and use them only as <em>additional</em> emphasis.
      *
      * @param name The name.
@@ -506,16 +506,6 @@ public class AnsiTextStyle implements RichTextStyle {
     @Override
     public String toString() {
         return "none";
-    }
-
-    @Override
-    public RichText apply(RichText richText) {
-        return richText;
-    }
-
-    @Override
-    public RichText reset(RichText richText) {
-        return richText;
     }
 
     static class Hue extends AnsiTextStyle {

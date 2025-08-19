@@ -31,10 +31,6 @@
     <artifactId>helidon-cli-functional</artifactId>
     <name>Helidon Command Line Interface Functional Tests</name>
 
-    <properties>
-        <version.lib.helidon>2.5.1</version.lib.helidon>
-    </properties>
-
     <dependencies>
         <dependency>
             <!-- Ensure helidon cli maven plugin is built before running functional test -->
@@ -78,12 +74,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
-            <version>${version.lib.helidon}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-test-utils</artifactId>
             <version>${project.version}</version>
@@ -100,6 +90,7 @@
                     <systemPropertyVariables>
                         <cli.version>${project.version}</cli.version>
                         <helidon.executable.directory>${project.basedir}/../../impl</helidon.executable.directory>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

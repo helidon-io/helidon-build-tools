@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -80,7 +81,7 @@ public final class InputStreams {
     /**
      * Wraps the given output stream as a {@code PrintStream} that uses UTF8 encoding.
      *
-     * @param out The stream to wrap.
+     * @param out       The stream to wrap.
      * @param autoFlush {@code true} If stream should flush on each line.
      * @return The stream.
      */
@@ -113,6 +114,78 @@ public final class InputStreams {
         }
     }
 
+    /**
+     * Filter the given input stream to normalize new lines.
+     *
+     * @param in input stream
+     * @return InputStream
+     */
+    public static InputStream normalizeNewLines(InputStream in) {
+        Objects.requireNonNull(in);
+        return new FilterInputStream(in) {
+            private volatile int next = -1;
+
+            @Override
+            public int read() throws IOException {
+                int i;
+                if (next < 0) {
+                    i = in.read();
+                } else {
+                    i = next;
+                    next = -1;
+                }
+                if (i == '\r') {
+                    i = in.read();
+                    if (i == '\n') {
+                        return '\n';
+                    }
+                    next = i;
+                    return '\r';
+                }
+                return i;
+            }
+        };
+    }
+
     private InputStreams() {
+    }
+
+    private abstract static class FilterInputStream extends InputStream {
+
+        private final InputStream in;
+
+        private FilterInputStream(InputStream in) {
+            this.in = Objects.requireNonNull(in);
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            return in.skip(n);
+        }
+
+        @Override
+        public int available() throws IOException {
+            return in.available();
+        }
+
+        @Override
+        public void close() throws IOException {
+            in.close();
+        }
+
+        @Override
+        public void mark(int limit) {
+            in.mark(limit);
+        }
+
+        @Override
+        public void reset() throws IOException {
+            in.reset();
+        }
+
+        @Override
+        public boolean markSupported() {
+            return in.markSupported();
+        }
     }
 }

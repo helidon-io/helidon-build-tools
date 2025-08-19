@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@
 
 <!DOCTYPE suppressions PUBLIC
         "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-        "http://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
+        "https://checkstyle.org/dtds/suppressions_1_1.dtd">
 
 <suppressions>
     <suppress checks="FileLength"
-            files="cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java"
-            lines="1"/>
+            files="cli/codegen/src/main/java/io/helidon/build/cli/codegen/AST.java" />
+    <suppress checks="FileLength"
+            files="archetype/engine-v2/src/main/java/io/helidon/build/archetype/engine/v2/ScriptCompiler.java" />
     <suppress checks="IllegalImport"
               files="cli/impl/src/main/java/io/helidon/build/cli/impl/Helidon.java"
               lines="22"/>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <presets>
+        <boolean path="path1" if="true">true</boolean>
+        <boolean path="path2" if="false">false</boolean>
+    </presets>
+    <step name="Step 1" if="true">
+        <help>Help about step 1</help>
+        <inputs>
+            <boolean id="input1" name="Input 1">
+                <output if="false">
+                    <file source="file3.txt" target="file4.txt"/>
+                </output>
+            </boolean>
+        </inputs>
+    </step>
+    <output if="true">
+        <file source="file1.txt" target="file2.txt" if="true"/>
+        <file source="file3.txt" target="file4.txt" if="false"/>
+        <template source="file1.tpl" target="file2.txt" engine="foo" if="true"/>
+        <template source="file3.tpl" target="file4.txt" engine="bar" if="false"/>
+        <files if="true">
+            <directory>colors</directory>
+            <includes>
+                <include if="true">red</include>
+                <include>green</include>
+                <include if="false">blue</include>
+            </includes>
+            <excludes>
+                <exclude if="true">yellow</exclude>
+                <exclude>pink</exclude>
+                <exclude if="false">purple</exclude>
+            </excludes>
+        </files>
+        <files if="false">
+            <directory>colors2</directory>
+            <includes>
+                <include>burgundy</include>
+            </includes>
+            <excludes>
+                <exclude>beige</exclude>
+            </excludes>
+        </files>
+        <model>
+            <value key="red" if="true">red</value>
+            <value key="green">green</value>
+            <value key="blue" if="false">blue</value>
+            <list key="colors1" if="true">
+                <value if="true">yellow</value>
+                <value>pink</value>
+                <value if="false">purple</value>
+            </list>
+            <list key="colors2" if="false">
+                <value>magenta</value>
+            </list>
+            <map key="shapes1" if="true">
+                <value key="rectangle" if="true">orange</value>
+                <value key="circle">lavender</value>
+                <value key="triangle" if="false">black</value>
+            </map>
+            <map key="shapes2" if="false &amp;&amp; !true">
+                <value key="circle">white</value>
+            </map>
+        </model>
+    </output>
+</archetype-script>

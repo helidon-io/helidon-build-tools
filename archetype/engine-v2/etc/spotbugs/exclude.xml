@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,63 +23,21 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.archetype.engine.v2.util.InputPermutations$VisitorImpl"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-
-    <Match>
-        <!-- This random generator (java.util.Random) is predictable -->
-        <Class name="io.helidon.build.archetype.engine.v2.util.InputPermutations"/>
-        <Bug pattern="PREDICTABLE_RANDOM"/>
-    </Match>
-
-    <Match>
-        <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.archetype.engine.v2.util.ArchetypeValidator"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-
-    <Match>
-        <!-- This random generator (java.util.Random) is predictable -->
-        <Class name="io.helidon.build.archetype.engine.v2.ScriptLoader"/>
-        <Bug pattern="PREDICTABLE_RANDOM"/>
-    </Match>
-
-    <Match>
         <!-- Found reliance on default encoding -->
-        <Class name="io.helidon.build.archetype.engine.v2.TerminalInputResolver"/>
+        <Class name="io.helidon.build.archetype.engine.v2.InputResolver$InteractiveResolver"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
-    </Match>
-
-    <Match>
-        <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.archetype.engine.v2.Controller"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
     <Match>
         <!--  Found reliance on default encoding -->
-        <Class name="io.helidon.build.archetype.engine.v2.MustacheSupport"/>
+        <Class name="io.helidon.build.archetype.engine.v2.TemplateSupport"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
     </Match>
 
     <Match>
         <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.archetype.engine.v2.OutputGenerator"/>
+        <Class name="io.helidon.build.archetype.engine.v2.Generator"/>
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-
-    <Match>
-        <!-- This random generator (java.util.Random) is predictable -->
-        <Class name="io.helidon.build.archetype.engine.v2.ScriptLoader"/>
-        <Bug pattern="PREDICTABLE_RANDOM"/>
-    </Match>
-
-    <Match>
-        <!-- Unchecked/unconfirmed cast -->
-        <Class name="io.helidon.build.archetype.engine.v2.util.ArchetypeScanner"/>
-        <Bug pattern="BC_UNCONFIRMED_CAST"/>
     </Match>
 
     <Match>

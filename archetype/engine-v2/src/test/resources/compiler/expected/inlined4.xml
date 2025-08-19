@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <step name="Cake">
+        <inputs>
+            <enum id="fruit" name="Fruit" default="berries" global="true">
+                <option name="Berries" value="berries"/>
+                <option name="Tropical" value="tropical"/>
+            </enum>
+            <enum id="berry-type"
+                  name="Berry type"
+                  default="raspberry"
+                  global="true"
+                  if="${fruit} == &apos;berries&apos;">
+                <option name="Raspberry" value="raspberry"/>
+                <option name="Strawberry" value="strawberry"/>
+            </enum>
+        </inputs>
+        <variables>
+            <text path="~berry-type" if="${fruit} != &apos;berries&apos;"><![CDATA[]]></text>
+        </variables>
+        <inputs>
+            <boolean id="organic"
+                     name="Organic"
+                     if="${berry-type} == &apos;raspberry&apos; &amp;&amp; ${fruit} == &apos;berries&apos;"/>
+            <boolean id="frozen"
+                     name="Frozen"
+                     if="${berry-type} == &apos;strawberry&apos; &amp;&amp; ${fruit} == &apos;berries&apos;"/>
+            <enum id="tropical-type"
+                  name="Tropical type"
+                  default="mango"
+                  global="true"
+                  if="${fruit} == &apos;tropical&apos;">
+                <option name="Mango" value="mango"/>
+                <option name="Banana" value="banana"/>
+            </enum>
+        </inputs>
+        <variables>
+            <text path="~tropical-type" if="${fruit} != &apos;tropical&apos;"><![CDATA[]]></text>
+        </variables>
+        <inputs>
+            <boolean id="fare-trade"
+                     name="Fare trade"
+                     global="true"
+                     if="${fruit} == &apos;tropical&apos; &amp;&amp; ${tropical-type} == &apos;mango&apos;"/>
+        </inputs>
+        <variables>
+            <boolean path="~fare-trade"
+                     if="${fruit} != &apos;tropical&apos; || ${tropical-type} != &apos;mango&apos;">false</boolean>
+        </variables>
+        <inputs>
+            <text id="comment"
+                  name="Comment"
+                  if="${fare-trade} &amp;&amp; ${fruit} == &apos;tropical&apos; &amp;&amp; ${tropical-type} == &apos;mango&apos;"/>
+            <boolean id="plantain"
+                     name="Plantain"
+                     if="${fruit} == &apos;tropical&apos; &amp;&amp; ${tropical-type} == &apos;banana&apos;"/>
+            <text id="comment" name="Comment"/>
+            <boolean id="frosting" name="Frosting"/>
+        </inputs>
+    </step>
+</archetype-script>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,30 @@
 package io.helidon.build.maven.archetype;
 
 import java.io.InputStream;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXParseException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link Schema}.
  */
 class SchemaTest {
 
-    private static final Schema VALIDATOR = new Schema(
-            SchemaTest.class.getClassLoader().getResourceAsStream(Schema.RESOURCE_NAME));
+    private static final Schema SCHEMA = new Schema();
 
     @Test
     void testValidate() {
-        VALIDATOR.validate(() -> resource("colors.xml"));
+        List<String> errors = SCHEMA.validate(resource("colors.xml"), "colors.xml");
+        assertThat(errors.size(), is(0));
     }
 
     @Test
     void testValidateNegative() {
-        RuntimeException ex = assertThrows(Schema.ValidationException.class,
-                () -> VALIDATOR.validate(() -> resource("shapes.xml")));
-        assertThat(ex.getCause(), is(instanceOf(SAXParseException.class)));
-    }
-
-    @Test
-    void testSkipNonArchetypes() {
-        VALIDATOR.validate(() -> resource("other.xml"));
+        List<String> errors = SCHEMA.validate(resource("shapes.xml"), "shapes.xml");
+        assertThat(errors.size(), is(1));
     }
 
     private static InputStream resource(String path) {

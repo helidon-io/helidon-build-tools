@@ -778,7 +778,7 @@ public class JavadocMojo extends AbstractMojo {
         for (Path sourceFile : sourceFiles) {
             String pkg = packages.computeIfAbsent(sourceFile.getParent(), ignored -> {
                 Log.debug("Parsing package name of %s", sourceFile);
-                return JavaParser.packge(sourceFile);
+                return JavaParser.pkg(sourceFile);
             });
             Path dir = sourceRoot(sourceFile, pkg);
             if (sourceFilter.test(dir)) {

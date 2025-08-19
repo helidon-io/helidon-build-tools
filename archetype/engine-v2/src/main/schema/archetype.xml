@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,27 +18,41 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <!-- This is a specimen file used to exercise the schema -->
-    <presets>
+    <presets if="${var1}">
         <boolean path="test.option1">true</boolean>
         <list path="test.array1">
             <value>hello</value>
         </list>
-        <enum path="test.enum1">bob</enum> <!-- error, this is not one of the enum values -->
-        <enum path="test.array1">bob</enum> <!-- error, this is declared as an array -->
+        <enum path="test.enum1">Foo</enum>
+        <enum path="test.array1">Foo</enum>
         <text path="test.text1">foo</text>
     </presets>
+    <variables if="${var1}">
+        <boolean path="test.option1">true</boolean>
+        <list path="test.array1">
+            <value>hello</value>
+        </list>
+        <enum path="test.enum1">Foo</enum>
+        <enum path="test.array1">Foo</enum>
+        <text path="test.text1">foo</text>
+    </variables>
+    <validations if="${var1}">
+        <validation id="validation1">
+            <regex>[a-zA-Z]+</regex>
+        </validation>
+    </validations>
     <step name="A Step Title">
         <help><![CDATA[
-Some **rich** help text !
+Some **rich** help !
 
 ```java
 System.out.println("YEAH");
 ```
 ]]></help>
-        <inputs>
+        <inputs if="${var1}">
             <text id="some-input" name="Some text input"/>
         </inputs>
     </step>
@@ -110,16 +124,26 @@ System.out.println("YEAH");
     <exec url="mvn://groupId:artifactId:version/helidon-archetype.xml"/>
     <output if="${foo} == 'bar'">
         <transformation id="t1">
-            <replace replacement="token" regex="foo" />
+            <replace replacement="token" regex="foo"/>
         </transformation>
         <templates transformations="t1" engine="mustache">
             <directory>files</directory>
             <includes>
                 <include>**/*.foo</include>
             </includes>
+            <excludes>
+                <exclude>**/*.bar</exclude>
+            </excludes>
         </templates>
+        <file source="" target=""/>
         <files transformations="t1">
             <directory>files</directory>
+            <includes>
+                <include>**/*.foo</include>
+            </includes>
+            <excludes>
+                <exclude>**/*.bar</exclude>
+            </excludes>
         </files>
         <model>
             <map key="foo">

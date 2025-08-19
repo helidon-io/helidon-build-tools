@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,12 @@
 package io.helidon.build.maven.cache;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -38,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.build.common.Checksum;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.maven.cache.CacheConfig.LifecycleConfig;
@@ -139,10 +135,10 @@ final class ProjectFiles {
             }
             checksum = elt.attributes().get("checksum");
             for (XMLElement fileElt : elt.children("file")) {
-                String fsum = fileElt.attributes().get("checksum");
-                String fpath = fileElt.value();
-                if (fsum != null && !fsum.isEmpty() && fpath != null && !fpath.isEmpty()) {
-                    allChecksums.put(fpath, fsum);
+                String sum = fileElt.attributes().get("checksum");
+                String path = fileElt.value();
+                if (sum != null && !sum.isEmpty() && path != null && !path.isEmpty()) {
+                    allChecksums.put(path, sum);
                 }
             }
         }
@@ -189,7 +185,7 @@ final class ProjectFiles {
         Files.walkFileTree(projectDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, visitor);
         long lastModified = 0;
         Map<String, String> fileChecksums = new HashMap<>();
-        MD5 md5 = cacheConfig.enableChecksums() ? new MD5() : null;
+        Checksum md5 = cacheConfig.enableChecksums() ? new Checksum.MD5() : null;
         Collections.sort(visitor.files);
         for (String f : visitor.files) {
             Path file = projectDir.resolve(f);
@@ -198,7 +194,7 @@ final class ProjectFiles {
                 lastModified = lm;
             }
             if (cacheConfig.includeAllChecksums()) {
-                fileChecksums.put(f, MD5.checksum(file));
+                fileChecksums.put(f, Checksum.md5(file));
             }
             if (md5 != null) {
                 md5.update(file);
@@ -256,56 +252,6 @@ final class ProjectFiles {
         @Override
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
             return FileVisitResult.CONTINUE;
-        }
-    }
-
-    private static final class MD5 {
-
-        private static final char[] HEX_CODE = "0123456789ABCDEF".toCharArray();
-        private static volatile ByteBuffer buffer;
-        private final MessageDigest md;
-
-        MD5() {
-            try {
-                md = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        MD5 update(Path file) throws IOException {
-            RandomAccessFile raf = new RandomAccessFile(file.toFile(), "r");
-            FileChannel fc = raf.getChannel();
-            if (buffer == null) {
-                synchronized (MD5.class) {
-                    if (buffer == null) {
-                        buffer = ByteBuffer.allocate(4096);
-                    }
-                }
-            }
-            while (fc.read(buffer) > 0) {
-                buffer.flip();
-                md.update(buffer);
-                buffer.clear();
-            }
-            buffer.clear();
-            fc.close();
-            raf.close();
-            return this;
-        }
-
-        String toHexString() {
-            byte[] bytes = md.digest();
-            StringBuilder r = new StringBuilder(bytes.length * 2);
-            for (byte b : bytes) {
-                r.append(HEX_CODE[(b >> 4) & 0xF]);
-                r.append(HEX_CODE[(b & 0xF)]);
-            }
-            return r.toString();
-        }
-
-        static String checksum(Path file) throws IOException {
-            return new MD5().update(file).toHexString();
         }
     }
 }

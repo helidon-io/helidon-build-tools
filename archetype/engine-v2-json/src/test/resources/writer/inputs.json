@@ -1,0 +1,50 @@
+{
+    "expressions": {
+        "1": [
+            {
+                "kind": "variable",
+                "value": "foo"
+            }
+        ]
+    },
+    "methods": {
+    },
+    "children": [
+        {
+            "kind": "step",
+            "id": "1",
+            "name": "Step1",
+            "help": "Help1",
+            "children": [
+                {
+                    "kind": "inputs",
+                    "children": [
+                        {
+                            "kind": "enum",
+                            "id": "enum1",
+                            "default": "option1",
+                            "if": "1",
+                            "children": [
+                                {
+                                    "kind": "option",
+                                    "name": "Option1",
+                                    "value": "option1"
+                                },
+                                {
+                                    "kind": "option",
+                                    "name": "Option2",
+                                    "value": "option2"
+                                }
+                            ]
+                        },
+                        {
+                            "kind": "text",
+                            "id": "text1",
+                            "default": "Default1"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

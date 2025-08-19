@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.build.cli.impl;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +65,7 @@ public final class InitOptions {
     private final String groupIdOption;
     private final String artifactIdOption;
     private final String packageNameOption;
-    private final File outputPropsFileOption;
+    private final String outputPropsFileOption;
     private final boolean batch;
     private String projectName;
     private String groupId;
@@ -110,7 +109,7 @@ public final class InitOptions {
             @KeyValue(name = "package", description = "Project's package name") String packageName,
             @KeyValue(name = "name", description = "Project's name") String projectName,
             @KeyValue(name = "output-props-file", description = "Path to file where user inputs will be saved")
-            File outputPropsFile,
+            String outputPropsFile,
             @Option.Flag(name = "batch", description = "Enable non-interactive mode") boolean batch) {
 
         this.buildOption = build;
@@ -140,7 +139,7 @@ public final class InitOptions {
      *
      * @return output-props-file
      */
-    public File outputPropsFileOption() {
+    public String outputPropsFileOption() {
         return outputPropsFileOption;
     }
 

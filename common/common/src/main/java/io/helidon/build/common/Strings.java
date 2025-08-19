@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public class Strings {
     }
 
     /**
-     * Generate a padding.
+     * Generate a padding string.
      *
      * @param pad         the value of a single "pad"
      * @param maxKeyWidth the max width of the padding to generate
@@ -152,7 +152,7 @@ public class Strings {
     }
 
     /**
-     * Sanitize given string with replacement keys and values.
+     * Sanitize the given string with replacement keys and values.
      *
      * @param str          string
      * @param replacements map containing old and new characters
@@ -172,11 +172,11 @@ public class Strings {
     }
 
     /**
-     * Count the amount of the symbols in the line that that match the predicate.
+     * Count the symbols in the line that that match the predicate.
      *
      * @param predicate predicate for the symbols
      * @param line      line
-     * @return amount of the symbols in the line that that match the predicate
+     * @return count of symbols in the line that that match the predicate
      */
     public static int countWhile(Predicate<Character> predicate, String line) {
         int result = 0;
@@ -191,7 +191,7 @@ public class Strings {
     }
 
     /**
-     * <p>Compares two Strings, and returns the portion where they differ.
+     * <p>Compares two strings and returns the portion where they differ.
      * More precisely, return the remainder of the second String,
      * starting from where it's different from the first. This means that
      * the difference between "abc" and "ab" is the empty String and not "c". </p>
@@ -209,8 +209,8 @@ public class Strings {
      * Strings.difference("abcde", "xyz") = "xyz"
      * </pre>
      *
-     * @param str1 the first String, may be null
-     * @param str2 the second String, may be null
+     * @param str1 the first string, may be {@code null}
+     * @param str2 the second string, may be {@code null}
      * @return the portion of str2 where it differs from str1; returns the
      *         empty String if they are equal
      */
@@ -229,7 +229,7 @@ public class Strings {
     }
 
     /**
-     * <p>Compares two CharSequences, and returns the index at which the
+     * <p>Compares two CharSequences and returns the index at which the
      * CharSequences begin to differ.</p>
      *
      * <p>For example,
@@ -244,8 +244,8 @@ public class Strings {
      * Strings.indexOfDifference("abcde", "xyz") = 0
      * </pre>
      *
-     * @param cs1 the first CharSequence, may be null
-     * @param cs2 the second CharSequence, may be null
+     * @param cs1 the first {@link CharSequence}, may be {@code null}
+     * @param cs2 the second {@link CharSequence}, may be {@code null}
      * @return the index where cs1 and cs2 begin to differ; -1 if they are equal
      */
     public static int indexOfDifference(final CharSequence cs1, final CharSequence cs2) {

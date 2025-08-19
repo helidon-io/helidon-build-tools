@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,8 @@ class ProjectStateTest {
 
         assertThat(projectState.projectFiles(), is(new ProjectFiles(7, 1717820328080L, null, Map.of())));
 
-        assertThat(projectState.executions(),
-                is(List.of(new ExecutionEntry("groupId1", "artifactId1", "version1", "goal1", "id1", XMLElement.builder()
+        ExecutionEntry expectedExecution = new ExecutionEntry("groupId1", "artifactId1", "version1", "goal1", "id1",
+                XMLElement.builder()
                         .name("configuration")
                         .child(includes -> includes
                                 .name("includes")
@@ -103,7 +103,8 @@ class ProjectStateTest {
                         .child(elt1 -> elt1
                                 .name("elt1")
                                 .attributes(Map.of("attr1", "value1")))
-                        .build()))));
+                        .build());
+        assertThat(projectState.executions(), is(List.of(expectedExecution)));
     }
 
     static final Pattern XML_COMMENT_PATTERN = Pattern.compile("<!--.*-->\\R?", Pattern.DOTALL);

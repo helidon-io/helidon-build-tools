@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <step name="Step1">
+        <inputs>
+            <boolean id="var1" name="Var1"/>
+            <boolean id="var2" name="Var2"/>
+            <boolean id="var3" name="Var3"/>
+            <boolean id="var4" name="Var4"/>
+            <boolean id="var5" name="Var5"/>
+        </inputs>
+    </step>
+    <output>
+        <transformation id="template-blobs-1">
+            <replace regex="\QD5C52BC22C00687FF133AA1047F310E2\E"
+                     replacement="${module-dir}/template1"/>
+            <replace regex="\QD41D8CD98F00B204E9800998ECF8427E\E"
+                     replacement="${module-dir}/${groupId/\./\/}/Main.java"/>
+        </transformation>
+        <transformation id="template-blobs-2">
+            <replace regex="\QD5C52BC22C00687FF133AA1047F310E2\E"
+                     replacement="${module-dir}/template2"/>
+            <replace regex="\QD41D8CD98F00B204E9800998ECF8427E\E"
+                     replacement="${groupId/\./\/}/Main.java"/>
+        </transformation>
+        <transformation id="template-blobs-3">
+            <replace regex="\QD5C52BC22C00687FF133AA1047F310E2\E" replacement="template1"/>
+        </transformation>
+        <transformation id="template-blobs-4">
+            <replace regex="\QD5C52BC22C00687FF133AA1047F310E2\E" replacement="template2"/>
+        </transformation>
+        <templates engine="mustache" transformations="template-blobs-1">
+            <directory>blobs</directory>
+            <includes>
+                <include if="${var1} &amp;&amp; ${var2} &amp;&amp; ${var3}">D5C52BC22C00687FF133AA1047F310E2</include>
+                <include if="${var1} &amp;&amp; ${var2} &amp;&amp; ${var3} &amp;&amp; ${var4}">D41D8CD98F00B204E9800998ECF8427E</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="template-blobs-2">
+            <directory>blobs</directory>
+            <includes>
+                <include if="${var1} &amp;&amp; ${var2} &amp;&amp; ${var3} &amp;&amp; ${var4} &amp;&amp; !${var5}">D5C52BC22C00687FF133AA1047F310E2</include>
+                <include if="!${var1} &amp;&amp; ${var2} &amp;&amp; ${var3} &amp;&amp; ${var4}">D41D8CD98F00B204E9800998ECF8427E</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="template-blobs-3">
+            <directory>blobs</directory>
+            <includes>
+                <include if="!${var1} &amp;&amp; ${var2} &amp;&amp; ${var3}">D5C52BC22C00687FF133AA1047F310E2</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="template-blobs-4">
+            <directory>blobs</directory>
+            <includes>
+                <include if="!${var1} &amp;&amp; ${var2} &amp;&amp; ${var3} &amp;&amp; ${var4} &amp;&amp; !${var5}">D5C52BC22C00687FF133AA1047F310E2</include>
+                <include><![CDATA[]]></include>
+            </includes>
+        </templates>
+    </output>
+</archetype-script>

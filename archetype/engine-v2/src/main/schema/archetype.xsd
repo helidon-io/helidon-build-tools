@@ -26,7 +26,7 @@
             <xs:annotation>
                 <xs:documentation source="version">2.0</xs:documentation>
                 <xs:documentation source="description">
-                    File path of a script relative to the current script directory ; a leading <code>/</code> can be
+                    File path of a script relative to the current script directory; a leading <code>/</code> can be
                     used to
                     refer to the archetype root directory.
                 </xs:documentation>
@@ -116,7 +116,7 @@
                 <xs:annotation>
                     <xs:documentation source="version">2.0</xs:documentation>
                     <xs:documentation source="description">
-                        File path of a base directory that contains the files to be included. Relative file path
+                        File path of a base directory that contains the files to be included. Relative file paths
                         are resolved relative to the current script directory. A leading <code>/</code> can be used to
                         refer to the archetype root directory.
                         <br/>
@@ -168,6 +168,17 @@
         </xs:attribute>
     </xs:attributeGroup>
 
+    <xs:attributeGroup name="value-group">
+        <xs:attribute name="model" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation source="version">2.0</xs:documentation>
+                <xs:documentation source="description">
+                    Indicate if a preset or variable can be used as a model.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
     <xs:attributeGroup name="if-group">
         <xs:attribute name="if" type="xs:string">
             <xs:annotation>
@@ -184,48 +195,17 @@
                         following types:
                     </p>
                     <ul>
-                        <li><b>Boolean</b>: <code>true</code> or
-                            <code>false</code>
-                        </li>
-                        <li><b>Text</b>:
-                            <code>'foo'</code>
-                        </li>
-                        <li><b>Array</b>:
-                            <code>['foo', 'bar']</code>
-                        </li>
+                        <li><b>Boolean</b>: <code>true</code> or <code>false</code></li>
+                        <li><b>Text</b>: <code>'foo'</code></li>
+                        <li><b>Array</b>: <code>['foo', 'bar']</code></li>
                     </ul>
                     The following operators are supported:
                     <ul>
-                        <li>
-                            <b>
-                                <code>&amp;&amp;</code>
-                            </b>
-                            : logical AND
-                        </li>
-                        <li>
-                            <b>
-                                <code>||</code>
-                            </b>
-                            : logical OR
-                        </li>
-                        <li>
-                            <b>
-                                <code>!</code>
-                            </b>
-                            : logical negation
-                        </li>
-                        <li>
-                            <b>
-                                <code>contains</code>
-                            </b>
-                            : (array|string) contains
-                        </li>
-                        <li>
-                            <b>
-                                <code>==</code>
-                            </b>
-                            : equality
-                        </li>
+                        <li><b><code>&amp;&amp;</code></b>: logical AND</li>
+                        <li><b><code>||</code></b>: logical OR</li>
+                        <li><b><code>!</code></b>: logical negation</li>
+                        <li><b><code>contains</code></b>: (array|string) contains</li>
+                        <li><b><code>==</code></b>: equality</li>
                     </ul>
                     Example:
                     <br/>
@@ -265,7 +245,7 @@
                         The template data model is shared. The key identifies the data to set.
 
                         The key is the identifier used when resolving data from a template. The syntax for
-                        resolving data from a template is template specific. E.g. in mustache: <code>{{my-key}}</code>.
+                        resolving data from a template is template-specific. E.g., in mustache: <code>{{my-key}}</code>.
                     </p>
                 </xs:documentation>
             </xs:annotation>
@@ -464,17 +444,17 @@
                         <li>A path contains segments separated by <code>"."</code> characters</li>
                         <li>Segments are ids of the parents for a given input</li>
                         <li>Segments can contain only letters, digits and separator <code>"-"</code></li>
-                        <li>The segment separator <code>"-"</code> must be used between valid characters ;
+                        <li>The segment separator <code>"-"</code> must be used between valid characters;
                             (<code>"--"</code> is prohibited
                         </li>
                         <li>Two reference operators are available, root scope: <code>"~"</code> ; parent scope: <code>".."</code>
                         </li>
-                        <li>A path that starts with <code>"~"</code> is absolute. I.e. relative to the root scope</li>
+                        <li>A path that starts with <code>"~"</code> is absolute. I.e., relative to the root scope</li>
                         <li>A path that starts with a segment is relative, or a parent reference is relative</li>
                     </ul>
 
                     <br/>
-                    Inputs can be declared as global in order to shorten the external path of an input.
+                    Inputs can be declared as global to shorten the external path of an input.
                     <br/>
                     The external path is the control visible to end-users.
                     <br/>
@@ -485,7 +465,7 @@
                         <li>the input is nested under a global input</li>
                     </ul>
                     <br/>
-                    There are effectively two kinds of path:
+                    There are effectively two kinds of paths:
                     <br/>
                     <ul>
                         <li>internal: all inputs are included in the path</li>
@@ -508,6 +488,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attributeGroup ref="a:value-group"/>
         <xs:attributeGroup ref="a:if-group"/>
     </xs:attributeGroup>
 
@@ -593,6 +574,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:choice>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="presets-type">
@@ -667,6 +649,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:choice>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="help-type">
@@ -815,6 +798,12 @@
     </xs:attributeGroup>
 
     <xs:complexType name="text-input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A text user input.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
         </xs:sequence>
@@ -822,6 +811,7 @@
         <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:value-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
@@ -842,6 +832,12 @@
     </xs:complexType>
 
     <xs:complexType name="boolean-input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A boolean user input.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
@@ -850,6 +846,7 @@
         <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:value-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:boolean">
             <xs:annotation>
@@ -862,11 +859,23 @@
     </xs:complexType>
 
     <xs:complexType name="enum-input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A choice based ("one-of") user input.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice maxOccurs="unbounded">
                 <xs:element name="option">
                     <xs:complexType>
+                        <xs:annotation>
+                            <xs:documentation source="version">2.0</xs:documentation>
+                            <xs:documentation source="description">
+                                A choice.
+                            </xs:documentation>
+                        </xs:annotation>
                         <xs:sequence>
                             <xs:element name="help" type="a:help-type" minOccurs="0"/>
                             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
@@ -890,6 +899,7 @@
         <xs:attributeGroup ref="a:name-group"/>
         <xs:attributeGroup ref="a:desc-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
+        <xs:attributeGroup ref="a:value-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attribute name="default" type="xs:string">
             <xs:annotation>
@@ -902,6 +912,12 @@
     </xs:complexType>
 
     <xs:complexType name="list-input-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                A choice based ("any-of") user input.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="help" type="a:help-type" minOccurs="0"/>
             <xs:choice maxOccurs="unbounded">
@@ -926,6 +942,7 @@
                 </xs:element>
             </xs:choice>
         </xs:sequence>
+        <xs:attributeGroup ref="a:value-group"/>
         <xs:attributeGroup ref="a:optional-group"/>
         <xs:attributeGroup ref="a:global-group"/>
         <xs:attributeGroup ref="a:input-group"/>
@@ -942,9 +959,16 @@
     </xs:complexType>
 
     <xs:complexType name="validations-type">
+        <xs:annotation>
+            <xs:documentation source="version">2.0</xs:documentation>
+            <xs:documentation source="description">
+                Container of validation.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="validation" type="a:validation-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="validation-type">
@@ -992,7 +1016,7 @@
         <xs:annotation>
             <xs:documentation source="version">2.0</xs:documentation>
             <xs:documentation source="description">
-                A user input.
+                A container of user inputs.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence minOccurs="0">
@@ -1004,6 +1028,7 @@
             </xs:choice>
             <xs:group ref="a:directive-group" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+        <xs:attributeGroup ref="a:if-group"/>
     </xs:complexType>
 
     <xs:complexType name="step-type">
@@ -1066,7 +1091,7 @@
                                 Replacements are search and replace regular expressions declared using <code>
                                 &lt;replace&gt;</code>. They form a chain where the first input is the included file
                                 path,
-                                the result is passed to the next replacement and the last result is used as the final
+                                the result is passed to the next replacement, and the last result is used as the final
                                 file
                                 path.
                             </p>
@@ -1174,6 +1199,7 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
+                        <xs:attributeGroup ref="a:if-group"/>
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="file">

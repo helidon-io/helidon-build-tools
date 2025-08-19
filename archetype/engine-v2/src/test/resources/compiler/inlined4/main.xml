@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 -->
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="https://helidon.io/archetype/2.0 file:/archetype.xsd">
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <methods>
         <method name="main">
@@ -30,11 +30,11 @@
         </method>
         <method name="fruit">
             <inputs>
-                <enum id="fruit" name="Fruit" default="berries">
-                    <option value="berries" name="Berries">
+                <enum id="fruit" name="Fruit" default="berries" global="true">
+                    <option name="Berries" value="berries">
                         <call method="berries"/>
                     </option>
-                    <option value="tropical" name="Tropical">
+                    <option name="Tropical" value="tropical">
                         <call method="tropical"/>
                     </option>
                 </enum>
@@ -42,11 +42,11 @@
         </method>
         <method name="berries">
             <inputs>
-                <enum id="berry-type" name="Berry type" default="raspberry">
-                    <option value="raspberry" name="Raspberry">
+                <enum id="berry-type" name="Berry type" default="raspberry" global="true">
+                    <option name="Raspberry" value="raspberry">
                         <call method="raspberry"/>
                     </option>
-                    <option value="strawberry" name="Strawberry">
+                    <option name="Strawberry" value="strawberry">
                         <call method="strawberry"/>
                     </option>
                 </enum>
@@ -54,11 +54,11 @@
         </method>
         <method name="tropical">
             <inputs>
-                <enum id="tropical-type" name="Tropical type" default="mango">
-                    <option value="mango" name="Mango">
+                <enum id="tropical-type" name="Tropical type" default="mango" global="true">
+                    <option name="Mango" value="mango">
                         <call method="mango"/>
                     </option>
-                    <option value="banana" name="Banana">
+                    <option name="Banana" value="banana">
                         <call method="banana"/>
                     </option>
                 </enum>
@@ -76,7 +76,7 @@
         </method>
         <method name="mango">
             <inputs>
-                <boolean id="fare-trade" name="Fare trade">
+                <boolean id="fare-trade" name="Fare trade" global="true">
                     <call method="common"/>
                 </boolean>
             </inputs>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,10 @@ import io.helidon.build.archetype.engine.v1.ArchetypeLoader;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
-import io.helidon.build.archetype.engine.v2.BatchInputResolver;
-import io.helidon.build.archetype.engine.v2.InputResolver;
-import io.helidon.build.archetype.engine.v2.InvalidInputException;
-import io.helidon.build.archetype.engine.v2.InvocationException;
-import io.helidon.build.archetype.engine.v2.TerminalInputResolver;
-import io.helidon.build.archetype.engine.v2.UnresolvedInputException;
+import io.helidon.build.archetype.engine.v2.Context;
+import io.helidon.build.archetype.engine.v2.InputResolver.InputUnresolvedException;
+import io.helidon.build.archetype.engine.v2.InputResolver.InvalidInputException;
+import io.helidon.build.archetype.engine.v2.ScriptInvoker.InvocationException;
 import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Maps;
@@ -341,7 +339,7 @@ abstract class ArchetypeInvoker {
 
             initOptions.applyConfig(userConfig(), EngineVersion.V1);
 
-            // Find jar and set up loader
+            // Find the jar and set up the loader
             File jarFile = browser.archetypeJar(archetype).toFile();
             require(jarFile.exists(), "%s does not exist", jarFile);
             ArchetypeLoader loader = new ArchetypeLoader(jarFile);
@@ -366,7 +364,7 @@ abstract class ArchetypeInvoker {
             Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
             engine.generate(projectDir);
 
-            // Create config file that includes feature information
+            // Create the config file that includes feature information
             ProjectConfig configFile = createProjectConfig(projectDir, helidonVersion);
             configFile.property(PROJECT_FLAVOR, initOptions.flavor().toString());
             configFile.property(PROJECT_ARCHETYPE, initOptions.archetypeName());
@@ -405,17 +403,17 @@ abstract class ArchetypeInvoker {
             // Ensure that flavor is lower case if present.
             externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
 
-            // Set build if provided on command-line
+            // Set build if provided on the command-line
             if (initOptions.buildOption() != null) {
                 externalValues.put(BUILD_SYSTEM_PROPERTY, initOptions.buildOption().toString());
             }
 
-            // Set flavor if provided on command-line
+            // Set flavor if provided on the command-line
             if (initOptions.flavorOption() != null) {
                 externalValues.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
             }
 
-            // Set base if provided on command-line
+            // Set base if provided on the command-line
             if (initOptions.archetypeNameOption() != null) {
                 externalValues.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
             }
@@ -425,10 +423,7 @@ abstract class ArchetypeInvoker {
                 Log.warn("--name option is not used in Helidon 3.x");
             }
 
-            InputResolver resolver;
             if (isInteractive()) {
-                resolver = new TerminalInputResolver(System.in);
-
                 // Set remaining command-line options as external values and user config as external defaults
                 if (initOptions.groupIdOption() != null) {
                     externalValues.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
@@ -446,9 +441,7 @@ abstract class ArchetypeInvoker {
                     externalDefaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
                 }
             } else {
-                resolver = new BatchInputResolver();
-
-                // Add defaults in case of the user has not specify mandatory options
+                // Add defaults in case the user has not specified mandatory options
                 externalDefaults.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
                 externalDefaults.put(FLAVOR_PROPERTY, initOptions.flavor().toString());
 
@@ -461,19 +454,19 @@ abstract class ArchetypeInvoker {
             //noinspection ConstantConditions
             ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
                                                         .fileSystem(archetype())
-                                                        .inputResolver(resolver)
+                                                        .batch(initOptions.batch())
                                                         .externalValues(externalValues)
                                                         .externalDefaults(externalDefaults)
                                                         .onResolved(onResolved())
-                                                        .directorySupplier(projectDirSupplier())
+                                                        .output(this::resolveProjectDir)
                                                         .outputPropsFile(initOptions.outputPropsFileOption())
                                                         .build();
             try {
                 return engine.generate();
             } catch (InvocationException ie) {
                 Throwable cause = ie.getCause();
-                if (cause instanceof UnresolvedInputException) {
-                    UnresolvedInputException uie = (UnresolvedInputException) cause;
+                if (cause instanceof InputUnresolvedException) {
+                    InputUnresolvedException uie = (InputUnresolvedException) cause;
                     String inputPath = uie.inputPath();
                     String option = optionName(inputPath);
                     if (option == null) {
@@ -504,6 +497,12 @@ abstract class ArchetypeInvoker {
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+        }
+
+        private Path resolveProjectDir(Context context) {
+            String artifactId = context.scope().get("artifactId").value().asString()
+                    .orElseThrow(() -> new IllegalStateException("Missing required artifactId"));
+            return projectDirSupplier().apply(artifactId);
         }
 
         private static String optionName(String inputPath) {

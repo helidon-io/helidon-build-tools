@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,15 +53,25 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <generateVariations>false</generateVariations>
+                            <externalValues>
+                                <package>io.helidon.build.maven.archetype.tests</package>
+                                <groupId>io.helidon.build.maven.archetype.tests</groupId>
+                                <artifactId>triangle-project</artifactId>
+                                <version>0.1-SNAPSHOT</version>
+                                <shape>triangle</shape>
+                            </externalValues>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
-                    <generateCombinations>false</generateCombinations>
-                    <externalValues>
-                        <package>io.helidon.build.maven.archetype.tests</package>
-                        <groupId>io.helidon.build.maven.archetype.tests</groupId>
-                        <artifactId>triangle-project</artifactId>
-                        <version>0.1-SNAPSHOT</version>
-                        <shape>triangle</shape>
-                    </externalValues>
                     <entrypoint>
                         <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
                     </entrypoint>

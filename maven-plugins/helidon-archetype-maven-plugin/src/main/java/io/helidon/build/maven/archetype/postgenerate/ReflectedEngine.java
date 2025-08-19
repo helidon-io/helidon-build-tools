@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Utility class to invoke the archetype engine using reflection.
@@ -29,49 +29,43 @@ import java.util.function.Function;
 final class ReflectedEngine {
 
     private static final String ENGINE_FCN = "io.helidon.build.archetype.engine.v2.ArchetypeEngineV2";
-    private static final String RESOLVER_FCN = "io.helidon.build.archetype.engine.v2.InputResolver";
-    private static final String BATCH_RESOLVER_FCN = "io.helidon.build.archetype.engine.v2.BatchInputResolver";
-    private static final String TERMINAL_RESOLVER_FCN = "io.helidon.build.archetype.engine.v2.TerminalInputResolver";
     private static final String ENGINE_FCN_BUILDER = "io.helidon.build.archetype.engine.v2.ArchetypeEngineV2$Builder";
 
-    private final ClassLoader classLoader;
     private final Object engineInstance;
     private final Method generateMethod;
 
     /**
      * Create a new engine.
      *
-     * @param cl                class loader
-     * @param fileSystem        archetype file system
-     * @param isInteractive     {@code true} if interactive
-     * @param externalValues    external values
-     * @param externalDefaults  external defaults
-     * @param directorySupplier directory supplier
+     * @param cl               class loader
+     * @param fileSystem       archetype file system
+     * @param isInteractive    {@code true} if interactive
+     * @param externalValues   external values
+     * @param externalDefaults external defaults
+     * @param dirSupplier      directory supplier
      */
     ReflectedEngine(ClassLoader cl,
                     FileSystem fileSystem,
                     boolean isInteractive,
                     Map<String, String> externalValues,
                     Map<String, String> externalDefaults,
-                    Function<String, Path> directorySupplier) {
+                    Supplier<Path> dirSupplier) {
         try {
-            classLoader = cl;
             Class<?> engineClass = cl.loadClass(ENGINE_FCN);
             Class<?> engineBuilderClass = cl.loadClass(ENGINE_FCN_BUILDER);
             Constructor<?> builderClassConstructor = engineBuilderClass.getDeclaredConstructor();
             builderClassConstructor.setAccessible(true);
             Object builder = builderClassConstructor.newInstance();
-            engineBuilderClass.getDeclaredMethod("directorySupplier", Function.class)
-                              .invoke(builder, directorySupplier);
+            engineBuilderClass.getDeclaredMethod("output", Supplier.class)
+                    .invoke(builder, dirSupplier);
             engineBuilderClass.getDeclaredMethod("externalDefaults", Map.class)
-                              .invoke(builder, externalDefaults);
+                    .invoke(builder, externalDefaults);
             engineBuilderClass.getDeclaredMethod("externalValues", Map.class)
-                              .invoke(builder, externalValues);
-            Class<?> inputResolverClass = cl.loadClass(RESOLVER_FCN);
-            engineBuilderClass.getDeclaredMethod("inputResolver", inputResolverClass)
-                              .invoke(builder, inputResolver(isInteractive));
+                    .invoke(builder, externalValues);
+            engineBuilderClass.getDeclaredMethod("batch", boolean.class)
+                    .invoke(builder, !isInteractive);
             engineBuilderClass.getDeclaredMethod("fileSystem", FileSystem.class)
-                              .invoke(builder, fileSystem);
+                    .invoke(builder, fileSystem);
             Constructor<?> constructor = engineClass.getDeclaredConstructor(engineBuilderClass);
             constructor.setAccessible(true);
             engineInstance = constructor.newInstance(builder);
@@ -104,24 +98,6 @@ final class ReflectedEngine {
                 throw (RuntimeException) cause;
             }
             throw new RuntimeException(e.getCause());
-        }
-    }
-
-    private Object inputResolver(boolean isInteractive) {
-        try {
-            String fcn = isInteractive ? TERMINAL_RESOLVER_FCN : BATCH_RESOLVER_FCN;
-            return classLoader.loadClass(fcn).getConstructor().newInstance();
-        } catch (ClassNotFoundException
-                | NoSuchMethodException
-                | InstantiationException
-                | IllegalAccessException ex) {
-            throw new IllegalStateException(ex);
-        } catch (InvocationTargetException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            throw new RuntimeException(ex.getCause());
         }
     }
 }

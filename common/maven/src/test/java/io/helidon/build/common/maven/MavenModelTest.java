@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.build.common.maven;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import io.helidon.build.common.xml.XMLException;
+
 import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -33,8 +35,31 @@ import static org.junit.jupiter.api.Assertions.fail;
 class MavenModelTest {
 
     @Test
-    void testRead() {
-        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-pom.xml");
+    void testBuilder() {
+        MavenModel mavenModel = MavenModel.builder()
+                .parentGroupId("com.acme")
+                .parentArtifactId("acme-parent")
+                .parentVersion("1.0.0-SNAPSHOT")
+                .artifactId("acme-project")
+                .name("ACME Project")
+                .description("A project by ACME")
+                .build();
+
+        assertThat(mavenModel, is(not(nullValue())));
+        assertThat(mavenModel.parent(), is(not(nullValue())));
+        assertThat(mavenModel.parent().groupId(), is("com.acme"));
+        assertThat(mavenModel.parent().artifactId(), is("acme-parent"));
+        assertThat(mavenModel.parent().version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.groupId(), is("com.acme"));
+        assertThat(mavenModel.artifactId(), is("acme-project"));
+        assertThat(mavenModel.version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.name(), is("ACME Project"));
+        assertThat(mavenModel.description(), is("A project by ACME"));
+    }
+
+    @Test
+    void testRead1() {
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-pom1.xml");
         assertThat(inputStream, is(not(nullValue())));
         MavenModel mavenModel = MavenModel.read(inputStream);
         assertThat(mavenModel, is(not(nullValue())));
@@ -50,9 +75,76 @@ class MavenModelTest {
     }
 
     @Test
+    void testRead2() {
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("test-pom2.xml");
+        assertThat(inputStream, is(not(nullValue())));
+        MavenModel mavenModel = MavenModel.read(inputStream);
+        assertThat(mavenModel, is(not(nullValue())));
+        assertThat(mavenModel.parent(), is(not(nullValue())));
+        assertThat(mavenModel.parent().groupId(), is("com.acme"));
+        assertThat(mavenModel.parent().artifactId(), is("acme-parent"));
+        assertThat(mavenModel.parent().version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.groupId(), is("com.acme"));
+        assertThat(mavenModel.artifactId(), is("acme-project"));
+        assertThat(mavenModel.version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.name(), is("ACME Project"));
+        assertThat(mavenModel.description(), is(nullValue()));
+    }
+
+    @Test
+    void testSelfClosedRelativePath() {
+        MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((
+                "<?xml?>"
+                + "<project>"
+                + "<parent>"
+                + "<groupId>com.acme</groupId>"
+                + "<artifactId>acme-parent</artifactId>"
+                + "<version>1.0.0-SNAPSHOT</version>"
+                + "<relativePath/>"
+                + "</parent>"
+                + "<groupId>com.acme</groupId>"
+                + "<artifactId>acme-project</artifactId>"
+                + "<version>1.0.0-SNAPSHOT</version>"
+                + "</project>")
+                .getBytes(UTF_8)));
+        assertThat(mavenModel, is(not(nullValue())));
+        assertThat(mavenModel.parent().groupId(), is("com.acme"));
+        assertThat(mavenModel.parent().artifactId(), is("acme-parent"));
+        assertThat(mavenModel.parent().version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.groupId(), is("com.acme"));
+        assertThat(mavenModel.artifactId(), is("acme-project"));
+        assertThat(mavenModel.version(), is("1.0.0-SNAPSHOT"));
+    }
+
+    @Test
+    void testParentAfter() {
+        MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((
+                "<?xml?>"
+                + "<project>"
+                + "<groupId>com.acme.project</groupId>"
+                + "<artifactId>acme-project</artifactId>"
+                + "<version>1.0.1-SNAPSHOT</version>"
+                + "<parent>"
+                + "<groupId>com.acme</groupId>"
+                + "<artifactId>acme-parent</artifactId>"
+                + "<version>1.0.0-SNAPSHOT</version>"
+                + "</parent>"
+                + "</project>")
+                .getBytes(UTF_8)));
+        assertThat(mavenModel, is(not(nullValue())));
+        assertThat(mavenModel.parent().groupId(), is("com.acme"));
+        assertThat(mavenModel.parent().artifactId(), is("acme-parent"));
+        assertThat(mavenModel.parent().version(), is("1.0.0-SNAPSHOT"));
+        assertThat(mavenModel.groupId(), is("com.acme.project"));
+        assertThat(mavenModel.artifactId(), is("acme-project"));
+        assertThat(mavenModel.version(), is("1.0.1-SNAPSHOT"));
+    }
+
+    @Test
     void testPartialParsing1() {
         try {
-            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((""
+            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((
+                    "<?xml?>"
                     + "<project>"
                     + "<parent>"
                     + "<groupId>com.acme</groupId>"
@@ -85,7 +177,8 @@ class MavenModelTest {
     @Test
     void testPartialParsing2() {
         try {
-            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((""
+            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((
+                    "<?xml?>"
                     + "<project>"
                     + "<parent>"
                     + "<groupId>com.acme</groupId>"
@@ -117,7 +210,8 @@ class MavenModelTest {
     @Test
     void testPartialParsing3() {
         try {
-            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((""
+            MavenModel mavenModel = MavenModel.read(new ByteArrayInputStream((
+                    "<?xml?>"
                     + "<project>"
                     + "<parent/>"
                     + "<groupId>com.acme</groupId>"
@@ -134,7 +228,7 @@ class MavenModelTest {
             assertThat(mavenModel.version(), is("1.0.0-SNAPSHOT"));
             assertThat(mavenModel.name(), is("ACME Project"));
             assertThat(mavenModel.description(), is("A project by ACME"));
-        } catch (IllegalStateException ex) {
+        } catch (XMLException ex) {
             fail("Should not be thrown", ex);
         }
     }

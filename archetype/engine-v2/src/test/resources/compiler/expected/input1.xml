@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <step name="Step1">
+        <inputs>
+            <enum id="i1" name="Input1" default="option1" global="true">
+                <option name="Option1" value="o1"/>
+                <option name="Option2" value="o2"/>
+            </enum>
+            <enum id="i1-1"
+                  name="Input1-1"
+                  default="o1"
+                  global="true"
+                  if="${i1} == &apos;o1&apos;">
+                <option name="Option1" value="o1"/>
+                <option name="Option2" value="o2"/>
+            </enum>
+        </inputs>
+        <variables>
+            <text path="~i1-1" if="${i1} != &apos;o1&apos;"><![CDATA[]]></text>
+        </variables>
+        <inputs>
+            <boolean id="i1-1-1"
+                     name="Input1-1-1"
+                     if="${i1} == &apos;o1&apos; &amp;&amp; ${i1-1} == &apos;o1&apos;"/>
+            <boolean id="i1-1-2"
+                     name="Input1-1-2"
+                     if="${i1} == &apos;o1&apos; &amp;&amp; ${i1-1} == &apos;o2&apos;"/>
+            <enum id="i1-2" name="Input1-2" default="i1-2" if="${i1} == &apos;o2&apos;">
+                <option name="Option1" value="o1">
+                    <inputs>
+                        <boolean id="i1-2-1" name="Input1-2-1"/>
+                    </inputs>
+                </option>
+                <option name="Option2" value="o2">
+                    <inputs>
+                        <boolean id="i1-2-2" name="Input1-2-2"/>
+                    </inputs>
+                </option>
+            </enum>
+        </inputs>
+    </step>
+</archetype-script>

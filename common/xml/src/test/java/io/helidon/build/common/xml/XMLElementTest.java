@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,17 @@
  */
 package io.helidon.build.common.xml;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link XMLElement}.
@@ -52,45 +54,15 @@ class XMLElementTest {
     }
 
     @Test
-    void testParse1() throws IOException {
-        XMLElement elt = parse("<foo fk1=\"fv1\"><bar bk1=\"bv1\"></bar></foo>");
-
-        assertThat(elt.parent(), is(nullValue()));
-        assertThat(elt.name(), is("foo"));
-        assertThat(elt.attributes(), is(Map.of("fk1", "fv1")));
-        assertThat(elt.children().size(), is(1));
-
-        XMLElement child = elt.children().get(0);
-        assertThat(child.parent(), is(elt));
-        assertThat(child.name(), is("bar"));
-        assertThat(child.attributes(), is(Map.of("bk1", "bv1")));
-        assertThat(child.children().size(), is(0));
-    }
-
-
-    @Test
-    void testParse2() throws IOException {
-        XMLElement elt = parse("<a><b>c</b><d>e</d></a>");
-
-        assertThat(elt.parent(), is(nullValue()));
-        assertThat(elt.name(), is("a"));
-        assertThat(elt.attributes(), is(Map.of()));
-        assertThat(elt.value(), is(""));
-        assertThat(elt.children().size(), is(2));
-
-        XMLElement child1 = elt.children().get(0);
-        assertThat(child1.parent(), is(elt));
-        assertThat(child1.name(), is("b"));
-        assertThat(child1.attributes(), is(Map.of()));
-        assertThat(child1.value(), is("c"));
-        assertThat(child1.children().size(), is(0));
-
-        XMLElement child2 = elt.children().get(1);
-        assertThat(child2.parent(), is(elt));
-        assertThat(child2.name(), is("d"));
-        assertThat(child2.attributes(), is(Map.of()));
-        assertThat(child2.value(), is("e"));
-        assertThat(child2.children().size(), is(0));
+    void testChildrenByName() {
+        XMLElement elt = XMLElement.builder()
+                .name("a")
+                .child(b -> b.name("b").value("b1"))
+                .child(c -> c.name("b").value("b2"))
+                .build();
+        assertThat(elt.children("b").stream()
+                .map(XMLElement::value)
+                .collect(Collectors.toList()), is(List.of("b1", "b2")));
     }
 
     @Test
@@ -107,16 +79,34 @@ class XMLElementTest {
     }
 
     @Test
-    void testElementWithTextAndChild() throws IOException {
-        XMLElement elt = parse("<a>b1\n    <c>d</c>\n</a>");
-        assertThat(elt.name(), is("a"));
-        assertThat(elt.value(), is("b1\n    "));
-        assertThat(elt.children().size(), is(1));
-        assertThat(elt.children().get(0).name(), is("c"));
-        assertThat(elt.children().get(0).value(), is("d"));
+    void testVisitNoParent() {
+        XMLElement elt = XMLElement.builder().name("foo");
+        elt.children().add(XMLElement.builder().name("bar"));
+
+        assertThrows(IllegalStateException.class, () -> elt.visit(new XMLElement.Visitor() {
+            @Override
+            public void visitElement(XMLElement elt) {
+                // no-op
+            }
+        }));
     }
 
-    private static XMLElement parse(String str) throws IOException {
-        return XMLElement.parse(new ByteArrayInputStream(str.getBytes()));
+    @Test
+    void testTraverse() {
+        XMLElement elt = XMLElement.builder()
+                .name("r")
+                .child(b -> b.name("a")
+                        .child(b1 -> b1.name("a1")
+                                .child(b2 -> b2.name("a2"))))
+                .child(b -> b.name("b")
+                        .child(b1 -> b1.name("b1")
+                                .child(b2 -> b2.name("b2"))))
+                .build();
+
+        List<String> names = new ArrayList<>();
+        for (XMLElement e : elt.traverse()) {
+            names.add(e.name());
+        }
+        assertThat(names, is(List.of("r", "a", "a1", "a2", "b", "b1", "b2")));
     }
 }

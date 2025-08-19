@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,12 @@ public class PropertyEvaluator {
         int start = input.indexOf("${");
         int end = input.indexOf("}", start);
         int index = 0;
-        String resolved = null;
+        StringBuilder resolved = null;
         while (start >= 0 && end > 0) {
             if (resolved == null) {
-                resolved = input.substring(index, start);
+                resolved = new StringBuilder(input.substring(index, start));
             } else {
-                resolved += input.substring(index, start);
+                resolved.append(input, index, start);
             }
             String propName = input.substring(start + 2, end);
 
@@ -67,11 +67,11 @@ public class PropertyEvaluator {
             String propValue = resolver.apply(propName);
             if (propValue == null) {
                 propValue = "";
-            } else if (regexp != null && replace != null) {
+            } else if (regexp != null) {
                 propValue = propValue.replaceAll(regexp, replace);
             }
 
-            resolved += propValue;
+            resolved.append(propValue);
             index = end + 1;
             start = input.indexOf("${", index);
             end = input.indexOf("}", index);

@@ -1,0 +1,35 @@
+{
+    "expressions": {
+    },
+    "methods": {
+    },
+    "children": [
+        {
+            "kind": "presets",
+            "children": [
+                {
+                    "kind": "boolean",
+                    "path": "preset-boolean1",
+                    "value": true
+                },
+                {
+                    "kind": "enum",
+                    "path": "preset-enum1",
+                    "value": "value1"
+                },
+                {
+                    "kind": "text",
+                    "path": "preset-text1",
+                    "value": "value1"
+                },
+                {
+                    "kind": "list",
+                    "path": "preset-list1",
+                    "value": [
+                        "value1"
+                    ]
+                }
+            ]
+        }
+    ]
+}

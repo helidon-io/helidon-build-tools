@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<variations>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>blue</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>green</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>green,blue</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>none</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>red</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>red,blue</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>red,green</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.palette-name>My Palette</theme.base.palette-name>
+        <theme.base.colors>red,green,blue</theme.base.colors>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>colors</theme>
+        <theme.base>rainbow</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>2d</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,rectangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,rectangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,triangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,triangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,triangle,rectangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>circle,triangle,rectangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>none</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>rectangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>rectangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>triangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>triangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>triangle,rectangle</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+    <variation>
+        <theme>shapes</theme>
+        <theme.base>custom</theme.base>
+        <theme.base.style>classic</theme.base.style>
+        <theme.base.library-name>My Shapes</theme.base.library-name>
+        <theme.base.shapes>triangle,rectangle,donut</theme.base.shapes>
+        <artifactId>my-project</artifactId>
+    </variation>
+</variations>

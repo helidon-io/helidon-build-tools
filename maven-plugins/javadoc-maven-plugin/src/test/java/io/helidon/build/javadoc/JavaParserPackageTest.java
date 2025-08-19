@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link JavaParser#packge(java.io.InputStream)}.
+ * Tests {@link JavaParser#pkg(java.io.InputStream)}.
  */
 @SuppressWarnings("TrailingWhitespacesInTextBlock")
 class JavaParserPackageTest {
@@ -134,6 +134,6 @@ class JavaParserPackageTest {
     }
 
     private String parse(String src) {
-        return JavaParser.packge(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
+        return JavaParser.pkg(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
     }
 }
