@@ -17,6 +17,8 @@ package io.helidon.build.common.maven.plugin;
 
 import java.nio.file.Path;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.build.common.maven.MavenModel;
 
@@ -31,6 +33,23 @@ import io.helidon.build.common.maven.MavenModel;
  * @param file       file
  */
 public record MavenArtifact(String groupId, String artifactId, String version, String classifier, String type, Path file) {
+
+    private static final Pattern COORDINATE_PATTERN =
+            Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+
+    /**
+     * Parse the given coordinates.
+     *
+     * @param coords coordinates
+     * @return MavenArtifact
+     */
+    public static MavenArtifact parse(String coords) {
+        Matcher m = COORDINATE_PATTERN.matcher(coords);
+        if (!m.matches()) {
+            throw new IllegalArgumentException("Invalid coordinates " + coords);
+        }
+        return new MavenArtifact(m.group(1), m.group(2), m.group(7), m.group(6), m.group(4));
+    }
 
     /**
      * Create a new instance.
@@ -147,8 +166,8 @@ public record MavenArtifact(String groupId, String artifactId, String version, S
      */
     public String coordinates() {
         String coords = groupId
-               + ":" + artifactId
-               + ":" + type;
+                        + ":" + artifactId
+                        + ":" + type;
         if (classifier != null) {
             coords += ":" + classifier;
         }

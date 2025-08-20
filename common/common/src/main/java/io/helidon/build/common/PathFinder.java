@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,19 @@ public class PathFinder {
             return cmdFile;
         }
         return IS_WINDOWS ? findWindowsCmd(dir, cmd) : null;
+    }
+
+    /**
+     * Find file in the given path.
+     *
+     * @param fileName file to be found
+     * @param paths    paths to search in
+     * @return path to the file
+     */
+    public static Optional<Path> find(String fileName, List<Path> paths) {
+        return paths.stream()
+                .flatMap(dir -> Optional.ofNullable(findCmd(dir, fileName)).stream())
+                .findFirst();
     }
 
     /**

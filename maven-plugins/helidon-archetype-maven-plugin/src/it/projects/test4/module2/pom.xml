@@ -55,6 +55,17 @@
                 <version>${project.version}</version>
                 <executions>
                     <execution>
+                        <id>default-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <entrypoint>
+                                <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
+                            </entrypoint>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>default-integration-test</id>
                         <goals>
                             <goal>integration-test</goal>
@@ -71,11 +82,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <entrypoint>
-                        <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
-                    </entrypoint>
-                </configuration>
             </plugin>
         </plugins>
     </build>

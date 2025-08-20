@@ -34,7 +34,9 @@ import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.Script;
 import io.helidon.build.archetype.engine.v2.ScriptCompiler;
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.VirtualFileSystem;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.plugin.MavenArtifact;
 import io.helidon.build.common.xml.XMLGenerator;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
@@ -55,6 +57,8 @@ import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 
+import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.newZipFileSystem;
 import static io.helidon.build.common.FileUtils.pathOf;
 import static io.helidon.build.common.FileUtils.randomPath;
 import static io.helidon.build.common.FileUtils.toBase64;
@@ -63,6 +67,7 @@ import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemp
 import static io.helidon.build.maven.archetype.ScriptCompilerExt.Options.VALIDATE_REGEX;
 import static io.helidon.build.maven.archetype.ScriptCompilerExt.Options.VALIDATE_SCHEMA;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.PACKAGE;
@@ -129,8 +134,20 @@ public class JarMojo extends AbstractMojo {
     /**
      * Indicate if the generated JAR should be compatible with the {@code maven-archetype-plugin}.
      */
-    @Parameter(defaultValue = "true")
+    @Parameter(property = "archetype.jar.mavenArchetypeCompatible", defaultValue = "true")
     private boolean mavenArchetypeCompatible;
+
+    /**
+     * Indicate if a {@code cli-data} directory should be created.
+     */
+    @Parameter(property = "archetype.jar.stageCli", defaultValue = "false")
+    private boolean stageCli;
+
+    /**
+     * List of compiler options.
+     */
+    @Parameter(property = "archetype.jar.compilerOptions")
+    private List<String> compilerOptions = List.of();
 
     /**
      * Entrypoint configuration.
@@ -145,7 +162,11 @@ public class JarMojo extends AbstractMojo {
             try (FileSystem fs = VirtualFileSystem.create(sourceDirectory.toPath())) {
                 Path cwd = fs.getPath("/");
                 ScriptCompiler compiler = new ScriptCompiler(entrypoint(cwd), cwd);
-                if (!compiler.compile(archetypeDir, VALIDATE_REGEX, VALIDATE_SCHEMA)) {
+                List<ScriptCompiler.Option> options = Lists.addAll(
+                        Lists.map(compilerOptions, ScriptCompiler.Options::valueOf),
+                        VALIDATE_REGEX,
+                        VALIDATE_SCHEMA);
+                if (!compiler.compile(archetypeDir, options)) {
                     compiler.errors().forEach(getLog()::error);
                     throw new MojoExecutionException("Validation failed");
                 }
@@ -155,6 +176,9 @@ public class JarMojo extends AbstractMojo {
             }
             File jarFile = createJar(archetypeDir);
             project.getArtifact().setFile(jarFile);
+            if (stageCli) {
+                generateCliData();
+            }
         } catch (IOException ioe) {
             throw new MojoExecutionException(ioe.getMessage(), ioe);
         }
@@ -270,6 +294,42 @@ public class JarMojo extends AbstractMojo {
             throw new MojoExecutionException("Error assembling archetype jar " + jarFile, e);
         }
         return jarFile;
+    }
+
+    private void generateCliData() throws IOException {
+        Path cliData = ensureDirectory(outputDirectory.toPath().resolve("cli-data"));
+        Path jarFile = project.getArtifact().getFile().toPath();
+        String version = project.getVersion();
+        Files.writeString(cliData.resolve("versions.xml"), String.format("""
+                <data>
+                    <archetypes>
+                        <version default="true">%s</version>
+                    </archetypes>
+                </data>
+                """, version));
+        Path versionDir = ensureDirectory(cliData.resolve(version));
+        try (FileSystem fs = newZipFileSystem(versionDir.resolve("cli-data.zip"))) {
+            Files.copy(jarFile, fs.getPath("helidon-" + version + ".jar"), REPLACE_EXISTING);
+        }
+
+        Log.info("""
+                \n|
+                |                      /')
+                |               $(cyan! /)$(blue /)$(blue! /)$(magenta /)  /' )'
+                |              $(blue @)   \\/'  )'
+                |  { $(yellow! note) }   $(yellow! <) (  (_...)'
+                |               \\      )
+                |                \\,,,,/
+                |                 $(red _|_)
+                |
+                |  You can test the archetype locally with the Helidon CLI using the following arguments:
+                |
+                |     --reset --url file://%s/cli-data
+                |
+                |  For example:
+                |
+                |     helidon init --reset --url file://%s/cli-data
+                |""", outputDirectory, outputDirectory);
     }
 
     private Stream<Path> postGenerateClasses() throws IOException {
