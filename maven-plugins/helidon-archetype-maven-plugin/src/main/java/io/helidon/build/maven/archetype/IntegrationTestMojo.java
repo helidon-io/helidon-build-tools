@@ -463,7 +463,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     private String invokerExe() {
         if (cli == null) {
-            Path cliArtifact = resolveArtifact(MavenArtifact.parse(invokerId));
+            Path cliArtifact = resolveArtifact(MavenArtifact.create(invokerId));
             Path downloadDir = outputDirectory.toPath().resolve("downloads");
             Log.debug("Unpacking %s to %s", cliArtifact, downloadDir);
             List<Path> entries = unzip(cliArtifact, downloadDir);

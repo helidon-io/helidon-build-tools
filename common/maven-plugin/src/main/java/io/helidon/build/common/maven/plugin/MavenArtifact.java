@@ -17,8 +17,6 @@ package io.helidon.build.common.maven.plugin;
 
 import java.nio.file.Path;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.build.common.maven.MavenModel;
 
@@ -34,21 +32,19 @@ import io.helidon.build.common.maven.MavenModel;
  */
 public record MavenArtifact(String groupId, String artifactId, String version, String classifier, String type, Path file) {
 
-    private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
-
     /**
      * Parse the given coordinates.
+     * The format is {@code groupId:artifactId[:extension[:classifier]]:version}.
      *
      * @param coords coordinates
-     * @return MavenArtifact
+     * @return MavenPattern
      */
-    public static MavenArtifact parse(String coords) {
-        Matcher m = COORDINATE_PATTERN.matcher(coords);
-        if (!m.matches()) {
-            throw new IllegalArgumentException("Invalid coordinates " + coords);
-        }
-        return new MavenArtifact(m.group(1), m.group(2), m.group(7), m.group(6), m.group(4));
+    public static MavenArtifact create(String coords) {
+        String[] args = MavenPattern.parse(coords, 5, null);
+        return new MavenArtifact(args[0], args[1],
+                args[4] != null ? args[4] : args[3] != null ? args[3] : args[2],
+                args[4] != null ? args[3] : null,
+                args[3] != null ? args[2] : null);
     }
 
     /**
@@ -109,6 +105,7 @@ public record MavenArtifact(String groupId, String artifactId, String version, S
      *
      * @param p plugin
      */
+    @SuppressWarnings("unused")
     public MavenArtifact(org.apache.maven.model.Plugin p) {
         this(p.getGroupId(), p.getArtifactId(), p.getVersion(), null, "jar");
     }
