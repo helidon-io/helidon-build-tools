@@ -21,6 +21,7 @@ This goal binds to the `package` phase by default.
 | outputDirectory          | File    | `${project.build.directory}`            | The project build output directory. (e.g. {@code target/})                           |
 | finalName                | String  | `${project.build.finalName}`            | Name of the generated JAR                                                            |
 | mavenArchetypeCompatible | boolean | `true`                                  | Indicate if the generated JAR should be compatible with the `maven-archetype-plugin` |
+| stageCli                 | boolean | `false`                                 | Stage a `cli-data` directory to use the archetype with the Helidon CLI               |
 
 ### General usage
 
@@ -61,6 +62,7 @@ Maven goal to test Helidon archetypes.
 | testGoal                 | String  | `package`                                       | The goal to use when building archetypes.                                                                                  |
 | testProfiles             | List    | `[]`                                            | The profiles to use when building archetypes.                                                                              |
 | mavenArchetypeCompatible | boolean | `60`                                            | Indicate if the project should be generated with the maven-archetype-plugin or with the Helidon archetype engine directly. |
+| invokerId                | String  | `maven`                                         | Specify the invoker used to generate the test projects. See [invokerId](#InvokerId).                                       |
 | debug                    | boolean | `false`                                         | Whether to show debug statements in the build output                                                                       |
 | showVersion              | boolean | `false`                                         | flag to show the maven version used.                                                                                       |
 | streamLogs               | boolean | `true`                                          | Flag used to determine whether the build logs should be output to the normal mojo log.                                     |
@@ -69,3 +71,12 @@ Maven goal to test Helidon archetypes.
 | skip                     | boolean | `false`                                         | Skip the integration test                                                                                                  |
 
 The above parameters are mapped to user properties of the form `archetype.test.PROPERTY`, e.g. `-Darchetype.test.skip=true`.
+
+### InvokerId
+
+The supported values are:
+- `maven` Use the Maven Archetype Engine to generate the test projects
+- `helidon` Use the Helidon Archetype Engine to generate the test projects
+- `groupId:artifactId[:extension[:classifier]]:version` Use a specific version of the Helidon CLI to generate the test projects
+
+Note that when using the Helidon CLI requires `<cliData>true</cliData>`.

@@ -56,21 +56,18 @@ public class PathFinder {
                 .filter(VALID_PATH);
     }
 
-    private static Path findWindowsCmd(Path dir, String cmd) {
-        return WINDOWS_EXECUTABLE_EXTENSIONS.stream()
-                .map((ext) -> dir.resolve(cmd + "." + ext))
-                .filter(Files::isRegularFile)
-                .findFirst()
-                .orElse(null);
-    }
-
     private static Path findCmd(Path dir, String cmd) {
         Log.debug("Searching for cmd: %s in %s", cmd, dir);
-        Path cmdFile = dir.resolve(cmd);
-        if (Files.isRegularFile(cmdFile)) {
-            return cmdFile;
+        if (IS_WINDOWS) {
+            return WINDOWS_EXECUTABLE_EXTENSIONS.stream()
+                    .map((ext) -> dir.resolve(cmd + "." + ext))
+                    .filter(Files::isRegularFile)
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            Path cmdFile = dir.resolve(cmd);
+            return Files.isRegularFile(cmdFile) ? cmdFile : null;
         }
-        return IS_WINDOWS ? findWindowsCmd(dir, cmd) : null;
     }
 
     /**

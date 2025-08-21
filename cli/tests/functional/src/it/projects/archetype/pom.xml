@@ -38,17 +38,27 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <invokerId>helidon</invokerId>
-                    <stageCli>true</stageCli>
-                    <entrypoint>
-                        <variables>
-                            <text path="build-tools-version" transient="true">${project.version}</text>
-                        </variables>
-                        <exec src="flavor.xml"/>
-                    </entrypoint>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <entrypoint>
+                                <variables>
+                                    <text path="build-tools-version" transient="true">${project.version}</text>
+                                </variables>
+                                <exec src="flavor.xml"/>
+                            </entrypoint>
+                            <stageCli>true</stageCli>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <pluginManagement>
