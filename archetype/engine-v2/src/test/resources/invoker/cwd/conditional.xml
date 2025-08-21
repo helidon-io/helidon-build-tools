@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <output>
-        <template engine="mustache" source="template1.hbs" target="template1.txt">
-            <model>
-                <value key="foo">bar</value>
-            </model>
-        </template>
-    </output>
+
+    <step name="step">
+        <inputs>
+            <boolean id="exec" name="exec" default="true"/>
+            <boolean id="source" name="source" default="true"/>
+        </inputs>
+    </step>
+    <exec src="dir1/script.xml" if="${exec}"/>
+    <source src="dir2/script.xml" if="${source}"/>
 </archetype-script>

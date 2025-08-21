@@ -50,7 +50,7 @@
         </inputs>
     </step>
     <output>
-        <template engine="mustache" source="context-values.hbs" target="context-values.txt">
+        <template engine="mustache" source="files/context-values.hbs" target="context-values.txt">
             <model>
                 <value key="foo">bar</value>
             </model>

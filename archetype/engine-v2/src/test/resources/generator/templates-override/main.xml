@@ -19,13 +19,21 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
-    <step name="step">
-        <inputs>
-            <boolean id="exec" name="exec" default="true"/>
-            <boolean id="source" name="source" default="true"/>
-        </inputs>
-    </step>
-    <exec src="dir1/exec1.xml" if="${exec}"/>
-    <source src="dir2/exec2.xml" if="${source}"/>
+    <output>
+        <transformation id="hbs">
+            <replace regex="\.hbs$" replacement=".txt"/>
+        </transformation>
+        <templates transformations="hbs" engine="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>template1.hbs</include>
+            </includes>
+            <model>
+                <value key="color">nested</value>
+            </model>
+        </templates>
+        <model>
+            <value key="color">global</value>
+        </model>
+    </output>
 </archetype-script>

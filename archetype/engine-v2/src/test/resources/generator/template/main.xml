@@ -20,11 +20,10 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <files transformations="t1">
-            <directory>dir1</directory>
-            <includes>
-                <include>**/*.txt</include>
-            </includes>
-        </files>
+        <template engine="mustache" source="files/template1.hbs" target="template1.txt">
+            <model>
+                <value key="foo">bar</value>
+            </model>
+        </template>
     </output>
 </archetype-script>

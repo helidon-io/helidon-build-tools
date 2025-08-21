@@ -21,10 +21,10 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
         <transformation id="t1">
-            <replace regex="pkg" replacement="${package/\./\/}"/>
+            <replace regex="\.txt" replacement=".xml"/>
         </transformation>
         <files transformations="t1">
-            <directory>dir3</directory>
+            <directory>files</directory>
             <includes>
                 <include>**/*.txt</include>
             </includes>

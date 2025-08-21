@@ -239,16 +239,7 @@ public class ScriptCompiler {
     }
 
     /**
-     * Get the variations.
-     *
-     * @return variations
-     */
-    public Set<Map<String, String>> variations() {
-        return variations(List.of());
-    }
-
-    /**
-     * Get a filtered view of the variations.
+     * Compute variations.
      *
      * @param filters filters
      * @return variations

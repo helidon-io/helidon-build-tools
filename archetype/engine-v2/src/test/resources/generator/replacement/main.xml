@@ -20,18 +20,14 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <template engine="mustache" source="shapes/shapes.hbs" target="shapes.txt" />
-        <model>
-            <value key="circle-color">red</value>
-            <value key="rectangle-color">yellow</value>
-            <list key="shapes">
-                <value template="mustache"><![CDATA[Here is a {{circle-color}} circle
-]]></value>
-                <value><![CDATA[Here is a blue triangle
-]]></value>
-                <value file="shapes/square.txt"/>
-                <value file="shapes/rectangle.hbs" template="mustache"/>
-            </list>
-        </model>
+        <transformation id="t1">
+            <replace regex="_pkg_" replacement="${package/\./\/}"/>
+        </transformation>
+        <files transformations="t1">
+            <directory>files</directory>
+            <includes>
+                <include>**/*.txt</include>
+            </includes>
+        </files>
     </output>
 </archetype-script>

@@ -300,20 +300,20 @@ public class JarMojo extends AbstractMojo {
         Path cliData = ensureDirectory(outputDirectory.toPath().resolve("cli-data"));
         Path jarFile = project.getArtifact().getFile().toPath();
         String version = project.getVersion();
-        Files.writeString(cliData.resolve("versions.xml"), String.format("""
-                <data>
-                    <archetypes>
-                        <version default="true">%s</version>
-                    </archetypes>
-                </data>
-                """, version));
+        Files.writeString(cliData.resolve("versions.xml"),
+                "<data>\n"
+                + "    <archetypes>\n"
+                + "        <version default=\"true\">" + version + "</version>\n"
+                + "    </archetypes>\n"
+                + "</data>\n");
         Path versionDir = ensureDirectory(cliData.resolve(version));
         try (FileSystem fs = newZipFileSystem(versionDir.resolve("cli-data.zip"))) {
             Files.copy(jarFile, fs.getPath("helidon-" + version + ".jar"), REPLACE_EXISTING);
         }
 
         Log.info("""
-                \n|
+                
+                |
                 |                      /')
                 |               $(cyan! /)$(blue /)$(blue! /)$(magenta /)  /' )'
                 |              $(blue @)   \\/'  )'

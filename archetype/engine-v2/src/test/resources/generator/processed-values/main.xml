@@ -19,6 +19,19 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-
-    <exec src="dir1/exec1.xml"/>
+    <output>
+        <template engine="mustache" source="files/shapes.hbs" target="shapes.txt" />
+        <model>
+            <value key="circle-color">red</value>
+            <value key="rectangle-color">yellow</value>
+            <list key="shapes">
+                <value template="mustache"><![CDATA[Here is a {{circle-color}} circle
+]]></value>
+                <value><![CDATA[Here is a blue triangle
+]]></value>
+                <value file="files/square.txt"/>
+                <value file="files/rectangle.hbs" template="mustache"/>
+            </list>
+        </model>
+    </output>
 </archetype-script>

@@ -17,7 +17,6 @@ package io.helidon.build.maven.archetype;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -458,7 +457,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 Log.info("Generating project '" + projectName + "' using Helidon CLI");
                 helidonInit(values, outputDir);
         }
-        invokePostArchetypeGenerationGoals(outputDir.toFile());
+        invokePostArchetypeGenerationGoals(outputDir);
     }
 
     private String invokerExe() {
@@ -599,16 +598,16 @@ public class IntegrationTestMojo extends AbstractMojo {
         invokeMethod(container.getLookupRealm(), MAVEN_GENERATOR_FCN, "generate", args);
     }
 
-    private void invokePostArchetypeGenerationGoals(File basedir) throws IOException, MojoExecutionException {
+    private void invokePostArchetypeGenerationGoals(Path basedir) throws IOException, MojoExecutionException {
         FileLogger logger = setupBuildLogger(basedir);
 
-        getLog().info(String.format("Invoking post-archetype-generation goal: %s, profiles: %s", testGoal, testProfiles));
+        Log.info(String.format("Invoking post-archetype-generation goal: %s, profiles: %s", testGoal, testProfiles));
 
         File localRepo = session.getRepositorySession().getLocalRepository().getBasedir();
         InvocationRequest request = new DefaultInvocationRequest()
                 .setUserSettingsFile(session.getRequest().getUserSettingsFile())
                 .setLocalRepositoryDirectory(localRepo)
-                .setBaseDirectory(basedir)
+                .setBaseDirectory(basedir.toFile())
                 .addArgs(List.of(testGoal))
                 .setProfiles(testProfiles)
                 .setBatchMode(true)
@@ -635,7 +634,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         try {
             InvocationResult result = invoker.execute(request);
-            getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
+            Log.info("Post-archetype-generation invoker exit code: " + result.getExitCode());
 
             // validate projects
             if (validations != null) {
@@ -650,16 +649,6 @@ public class IntegrationTestMojo extends AbstractMojo {
         } catch (MavenInvocationException ex) {
             throw new MojoExecutionException(ex.getMessage(), ex);
         }
-    }
-
-    private FileLogger setupBuildLogger(File basedir) throws IOException {
-        FileLogger logger = null;
-        if (!noLog) {
-            File outputLog = new File(basedir, "build.log");
-            logger = new FileLogger(outputLog, streamLogs);
-            Log.debug("build log initialized in: " + outputLog);
-        }
-        return logger;
     }
 
     private List<Expression> rules() {
@@ -694,15 +683,24 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
+    private FileLogger setupBuildLogger(Path basedir) throws IOException {
+        FileLogger logger = null;
+        if (!noLog) {
+            Path logFile = basedir.resolve("build.log");
+            logger = new FileLogger(logFile, streamLogs);
+            Log.debug("build log initialized in: " + logFile);
+        }
+        return logger;
+    }
+
     private static final class FileLogger implements InvocationOutputHandler, Closeable {
 
         private final PrintStream printer;
         private final boolean streamLogs;
 
-        FileLogger(File outputFile, boolean streamLogs) throws IOException {
-            //noinspection ResultOfMethodCallIgnored
-            outputFile.getParentFile().mkdirs();
-            this.printer = new PrintStream(new FileOutputStream(outputFile));
+        FileLogger(Path logFile, boolean streamLogs) throws IOException {
+            Files.createDirectories(logFile.getParent());
+            this.printer = new PrintStream(Files.newOutputStream(logFile));
             this.streamLogs = streamLogs;
         }
 

@@ -28,7 +28,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.build.common.Lists;
@@ -56,6 +55,7 @@ import static io.helidon.build.archetype.engine.v2.ScriptCompiler.STEP_NOT_DECLA
 import static io.helidon.build.archetype.engine.v2.ScriptCompiler.STEP_NO_INPUT;
 import static io.helidon.build.archetype.engine.v2.ScriptCompiler.Options.NO_TRANSIENT;
 import static io.helidon.build.archetype.engine.v2.ScriptCompiler.Options.NO_OUTPUT;
+import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
@@ -442,64 +442,64 @@ class ScriptCompilerTest {
 
     @Test
     void testVariationsList1() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/list1.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "list1.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list1.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "list1.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsList2() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/list2.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "list2.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list2.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "list2.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsList3() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/list3.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "list3.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list3.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "list3.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsEnum1() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/enum1.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "enum1.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum1.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "enum1.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsEnum2() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/enum2.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "enum2.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum2.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "enum2.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsEnum3() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/enum3.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "enum3.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum3.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "enum3.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsBoolean1() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/boolean1.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "boolean1.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean1.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "boolean1.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsBoolean2() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/boolean2.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "boolean2.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean2.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "boolean2.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsBoolean3() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/boolean3.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "boolean3.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean3.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "boolean3.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
@@ -508,7 +508,7 @@ class ScriptCompilerTest {
         Set<Map<String, String>> expected = new LinkedHashSet<>();
         expected.add(Map.of("name", "Foo"));
 
-        Set<Map<String, String>> actual = compile("compiler/variations", "text1.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> actual = variations("compiler/variations", "text1.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
@@ -517,7 +517,7 @@ class ScriptCompilerTest {
         Set<Map<String, String>> expected = new LinkedHashSet<>();
         expected.add(Maps.of("name", "<?>"));
 
-        Set<Map<String, String>> actual = compile("compiler/variations", "text2.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> actual = variations("compiler/variations", "text2.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
@@ -527,38 +527,38 @@ class ScriptCompilerTest {
         expected.add(Maps.of("text", "a-foo-a-bar", "list-things", "a-bar"));
         expected.add(Maps.of("text", "a-foo-a-bar", "list-things", "none"));
 
-        Set<Map<String, String>> actual = compile("compiler/variations", "substitutions.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> actual = variations("compiler/variations", "substitutions.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsConditionals() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/conditionals.xml");
-        Set<Map<String, String>> actual = compile("compiler/variations", "conditionals.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/conditionals.xml");
+        Set<Map<String, String>> actual = variations("compiler/variations", "conditionals.xml", List.of());
         assertThat(toString(actual), is(toString(expected)));
     }
 
     @Test
     void testVariationsE2e() {
-        Set<Map<String, String>> actual = compile("e2e", "main.xml", ScriptCompiler::variations);
+        Set<Map<String, String>> actual = variations("e2e", "main.xml", List.of());
         assertThat(actual.size(), is(65604));
     }
 
     @Test
     void testVariationsFilters() {
-        Set<Map<String, String>> expected = variations("compiler/variations/expected/filtered.xml");
+        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/filtered.xml");
         List<Expression> filters = filters("compiler/variations/filters.xml");
-        Set<Map<String, String>> actual = compile("e2e", "main.xml", c -> c.variations(filters));
+        Set<Map<String, String>> actual = variations("e2e", "main.xml", filters);
         assertThat(toString(actual), is(toString(expected)));
     }
 
-    static <T> T compile(String path, String entrypoint, Function<ScriptCompiler, T> func) {
+    static Set<Map<String, String>> variations(String path, String entrypoint, List<Expression> filters) {
         Path targetDir = targetDir(ScriptCompilerTest.class);
         try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
             Path cwd = fs.getPath(path);
             Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
             ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
-            return func.apply(compiler);
+            return compiler.variations(filters);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex.getMessage(), ex);
         }
@@ -566,13 +566,18 @@ class ScriptCompilerTest {
 
     static Path compile(String path, String entrypoint, ScriptCompiler.Options... features) {
         Path targetDir = targetDir(ScriptCompilerTest.class);
-        return compile(path, entrypoint, compiler -> {
-            Path outputDir = unique(targetDir.resolve("compiler-ut").resolve(path), "out");
+        try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
+            Path cwd = fs.getPath(path);
+            Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
+            ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
+            Path outputDir = unique(targetDir.resolve("compiler-ut"), fileName(cwd));
             if (!compiler.compile(outputDir, features)) {
                 throw new ValidationErrors(compiler.errors());
             }
             return outputDir;
-        });
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex.getMessage(), ex);
+        }
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -589,7 +594,7 @@ class ScriptCompilerTest {
         return excludes;
     }
 
-    static Set<Map<String, String>> variations(String path) {
+    static Set<Map<String, String>> loadVariations(String path) {
         Set<Map<String, String>> result = new LinkedHashSet<>();
         for (XMLElement e : loadXml(path).children("variation")) {
             Map<String, String> map = new LinkedHashMap<>();

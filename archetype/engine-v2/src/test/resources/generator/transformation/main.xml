@@ -20,6 +20,11 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
-        <file source="file1.txt" target="file2.txt"/>
+        <files transformations="t1">
+            <directory>files</directory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </files>
     </output>
 </archetype-script>
