@@ -88,10 +88,10 @@ class CliFunctionalTest {
     }
 
     @Test
-    void batchTest() {
+    void testBatch() {
         try (Monitor monitor = new CliInvocation()
                 .bin(CLI_EXE.get())
-                .cwd(unique(CWD, "batch-test"))
+                .cwd(unique(CWD, "batch"))
                 .args("init",
                         "--batch",
                         "--reset",
@@ -112,8 +112,8 @@ class CliFunctionalTest {
     }
 
     @Test
-    void batchTestEmbedded() {
-        Path projectDir = unique(CWD, "batch-test-embedded");
+    void testBatchEmbedded() {
+        Path projectDir = unique(CWD, "batch-embedded");
         Helidon.execute(
                 "init",
                 "--batch",
@@ -121,7 +121,7 @@ class CliFunctionalTest {
                 "--url", CLI_DATA_URL.get(),
                 "--project", projectDir.toString(),
                 "--groupId", "com.acme",
-                "--artifactId", "batch-test-embedded",
+                "--artifactId", "batch-embedded",
                 "--package", "com.acme",
                 "--version", CLI_VERSION.get());
 
@@ -130,17 +130,17 @@ class CliFunctionalTest {
 
     @Test
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
-    void batchTestNativeImage() {
+    void testBatchNativeImage() {
         try (Monitor monitor = new CliInvocation()
                 .bin(CLI_NATIVE.get())
-                .cwd(unique(CWD, "batch-test-native-image"))
+                .cwd(unique(CWD, "batch-native-image"))
                 .args("init",
                         "--batch",
                         "--reset",
                         "--url", CLI_DATA_URL.get(),
                         "--project", "my-project",
                         "--groupId", "com.acme",
-                        "--artifactId", "batch-test-native-image",
+                        "--artifactId", "batch-native-image",
                         "--package", "com.acme",
                         "--version", CLI_VERSION.get())
                 .start()) {
@@ -154,11 +154,11 @@ class CliFunctionalTest {
     }
 
     @Test
-    void interactiveTest() {
+    void testInteractive() {
         try (Monitor monitor = new CliInvocation()
                 .bin(CLI_EXE.get())
                 .inputFile(INPUT_FILE.get())
-                .cwd(unique(CWD, "interactive-test"))
+                .cwd(unique(CWD, "interactive"))
                 .args("init",
                         "--plain",
                         "--reset",
@@ -176,17 +176,17 @@ class CliFunctionalTest {
 
     @Test
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
-    void interactiveTestNativeImage() {
+    void testInteractiveNativeImage() {
         try (Monitor monitor = new CliInvocation()
                 .bin(CLI_NATIVE.get())
                 .inputFile(INPUT_FILE.get())
-                .cwd(unique(CWD, "interactive-test-native-image"))
+                .cwd(unique(CWD, "interactive-native-image"))
                 .args("init",
                         "--reset",
                         "--url", CLI_DATA_URL.get(),
                         "--project", "my-project",
                         "--groupId", "com.acme",
-                        "--artifactId", "interactive-test-native-image",
+                        "--artifactId", "interactive-native-image",
                         "--package", "com.acme",
                         "--version", CLI_VERSION.get())
                 .start()) {
@@ -203,7 +203,7 @@ class CliFunctionalTest {
     void testDebug() {
         try (Monitor monitor = new CliInvocation()
                 .bin(CLI_EXE.get())
-                .cwd(unique(CWD, "debug-test"))
+                .cwd(unique(CWD, "debug"))
                 .args("init",
                         "--batch",
                         "--debug",
@@ -211,7 +211,7 @@ class CliFunctionalTest {
                         "--url", CLI_DATA_URL.get(),
                         "--project", "my-project",
                         "--groupId", "com.acme",
-                        "--artifactId", "debug-test",
+                        "--artifactId", "debug",
                         "--package", "com.acme",
                         "--version", CLI_VERSION.get())
                 .start()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,14 +126,14 @@ class EmbeddedModeTest {
         System.clearProperty("format");
     }
 
-    private static List<String> loggedLines() {
+    static List<String> loggedLines() {
         return LOG_RECORDER.entries()
                 .stream()
                 .flatMap(String::lines)
                 .collect(Collectors.toList());
     }
 
-    private int countLinesContainingAll(String... fragments) {
+    int countLinesContainingAll(String... fragments) {
         return (int) LOG_RECORDER.entries()
                 .stream()
                 .flatMap(String::lines)
@@ -141,7 +141,7 @@ class EmbeddedModeTest {
                 .count();
     }
 
-    private static boolean containsAll(String msg, String... fragments) {
+    static boolean containsAll(String msg, String... fragments) {
         for (String fragment : fragments) {
             if (!msg.contains(fragment)) {
                 return false;

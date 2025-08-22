@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ class MetadataTest {
     private Path versionsFile;
     private Metadata meta;
     private MavenVersion defaultVersion;
-    private MetadataTestServer testServer;
+    private MetadataServer testServer;
 
     @BeforeAll
     static void beforeAll() {
@@ -628,7 +628,7 @@ class MetadataTest {
     }
 
     private void startMetadataTestServer(TestVersion defaultVersion) {
-        testServer = new MetadataTestServer(defaultVersion, false).start();
+        testServer = new MetadataServer(defaultVersion, false).start();
         baseUrl = testServer.url();
     }
 

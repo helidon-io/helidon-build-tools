@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static org.mockserver.model.NottableString.not;
 /**
  * Metadata server that serves local test data.
  */
-class MetadataTestServer {
+class MetadataServer {
     private static final String USAGE = "Usage: [--port <port>] [--rc1 | --rc2] [--quiet] [--help]";
     private static final int DEFAULT_MAIN_PORT = 8080;
     private static final String VERBOSE_LEVEL = "INFO";
@@ -86,7 +86,7 @@ class MetadataTestServer {
      *
      * @param args The arguments.
      */
-    static void main(String[] args) {
+    public static void main(String[] args) {
         int port = DEFAULT_MAIN_PORT;
         TestVersion defaultVersion = TestVersion.RC1;
         boolean verbose = true;
@@ -113,7 +113,7 @@ class MetadataTestServer {
                     break;
             }
         }
-        new MetadataTestServer(port, defaultVersion, verbose).start();
+        new MetadataServer(port, defaultVersion, verbose).start();
     }
 
     /**
@@ -122,7 +122,7 @@ class MetadataTestServer {
      * @param defaultVersion default version
      * @param verbose Whether to do verbose logging.
      */
-    MetadataTestServer(TestVersion defaultVersion, boolean verbose) {
+    MetadataServer(TestVersion defaultVersion, boolean verbose) {
         this(freePort(), defaultVersion, verbose);
     }
 
@@ -134,7 +134,7 @@ class MetadataTestServer {
      * @param defaultVersion default version
      */
     @SuppressWarnings("ConstantConditions")
-    MetadataTestServer(int port, TestVersion defaultVersion, boolean verbose) {
+    MetadataServer(int port, TestVersion defaultVersion, boolean verbose) {
         if (MockServer.class.getClassLoader() != ClassLoader.getSystemClassLoader()) {
             final String reason = "MockServer must be in system class loader";
             Log.info("$(italic,yellow Skipping: %s)", reason);
@@ -152,7 +152,7 @@ class MetadataTestServer {
      * @return This instance, for chaining.
      */
     @SuppressWarnings("BusyWait")
-    MetadataTestServer start() {
+    MetadataServer start() {
         mockServer = ClientAndServer.startClientAndServer(port);
 
         // Set the response for "/versions.xml"
@@ -198,6 +198,7 @@ class MetadataTestServer {
      *
      * @param defaultVersion defaultVersion
      */
+    @SuppressWarnings("SameParameterValue")
     void defaultVersion(TestVersion defaultVersion) {
         this.defaultVersion = defaultVersion;
     }
