@@ -311,8 +311,7 @@ public class JarMojo extends AbstractMojo {
             Files.copy(jarFile, fs.getPath("helidon-" + version + ".jar"), REPLACE_EXISTING);
         }
 
-        Log.info("""
-                
+        Log.info("\n" + """
                 |
                 |                      /')
                 |               $(cyan! /)$(blue /)$(blue! /)$(magenta /)  /' )'

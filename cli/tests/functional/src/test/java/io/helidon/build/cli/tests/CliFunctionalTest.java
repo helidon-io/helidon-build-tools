@@ -16,13 +16,10 @@
 
 package io.helidon.build.cli.tests;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,43 +29,34 @@ import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.cli.tests.ProcessInvocation.Monitor;
 import io.helidon.build.cli.tests.ProcessInvocation.MonitorException;
 import io.helidon.build.common.LazyValue;
-import io.helidon.build.common.PrintStreams;
-import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.SourcePath;
-import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_DATA_URL;
+import static io.helidon.build.cli.tests.FunctionalUtils.CLI_DIR;
+import static io.helidon.build.cli.tests.FunctionalUtils.CLI_DIRNAME;
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
-import static io.helidon.build.cli.tests.FunctionalUtils.EXECUTABLE_DIR;
-import static io.helidon.build.cli.tests.FunctionalUtils.HELIDON_CLI_JAR;
-import static io.helidon.build.cli.tests.FunctionalUtils.JAVA_BIN;
+import static io.helidon.build.cli.tests.FunctionalUtils.CLI_NATIVE;
+import static io.helidon.build.cli.tests.FunctionalUtils.CLI_EXE;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
-import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.list;
 import static io.helidon.build.common.FileUtils.unique;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class CliFunctionalV2Test {
+class CliFunctionalTest {
 
-    private static final Path CWD = TestFiles.targetDir(CliFunctionalV2Test.class).resolve("cli-functional-v2-test");
-    private static final String HELIDON_NATIVE_BIN_NAME = System.getProperty("native.image.name", "helidon");
-    private static final LazyValue<Path> HELIDON_SHELL = new LazyValue<>(() -> EXECUTABLE_DIR.get().resolve("helidon.sh"));
-    private static final LazyValue<Path> HELIDON_BATCH = new LazyValue<>(() -> EXECUTABLE_DIR.get().resolve("helidon.bat"));
-    private static final LazyValue<Path> HELIDON_NATIVE = new LazyValue<>(() ->
-            EXECUTABLE_DIR.get().resolve("target").resolve(HELIDON_NATIVE_BIN_NAME));
-    private static final LazyValue<File> INPUT_FILE = new LazyValue<>(CliFunctionalV2Test::inputFile);
+    private static final Path CWD = TestFiles.targetDir(CliFunctionalTest.class).resolve("cli-functional-test");
+    private static final LazyValue<Path> INPUT_FILE = new LazyValue<>(CliFunctionalTest::inputFile);
 
     static {
         LogLevel.set(LogLevel.DEBUG);
@@ -80,8 +68,29 @@ class CliFunctionalV2Test {
     }
 
     @Test
+    void testCliContent() {
+        List<String> content = list(CLI_DIR.get(), 4).stream()
+                .peek(p -> assertThat(Files.exists(p), is(true)))
+                .map(CLI_DIR.get()::relativize)
+                .map(Path::toString)
+                .map(s -> s.replace("\\", "/"))
+                .collect(Collectors.toList());
+
+        // ensure the main directories are present
+        assertThat(content, hasItems(CLI_DIRNAME + "/bin"));
+        assertThat(content, hasItems(CLI_DIRNAME + "/libs"));
+
+        // ensure the main files are present
+        assertThat(content, hasItems(CLI_DIRNAME + "/bin/helidon"));
+        assertThat(content, hasItems(CLI_DIRNAME + "/bin/helidon.bat"));
+        assertThat(content, hasItems(CLI_DIRNAME + "/helidon-cli.jar"));
+        assertThat(content, hasItems(CLI_DIRNAME + "/LICENSE.txt"));
+    }
+
+    @Test
     void batchTest() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
                 .cwd(unique(CWD, "batch-test"))
                 .args("init",
                         "--batch",
@@ -90,56 +99,6 @@ class CliFunctionalV2Test {
                         "--project", "my-project",
                         "--groupId", "com.acme",
                         "--artifactId", "batch-test",
-                        "--package", "com.acme",
-                        "--version", CLI_VERSION.get())
-                .start()) {
-
-            monitor.await();
-            Path projectDir = monitor.cwd().resolve("my-project");
-            String expectedOutput = String.format("Switch directory to %s to use CLI", projectDir);
-            assertThat(monitor.output(), containsString(expectedOutput));
-            validateProject(projectDir);
-        }
-    }
-
-    @Test
-    @DisabledOnOs(OS.WINDOWS)
-    void batchTestShellScript() {
-        try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_SHELL.get())
-                .cwd(unique(CWD, "batch-test-shell"))
-                .args("init",
-                        "--batch",
-                        "--reset",
-                        "--url", CLI_DATA_URL.get(),
-                        "--project", "my-project",
-                        "--groupId", "com.acme",
-                        "--artifactId", "batch-test-shell",
-                        "--package", "com.acme",
-                        "--version", CLI_VERSION.get())
-                .start()) {
-
-            monitor.await();
-            Path projectDir = monitor.cwd().resolve("my-project");
-            String expectedOutput = String.format("Switch directory to %s to use CLI", projectDir);
-            assertThat(monitor.output(), containsString(expectedOutput));
-            validateProject(projectDir);
-        }
-    }
-
-    @Test
-    @EnabledOnOs(OS.WINDOWS)
-    void batchTestBatScript() {
-        try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_BATCH.get())
-                .cwd(unique(CWD, "batch-test-shell-windows"))
-                .args("init",
-                        "--batch",
-                        "--reset",
-                        "--url", CLI_DATA_URL.get(),
-                        "--project", "my-project",
-                        "--groupId", "com.acme",
-                        "--artifactId", "batch-test-shell-windows",
                         "--package", "com.acme",
                         "--version", CLI_VERSION.get())
                 .start()) {
@@ -173,7 +132,7 @@ class CliFunctionalV2Test {
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
     void batchTestNativeImage() {
         try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_NATIVE.get())
+                .bin(CLI_NATIVE.get())
                 .cwd(unique(CWD, "batch-test-native-image"))
                 .args("init",
                         "--batch",
@@ -197,55 +156,11 @@ class CliFunctionalV2Test {
     @Test
     void interactiveTest() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
                 .inputFile(INPUT_FILE.get())
                 .cwd(unique(CWD, "interactive-test"))
                 .args("init",
-                        "--reset",
-                        "--url", CLI_DATA_URL.get(),
-                        "--project", "my-project",
-                        "--groupId", "com.acme",
-                        "--artifactId", "interactive-test",
-                        "--package", "com.acme",
-                        "--version", CLI_VERSION.get())
-                .start()) {
-
-            monitor.await();
-            Path projectDir = monitor.cwd().resolve("my-project");
-            String expectedOutput = String.format("Switch directory to %s to use CLI", projectDir);
-            assertThat(monitor.output(), containsString(expectedOutput));
-            validateProject(projectDir);
-        }
-    }
-
-    @Test
-    @DisabledOnOs(OS.WINDOWS)
-    void interactiveTestShellScript() {
-        try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_SHELL.get())
-                .inputFile(INPUT_FILE.get())
-                .cwd(unique(CWD, "interactive-test-shell"))
-                .args("init",
-                        "--reset",
-                        "--url", CLI_DATA_URL.get(),
-                        "--project", "my-project")
-                .start()) {
-
-            monitor.await();
-            Path projectDir = monitor.cwd().resolve("my-project");
-            String expectedOutput = String.format("Switch directory to %s to use CLI", projectDir);
-            assertThat(monitor.output(), containsString(expectedOutput));
-            validateProject(projectDir);
-        }
-    }
-
-    @Test
-    @EnabledOnOs(OS.WINDOWS)
-    void interactiveTestBatScript() {
-        try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_BATCH.get())
-                .inputFile(INPUT_FILE.get())
-                .cwd(unique(CWD, "interactive-test-shell-windows"))
-                .args("init",
+                        "--plain",
                         "--reset",
                         "--url", CLI_DATA_URL.get(),
                         "--project", "my-project")
@@ -263,7 +178,7 @@ class CliFunctionalV2Test {
     @EnabledIfSystemProperty(named = "native.image", matches = "true")
     void interactiveTestNativeImage() {
         try (Monitor monitor = new CliInvocation()
-                .bin(HELIDON_NATIVE.get())
+                .bin(CLI_NATIVE.get())
                 .inputFile(INPUT_FILE.get())
                 .cwd(unique(CWD, "interactive-test-native-image"))
                 .args("init",
@@ -287,6 +202,7 @@ class CliFunctionalV2Test {
     @Test
     void testDebug() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
                 .cwd(unique(CWD, "debug-test"))
                 .args("init",
                         "--batch",
@@ -309,6 +225,8 @@ class CliFunctionalV2Test {
     @Test
     void testVerbose() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
+                .cwd(CWD)
                 .args("--verbose", "info")
                 .start()) {
 
@@ -322,6 +240,8 @@ class CliFunctionalV2Test {
     @Test
     void incorrectFlavorTest() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
+                .cwd(CWD)
                 .args("init",
                         "--flavor", "wrongFlavor",
                         "--version", CLI_VERSION.get())
@@ -337,6 +257,8 @@ class CliFunctionalV2Test {
     @Test
     void incorrectHelidonVersionTest() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
+                .cwd(CWD)
                 .args("init",
                         "--version", "0.0.0")
                 .start()) {
@@ -351,6 +273,8 @@ class CliFunctionalV2Test {
     @Test
     void testVersionCommand() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
+                .cwd(CWD)
                 .args("version")
                 .start()) {
 
@@ -364,6 +288,8 @@ class CliFunctionalV2Test {
     @Test
     void testCacheContent() {
         try (Monitor monitor = new CliInvocation()
+                .bin(CLI_EXE.get())
+                .cwd(CWD)
                 .args("info",
                         "--reset",
                         "--url", CLI_DATA_URL.get())
@@ -389,63 +315,11 @@ class CliFunctionalV2Test {
         assertThat(files.stream().anyMatch(path -> path.matches("**/*.java")), is(true));
     }
 
-    static File inputFile() {
+    static Path inputFile() {
         try {
-            return Files.writeString(unique(CWD, "input.txt"), "\n\n\n").toFile();
+            return Files.writeString(unique(CWD, "input.txt"), "\n\n\n");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    static final class CliInvocation extends ProcessInvocation {
-
-        private Path bin;
-        private File inputFile;
-
-        CliInvocation() {
-            cwd = CWD;
-        }
-
-        CliInvocation bin(Path bin) {
-            this.bin = bin;
-            return this;
-        }
-
-        CliInvocation inputFile(File inputFile) {
-            this.inputFile = inputFile;
-            return this;
-        }
-
-        @Override
-        Monitor start() {
-            List<String> cmd = new ArrayList<>();
-            if (bin != null) {
-                cmd.add(bin.toString());
-            } else {
-                cmd.addAll(List.of(JAVA_BIN.get(), "-Xmx128M", "-jar", HELIDON_CLI_JAR.get()));
-            }
-            cmd.addAll(args);
-            ensureDirectory(cwd);
-            Recorder recorder = new Recorder();
-            Path logFile = unique(logDir != null ? logDir : cwd, "cli", ".log");
-            try {
-                PrintStream printStream = new PrintStream(Files.newOutputStream(logFile));
-                ProcessMonitor processMonitor = ProcessMonitor.builder()
-                        .processBuilder(new ProcessBuilder()
-                                .command(cmd)
-                                .directory(cwd.toFile()))
-                        .stdIn(inputFile)
-                        .stdOut(PrintStreams.accept(printStream, recorder::record))
-                        .stdErr(PrintStreams.accept(printStream, recorder::record))
-                        .capture(true)
-                        .build();
-                Log.debug("Executing: " + String.join(" ", cmd));
-                return new Monitor(processMonitor.start(), recorder, cwd);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            } catch (Exception ex) {
-                throw new MonitorException(recorder.sb.toString(), ex);
-            }
         }
     }
 }
