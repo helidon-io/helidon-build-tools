@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,12 +76,30 @@ public abstract class LogWriter {
     /**
      * Record a formatted log entry.
      *
+     * @param level log level
      * @param entry log entry
      */
-    protected final void recordEntry(String entry) {
+    protected final void recordEntry(LogLevel level, String entry) {
         for (LogRecorder recorder : recorders) {
-            recorder.addEntry(entry);
+            if (level.ordinal() >= recorder.level().ordinal()) {
+                recorder.addEntry(entry);
+            }
         }
+    }
+
+    /**
+     * Get the lowest recorder log level.
+     *
+     * @return level
+     */
+    protected LogLevel recordLevel() {
+        LogLevel level = LogLevel.INFO;
+        for (LogRecorder recorder : recorders) {
+            if (level.ordinal() > recorder.level().ordinal()) {
+                level = recorder.level();
+            }
+        }
+        return level;
     }
 
     /**
@@ -101,7 +119,7 @@ public abstract class LogWriter {
         }
 
         static final LogWriter INSTANCE = ServiceLoader.load(LogWriter.class)
-                                                       .findFirst()
-                                                       .orElse(SystemLogWriter.INSTANCE);
+                .findFirst()
+                .orElse(SystemLogWriter.INSTANCE);
     }
 }

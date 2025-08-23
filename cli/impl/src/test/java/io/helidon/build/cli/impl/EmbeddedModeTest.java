@@ -16,22 +16,22 @@
 package io.helidon.build.cli.impl;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogRecorder;
-import io.helidon.build.common.logging.LogWriter;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.cli.impl.TestUtils.equalToIgnoringStyle;
 import static io.helidon.build.cli.impl.TestUtils.isNotStyled;
 import static io.helidon.build.cli.impl.TestUtils.isStyled;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
@@ -40,113 +40,90 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Unit test for embedded mode.
  */
+@SuppressWarnings("unchecked")
 class EmbeddedModeTest {
-    private static final LogRecorder LOG_RECORDER = LogRecorder.create();
 
     @BeforeAll
     static void beforeAllTests() {
         System.setProperty("jansi.passthrough", "true");
-        LogWriter.addRecorder(LOG_RECORDER);
-    }
-
-    @AfterAll
-    static void afterAllTests() {
-        LogWriter.removeRecorder(LOG_RECORDER);
-    }
-
-    @BeforeEach
-    void beforeEachTest() {
-        LOG_RECORDER.clear();
-    }
-
-    @AfterEach
-    void afterEachTest() {
-        LOG_RECORDER.clear();
     }
 
     @Test
     void testValidCommand() {
-        Helidon.execute("version");
-        List<String> lines = loggedLines();
-        assertThat(lines, is(not(empty())));
-        assertThat(countLinesContainingAll("build."), is(3));
-        assertThat(lines.get(0), isStyled());
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            Helidon.execute("version");
+
+            List<String> logEntries = recorder.entries();
+            assertThat(logEntries, is(not(empty())));
+            assertThat(logEntries.get(0), isStyled());
+            assertThat(logEntries, hasItems(
+                    containsString("build."),
+                    containsString("build."),
+                    containsString("build.")));
+        }
     }
 
     @Test
     void testUnknownCommand() {
-        Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
-        assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
-        List<String> lines = loggedLines();
-        assertThat(lines.size(), is(2));
-        assertThat(lines.get(0), isStyled());
-        assertThat(lines.get(1), isStyled());
-        assertThat(lines.get(0), equalToIgnoringStyle("error: 'foo' is not a valid command."));
-        assertThat(lines.get(1), equalToIgnoringStyle("See 'helidon --help' for more information"));
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
+
+            assertThat(e.getMessage(), isNotStyled());
+            assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
+
+            List<String> logLines = recorder.lines();
+            assertThat(logLines, contains(
+                    allOf(isStyled(), equalToIgnoringStyle("error: 'foo' is not a valid command.")),
+                    allOf(isStyled(), equalToIgnoringStyle("See 'helidon --help' for more information"))));
+        }
     }
 
     @Test
     void testInvalidCommand() {
-        Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
-        assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), is("Invalid command name: *"));
-        List<String> lines = loggedLines();
-        assertThat(lines.size(), is(1));
-        assertThat(lines.get(0), isStyled());
-        assertThat(lines.get(0), equalToIgnoringStyle("error: Invalid command name: *"));
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
+
+            assertThat(e.getMessage(), isNotStyled());
+            assertThat(e.getMessage(), is("Invalid command name: *"));
+
+            List<String> logLines = recorder.lines();
+            assertThat(logLines, contains(allOf(isStyled(), equalToIgnoringStyle("error: Invalid command name: *"))));
+        }
     }
 
     @Test
     void testStyledExceptionThrown() {
-        Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
-        assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
-        List<String> lines = loggedLines();
-        assertThat(lines, is(not(empty())));
-        if (lines.size() > 1) {
-            for (int i = 0; i < lines.size() - 1; i++) {
-                assertThat(lines.get(i), isStyled());
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            Error e = assertThrows(Error.class,
+                    () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
+
+            assertThat(e.getMessage(), isNotStyled());
+            assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
+
+            List<String> logEntries = recorder.entries();
+
+            assertThat(logEntries, is(not(empty())));
+            for (int i = 0; i < logEntries.size() - 1; i++) {
+                assertThat(logEntries.get(i), isStyled());
             }
+            assertThat(logEntries.get(logEntries.size() - 1),
+                    allOf(isStyled(), equalToIgnoringStyle("Helidon version 99.99 not found.")));
         }
-        assertThat(lines.get(lines.size() - 1), isStyled());
-        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle("Helidon version 99.99 not found."));
     }
 
     @Test
     void testFormatStringInProperties() {
-        System.setProperty("format", "%s");
-        Helidon.execute("info", "--verbose");
-        long lineCount = loggedLines().stream()
-                .distinct()
-                .filter(l -> l.contains("%s"))
-                .filter(l -> l.contains("format") || l.contains("formatEnv"))
-                .count();
-        assertThat(lineCount, is(2L));
-        System.clearProperty("format");
-    }
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            System.setProperty("format", "%s");
 
-    static List<String> loggedLines() {
-        return LOG_RECORDER.entries()
-                .stream()
-                .flatMap(String::lines)
-                .collect(Collectors.toList());
-    }
+            Helidon.execute("info", "--verbose");
 
-    int countLinesContainingAll(String... fragments) {
-        return (int) LOG_RECORDER.entries()
-                .stream()
-                .flatMap(String::lines)
-                .filter(msg -> containsAll(msg, fragments))
-                .count();
-    }
-
-    static boolean containsAll(String msg, String... fragments) {
-        for (String fragment : fragments) {
-            if (!msg.contains(fragment)) {
-                return false;
-            }
+            List<String> logEntries = recorder.entries();
+            assertThat(logEntries, hasItems(
+                    allOf(containsString("%s"), containsString("format"), containsString("formatEnv")),
+                    allOf(containsString("%s"), containsString("format"), containsString("formatEnv"))));
+        } finally {
+            System.clearProperty("format");
         }
-        return true;
     }
 }

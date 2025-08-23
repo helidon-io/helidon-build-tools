@@ -29,17 +29,14 @@ import io.helidon.build.archetype.engine.v1.ArchetypeCatalog;
 import io.helidon.build.archetype.engine.v1.ArchetypeCatalog.ArchetypeEntry;
 import io.helidon.build.cli.impl.TestMetadata.TestVersion;
 import io.helidon.build.common.ConfigProperties;
-import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogRecorder;
-import io.helidon.build.common.logging.LogWriter;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.test.utils.TestFiles;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -87,29 +84,21 @@ class MetadataTest {
     static final String RC2_ZIP = VERSION_RC2 + File.separator + CLI_DATA_FILE_NAME;
     static final String RC2_ZIP_URI = VERSION_RC2 + "/" + CLI_DATA_FILE_NAME;
 
-    final LogLevel logLevel = LogLevel.get();
-
     @BeforeEach
     void beforeEach() {
         Plugins.reset(false);
-        LogLevel.set(LogLevel.DEBUG);
-    }
-
-    @AfterEach
-    protected void afterEach() {
-        LogLevel.set(logLevel);
     }
 
     @Test
     void smokeTest() throws Metadata.UpdateFailed {
         // Setup with RC1 as default
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
 
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
@@ -140,7 +129,7 @@ class MetadataTest {
             assertThat(props.contains("cli.2.0.0-M4.message"), is(true));
             assertThat(props.contains("cli.2.0.0-RC1.message"), is(true));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(RC1_LAST_UPDATE))));
@@ -157,7 +146,7 @@ class MetadataTest {
             assertThat(entriesById.get(HELIDON_BARE_MP), is(notNullValue()));
             assertThat(entriesById.get(HELIDON_BARE_MP).name(), is("bare"));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(RC1_LAST_UPDATE))));
@@ -168,7 +157,7 @@ class MetadataTest {
             assertThat(Files.exists(archetypeJar), is(true));
             assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC1.jar"));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(RC1_LAST_UPDATE))));
@@ -183,7 +172,7 @@ class MetadataTest {
             ArchetypeCatalog catalog2 = meta.catalogOf(defaultVersion);
             assertThat(catalog2, is(catalog));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(3));
             assertThat(logEntries, hasItems(
                     allOf(containsString("stale check"), containsString("is false"), containsString(VERSIONS_FILE_NAME)),
@@ -204,13 +193,13 @@ class MetadataTest {
 
     @Test
     void smokeTestRc2() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC2)) {
+        try (TestContext ctx = new TestContext(RC2).start()) {
             Metadata meta = ctx.metadata(24, TimeUnit.HOURS);
 
             // Do the initial catalog request for RC2
             meta.catalogOf(VERSION_RC2);
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
 
             assertThat(logEntries, not(hasItem(
                     containsString("Looking up default Helidon version"))));
@@ -232,7 +221,7 @@ class MetadataTest {
             // Check latest version. Should not perform update.
             meta.latestVersion();
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(VERSIONS_FILE_NAME))));
@@ -244,7 +233,7 @@ class MetadataTest {
             assertThat(props.property("build-tools.version"), is("2.0.0-RC2"));
             assertThat(props.property("cli.version"), is("2.0.0-RC2"));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItems(allOf(
                     containsString("stale check"),
@@ -262,7 +251,7 @@ class MetadataTest {
             assertThat(entries.get(HELIDON_BARE_MP), is(notNullValue()));
             assertThat(entries.get(HELIDON_BARE_MP).name(), is("bare"));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(RC2_LAST_UPDATE))));
@@ -273,7 +262,7 @@ class MetadataTest {
             assertThat(Files.exists(archetypeJar), is(true));
             assertThat(archetypeJar.getFileName().toString(), is("helidon-bare-se-2.0.0-RC2.jar"));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(1));
             assertThat(logEntries, hasItem(allOf(
                     containsString("stale check"), containsString("is false"), containsString(RC2_LAST_UPDATE))));
@@ -285,7 +274,7 @@ class MetadataTest {
             ArchetypeCatalog catalog2 = meta.catalogOf(VERSION_RC2);
             assertThat(catalog2, is(catalog));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries.size(), is(2));
             assertThat(logEntries, hasItems(
                     allOf(containsString("stale check"), containsString("is false"), containsString(RC2_LAST_UPDATE)),
@@ -295,7 +284,7 @@ class MetadataTest {
 
     @Test
     void testCheckForCliUpdate() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC2)) {
+        try (TestContext ctx = new TestContext(RC2).start()) {
             Metadata meta = ctx.metadata(DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS);
 
             // Simulate different cli versions
@@ -324,7 +313,7 @@ class MetadataTest {
 
     @Test
     void testCliPluginVersion() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC2)) {
+        try (TestContext ctx = new TestContext(RC2).start()) {
             Metadata meta = ctx.metadata(0, TimeUnit.SECONDS);
 
             // Helidon Version   metadata.properties
@@ -384,7 +373,7 @@ class MetadataTest {
 
     @Test
     void testReleaseNotes() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(0, TimeUnit.SECONDS);
 
             MavenVersion helidonVersion = MAVEN_VERSION_RC2;
@@ -421,13 +410,13 @@ class MetadataTest {
 
     @Test
     void testDefaultVersionUpdatesAfterDelay() throws Metadata.UpdateFailed, InterruptedException {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(1, TimeUnit.SECONDS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
 
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
@@ -452,7 +441,7 @@ class MetadataTest {
             Thread.sleep(1250);
             assertThat(meta.defaultVersion(), is(defaultVersion));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, hasItems(
                     allOf(containsString("stale check"), containsString("is true"), containsString(VERSIONS_FILE_NAME)),
                     allOf(containsString("updated"), containsString(RC1_LAST_UPDATE), containsString("etag " + RC1_ETAG)),
@@ -465,13 +454,13 @@ class MetadataTest {
 
     @Test
     void testPropertiesUpdatesAfterDelay() throws Metadata.UpdateFailed, InterruptedException {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(1, TimeUnit.SECONDS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
 
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
@@ -498,7 +487,7 @@ class MetadataTest {
             ConfigProperties props = meta.propertiesOf(defaultVersion);
             assertThat(props, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Looking up default Helidon version"))));
 
@@ -513,13 +502,13 @@ class MetadataTest {
 
     @Test
     void testCatalogUpdatesAfterDelay() throws Metadata.UpdateFailed, InterruptedException {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(1, TimeUnit.SECONDS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
 
@@ -545,7 +534,7 @@ class MetadataTest {
             ArchetypeCatalog catalog = meta.catalogOf(defaultVersion);
             assertThat(catalog, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Looking up default Helidon version"))));
 
@@ -561,13 +550,13 @@ class MetadataTest {
 
     @Test
     void testZipIsNotDownloadedWhenEtagMatches() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(0, TimeUnit.NANOSECONDS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
 
@@ -591,7 +580,7 @@ class MetadataTest {
             ConfigProperties props = meta.propertiesOf(defaultVersion);
             assertThat(props, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, hasItems(
                     allOf(containsString("not modified"), containsString(RC1 + "/" + CLI_DATA_FILE_NAME)),
                     allOf(containsString("updated"), containsString(RC1_LAST_UPDATE), containsString("etag " + RC1_ETAG)),
@@ -603,13 +592,13 @@ class MetadataTest {
 
     @Test
     void testUpdateWhenDefaultChanges() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC2)) {
+        try (TestContext ctx = new TestContext(RC2).start()) {
             Metadata meta = ctx.metadata(0, TimeUnit.NANOSECONDS);
 
             MavenVersion defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC2)));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC2))));
 
@@ -633,7 +622,7 @@ class MetadataTest {
             ConfigProperties props = meta.propertiesOf(defaultVersion);
             assertThat(props, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, hasItems(
                     allOf(containsString("not modified"), containsString(RC2 + "/" + CLI_DATA_FILE_NAME)),
                     allOf(containsString("updated"), containsString(RC2_LAST_UPDATE), containsString("etag " + RC2_ETAG)),
@@ -651,7 +640,7 @@ class MetadataTest {
             defaultVersion = meta.defaultVersion();
             assertThat(defaultVersion, is(toMavenVersion(VERSION_RC1)));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Updating metadata for Helidon version " + VERSION_RC1))));
 
@@ -674,13 +663,13 @@ class MetadataTest {
 
     @Test
     void testCatalogUpdatesWhenUnseenVersionRequested() throws Metadata.UpdateFailed {
-        try (TestContext ctx = new TestContext(RC1)) {
+        try (TestContext ctx = new TestContext(RC1).start()) {
             Metadata meta = ctx.metadata(DEFAULT_UPDATE_FREQUENCY, DEFAULT_UPDATE_FREQUENCY_UNITS);
 
             ArchetypeCatalog catalog = meta.catalogOf(VERSION_RC2);
             assertThat(catalog, is(not(nullValue())));
 
-            List<String> logEntries = Lists.drain(ctx.recorder.entries());
+            List<String> logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItem(
                     containsString("Looking up default Helidon version"))));
 
@@ -703,7 +692,7 @@ class MetadataTest {
             catalog = meta.catalogOf(VERSION_RC2);
             assertThat(catalog, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItems(
                     containsString("Looking up default Helidon version"),
                     containsString("Updating metadata for Helidon version " + VERSION_RC2))));
@@ -714,7 +703,7 @@ class MetadataTest {
             ConfigProperties props = meta.propertiesOf(VERSION_RC2);
             assertThat(props, is(not(nullValue())));
 
-            logEntries = Lists.drain(ctx.recorder.entries());
+            logEntries = ctx.recorder.entries();
             assertThat(logEntries, not(hasItems(
                     allOf(containsString("not modified"), containsString(RC2 + "/" + CLI_DATA_FILE_NAME)),
                     allOf(containsString("updated"), containsString(RC2_LAST_UPDATE), containsString("etag " + RC2_ETAG)),
@@ -734,12 +723,17 @@ class MetadataTest {
 
         TestContext(TestVersion version) {
             THREAD_LOCAL.get().push(Config.userConfig());
-            recorder = new LogRecorder();
-            LogWriter.addRecorder(recorder);
+            recorder = new LogRecorder(LogLevel.DEBUG);
             userConfig = UserConfig.create(ensureDirectory(unique(CWD, "config")));
-            server = new MetadataServer(version, false).start();
+            server = new MetadataServer(version, false);
             Config.setUserHome(userConfig.homeDir());
             Config.setUserConfig(userConfig);
+        }
+
+        TestContext start() {
+            recorder.start();
+            server.start();
+            return this;
         }
 
         Metadata metadata(long frequency, TimeUnit frequencyUnit) {
@@ -756,7 +750,7 @@ class MetadataTest {
         @Override
         public void close() {
             server.stop();
-            LogWriter.removeRecorder(recorder);
+            recorder.close();
             UserConfig config = THREAD_LOCAL.get().pop();
             Config.setUserConfig(config);
             Config.setUserHome(config.homeDir());
