@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.is;
  */
 class HelpCommandTest {
 
-    static final Path CWD = TestFiles.targetDir(InitCommandTest.class).resolve("help-command-test");
+    static final Path CWD = TestFiles.targetDir(InitCommandTest.class).resolve("help-ut");
 
     @Test
     void testCliHelp() {

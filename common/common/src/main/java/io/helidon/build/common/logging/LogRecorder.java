@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,9 @@ import java.util.List;
  */
 public class LogRecorder {
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
 
     private final List<String> entries = new LinkedList<>();
-
-    private LogRecorder() {
-    }
 
     /**
      * Create a new instance.
@@ -70,7 +67,7 @@ public class LogRecorder {
      */
     public String output() {
         String output = String.join(EOL, entries());
-        if (output.length() > 0) {
+        if (!output.isEmpty()) {
             return output + EOL;
         }
         return output;

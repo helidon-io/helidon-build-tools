@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 
 import io.helidon.build.cli.impl.ProcessInvocation.Monitor;
 import io.helidon.build.cli.impl.ProcessInvocation.MonitorException;
-import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.maven.MavenModel;
 
@@ -49,7 +48,7 @@ import static org.hamcrest.Matchers.containsString;
 class InitCommandTest extends MetadataAccess {
 
     static final Path TARGET_DIR = targetDir(InitCommandTest.class);
-    static final Path CWD = TARGET_DIR.resolve("init-command-test");
+    static final Path CWD = TARGET_DIR.resolve("init-ut");
 
     @Test
     void testProjectOptionAndArgumentMatch() {
