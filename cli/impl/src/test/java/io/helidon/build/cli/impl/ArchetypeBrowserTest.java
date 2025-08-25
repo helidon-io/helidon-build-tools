@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests {@link ArchetypeBrowser}.
  */
-class ArchetypeBrowserTest extends MetadataAccessTestBase {
+class ArchetypeBrowserTest extends MetadataAccess {
 
     @Test
     void testMpBrowser() {
@@ -49,12 +49,12 @@ class ArchetypeBrowserTest extends MetadataAccessTestBase {
         assertThat(Files.exists(browser.archetypeJar(entry)), is(true));
     }
 
-    private ArchetypeBrowser newBrowser(Flavor flavor) {
+    ArchetypeBrowser newBrowser(Flavor flavor) {
         return new ArchetypeBrowser(metadata(), flavor, helidonTestVersion());
     }
 
     @SuppressWarnings("SameParameterValue")
-    private static ArchetypeEntry findEntry(String name, ArchetypeBrowser browser) {
+    static ArchetypeEntry findEntry(String name, ArchetypeBrowser browser) {
         return browser.archetypes()
                       .stream()
                       .filter(e -> e.name().equals(name))

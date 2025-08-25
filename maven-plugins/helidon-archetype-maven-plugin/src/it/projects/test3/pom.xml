@@ -45,11 +45,19 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <entrypoint>
-                        <exec src="shape.xml"/>
-                    </entrypoint>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <entrypoint>
+                                <exec src="shape.xml"/>
+                            </entrypoint>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <pluginManagement>

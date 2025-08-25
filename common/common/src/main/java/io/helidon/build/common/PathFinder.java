@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,21 +56,31 @@ public class PathFinder {
                 .filter(VALID_PATH);
     }
 
-    private static Path findWindowsCmd(Path dir, String cmd) {
-        return WINDOWS_EXECUTABLE_EXTENSIONS.stream()
-                .map((ext) -> dir.resolve(cmd + "." + ext))
-                .filter(Files::isRegularFile)
-                .findFirst()
-                .orElse(null);
-    }
-
     private static Path findCmd(Path dir, String cmd) {
         Log.debug("Searching for cmd: %s in %s", cmd, dir);
-        Path cmdFile = dir.resolve(cmd);
-        if (Files.isRegularFile(cmdFile)) {
-            return cmdFile;
+        if (IS_WINDOWS) {
+            return WINDOWS_EXECUTABLE_EXTENSIONS.stream()
+                    .map((ext) -> dir.resolve(cmd + "." + ext))
+                    .filter(Files::isRegularFile)
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            Path cmdFile = dir.resolve(cmd);
+            return Files.isRegularFile(cmdFile) ? cmdFile : null;
         }
-        return IS_WINDOWS ? findWindowsCmd(dir, cmd) : null;
+    }
+
+    /**
+     * Find file in the given path.
+     *
+     * @param fileName file to be found
+     * @param paths    paths to search in
+     * @return path to the file
+     */
+    public static Optional<Path> find(String fileName, List<Path> paths) {
+        return paths.stream()
+                .flatMap(dir -> Optional.ofNullable(findCmd(dir, fileName)).stream())
+                .findFirst();
     }
 
     /**

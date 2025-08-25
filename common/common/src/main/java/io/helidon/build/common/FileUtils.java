@@ -892,14 +892,16 @@ public final class FileUtils {
      *
      * @param zip       source file
      * @param directory target directory
+     * @return extracted entries
      */
-    public static void unzip(Path zip, Path directory) {
+    public static List<Path> unzip(Path zip, Path directory) {
         try (FileSystem fs = newZipFileSystem(zip)) {
             ensureDirectory(directory);
             boolean posix = isPosix(directory);
             Path root = fs.getRootDirectories().iterator().next();
-            try (Stream<Path> entries = Files.walk(root)) {
-                entries.filter(p -> !p.equals(root))
+            List<Path> entries = new ArrayList<>();
+            try (Stream<Path> dirStream = Files.walk(root)) {
+                dirStream.filter(p -> !p.equals(root))
                         .forEach(file -> {
                             Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
                             try {
@@ -912,10 +914,12 @@ public final class FileUtils {
                                     Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
                                     Files.setPosixFilePermissions(filePath, perms);
                                 }
+                                entries.add(filePath);
                             } catch (IOException ioe) {
                                 throw new UncheckedIOException(ioe);
                             }
                         });
+                return entries;
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -1198,12 +1202,12 @@ public final class FileUtils {
     /**
      * Check if a line of that file matches predicate.
      *
-     * @param path file path
+     * @param path      file path
      * @param predicate predicate
      * @return {@code true} if matches, {@code false} otherwise
      */
     public static boolean containsLine(Path path, Predicate<String> predicate) {
-        try (Stream<String> lines = Files.lines(path)){
+        try (Stream<String> lines = Files.lines(path)) {
             return lines.anyMatch(predicate);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

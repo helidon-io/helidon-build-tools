@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,40 +30,14 @@ import static io.helidon.build.common.SourcePath.wildcardMatch;
 public record MavenPattern(String groupId, String artifactId, String classifier, String type) {
 
     /**
-     * Create a new pattern from a formatted string ({@code groupId:artifactId[:classifier[:type]}.
+     * Create a new pattern from a formatted string ({@code groupId:artifactId[:classifier[:type]]}.
      *
      * @param filter filter
      * @return MavenPattern
      */
     public static MavenPattern create(String filter) {
-        String[] args = new String[4];
-        int i = 0;
-        int index = 0;
-        for (; i < 4; i++) {
-            if (index >= 0) {
-                int endIndex = filter.indexOf(':', index);
-                if (index == endIndex + 1 || index == endIndex) {
-                    break;
-                }
-                if (endIndex > 0) {
-                    args[i] = filter.substring(index, endIndex);
-                    int nextIndex = endIndex + 1;
-                    if (nextIndex == filter.length()) {
-                        break;
-                    }
-                    index = nextIndex;
-                } else {
-                    args[i] = filter.substring(index);
-                    index = -1;
-                }
-            } else {
-                args[i] = "*";
-            }
-        }
-        if (i > 0 && index == -1) {
-            return new MavenPattern(args[0], args[1], args[2], args[3]);
-        }
-        throw new IllegalArgumentException("Invalid filter at index %d: %s".formatted(i > 0 ? index : 0, filter));
+        String[] args = parse(filter, 4, "*");
+        return new MavenPattern(args[0], args[1], args[2], args[3]);
     }
 
     /**
@@ -100,5 +74,36 @@ public record MavenPattern(String groupId, String artifactId, String classifier,
                && wildcardMatch(artifactId, this.artifactId)
                && wildcardMatch(classifier != null ? classifier : "", this.classifier)
                && wildcardMatch(type, this.type);
+    }
+
+    static String[] parse(String pattern, int size, String defaultValue) {
+        String[] args = new String[size];
+        int i = 0;
+        int index = 0;
+        for (; i < size; i++) {
+            if (index >= 0) {
+                int endIndex = pattern.indexOf(':', index);
+                if (index == endIndex + 1 || index == endIndex) {
+                    break;
+                }
+                if (endIndex > 0) {
+                    args[i] = pattern.substring(index, endIndex);
+                    int nextIndex = endIndex + 1;
+                    if (nextIndex == pattern.length()) {
+                        break;
+                    }
+                    index = nextIndex;
+                } else {
+                    args[i] = pattern.substring(index);
+                    index = -1;
+                }
+            } else {
+                args[i] = defaultValue;
+            }
+        }
+        if (i > 0 && index == -1) {
+            return args;
+        }
+        throw new IllegalArgumentException("Invalid pattern at index %d: %s".formatted(i > 0 ? index : 0, pattern));
     }
 }

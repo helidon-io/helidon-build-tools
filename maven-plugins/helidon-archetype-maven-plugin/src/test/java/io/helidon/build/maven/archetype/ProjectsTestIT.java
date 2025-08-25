@@ -111,6 +111,16 @@ class ProjectsTestIT {
         assertDiffs(diffs);
     }
 
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test7(String basedir) throws IOException {
+        Path projectDir = projectsDir(basedir);
+        assertProjectCount(projectDir, 3);
+        assertProjectShape(projectDir, "circle");
+        assertProjectShape(projectDir, "triangle");
+        assertProjectShape(projectDir, "square");
+    }
+
     private static Path projectsDir(String baseDir) {
         return projectsDir(baseDir, null);
     }

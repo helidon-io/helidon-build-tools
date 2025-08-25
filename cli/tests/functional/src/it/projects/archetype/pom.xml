@@ -38,51 +38,24 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <entrypoint>
-                        <variables>
-                            <text path="build-tools-version" transient="true">${project.version}</text>
-                        </variables>
-                        <exec src="flavor.xml"/>
-                    </entrypoint>
-                    <jarName>helidon-${project.version}</jarName>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-stager-maven-plugin</artifactId>
-                <version>${project.version}</version>
                 <executions>
                     <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>stage</goal>
-                        </goals>
+                        <id>default-jar</id>
                         <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}">
-                                    <archives>
-                                        <archive target="cli-data/${project.version}/cli-data.zip">
-                                            <files>
-                                                <file source="${project.build.directory}/helidon-${project.version}.jar"
-                                                      target="helidon-${project.version}.jar"/>
-                                            </files>
-                                        </archive>
-                                    </archives>
-                                    <templates>
-                                        <template source="cli/versions.xml.hbs"
-                                                  target="cli-data/versions.xml">
-                                            <variables>
-                                                <variable name="projectVersion" value="${project.version}"/>
-                                            </variables>
-                                        </template>
-                                    </templates>
-                                    <files>
-                                        <file target="cli-data/latest">${project.version}</file>
-                                    </files>
-                                </directory>
-                            </directories>
+                            <entrypoint>
+                                <variables>
+                                    <text path="build-tools-version" transient="true">${project.version}</text>
+                                </variables>
+                                <exec src="flavor.xml"/>
+                            </entrypoint>
+                            <stageCli>true</stageCli>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <configuration>
+                            <skip>true</skip>
                         </configuration>
                     </execution>
                 </executions>

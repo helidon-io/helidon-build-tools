@@ -48,6 +48,16 @@ class TemplateModelTest {
         assertThat(((TemplateModel.Value) node).value(), is("bar"));
     }
 
+    @Test
+    void testEmptyModelValue() {
+        Context context = new Context();
+        Node model = model(modelValue("foo", null));
+        TemplateModel mergedModel = resolveModel(model, context);
+        ModelNode node = mergedModel.root().get("foo");
+        assertThat(((TemplateModel.Value) node).value(), is(""));
+
+    }
+
     boolean isRootScope(Context context) {
         Context.Scope scope = context.scope();
         return scope != null && scope.parent() == null;

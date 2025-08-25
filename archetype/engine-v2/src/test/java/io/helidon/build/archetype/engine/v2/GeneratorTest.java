@@ -31,9 +31,9 @@ import io.helidon.build.common.Strings;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,7 +46,7 @@ class GeneratorTest {
 
     @Test
     void testContextValues() throws IOException {
-        Path outputDir = generate("generator/context-values.xml");
+        Path outputDir = generate("generator/context-values");
         Path expected = outputDir.resolve("context-values.txt");
         assertThat(Files.exists(expected), is(true));
         List<String> lines = readFile(expected).lines().collect(Collectors.toList());
@@ -64,7 +64,7 @@ class GeneratorTest {
 
     @Test
     void testFile() throws IOException {
-        Path outputDir = generate("generator/file.xml");
+        Path outputDir = generate("generator/file");
         Path expected = outputDir.resolve("file2.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("foo\n"));
@@ -72,7 +72,7 @@ class GeneratorTest {
 
     @Test
     void testTemplate() throws IOException {
-        Path outputDir = generate("generator/template.xml");
+        Path outputDir = generate("generator/template");
         Path expected = outputDir.resolve("template1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("bar\n"));
@@ -80,7 +80,7 @@ class GeneratorTest {
 
     @Test
     void testFiles() throws IOException {
-        Path outputDir = generate("generator/files.xml");
+        Path outputDir = generate("generator/files");
         Path expected1 = outputDir.resolve("file1.xml");
         assertThat(Files.exists(expected1), is(true));
         assertThat(readFile(expected1), is("<foo/>\n"));
@@ -91,7 +91,7 @@ class GeneratorTest {
 
     @Test
     void testTemplates() throws IOException {
-        Path outputDir = generate("generator/templates.xml");
+        Path outputDir = generate("generator/templates");
         Path expected1 = outputDir.resolve("file1.txt");
         assertThat(Files.exists(expected1), is(true));
         assertThat(readFile(expected1), is("red\n"));
@@ -103,14 +103,14 @@ class GeneratorTest {
     @Test
     void testTransformation() {
         InvocationException ex = assertThrows(InvocationException.class,
-                () -> generate("generator/transformation.xml"));
+                () -> generate("generator/transformation"));
         assertThat(ex.getCause(), is(instanceOf(IllegalArgumentException.class)));
         assertThat(ex.getCause().getMessage(), is("Unresolved transformation: t1"));
     }
 
     @Test
     void testReplacement() throws IOException {
-        Path outputDir = generate("generator/replacement.xml",
+        Path outputDir = generate("generator/replacement",
                 ctx -> ctx.scope().getOrCreate("package").value(Value.of("com.example"), ValueKind.EXTERNAL));
         Path expected = outputDir.resolve("com/example/file1.txt");
         assertThat(Files.exists(expected), is(true));
@@ -119,7 +119,7 @@ class GeneratorTest {
 
     @Test
     void testProcessedValues() throws IOException {
-        Path outputDir = generate("generator/processed-values.xml");
+        Path outputDir = generate("generator/processed-values");
         Path expected = outputDir.resolve("shapes.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is(""
@@ -131,8 +131,8 @@ class GeneratorTest {
     }
 
     @Test
-    void testTemplatesScope() throws IOException {
-        Path outputDir = generate("generator/templates-override.xml");
+    void testTemplatesOverride() throws IOException {
+        Path outputDir = generate("generator/templates-override");
         Path expected = outputDir.resolve("template1.txt");
         assertThat(Files.exists(expected), is(true));
         assertThat(readFile(expected), is("nested\n"));
@@ -142,21 +142,17 @@ class GeneratorTest {
         return generate(path, scope -> {});
     }
 
-    static Path generate(String path, Consumer<Context> initializer) {
-        Node node = load(path);
-        String dirname = node.script().path().getFileName().toString().replaceAll(".xml", "");
-        Path target = targetDir(GeneratorTest.class);
-        Path outputDir = unique(target.resolve("generator-ut/"), dirname);
+    static Path generate(String path, Consumer<Context> consumer) {
+        Path targetDir = targetDir(GeneratorTest.class);
+        Path cwd = targetDir.resolve("test-classes/" + path);
+        Node node = Script.load(cwd.resolve("main.xml"));
+        Path outputDir = unique(targetDir.resolve("generator-ut"), fileName(cwd));
         Context context = new Context().pushCwd(node.script().path().getParent());
-        initializer.accept(context);
+        consumer.accept(context);
         TemplateModel model = resolveModel(node, context);
         Generator generator = new Generator(model, context, outputDir);
         ScriptInvoker.invoke(node, context, new BatchResolver(context), generator);
         return outputDir;
-    }
-
-    static Node load(String path) {
-        return Script.load(testResourcePath(GeneratorTest.class, path));
     }
 
     static TemplateModel resolveModel(Node scope, Context context) {

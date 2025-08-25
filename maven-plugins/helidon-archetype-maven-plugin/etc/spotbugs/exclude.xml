@@ -23,21 +23,9 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Possible null pointer dereference due to return value of called method -->
-        <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-
-    <Match>
         <!-- Found reliance on default encoding -->
         <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
-    </Match>
-
-    <Match>
-        <!--  Exceptional return value of java.io.File.mkdirs() ignored -->
-        <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
     </Match>
 
     <Match>
@@ -65,12 +53,6 @@
     </Match>
 
     <Match>
-        <!-- Exceptional return value of java.io.File.mkdirs() ignored -->
-        <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo$FileLogger"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
-    </Match>
-
-    <Match>
         <!-- Found reliance on default encoding -->
         <Class name="io.helidon.build.maven.archetype.MustacheHelper"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
@@ -83,9 +65,15 @@
     </Match>
 
     <Match>
-        <!-- Exceptional return value of java.io.File.mkdirs() ignored -->
+        <!-- Possible null pointer dereference due to return value of called method -->
+        <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo$FileLogger"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <!-- can be vulnerable to Command Injection -->
         <Class name="io.helidon.build.maven.archetype.IntegrationTestMojo"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+        <Bug pattern="COMMAND_INJECTION"/>
     </Match>
 
     <Match>
@@ -105,5 +93,4 @@
         <Class name="io.helidon.build.maven.archetype.MustacheHelper"/>
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
-
 </FindBugsFilter>

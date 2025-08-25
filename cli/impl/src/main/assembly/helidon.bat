@@ -1,5 +1,5 @@
 @REM
-@REM Copyright (c) 2023 Oracle and/or its affiliates.
+@REM Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 @REM
 @REM Licensed under the Apache License, Version 2.0 (the "License");
 @REM you may not use this file except in compliance with the License.
@@ -15,39 +15,34 @@
 @REM
 
 @echo off
-SETLOCAL
 
-if NOT "%JAVA_HOME%"=="" set JAVACMD=%JAVA_HOME%\bin\java
-if "%JAVACMD%"=="" set JAVACMD=java
+if NOT "%JAVA_HOME%" == "" (
+    set "JAVA_EXE=%JAVA_HOME%\bin\java"
+) else (
+    set "JAVA_EXE=java"
+)
+
+set HELIDON_CLI_CMD=
+if not "%HELIDON_CLI_JAVA_OPTS%" == "" (
+    set "HELIDON_CLI_CMD=%HELIDON_CLI_CMD% %HELIDON_CLI_JAVA_OPTS%"
+)
 
 @REM Find script base directory
 for %%i in ("%~dp0..") do set "BASEDIR=%%~fi"
 
-set JARFILE=%BASEDIR%\helidon-cli.jar
-set ARGS=
+set "HELIDON_CLI_CMD=%HELIDON_CLI_CMD% -jar %BASEDIR%\helidon-cli.jar %*"
 
-for %%x in (%*) do (
-   call :parse_args %%~x
+if /i "%HELIDON_CLI_DEBUG%" == "true" (
+    echo.
+    echo [DEBUG] Use HELIDON_CLI_JAVA_OPTS environment property to setup JVM arguments
+    echo [DEBUG] Distribution located at : %BASEDIR%
+    echo [DEBUG] Using java command : %JAVA_EXE%
+    echo [DEBUG] Command executed : %JAVA_EXE% %HELIDON_CLI_CMD%
+    echo.
 )
 
-if NOT "%IS_DEBUG%"=="" (
-    echo "[WARNING] Use HELIDON_JAVA_OPS environment property to setup JVM arguments"
-    echo "[DEBUG] Distribution located at : %BASEDIR%"
-    echo "[DEBUG] Using java command : %JAVACMD%"
-    echo "[DEBUG] Command executed : %JAVACMD% %HELIDON_JAVA_OPTS% -jar %JARFILE% %ARGS%"
+"%JAVA_EXE%" %HELIDON_CLI_CMD%
+
+if ERRORLEVEL 1 (
+    exit /b 1
 )
-
-%JAVACMD% %HELIDON_JAVA_OPTS% -jar %JARFILE% %ARGS%
-
-ENDLOCAL
-goto :eof
-
-:parse_args
-if "--cli-debug" == "%~1" (
-    set IS_DEBUG="true"
-) else (
-    set ARGS=%ARGS% %~1
-)
-exit /b
-
-exit /B 0

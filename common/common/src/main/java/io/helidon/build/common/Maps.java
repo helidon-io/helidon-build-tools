@@ -341,6 +341,20 @@ public class Maps {
      *
      * @param entries     input entries
      * @param keyMapper   key mapper
+     * @param <T>         collection type
+     * @param <K>         key type
+     * @param <V>         value type
+     * @return map
+     */
+    public static <T, K, V> Map<K, T> from(Collection<T> entries, Function<T, K> keyMapper) {
+        return from(entries, keyMapper, Function.identity());
+    }
+
+    /**
+     * Get the given entries as a {@link LinkedHashMap}.
+     *
+     * @param entries     input entries
+     * @param keyMapper   key mapper
      * @param valueMapper value mapper
      * @param <T>         collection type
      * @param <K>         key type

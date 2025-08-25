@@ -15,12 +15,13 @@
  */
 package io.helidon.build.common.maven.logging;
 
-import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogWriter;
 import io.helidon.build.common.logging.SystemLogWriter;
 
 import org.codehaus.plexus.logging.Logger;
+
+import static io.helidon.build.common.RichTextRenderer.render;
 
 /**
  * {@link LogWriter} that writes to a maven log.
@@ -35,57 +36,71 @@ public class PlexusLogWriter extends LogWriter {
             SystemLogWriter.INSTANCE.writeEntry(level, thrown, message, args);
             return;
         }
-        String entry;
+        boolean record = level.ordinal() >= recordLevel().ordinal();
         switch (level) {
             case DEBUG:
             case VERBOSE:
-                if (logger.isDebugEnabled()) {
-                    entry = renderEntry(message, args);
-                    if (thrown == null) {
-                        logger.debug(entry);
-                    } else {
-                        logger.debug(entry, thrown);
+                if (record || logger.isDebugEnabled()) {
+                    String entry = render(message, args);
+                    if (record) {
+                        recordEntry(level, entry);
+                    }
+                    if (logger.isDebugEnabled()) {
+                        if (thrown == null) {
+                            logger.debug(entry);
+                        } else {
+                            logger.debug(entry, thrown);
+                        }
                     }
                 }
                 break;
             case INFO:
-                if (logger.isInfoEnabled()) {
-                    entry = renderEntry(message, args);
-                    if (thrown == null) {
-                        logger.info(entry);
-                    } else {
-                        logger.info(entry, thrown);
+                if (record || logger.isInfoEnabled()) {
+                    String entry = render(message, args);
+                    if (record) {
+                        recordEntry(level, entry);
+                    }
+                    if (logger.isInfoEnabled()) {
+                        if (thrown == null) {
+                            logger.info(entry);
+                        } else {
+                            logger.info(entry, thrown);
+                        }
                     }
                 }
                 break;
             case WARN:
-                if (logger.isWarnEnabled()) {
-                    entry = renderEntry(message, args);
-                    if (thrown == null) {
-                        logger.warn(entry);
-                    } else {
-                        logger.warn(entry, thrown);
+                if (record || logger.isWarnEnabled()) {
+                    String entry = render(message, args);
+                    if (record) {
+                        recordEntry(level, entry);
+                    }
+                    if (logger.isWarnEnabled()) {
+                        if (thrown == null) {
+                            logger.warn(entry);
+                        } else {
+                            logger.warn(entry, thrown);
+                        }
                     }
                 }
                 break;
             case ERROR:
-                if (logger.isErrorEnabled()) {
-                    entry = renderEntry(message, args);
-                    if (thrown == null) {
-                        logger.error(entry);
-                    } else {
-                        logger.error(entry, thrown);
+                if (record || logger.isErrorEnabled()) {
+                    String entry = render(message, args);
+                    if (record) {
+                        recordEntry(level, entry);
+                    }
+                    if (logger.isErrorEnabled()) {
+                        if (thrown == null) {
+                            logger.error(entry);
+                        } else {
+                            logger.error(entry, thrown);
+                        }
                     }
                 }
                 break;
             default:
                 throw new Error();
         }
-    }
-
-    private String renderEntry(String message, Object... args) {
-        String entry = RichTextRenderer.render(message, args);
-        recordEntry(entry);
-        return entry;
     }
 }

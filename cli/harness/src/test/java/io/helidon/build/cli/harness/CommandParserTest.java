@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.build.cli.harness;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -27,17 +26,16 @@ import java.util.Properties;
 import io.helidon.build.cli.harness.CommandModel.FlagInfo;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 import io.helidon.build.cli.harness.CommandParser.CommandParserException;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -270,7 +268,7 @@ class CommandParserTest {
     @Test
     void testVersionFlag() {
         CommandParser parser = CommandParser.create("--version");
-        assertThat(parser.commandName().get(), is("version"));
+        assertThat(parser.commandName().orElse(null), is("version"));
     }
 
     @Test
@@ -291,11 +289,11 @@ class CommandParserTest {
     }
 
     @Test
-    void testArgsFileOptionWithExistingFile() throws URISyntaxException {
+    void testArgsFileOptionWithExistingFile() {
         KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "flavor", "flavor", null, false);
         CommandParameters cmd = new CommandParameters(param);
 
-        URI argsFilePath = getClass().getResource("args.txt").toURI();
+        URI argsFilePath = testResourcePath(CommandParserTest.class, "args.txt").toUri();
         CommandParser parser = CommandParser.create("command", "--args-file", Paths.get(argsFilePath).toString());
         CommandParser.Resolver resolver = parser.parseCommand(cmd);
 
@@ -318,8 +316,7 @@ class CommandParserTest {
 
     @Test
     void testPropsFileOptionWithExistingFile() {
-        String packagePath = getClass().getPackageName().replaceAll("\\.", "/");
-        String argsFilePath = testResourcePath(getClass(), packagePath + "/test-props-file.properties").toString();
+        String argsFilePath = testResourcePath(getClass(), "/test-props-file.properties").toString();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
         CommandParameters cmd = new CommandParameters(propsFileOption);
 

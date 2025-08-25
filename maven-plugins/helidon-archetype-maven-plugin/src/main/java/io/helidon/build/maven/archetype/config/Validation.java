@@ -15,7 +15,7 @@
  */
 package io.helidon.build.maven.archetype.config;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -94,7 +94,7 @@ public class Validation {
      * @param basedir base directory
      * @throws MojoExecutionException if validation mismatch
      */
-    public void validate(File basedir) throws MojoExecutionException {
+    public void validate(Path basedir) throws MojoExecutionException {
         List<SourcePath> paths = SourcePath.scan(basedir);
         String error = String.format("Validation failed in directory %s", basedir);
         boolean isMatch;

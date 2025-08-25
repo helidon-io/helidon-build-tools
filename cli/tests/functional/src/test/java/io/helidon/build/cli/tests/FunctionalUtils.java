@@ -17,21 +17,33 @@ package io.helidon.build.cli.tests;
 
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.LazyValue;
+import io.helidon.build.common.PathFinder;
+import io.helidon.build.common.logging.Log;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.List;
 
-import static io.helidon.build.common.FileUtils.requireJavaExecutable;
+import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.FileUtils.unzip;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 
 class FunctionalUtils {
 
+    static final String CLI_VERSION_KEY = "cli.version";
+    static final String CLI_DIRNAME = "helidon-" + requiredProperty(CLI_VERSION_KEY);
+    static final String CLI_NATIVE_BIN_NAME = System.getProperty("native.image.name", "helidon");
+
     static final LazyValue<String> CLI_DATA_URL = new LazyValue<>(FunctionalUtils::cliDataUrl);
     static final LazyValue<String> MAVEN_LOCAL_REPO = new LazyValue<>(FunctionalUtils::mavenLocalRepoUrl);
     static final LazyValue<String> CLI_VERSION = new LazyValue<>(() -> requiredProperty("cli.version"));
-    static final LazyValue<String> HELIDON_CLI_JAR = new LazyValue<>(FunctionalUtils::helidonCliJar);
-    static final LazyValue<String> JAVA_BIN = new LazyValue<>(() -> requireJavaExecutable().toString());
     static final LazyValue<Path> EXECUTABLE_DIR = new LazyValue<>(() -> Path.of(requiredProperty("helidon.executable.directory")));
+
+    static final LazyValue<Path> CLI_NATIVE = new LazyValue<>(FunctionalUtils::cliNative);
+    static final LazyValue<Path> CLI_ZIP = new LazyValue<>(FunctionalUtils::cliZip);
+    static final LazyValue<Path> CLI_DIR = new LazyValue<>(FunctionalUtils::cliInstallDir);
+    static final LazyValue<Path> CLI_BIN_DIR = new LazyValue<>(FunctionalUtils::cliBinDir);
+    static final LazyValue<Path> CLI_EXE = new LazyValue<>(FunctionalUtils::cliExe);
 
     static String requiredProperty(String key) {
         String value = System.getProperty(key);
@@ -41,12 +53,35 @@ class FunctionalUtils {
         return value;
     }
 
-    static String helidonCliJar() {
+    static Path cliInstallDir() {
+        Path installDir = unique(targetDir(FunctionalUtils.class).resolve("install"), "helidon-cli");
+        Log.debug("Unzipping " + CLI_ZIP.get());
+        unzip(CLI_ZIP.get(), installDir);
+        return installDir;
+    }
+
+    static Path cliZip() {
         return EXECUTABLE_DIR.get()
-                .resolve("target/helidon-cli.jar")
+                .resolve("target/helidon-cli.zip")
                 .toAbsolutePath()
-                .normalize()
-                .toString();
+                .normalize();
+    }
+
+    static Path cliBinDir() {
+        return CLI_DIR.get()
+                .resolve(CLI_DIRNAME)
+                .resolve("bin");
+    }
+
+    static Path cliExe() {
+        return PathFinder.find("helidon", List.of(CLI_BIN_DIR.get()))
+                .orElseThrow();
+    }
+
+    static Path cliNative() {
+        return EXECUTABLE_DIR.get()
+                .resolve("target")
+                .resolve(CLI_NATIVE_BIN_NAME);
     }
 
     static String cliDataUrl() {

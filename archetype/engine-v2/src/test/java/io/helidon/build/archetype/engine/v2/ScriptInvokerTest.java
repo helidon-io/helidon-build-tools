@@ -111,7 +111,7 @@ class ScriptInvokerTest {
 
     @Test
     void testExecCwd() {
-        Node node = load("invoker/exec.xml");
+        Node node = load("invoker/cwd/exec.xml");
 
         List<String> values = modelValues(node);
         assertThat(values, contains("red"));
@@ -119,15 +119,15 @@ class ScriptInvokerTest {
 
     @Test
     void testSourceCwd() {
-        Node node = load("invoker/source.xml");
+        Node node = load("invoker/cwd/source.xml");
 
         List<String> values = modelValues(node);
         assertThat(values, contains("green"));
     }
 
     @Test
-    void testInvocationCondition() {
-        Node node = load("invoker/invocation.xml");
+    void testConditionalCwd() {
+        Node node = load("invoker/cwd/conditional.xml");
         Path cwd = node.script().path().getParent();
         Context context = new Context()
                 .pushCwd(cwd)
