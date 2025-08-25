@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -318,13 +317,12 @@ public class IntegrationTestMojo extends AbstractMojo {
                     return;
                 }
 
-                Set<String> artifactIds = new HashSet<>();
                 Map<Integer, Map<String, String>> variations = filterVariations();
                 for (Map.Entry<Integer, Map<String, String>> entry : variations.entrySet()) {
                     index = entry.getKey();
                     Map<String, String> variation = entry.getValue();
                     String artifactId = variation.getOrDefault("artifactId", "myproject");
-                    if (!artifactIds.add(artifactId)) {
+                    if (index > 1) {
                         variation.put("artifactId", artifactId + "-" + index);
                     }
                     processIntegrationTest(testName, variation, archetypeFile);
@@ -332,7 +330,6 @@ public class IntegrationTestMojo extends AbstractMojo {
             } else {
                 processIntegrationTest(testName, externalValues, archetypeFile);
             }
-
         } catch (IOException e) {
             Log.error(e, "Integration test failed with error(s)");
             throw new MojoExecutionException("Integration test failed with error(s)");
@@ -509,7 +506,8 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logTestDescription(String testName, Map<String, String> externalValues) {
         String description = Bold.apply("Test: ") + BoldBlue.apply(testName);
         if (variations != null && index > 0) {
-            description += BoldBlue.apply(String.format(", progress: %s/%s", index, variations.size()));
+            int total = endIndex == -1 ? variations.size() : endIndex;
+            description += BoldBlue.apply(String.format(", progress: %s/%s", index, total));
         }
         Log.info("");
         Log.info("-------------------------------------");
@@ -693,7 +691,7 @@ public class IntegrationTestMojo extends AbstractMojo {
         return logger;
     }
 
-    private static final class FileLogger implements InvocationOutputHandler, Closeable {
+    private final class FileLogger implements InvocationOutputHandler, Closeable {
 
         private final PrintStream printer;
         private final boolean streamLogs;
@@ -709,7 +707,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             printer.println(line);
             printer.flush();
             if (streamLogs) {
-                Log.info(line);
+                getLog().info(line);
             }
         }
 
