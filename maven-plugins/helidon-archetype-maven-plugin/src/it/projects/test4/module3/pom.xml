@@ -45,22 +45,21 @@
                 <version>${project.version}</version>
                 <executions>
                     <execution>
-                        <id>default-jar</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
+                        <id>default-compile</id>
                         <configuration>
                             <entrypoint>
                                 <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
                             </entrypoint>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
                             <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
                         </configuration>
                     </execution>
                     <execution>
                         <id>default-integration-test</id>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
                         <configuration>
                             <externalValues>
                                 <package>io.helidon.build.maven.archetype.tests</package>
@@ -70,7 +69,7 @@
                                 <shape>rectangle</shape>
                             </externalValues>
                             <invokerId>helidon</invokerId>
-                            <generateVariations>false</generateVariations>
+                            <generateTests>false</generateTests>
                         </configuration>
                     </execution>
                 </executions>

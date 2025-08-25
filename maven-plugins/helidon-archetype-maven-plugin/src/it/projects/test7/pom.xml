@@ -28,9 +28,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <archetype.jar.mavenArchetypeCompatible>true</archetype.jar.mavenArchetypeCompatible>
-        <archetype.jar.stageCli>true</archetype.jar.stageCli>
-        <archetype.test.invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:@project.version@</archetype.test.invokerId>
     </properties>
 
     <dependencies>
@@ -48,6 +45,26 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stage-cli</id>
+                        <goals>
+                            <goal>stage</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <configuration>
+                            <invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:@project.version@</invokerId>
+                        </configuration>
+                    </execution>
+                </executions>
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.build-tools.cli</groupId>

@@ -40,7 +40,7 @@
                 <extensions>true</extensions>
                 <executions>
                     <execution>
-                        <id>default-jar</id>
+                        <id>default-compile</id>
                         <configuration>
                             <entrypoint>
                                 <variables>
@@ -48,9 +48,19 @@
                                 </variables>
                                 <exec src="flavor.xml"/>
                             </entrypoint>
-                            <stageCli>true</stageCli>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
                             <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>stage-cli</id>
+                        <goals>
+                            <goal>stage</goal>
+                        </goals>
                     </execution>
                     <execution>
                         <id>default-integration-test</id>

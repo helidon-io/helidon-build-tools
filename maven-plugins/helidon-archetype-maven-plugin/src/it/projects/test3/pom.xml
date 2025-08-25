@@ -47,10 +47,7 @@
                 <extensions>true</extensions>
                 <executions>
                     <execution>
-                        <id>default-jar</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
+                        <id>default-compile</id>
                         <configuration>
                             <entrypoint>
                                 <exec src="shape.xml"/>

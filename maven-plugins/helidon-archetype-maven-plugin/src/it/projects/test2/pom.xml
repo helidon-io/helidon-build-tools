@@ -28,8 +28,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <archetype.jar.mavenArchetypeCompatible>false</archetype.jar.mavenArchetypeCompatible>
-        <archetype.test.invokerId>helidon</archetype.test.invokerId>
     </properties>
 
     <build>
@@ -39,6 +37,20 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <configuration>
+                            <invokerId>helidon</invokerId>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <pluginManagement>

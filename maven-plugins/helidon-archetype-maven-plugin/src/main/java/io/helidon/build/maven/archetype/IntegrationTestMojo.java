@@ -213,44 +213,44 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalDefaults;
 
     /**
-     * File that contains rules to filter the variations.
+     * File that contains rules to filter the generated tests.
      */
     @Parameter(property = "archetype.test.rulesFile",
                defaultValue = "${project.basedir}/src/test/archetype/rules.xml")
     private File rulesFile;
 
     /**
-     * Whether to generate input variations.
+     * Whether to generate tests.
      */
-    @Parameter(property = "archetype.test.generateVariations", defaultValue = "true")
-    private boolean generateVariations;
+    @Parameter(property = "archetype.test.generateTests", defaultValue = "true")
+    private boolean generateTests;
 
     /**
-     * Whether to only generate input variations.
+     * Whether to only generate tests.
      */
-    @Parameter(property = "archetype.test.variationsOnly", defaultValue = "false")
-    private boolean variationsOnly;
+    @Parameter(property = "archetype.test.generateOnly", defaultValue = "false")
+    private boolean generateOnly;
 
     /**
-     * Variation start index.
+     * Test start index.
      */
-    @Parameter(property = "archetype.test.variationStartIndex", defaultValue = "1")
-    private int variationStartIndex;
+    @Parameter(property = "archetype.test.startIndex", defaultValue = "1")
+    private int startIndex;
 
     /**
-     * Variation end index.
+     * Test end index.
      */
-    @Parameter(property = "archetype.test.variationEndIndex", defaultValue = "-1")
-    private int variationEndIndex;
+    @Parameter(property = "archetype.test.endIndex", defaultValue = "-1")
+    private int endIndex;
 
     /**
-     * Variations to process.
+     * Comma separated string of the tests to process.
      */
-    @Parameter(property = "archetype.test.variation")
-    private String variation;
+    @Parameter(property = "archetype.test.test")
+    private String tests;
 
     /**
-     * Invoker environment variables.
+     * Maven invoker environment variables.
      */
     @Parameter(property = "archetype.test.invokerEnvVars")
     private Map<String, String> invokerEnvVars;
@@ -270,9 +270,9 @@ public class IntegrationTestMojo extends AbstractMojo {
     /**
      * The {@code cli-data} directory.
      */
-    @Parameter(property = "archetype.test.cliData",
+    @Parameter(property = "archetype.test.cliDataDirectory",
                defaultValue = "${project.build.directory}/cli-data")
-    private File cliData;
+    private File cliDataDirectory;
 
     /**
      * Generated code inspection.
@@ -303,7 +303,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         String testName = fileName(project.getFile().toPath().getParent());
         try {
-            if (generateVariations) {
+            if (generateTests) {
                 logVariations(testName);
 
                 Log.info("");
@@ -314,7 +314,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 Log.info("Markdown file: " + writeSummary());
                 Log.info("CSV file: " + writeCsv());
 
-                if (variationsOnly) {
+                if (generateOnly) {
                     return;
                 }
 
@@ -399,16 +399,16 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     private Map<Integer, Map<String, String>> filterVariations() {
         Map<Integer, Map<String, String>> indexes = new LinkedHashMap<>();
-        if (variation == null || variation.isEmpty()) {
-            Iterator<Map<String, String>> it = this.variations.iterator();
+        if (tests == null || tests.isEmpty()) {
+            Iterator<Map<String, String>> it = variations.iterator();
             for (int i = 1; it.hasNext(); i++) {
                 Map<String, String> next = it.next();
-                if (i >= variationStartIndex && (variationEndIndex <= 0 || i <= variationEndIndex)) {
+                if (i >= startIndex && (endIndex <= 0 || i <= endIndex)) {
                     indexes.put(i, next);
                 }
             }
         } else {
-            List<Integer> indices = Arrays.stream(variation.split(","))
+            List<Integer> indices = Arrays.stream(tests.split(","))
                     .map(Integer::valueOf)
                     .toList();
             Iterator<Map<String, String>> it = variations.iterator();
@@ -479,7 +479,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                             "--error",
                             "--project", outputDir.toString(),
                             "--reset",
-                            "--url", cliData.toURI().toString()),
+                            "--url", cliDataDirectory.toURI().toString()),
                     Lists.map(values.entrySet(), e -> "-D" + e.getKey() + "=" + e.getValue()));
             Log.info("Executing: %s", String.join(" ", cmd));
             ProcessMonitor.builder()
@@ -509,7 +509,7 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logTestDescription(String testName, Map<String, String> externalValues) {
         String description = Bold.apply("Test: ") + BoldBlue.apply(testName);
         if (variations != null && index > 0) {
-            description += BoldBlue.apply(String.format(", variation: %s/%s", index, variations.size()));
+            description += BoldBlue.apply(String.format(", progress: %s/%s", index, variations.size()));
         }
         Log.info("");
         Log.info("-------------------------------------");

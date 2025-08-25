@@ -15,13 +15,11 @@
  */
 package io.helidon.build.maven.archetype;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -32,11 +30,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.archetype.engine.v2.Script;
-import io.helidon.build.archetype.engine.v2.ScriptCompiler;
-import io.helidon.build.common.Lists;
-import io.helidon.build.common.VirtualFileSystem;
-import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.plugin.MavenArtifact;
 import io.helidon.build.common.xml.XMLGenerator;
 import io.helidon.build.maven.archetype.MustacheHelper.RawString;
@@ -55,19 +48,12 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.jar.ManifestException;
-import org.codehaus.plexus.configuration.PlexusConfiguration;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-import static io.helidon.build.common.FileUtils.newZipFileSystem;
 import static io.helidon.build.common.FileUtils.pathOf;
-import static io.helidon.build.common.FileUtils.randomPath;
 import static io.helidon.build.common.FileUtils.toBase64;
 import static io.helidon.build.maven.archetype.MustacheHelper.MUSTACHE_EXT;
 import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemplate;
-import static io.helidon.build.maven.archetype.ScriptCompilerExt.Options.VALIDATE_REGEX;
-import static io.helidon.build.maven.archetype.ScriptCompilerExt.Options.VALIDATE_SCHEMA;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.PACKAGE;
@@ -90,10 +76,10 @@ public class JarMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * The archetype source directory.
+     * The archetype directory to archive.
      */
-    @Parameter(defaultValue = "${project.basedir}/src/main/archetype", readonly = true, required = true)
-    private File sourceDirectory;
+    @Parameter(defaultValue = "${project.build.directory}/archetype", readonly = true, required = true)
+    private File archetypeDirectory;
 
     /**
      * The build output directory. (e.g. {@code target/})
@@ -137,48 +123,15 @@ public class JarMojo extends AbstractMojo {
     @Parameter(property = "archetype.jar.mavenArchetypeCompatible", defaultValue = "true")
     private boolean mavenArchetypeCompatible;
 
-    /**
-     * Indicate if a {@code cli-data} directory should be created.
-     */
-    @Parameter(property = "archetype.jar.stageCli", defaultValue = "false")
-    private boolean stageCli;
-
-    /**
-     * List of compiler options.
-     */
-    @Parameter(property = "archetype.jar.compilerOptions")
-    private List<String> compilerOptions = List.of();
-
-    /**
-     * Entrypoint configuration.
-     */
-    @Parameter
-    private PlexusConfiguration entrypoint;
-
     @Override
     public void execute() throws MojoExecutionException {
         try {
-            Path archetypeDir = outputDirectory.toPath().resolve("archetype");
-            try (FileSystem fs = VirtualFileSystem.create(sourceDirectory.toPath())) {
-                Path cwd = fs.getPath("/");
-                ScriptCompiler compiler = new ScriptCompiler(entrypoint(cwd), cwd);
-                List<ScriptCompiler.Option> options = Lists.addAll(
-                        Lists.map(compilerOptions, ScriptCompiler.Options::valueOf),
-                        VALIDATE_REGEX,
-                        VALIDATE_SCHEMA);
-                if (!compiler.compile(archetypeDir, options)) {
-                    compiler.errors().forEach(getLog()::error);
-                    throw new MojoExecutionException("Validation failed");
-                }
-            }
+            Path archetypeDir = archetypeDirectory.toPath();
             if (mavenArchetypeCompatible) {
                 processMavenCompat(archetypeDir);
             }
             File jarFile = createJar(archetypeDir);
             project.getArtifact().setFile(jarFile);
-            if (stageCli) {
-                generateCliData();
-            }
         } catch (IOException ioe) {
             throw new MojoExecutionException(ioe.getMessage(), ioe);
         }
@@ -250,36 +203,6 @@ public class JarMojo extends AbstractMojo {
         renderPostScript(archetypeDir);
     }
 
-    private Script.Source entrypoint(Path dir) throws IOException {
-        if (entrypoint != null) {
-            Path path = randomPath(dir, "entrypoint-", ".xml");
-            byte[] bytes = entrypointXml().getBytes(UTF_8);
-            return new Script.Source() {
-                @Override
-                public InputStream inputStream() {
-                    return new ByteArrayInputStream(bytes);
-                }
-
-                @Override
-                public Path path() {
-                    return path;
-                }
-            };
-        }
-        // assuming main exists in the source directory
-        return () -> dir.resolve("main.xml");
-    }
-
-    private String entrypointXml() {
-        return "<archetype-script xmlns=\"https://helidon.io/archetype/2.0\"\n"
-               + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
-               + "        xsi:schemaLocation=\"https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd\">"
-               + Stream.of(entrypoint.getChildren())
-                       .map(PlexusConfiguration::toString)
-                       .collect(Collectors.joining())
-               + "</archetype-script>";
-    }
-
     private File createJar(Path archetypeDir) throws MojoExecutionException, IOException {
         File jarFile = new File(outputDirectory, finalName + ".jar");
         MavenArchiver archiver = new MavenArchiver();
@@ -294,41 +217,6 @@ public class JarMojo extends AbstractMojo {
             throw new MojoExecutionException("Error assembling archetype jar " + jarFile, e);
         }
         return jarFile;
-    }
-
-    private void generateCliData() throws IOException {
-        Path cliData = ensureDirectory(outputDirectory.toPath().resolve("cli-data"));
-        Path jarFile = project.getArtifact().getFile().toPath();
-        String version = project.getVersion();
-        Files.writeString(cliData.resolve("versions.xml"),
-                "<data>\n"
-                + "    <archetypes>\n"
-                + "        <version default=\"true\">" + version + "</version>\n"
-                + "    </archetypes>\n"
-                + "</data>\n");
-        Path versionDir = ensureDirectory(cliData.resolve(version));
-        try (FileSystem fs = newZipFileSystem(versionDir.resolve("cli-data.zip"))) {
-            Files.copy(jarFile, fs.getPath("helidon-" + version + ".jar"), REPLACE_EXISTING);
-        }
-
-        Log.info("\n" + """
-                |
-                |                      /')
-                |               $(cyan! /)$(blue /)$(blue! /)$(magenta /)  /' )'
-                |              $(blue @)   \\/'  )'
-                |  { $(yellow! note) }   $(yellow! <) (  (_...)'
-                |               \\      )
-                |                \\,,,,/
-                |                 $(red _|_)
-                |
-                |  You can test the archetype locally with the Helidon CLI using the following arguments:
-                |
-                |     --reset --url file://%s/cli-data
-                |
-                |  For example:
-                |
-                |     helidon init --reset --url file://%s/cli-data
-                |""", outputDirectory, outputDirectory);
     }
 
     private Stream<Path> postGenerateClasses() throws IOException {
