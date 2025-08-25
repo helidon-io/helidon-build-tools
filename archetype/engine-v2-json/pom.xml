@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.build-tools.archetype</groupId>
         <artifactId>helidon-archetype-project</artifactId>
-        <version>4.0.21-SNAPSHOT</version>
+        <version>4.0.21</version>
     </parent>
     <artifactId>helidon-archetype-engine-v2-json</artifactId>
     <name>Helidon Archetype Engine V2 JSON Support</name>
