@@ -81,7 +81,7 @@ public class ArchetypeEngineV2 {
         Path directory = outputResolver.apply(context);
 
         // generate output  (full traversal)
-        Generator generator = new Generator(model, context, outputResolver.apply(context));
+        Generator generator = new Generator(model, context, directory);
         ScriptInvoker.invoke(node, context, new BatchResolver(context), generator);
 
         if (outputPropsFile != null) {

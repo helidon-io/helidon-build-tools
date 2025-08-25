@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,11 @@ public final class SystemLogWriter extends LogWriter {
 
     @Override
     public void writeEntry(LogLevel level, Throwable thrown, String message, Object... args) {
-        if (level.ordinal() >= LogLevel.get().ordinal()) {
-            final String entry = LogFormatter.format(level, thrown, message, args);
-            recordEntry(entry);
+        boolean record = level.ordinal() >= recordLevel().ordinal();
+        boolean write = level.ordinal() >= LogLevel.get().ordinal();
+        if (record || write) {
+            String entry = LogFormatter.format(level, thrown, message, args);
+            recordEntry(level, entry);
             switch (level) {
                 case DEBUG:
                 case VERBOSE:

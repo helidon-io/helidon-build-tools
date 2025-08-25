@@ -43,20 +43,36 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
-                <configuration>
-                    <generateVariations>false</generateVariations>
-                    <externalValues>
-                        <package>io.helidon.build.maven.archetype.tests</package>
-                        <groupId>io.helidon.build.maven.archetype.tests</groupId>
-                        <artifactId>rectangle-project</artifactId>
-                        <version>0.1-SNAPSHOT</version>
-                        <shape>rectangle</shape>
-                    </externalValues>
-                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <entrypoint>
-                        <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
-                    </entrypoint>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <entrypoint>
+                                <exec url="mvn://io.helidon.build-tools.archetype.tests:test-archetype1:${project.version}!/main.xml"/>
+                            </entrypoint>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <configuration>
+                            <externalValues>
+                                <package>io.helidon.build.maven.archetype.tests</package>
+                                <groupId>io.helidon.build.maven.archetype.tests</groupId>
+                                <artifactId>rectangle-project</artifactId>
+                                <version>0.1-SNAPSHOT</version>
+                                <shape>rectangle</shape>
+                            </externalValues>
+                            <invokerId>helidon</invokerId>
+                            <generateTests>false</generateTests>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

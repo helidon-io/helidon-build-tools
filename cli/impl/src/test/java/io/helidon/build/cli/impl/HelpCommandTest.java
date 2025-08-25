@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,53 +15,76 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.nio.file.Path;
+
+import io.helidon.build.cli.impl.ProcessInvocation.Monitor;
+import io.helidon.build.common.test.utils.TestFiles;
+
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.cli.impl.TestUtils.exec;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 /**
- * {@code helidon help} test.
+ * Tests {@code helidon --help}.
  */
 class HelpCommandTest {
 
+    static final Path CWD = TestFiles.targetDir(InitCommandTest.class).resolve("help-ut");
+
     @Test
-    void testCliHelp() throws Exception {
-        String output = exec("help");
-        assertThat(output, containsString("Helidon command line tool"));
+    void testCliHelp() {
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(CWD)
+                .args("help")
+                .start()) {
+
+            monitor.await();
+            assertThat(monitor.output(), containsString("Helidon command line tool"));
+        }
     }
 
     @Test
-    void testBuildCommandHelp() throws Exception {
-        assertCommandHelp("build");
+    void testBuildCommandHelp() {
+        assertHelp("build");
     }
 
     @Test
-    void testDevCommandHelp() throws Exception {
-        assertCommandHelp("dev");
+    void testDevCommandHelp() {
+        assertHelp("dev");
     }
 
     @Test
-    void testInfoCommandHelp() throws Exception {
-        assertCommandHelp("info");
+    void testInfoCommandHelp() {
+        assertHelp("info");
     }
 
     @Test
-    void testInitCommandHelp() throws Exception {
-        assertCommandHelp("init");
+    void testInitCommandHelp() {
+        assertHelp("init");
     }
 
     @Test
-    void testVersionCommandHelp() throws Exception {
-        assertCommandHelp("version");
+    void testVersionCommandHelp() {
+        assertHelp("version");
     }
 
-    private static void assertCommandHelp(String command) throws Exception {
-        String commandHelp = exec(command, "--help");
-        String helpCommand = exec("help", command);
-        assertThat(helpCommand, is(commandHelp));
-        assertThat(helpCommand, containsString("Usage: helidon " + command));
+    static void assertHelp(String command) {
+        String cmdHelp = exec(command, "--help");
+        String helpCmd = exec("help", command);
+        assertThat(helpCmd, is(cmdHelp));
+        assertThat(helpCmd, containsString("Usage: helidon " + command));
+    }
+
+    static String exec(String... args) {
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(CWD)
+                .args(args)
+                .start()) {
+
+            monitor.await();
+            return monitor.output();
+        }
     }
 }

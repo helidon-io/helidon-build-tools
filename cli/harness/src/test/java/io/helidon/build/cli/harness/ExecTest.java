@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,19 @@
  */
 package io.helidon.build.cli.harness;
 
-import java.io.InputStream;
-
 import io.helidon.build.cli.harness.CommandContext.ExitStatus;
 import io.helidon.build.cli.harness.CommandModel.KeyValueInfo;
 
 import io.helidon.build.common.ansi.AnsiTextStyle;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogRecorder;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.Strings;
-import io.helidon.build.common.logging.LogWriter;
-import org.junit.jupiter.api.AfterAll;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
+import static io.helidon.build.common.test.utils.TestFiles.testResourceString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,53 +38,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ExecTest {
 
     static final CommandRegistry REGISTRY = new TestCommandRegistry();
-    static final String CLI_USAGE = resourceAsString("cli-usage.txt");
-    static final String HELP_CMD_HELP = resourceAsString("help-cmd-help.txt");
-    static final String SIMPLE_CMD_HELP = resourceAsString("simple-cmd-help.txt");
-    static final LogRecorder RECORDER = LogRecorder.create();
-
-    static CommandContext context() {
-        return new CommandContext(REGISTRY, null, false);
-    }
-
-    static String resourceAsString(String name) {
-        InputStream is = ExecTest.class.getResourceAsStream(name);
-        if (is != null) {
-            return AnsiTextStyle.strip(Strings.normalizeNewLines(Strings.read(is)));
-        }
-        return null;
-    }
-
-    @BeforeAll
-    static void beforeAllTests() {
-        LogWriter.addRecorder(RECORDER);
-    }
-
-    @AfterAll
-    static void afterAllTests() {
-        LogWriter.removeRecorder(RECORDER);
-    }
-
-    @BeforeEach
-    void beforeEachTest() {
-        RECORDER.clear();
-    }
-
-    @AfterEach
-    void afterEachTest() {
-        RECORDER.clear();
-    }
-
-    String exec(CommandContext context, String... args) {
-        RECORDER.clear();
-        CommandRunner.execute2(context, args);
-        String out = Strings.normalizeNewLines(RECORDER.output());
-        return strip(out);
-    }
-
-    String exec(String... args) {
-        return AnsiTextStyle.strip(exec(context(), args));
-    }
+    static final String CLI_USAGE = testResourceString(ExecTest.class, "cli-usage.txt");
+    static final String HELP_CMD_HELP = testResourceString(ExecTest.class, "help-cmd-help.txt");
+    static final String SIMPLE_CMD_HELP = testResourceString(ExecTest.class, "simple-cmd-help.txt");
 
     @Test
     void testUsage() {
@@ -124,7 +75,23 @@ class ExecTest {
                 is("Missing required option: key\nSee 'test-cli common --help'"));
     }
 
-    private static final class TestCommandRegistry extends CommandRegistry {
+    static CommandContext context() {
+        return new CommandContext(REGISTRY, null, false);
+    }
+
+    static String exec(CommandContext context, String... args) {
+        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+            CommandRunner.execute2(context, args);
+            String out = Strings.normalizeNewLines(recorder.output());
+            return strip(out);
+        }
+    }
+
+    static String exec(String... args) {
+        return AnsiTextStyle.strip(exec(context(), args));
+    }
+
+    static final class TestCommandRegistry extends CommandRegistry {
 
         TestCommandRegistry() {
             super("", "test-cli", "A test cli");
@@ -133,7 +100,7 @@ class ExecTest {
         }
     }
 
-    private static final class SimpleCommand extends CommandModel {
+    static final class SimpleCommand extends CommandModel {
 
         private static final FlagInfo FOO = new FlagInfo("foo", "Foo option");
         private static final FlagInfo BAR = new FlagInfo("bar", "Bar option");
@@ -157,7 +124,7 @@ class ExecTest {
         }
     }
 
-    private static final class CommandWithCommonOptions extends CommandModel {
+    static final class CommandWithCommonOptions extends CommandModel {
 
         private static final CommonOptionsInfo COMMON_OPTIONS = new CommonOptionsInfo();
         private static final FlagInfo FOO = new FlagInfo("foo", "Turn on foo mode");
@@ -180,7 +147,7 @@ class ExecTest {
         }
     }
 
-    private static final class CommonOptions {
+    static final class CommonOptions {
 
         final String key;
 
@@ -189,7 +156,7 @@ class ExecTest {
         }
     }
 
-    private static final class CommonOptionsInfo extends CommandParameters.CommandFragmentInfo<CommonOptions> {
+    static final class CommonOptionsInfo extends CommandParameters.CommandFragmentInfo<CommonOptions> {
 
         private static final KeyValueInfo<String> KEY_OPTION = new KeyValueInfo<>(
                 String.class,

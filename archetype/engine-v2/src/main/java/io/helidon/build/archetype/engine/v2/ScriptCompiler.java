@@ -161,7 +161,18 @@ public class ScriptCompiler {
      * @return {@code true} if successful, {@code false} otherwise
      */
     public boolean compile(Path outputDir, Option... opts) {
-        options = List.of(opts);
+        return compile(outputDir, List.of(opts));
+    }
+
+    /**
+     * Compile the given script.
+     *
+     * @param outputDir output directory
+     * @param options   options
+     * @return {@code true} if successful, {@code false} otherwise
+     */
+    public boolean compile(Path outputDir, List<Option> options) {
+        this.options = options;
         init();
 
         // validate
@@ -228,16 +239,7 @@ public class ScriptCompiler {
     }
 
     /**
-     * Get the variations.
-     *
-     * @return variations
-     */
-    public Set<Map<String, String>> variations() {
-        return variations(List.of());
-    }
-
-    /**
-     * Get a filtered view of the variations.
+     * Compute variations.
      *
      * @param filters filters
      * @return variations
@@ -1238,7 +1240,7 @@ public class ScriptCompiler {
                         Node copy = node.deepCopy();
                         for (Node n : copy.traverse(Kind.MODEL_VALUE::equals)) {
                             String value = n.value().asString().orElse("");
-                            if (value.matches("^\\s+") || value.matches("\\s+$") || value.contains("\n")) {
+                            if (value.matches("^\\s+.*") || value.matches(".*\\s+$") || value.contains("\n")) {
                                 // move text model with leading, trailing whitespaces or newlines to blobs
                                 String id = md5(n.location());
                                 image.blobs.put(id, value.getBytes(StandardCharsets.UTF_8));

@@ -211,7 +211,7 @@ jobs:
               -Pnative-image \
               -Dnative.image.name=helidon-cli-${{ matrix.platform }} \
               -Dsurefire.reportNameSuffix=native-image-${{ matrix.platform }} \
-              -Dtest=CliFunctionalV2Test#*Native* \
+              -Dtest=CliFunctionalTest#*Native* \
               -P tests \
               test
   cli-binaries:

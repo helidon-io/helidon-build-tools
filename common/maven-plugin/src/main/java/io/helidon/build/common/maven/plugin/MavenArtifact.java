@@ -33,6 +33,21 @@ import io.helidon.build.common.maven.MavenModel;
 public record MavenArtifact(String groupId, String artifactId, String version, String classifier, String type, Path file) {
 
     /**
+     * Parse the given coordinates.
+     * The format is {@code groupId:artifactId[:extension[:classifier]]:version}.
+     *
+     * @param coords coordinates
+     * @return MavenPattern
+     */
+    public static MavenArtifact create(String coords) {
+        String[] args = MavenPattern.parse(coords, 5, null);
+        return new MavenArtifact(args[0], args[1],
+                args[4] != null ? args[4] : args[3] != null ? args[3] : args[2],
+                args[4] != null ? args[3] : null,
+                args[3] != null ? args[2] : null);
+    }
+
+    /**
      * Create a new instance.
      *
      * @param groupId    groupId
@@ -90,6 +105,7 @@ public record MavenArtifact(String groupId, String artifactId, String version, S
      *
      * @param p plugin
      */
+    @SuppressWarnings("unused")
     public MavenArtifact(org.apache.maven.model.Plugin p) {
         this(p.getGroupId(), p.getArtifactId(), p.getVersion(), null, "jar");
     }
@@ -147,8 +163,8 @@ public record MavenArtifact(String groupId, String artifactId, String version, S
      */
     public String coordinates() {
         String coords = groupId
-               + ":" + artifactId
-               + ":" + type;
+                        + ":" + artifactId
+                        + ":" + type;
         if (classifier != null) {
             coords += ":" + classifier;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,58 @@
  */
 package io.helidon.build.common.logging;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+
+import io.helidon.build.common.Lists;
+import io.helidon.build.common.Strings;
 
 /**
  * Log recorder.
  */
-public class LogRecorder {
+public class LogRecorder implements AutoCloseable {
 
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
+    private static final ThreadLocal<Deque<LogLevel>> THREAD_LOCAL = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final List<String> entries = new LinkedList<>();
-
-    private LogRecorder() {
-    }
+    private final LogLevel level;
 
     /**
      * Create a new instance.
      *
-     * @return The instance.
+     * @param level level
      */
-    public static LogRecorder create() {
-        return new LogRecorder();
+    public LogRecorder(LogLevel level) {
+        this.level = level;
+    }
+
+    /**
+     * Start recording.
+     *
+     * @return this instance
+     */
+    public LogRecorder start() {
+        THREAD_LOCAL.get().push(LogLevel.get());
+        LogLevel.set(level);
+        LogWriter.addRecorder(this);
+        return this;
+    }
+
+    /**
+     * Get the level.
+     *
+     * @return level
+     */
+    public LogLevel level() {
+        return level;
     }
 
     /**
      * Add a new log entry to record.
+     *
      * @param entry log entry
      */
     public void addEntry(String entry) {
@@ -48,19 +74,21 @@ public class LogRecorder {
     }
 
     /**
-     * Clear the captured output.
+     * Returns the captured entries.
+     *
+     * @return entries.
      */
-    public void clear() {
-        entries.clear();
+    public List<String> entries() {
+        return Lists.drain(entries);
     }
 
     /**
-     * Returns the captured lines.
+     * Get the captured lines.
      *
-     * @return The lines.
+     * @return lines
      */
-    public List<String> entries() {
-        return entries;
+    public List<String> lines() {
+        return Lists.flatMap(entries(), Strings::lines);
     }
 
     /**
@@ -70,18 +98,15 @@ public class LogRecorder {
      */
     public String output() {
         String output = String.join(EOL, entries());
-        if (output.length() > 0) {
+        if (!output.isEmpty()) {
             return output + EOL;
         }
         return output;
     }
 
-    /**
-     * Returns the number of messages logged.
-     *
-     * @return The size.
-     */
-    public int size() {
-        return entries.size();
+    @Override
+    public void close() {
+        LogWriter.removeRecorder(this);
+        LogLevel.set(THREAD_LOCAL.get().pop());
     }
 }

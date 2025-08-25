@@ -45,21 +45,26 @@
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <entrypoint>
-                        <step name="step">
-                            <inputs>
-                                <text id="package" name="Java package" default="io.helidon.build.maven.archetype.tests"/>
-                                <text id="groupId" name="Project groupId" default="io.helidon.build.maven.archetype.tests"/>
-                                <text id="artifactId" name="Project artifactId" default="validation-project"/>
-                                <text id="version" name="Project version" default="0.1-SNAPSHOT"/>
-                                <output>
-                                    <file source="files/pom.xml" target="pom.xml"/>
-                                </output>
-                            </inputs>
-                        </step>
-                    </entrypoint>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <entrypoint>
+                                <step name="step">
+                                    <inputs>
+                                        <text id="package" name="Java package" default="io.helidon.build.maven.archetype.tests"/>
+                                        <text id="groupId" name="Project groupId" default="io.helidon.build.maven.archetype.tests"/>
+                                        <text id="artifactId" name="Project artifactId" default="validation-project"/>
+                                        <text id="version" name="Project version" default="0.1-SNAPSHOT"/>
+                                        <output>
+                                            <file source="files/pom.xml" target="pom.xml"/>
+                                        </output>
+                                    </inputs>
+                                </step>
+                            </entrypoint>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <pluginManagement>

@@ -17,7 +17,6 @@ package io.helidon.build.maven.archetype;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -37,13 +36,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.Expression;
 import io.helidon.build.archetype.engine.v2.ScriptCompiler;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
+import io.helidon.build.common.PathFinder;
+import io.helidon.build.common.PrintStreams;
+import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
+import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.ansi.AnsiConsoleInstaller;
+import io.helidon.build.common.logging.Log;
+import io.helidon.build.common.maven.plugin.MavenArtifact;
 import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.maven.archetype.config.Validation;
 
@@ -52,7 +59,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -66,11 +72,19 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.codehaus.plexus.PlexusContainer;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.unique;
+import static io.helidon.build.common.FileUtils.unzip;
+import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static io.helidon.build.common.Strings.padding;
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
 import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
@@ -95,6 +109,24 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Component
     private Invoker invoker;
 
+    @Component
+    private RepositorySystem repoSystem;
+
+    /**
+     * The current repository/network configuration of Maven.
+     */
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
+    private RepositorySystemSession repoSession;
+
+    /**
+     * The project remote repositories to use.
+     */
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
+    private List<RemoteRepository> remoteRepos;
+
+    @Component
+    private PluginContainerManager pluginContainerManager;
+
     /**
      * The archetype project to execute the integration tests on.
      */
@@ -112,6 +144,12 @@ public class IntegrationTestMojo extends AbstractMojo {
     @SuppressWarnings("FieldCanBeLocal")
     @Parameter(property = "archetype.test.skip")
     private boolean skip = false;
+
+    /**
+     * The project build output directory. (e.g. {@code target/})
+     */
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true, required = true)
+    private File outputDirectory;
 
     /**
      * Tests directory.
@@ -151,13 +189,6 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> properties = new HashMap<>();
 
     /**
-     * Indicate if the project should be generated with the maven-archetype-plugin or with the Helidon archetype
-     * engine directly.
-     */
-    @Parameter(defaultValue = "true")
-    private boolean mavenArchetypeCompatible;
-
-    /**
      * The goal to use when building archetypes.
      */
     @Parameter(property = "archetype.test.testGoal", defaultValue = "package")
@@ -182,52 +213,66 @@ public class IntegrationTestMojo extends AbstractMojo {
     private Map<String, String> externalDefaults;
 
     /**
-     * File that contains rules to filter the variations.
+     * File that contains rules to filter the generated tests.
      */
-    @Parameter(property = "archetype.test.rulesFile")
+    @Parameter(property = "archetype.test.rulesFile",
+               defaultValue = "${project.basedir}/src/test/archetype/rules.xml")
     private File rulesFile;
 
     /**
-     * Whether to generate input variations.
+     * Whether to generate tests.
      */
-    @Parameter(property = "archetype.test.generateVariations", defaultValue = "true")
-    private boolean generateVariations;
+    @Parameter(property = "archetype.test.generateTests", defaultValue = "true")
+    private boolean generateTests;
 
     /**
-     * Whether to only generate input variations.
+     * Whether to only generate tests.
      */
-    @Parameter(property = "archetype.test.variationsOnly", defaultValue = "false")
-    private boolean variationsOnly;
+    @Parameter(property = "archetype.test.generateOnly", defaultValue = "false")
+    private boolean generateOnly;
 
     /**
-     * Variation start index.
+     * Test start index.
      */
-    @Parameter(property = "archetype.test.variationStartIndex", defaultValue = "1")
-    private int variationStartIndex;
+    @Parameter(property = "archetype.test.startIndex", defaultValue = "1")
+    private int startIndex;
 
     /**
-     * Variation end index.
+     * Test end index.
      */
-    @Parameter(property = "archetype.test.variationEndIndex", defaultValue = "-1")
-    private int variationEndIndex;
+    @Parameter(property = "archetype.test.endIndex", defaultValue = "-1")
+    private int endIndex;
 
     /**
-     * Variations to process.
+     * Comma separated string of the tests to process.
      */
-    @Parameter(property = "archetype.test.variation")
-    private String variation;
+    @Parameter(property = "archetype.test.test")
+    private String tests;
 
     /**
-     * Invoker environment variables.
+     * Maven invoker environment variables.
      */
     @Parameter(property = "archetype.test.invokerEnvVars")
     private Map<String, String> invokerEnvVars;
 
-    @Component
-    private RepositorySystem repoSystem;
+    /**
+     * Invoker id.
+     * <ul>
+     *  <li>{@code helidon} (default) to use the Helidon Archetype Engine</li>
+     *  <li>{@code maven} to use the Maven Archetype Engine</li>
+     *  <li>{@code <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>} Maven coordinates of a Helidon CLI
+     *  distribution</li>
+     * </ul>
+     */
+    @Parameter(property = "archetype.test.invokerId", defaultValue = "maven")
+    private String invokerId;
 
-    @Component
-    private PluginContainerManager pluginContainerManager;
+    /**
+     * The {@code cli-data} directory.
+     */
+    @Parameter(property = "archetype.test.cliDataDirectory",
+               defaultValue = "${project.build.directory}/cli-data")
+    private File cliDataDirectory;
 
     /**
      * Generated code inspection.
@@ -235,14 +280,12 @@ public class IntegrationTestMojo extends AbstractMojo {
     @Parameter
     private List<Validation> validations;
 
+    private Path cli = null;
     private Set<Map<String, String>> variations;
     private int index = 1;
-    private Log log;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        log = getLog();
-
         if (skip) {
             return;
         }
@@ -258,20 +301,20 @@ public class IntegrationTestMojo extends AbstractMojo {
             throw new MojoFailureException("Archetype not found");
         }
 
-        String testName = project.getFile().toPath().getParent().getFileName().toString();
+        String testName = fileName(project.getFile().toPath().getParent());
         try {
-            if (generateVariations) {
+            if (generateTests) {
                 logVariations(testName);
 
-                log.info("");
-                log.info("Computing variations...");
+                Log.info("");
+                Log.info("Computing variations...");
                 variations = variations(archetypeFile.toPath());
-                log.info("");
-                log.info("Total projects: " + variations.size());
-                log.info("Markdown file: " + writeSummary());
-                log.info("CSV file: " + writeCsv());
+                Log.info("");
+                Log.info("Total projects: " + variations.size());
+                Log.info("Markdown file: " + writeSummary());
+                Log.info("CSV file: " + writeCsv());
 
-                if (variationsOnly) {
+                if (generateOnly) {
                     return;
                 }
 
@@ -280,7 +323,7 @@ public class IntegrationTestMojo extends AbstractMojo {
                 for (Map.Entry<Integer, Map<String, String>> entry : variations.entrySet()) {
                     index = entry.getKey();
                     Map<String, String> variation = entry.getValue();
-                    String artifactId = variation.getOrDefault("artifactId", "my-project");
+                    String artifactId = variation.getOrDefault("artifactId", "myproject");
                     if (!artifactIds.add(artifactId)) {
                         variation.put("artifactId", artifactId + "-" + index);
                     }
@@ -291,7 +334,7 @@ public class IntegrationTestMojo extends AbstractMojo {
             }
 
         } catch (IOException e) {
-            getLog().error(e);
+            Log.error(e, "Integration test failed with error(s)");
             throw new MojoExecutionException("Integration test failed with error(s)");
         }
     }
@@ -356,16 +399,16 @@ public class IntegrationTestMojo extends AbstractMojo {
 
     private Map<Integer, Map<String, String>> filterVariations() {
         Map<Integer, Map<String, String>> indexes = new LinkedHashMap<>();
-        if (variation == null || variation.isEmpty()) {
-            Iterator<Map<String, String>> it = this.variations.iterator();
+        if (tests == null || tests.isEmpty()) {
+            Iterator<Map<String, String>> it = variations.iterator();
             for (int i = 1; it.hasNext(); i++) {
                 Map<String, String> next = it.next();
-                if (i >= variationStartIndex && (variationEndIndex <= 0 || i <= variationEndIndex)) {
+                if (i >= startIndex && (endIndex <= 0 || i <= endIndex)) {
                     indexes.put(i, next);
                 }
             }
         } else {
-            List<Integer> indices = Arrays.stream(variation.split(","))
+            List<Integer> indices = Arrays.stream(tests.split(","))
                     .map(Integer::valueOf)
                     .toList();
             Iterator<Map<String, String>> it = variations.iterator();
@@ -385,41 +428,79 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         logTestDescription(testName, externalValues);
 
-        Properties props = new Properties();
-        props.putAll(externalValues);
-
         Path testsDir = testsDirectory.toPath();
         ensureDirectory(testsDir);
-        String projectName = props.getProperty("artifactId", "myproject");
-        Path outputDir = unique(testsDir, projectName);
-        projectName = outputDir.getFileName().toString();
-        props.setProperty("artifactId", projectName);
 
-        if (mavenArchetypeCompatible) {
-            log.info("Generating project '" + projectName + "' using Maven archetype");
-            System.setProperty("interactiveMode", "false");
-            mavenCompatGenerate(
-                    project.getGroupId(),
-                    project.getArtifactId(),
-                    project.getVersion(),
-                    archetypeFile,
-                    props,
-                    outputDir.getParent());
-        } else {
-            log.info("Generating project '" + projectName + "' using Helidon archetype engine");
-            generate(archetypeFile.toPath(), props, outputDir);
+        // ensure artifactId matches the directory
+        Map<String, String> values = new HashMap<>(externalValues);
+        Path outputDir = unique(testsDir, values.getOrDefault("artifactId", "myproject"));
+        String projectName = fileName(outputDir);
+        values.put("artifactId", projectName);
+
+        switch (invokerId) {
+            case "helidon":
+                Log.info("Generating project '" + projectName + "' using Helidon archetype engine");
+                helidonEmbedded(archetypeFile.toPath(), values, outputDir);
+                break;
+            case "maven":
+                Log.info("Generating project '" + projectName + "' using Maven archetype");
+                System.setProperty("interactiveMode", "false");
+                mavenEmbedded(
+                        project.getGroupId(),
+                        project.getArtifactId(),
+                        project.getVersion(),
+                        archetypeFile,
+                        Maps.toProperties(values),
+                        testsDir);
+                break;
+            default:
+                Log.info("Generating project '" + projectName + "' using Helidon CLI");
+                helidonInit(values, outputDir);
         }
+        invokePostArchetypeGenerationGoals(outputDir);
+    }
 
-        invokePostArchetypeGenerationGoals(outputDir.toFile());
+    private String invokerExe() {
+        if (cli == null) {
+            Path cliArtifact = resolveArtifact(MavenArtifact.create(invokerId));
+            Path downloadDir = outputDirectory.toPath().resolve("downloads");
+            Log.debug("Unpacking %s to %s", cliArtifact, downloadDir);
+            List<Path> entries = unzip(cliArtifact, downloadDir);
+            cli = PathFinder.find("helidon", Lists.filter(entries, Files::isDirectory)).orElseThrow();
+        }
+        return cli.toString();
+    }
+
+    private void helidonInit(Map<String, String> values, Path outputDir) throws IOException {
+        try {
+            List<String> cmd = Lists.addAll(
+                    List.of(invokerExe(), "init",
+                            "--batch",
+                            "--error",
+                            "--project", outputDir.toString(),
+                            "--reset",
+                            "--url", cliDataDirectory.toURI().toString()),
+                    Lists.map(values.entrySet(), e -> "-D" + e.getKey() + "=" + e.getValue()));
+            Log.info("Executing: %s", String.join(" ", cmd));
+            ProcessMonitor.builder()
+                    .processBuilder(new ProcessBuilder(cmd))
+                    .autoEol(false)
+                    .stdOut(PrintStreams.accept(DEVNULL, Log::debug))
+                    .stdErr(PrintStreams.accept(DEVNULL, Log::warn))
+                    .build()
+                    .execute(1, TimeUnit.DAYS);
+        } catch (ProcessFailedException | ProcessTimeoutException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void logVariations(String testName) {
-        log.info("");
-        log.info("--------------------------------------");
-        log.info("Generating Archetype Tests Variations");
-        log.info("--------------------------------------");
-        log.info("");
-        log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));
+        Log.info("");
+        Log.info("--------------------------------------");
+        Log.info("Generating Archetype Tests Variations");
+        Log.info("--------------------------------------");
+        Log.info("");
+        Log.info(Bold.apply("Test: ") + BoldBlue.apply(testName));
         int maxKeyWidth = maxKeyWidth(externalValues, externalDefaults);
         logInputs("externalValues", externalValues, maxKeyWidth);
         logInputs("externalDefaults", externalDefaults, maxKeyWidth);
@@ -428,28 +509,28 @@ public class IntegrationTestMojo extends AbstractMojo {
     private void logTestDescription(String testName, Map<String, String> externalValues) {
         String description = Bold.apply("Test: ") + BoldBlue.apply(testName);
         if (variations != null && index > 0) {
-            description += BoldBlue.apply(String.format(", variation: %s/%s", index, variations.size()));
+            description += BoldBlue.apply(String.format(", progress: %s/%s", index, variations.size()));
         }
-        log.info("");
-        log.info("-------------------------------------");
-        log.info("Processing Archetype Integration Test");
-        log.info("-------------------------------------");
-        log.info("");
-        log.info(description);
+        Log.info("");
+        Log.info("-------------------------------------");
+        Log.info("Processing Archetype Integration Test");
+        Log.info("-------------------------------------");
+        Log.info("");
+        Log.info(description);
         int maxKeyWidth = maxKeyWidth(externalValues);
         logInputs("externalValues", externalValues, maxKeyWidth);
-        log.info("");
+        Log.info("");
     }
 
     private void logInputs(String label, Map<String, String> inputs, int maxKeyWidth) {
         boolean empty = inputs.isEmpty();
-        log.info("");
-        log.info(Bold.apply(label) + ":" + (empty ? Italic.apply(" [none]") : ""));
+        Log.info("");
+        Log.info(Bold.apply(label) + ":" + (empty ? Italic.apply(" [none]") : ""));
         if (!empty) {
-            log.info("");
+            Log.info("");
             inputs.forEach((k, v) -> {
                 String padding = padding(" ", maxKeyWidth, k);
-                log.info("    " + Cyan.apply(k) + padding + SEP + BoldBlue.apply(v));
+                Log.info("    " + Cyan.apply(k) + padding + SEP + BoldBlue.apply(v));
             });
         }
     }
@@ -468,13 +549,13 @@ public class IntegrationTestMojo extends AbstractMojo {
         return maxLen;
     }
 
-    private void generate(Path archetypeFile, Properties props, Path outputDir) {
+    private void helidonEmbedded(Path archetypeFile, Map<String, String> externalValues, Path outputDir) {
         try {
             FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
             ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
                     .fileSystem(fileSystem)
                     .batch(true)
-                    .externalValues(Maps.fromProperties(props))
+                    .externalValues(externalValues)
                     .output(() -> outputDir)
                     .build();
             engine.generate();
@@ -483,12 +564,12 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private void mavenCompatGenerate(String archetypeGroupId,
-                                     String archetypeArtifactId,
-                                     String archetypeVersion,
-                                     File archetypeFile,
-                                     Properties properties,
-                                     Path basedir) throws MojoExecutionException {
+    private void mavenEmbedded(String archetypeGroupId,
+                               String archetypeArtifactId,
+                               String archetypeVersion,
+                               File archetypeFile,
+                               Properties properties,
+                               Path basedir) throws MojoExecutionException {
 
         // pre-install the archetype JAR so that the post-generate script can resolve it
         try {
@@ -517,16 +598,16 @@ public class IntegrationTestMojo extends AbstractMojo {
         invokeMethod(container.getLookupRealm(), MAVEN_GENERATOR_FCN, "generate", args);
     }
 
-    private void invokePostArchetypeGenerationGoals(File basedir) throws IOException, MojoExecutionException {
+    private void invokePostArchetypeGenerationGoals(Path basedir) throws IOException, MojoExecutionException {
         FileLogger logger = setupBuildLogger(basedir);
 
-        getLog().info(String.format("Invoking post-archetype-generation goal: %s, profiles: %s", testGoal, testProfiles));
+        Log.info(String.format("Invoking post-archetype-generation goal: %s, profiles: %s", testGoal, testProfiles));
 
         File localRepo = session.getRepositorySession().getLocalRepository().getBasedir();
         InvocationRequest request = new DefaultInvocationRequest()
                 .setUserSettingsFile(session.getRequest().getUserSettingsFile())
                 .setLocalRepositoryDirectory(localRepo)
-                .setBaseDirectory(basedir)
+                .setBaseDirectory(basedir.toFile())
                 .addArgs(List.of(testGoal))
                 .setProfiles(testProfiles)
                 .setBatchMode(true)
@@ -553,7 +634,7 @@ public class IntegrationTestMojo extends AbstractMojo {
 
         try {
             InvocationResult result = invoker.execute(request);
-            getLog().info("Post-archetype-generation invoker exit code: " + result.getExitCode());
+            Log.info("Post-archetype-generation invoker exit code: " + result.getExitCode());
 
             // validate projects
             if (validations != null) {
@@ -570,22 +651,8 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
-    private FileLogger setupBuildLogger(File basedir) throws IOException {
-        FileLogger logger = null;
-        if (!noLog) {
-            File outputLog = new File(basedir, "build.log");
-            if (streamLogs) {
-                logger = new FileLogger(outputLog, getLog());
-            } else {
-                logger = new FileLogger(outputLog, null);
-            }
-            getLog().debug("build log initialized in: " + outputLog);
-        }
-        return logger;
-    }
-
     private List<Expression> rules() {
-        if (rulesFile == null) {
+        if (rulesFile == null || !Files.exists(rulesFile.toPath())) {
             return List.of();
         }
         try (InputStream is = Files.newInputStream(rulesFile.toPath())) {
@@ -604,30 +671,51 @@ public class IntegrationTestMojo extends AbstractMojo {
         }
     }
 
+    private Path resolveArtifact(MavenArtifact artifact) {
+        try {
+            ArtifactRequest request = new ArtifactRequest();
+            request.setArtifact(artifact.toAetherArtifact());
+            request.setRepositories(remoteRepos);
+            ArtifactResult result = repoSystem.resolveArtifact(repoSession, request);
+            return result.getArtifact().getFile().toPath();
+        } catch (ArtifactResolutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private FileLogger setupBuildLogger(Path basedir) throws IOException {
+        FileLogger logger = null;
+        if (!noLog) {
+            Path logFile = basedir.resolve("build.log");
+            logger = new FileLogger(logFile, streamLogs);
+            Log.debug("build log initialized in: " + logFile);
+        }
+        return logger;
+    }
+
     private static final class FileLogger implements InvocationOutputHandler, Closeable {
 
-        private final PrintStream stream;
-        private final Log log;
+        private final PrintStream printer;
+        private final boolean streamLogs;
 
-        FileLogger(File outputFile, Log log) throws IOException {
-            this.log = log;
-            //noinspection ResultOfMethodCallIgnored
-            outputFile.getParentFile().mkdirs();
-            stream = new PrintStream(new FileOutputStream(outputFile));
+        FileLogger(Path logFile, boolean streamLogs) throws IOException {
+            Files.createDirectories(logFile.getParent());
+            this.printer = new PrintStream(Files.newOutputStream(logFile));
+            this.streamLogs = streamLogs;
         }
 
         @Override
         public void consumeLine(String line) {
-            stream.println(line);
-            stream.flush();
-            if (log != null) {
-                log.info(line);
+            printer.println(line);
+            printer.flush();
+            if (streamLogs) {
+                Log.info(line);
             }
         }
 
         @Override
         public void close() {
-            stream.close();
+            printer.close();
         }
     }
 }

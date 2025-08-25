@@ -59,7 +59,7 @@ public final class TemplateModel implements Node.Visitor {
                 // file attribute or node value
                 String content = node.attribute("file").asString()
                         .map(file -> readFile(context, file))
-                        .orElseGet(() -> node.value().getString());
+                        .orElseGet(() -> node.value().asString().orElse(""));
 
                 boolean isOverride = node.attribute("override").asBoolean().orElse(false);
                 String template = node.attribute("template").asString().orElse(null);

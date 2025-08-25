@@ -19,8 +19,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * String utility methods.
@@ -265,6 +268,19 @@ public class Strings {
             return i;
         }
         return -1;
+    }
+
+    /**
+     * Get the lines in a string.
+     *
+     * @param str string
+     * @return lines
+     */
+    public static Collection<String> lines(String str) {
+        if (str == null) {
+            return List.of();
+        }
+        return str.lines().collect(Collectors.toList());
     }
 
     private Strings() {

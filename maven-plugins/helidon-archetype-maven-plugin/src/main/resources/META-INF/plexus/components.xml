@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@
                         <id>default</id>
                         <phases>
                             <process-test-resources>org.apache.maven.plugins:maven-resources-plugin:testResources</process-test-resources>
+                            <compile>io.helidon.build-tools:helidon-archetype-maven-plugin:compile</compile>
                             <package>io.helidon.build-tools:helidon-archetype-maven-plugin:jar</package>
                             <integration-test>io.helidon.build-tools:helidon-archetype-maven-plugin:integration-test</integration-test>
                             <install>org.apache.maven.plugins:maven-install-plugin:install</install>

@@ -475,4 +475,17 @@ public class Lists {
     public static <T> int max(Collection<T> list, Function<T, Integer> function) {
         return list.stream().mapToInt(function::apply).max().orElseThrow();
     }
+
+    /**
+     * Drain the given list.
+     *
+     * @param list list
+     * @param <T>  the list element type
+     * @return drain elements
+     */
+    public static <T> List<T> drain(Collection<T> list) {
+        List<T> drained = new ArrayList<>(list);
+        list.clear();
+        return drained;
+    }
 }

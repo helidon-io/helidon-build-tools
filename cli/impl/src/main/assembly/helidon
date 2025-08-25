@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,69 +15,37 @@
 # limitations under the License.
 #
 
-main() {
-    local command debug
-    find_root_directory
-    find_java_executable
-    build_command "${@}"
-    if [ -n "${debug}" ]; then
-        echo "[WARNING] Use HELIDON_JAVA_OPS environment property to setup JVM arguments"
-        echo "[DEBUG] Distribution located at : ${BASEDIR}"
-        echo "[DEBUG] Using java command : ${JAVA_EXEC}"
-        echo "[DEBUG] Command executed : ${command}"
-    fi
-    ${command}
-}
+if [ -h "${0}" ] ; then
+  SCRIPT_PATH="$(readlink "${BASH_SOURCE[0]}")"
+else
+  SCRIPT_PATH="${BASH_SOURCE[0]}"
+fi
+BASEDIR=$(cd "$(dirname -- "${SCRIPT_PATH}")/.." || true ; pwd -P)
 
-#Find archive directory and use it as based directory
-find_root_directory() {
-    local wdir dir
-    wdir="${0}"
-    while [ -h "${wdir}" ]; do
-        ls=$(ls -ld "${wdir}")
-        link=$(expr "${ls}" : '.*-> \(.*\)$')
-        if expr "${link}" : '/.*' > /dev/null; then
-            wdir="${link}"
-        else
-            wdir=$(dirname "${wdir}")/"$link"
-        fi
-    done
-    dir=$(dirname "${wdir}")
-    BASEDIR=$(cd "${dir}/.." || exit; pwd)
-}
+if [ "$(uname)" == "CYGWIN" ]; then
+    JAVA_HOME=$(cygpath --unix "${JAVA_HOME}")
+    JAVA_HOME=$(cygpath --path --windows "${JAVA_HOME}")
+    BASEDIR=$(cygpath --path --windows "${BASEDIR}")
+elif [ -n "${JAVA_HOME}" ]; then
+    JAVA_EXE="${JAVA_HOME}/bin/java"
+else
+    JAVA_EXE="java"
+    echo "[WARNING] JAVA_HOME is not set"
+fi
 
-#Look for JAVA_HOME java binary, then `which java` result
-find_java_executable() {
-    if [ -z "${JAVA_HOME}" ]; then
-        JAVA_EXEC=$(which java)
-        echo "[WARNING] JAVA_HOME is not set, using ${JAVA_EXEC} instead"
-        return
-    fi
-    if [ "$(uname)" == "CYGWIN" ]; then
-        JAVA_HOME=$(cygpath --unix "${JAVA_HOME}")
-        JAVA_HOME=$(cygpath --path --windows "${JAVA_HOME}")
-        BASEDIR=$(cygpath --path --windows "${BASEDIR}")
-    fi
-    JAVA_EXEC="${JAVA_HOME}/bin/java"
-}
+HELIDON_CLI_CMD="${JAVA_EXE}"
+if [ -n "${HELIDON_CLI_JAVA_OPTS}" ]; then
+  HELIDON_CLI_CMD="${HELIDON_CLI_CMD} ${HELIDON_CLI_JAVA_OPTS}"
+fi
+HELIDON_CLI_CMD="${HELIDON_CLI_CMD} -jar ${BASEDIR}/helidon-cli.jar ${*}"
 
-#Build command line
-build_command() {
-    local args
+if [ "${HELIDON_CLI_DEBUG}" = "true" ]; then
+    echo ""
+    echo "[DEBUG] Use HELIDON_CLI_JAVA_OPTS environment property to setup JVM arguments"
+    echo "[DEBUG] Distribution located at : ${BASEDIR}"
+    echo "[DEBUG] Using java command : ${JAVA_EXE}"
+    echo "[DEBUG] Command executed : ${HELIDON_CLI_CMD}"
+    echo ""
+fi
 
-    while (( ${#} > 0 )); do
-        case "${1}" in
-            --cli-debug) debug="true";;
-            *) append_var args "${1}" ;;
-        esac
-        shift
-    done
-
-    command="${JAVA_EXEC} ${HELIDON_JAVA_OPS} -jar ${BASEDIR}/helidon-cli.jar ${args}"
-}
-
-#Append variable value
-append_var() {
-    export "${1}"="${!1:+${!1} }${2}"
-}
-main "${@}"
+${HELIDON_CLI_CMD}
