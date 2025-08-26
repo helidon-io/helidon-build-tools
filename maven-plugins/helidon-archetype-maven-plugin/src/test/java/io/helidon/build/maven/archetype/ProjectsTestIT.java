@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.build.common.test.utils.BuildLog;
@@ -29,10 +30,12 @@ import io.helidon.build.common.test.utils.JUnitLauncher;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
+import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Integration test that verifies the projects under {@code src/it/projects}.
@@ -135,31 +138,44 @@ class ProjectsTestIT {
         return projectsDir;
     }
 
-    private static void assertProjectCount(Path projectsDir, int expectedCount) throws IOException {
-        int projectCount = 0;
+    private static List<Path> testProjects(Path projectsDir) throws IOException {
+        List<Path> projects = new ArrayList<>();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(projectsDir)) {
             for (Path path : paths) {
-                if (path.getFileName().toString().endsWith("-project")) {
-                    assertThat(Files.isDirectory(path), is(true));
-                    projectCount++;
+                if (fileName(path).matches(".*-project(-[0-9]+)?$")) {
+                    projects.add(path);
                 }
             }
-            assertThat(projectCount, is(expectedCount));
         }
+        return projects;
+    }
+
+    private static void assertProjectCount(Path projectsDir, int expectedCount) throws IOException {
+        int projectCount = 0;
+        for (Path path : testProjects(projectsDir)) {
+            assertThat(Files.isDirectory(path), is(true));
+            projectCount++;
+        }
+        assertThat(projectCount, is(expectedCount));
     }
 
     private static void assertProjectShape(Path projectsDir, String shape) throws IOException {
         // Check project directory
-        Path outputDir = projectsDir.resolve(shape + "-project");
+        Path outputDir = testProjects(projectsDir).stream()
+                .filter(p -> fileName(p).contains(shape + "-project"))
+                .findFirst()
+                .orElse(null);
+        assertThat(outputDir, is(not(nullValue())));
         assertThat(Files.exists(outputDir), is(true));
 
         // Check pom file
         Path pomFile = outputDir.resolve("pom.xml");
+        String fileName = fileName(outputDir);
         assertContains(pomFile, List.of(
                 "<groupId>io.helidon.build.maven.archetype.tests</groupId>",
-                "<artifactId>" + shape + "-project</artifactId>",
+                "<artifactId>" + fileName + "</artifactId>",
                 "<version>0.1-SNAPSHOT</version>",
-                "<name>" + shape + "-project</name>"
+                "<name>" + fileName + "</name>"
         ));
 
         // Check source file
