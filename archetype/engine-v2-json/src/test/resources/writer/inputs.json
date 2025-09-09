@@ -7,8 +7,6 @@
             }
         ]
     },
-    "methods": {
-    },
     "children": [
         {
             "kind": "step",

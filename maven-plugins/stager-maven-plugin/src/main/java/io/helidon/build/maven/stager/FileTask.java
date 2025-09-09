@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
@@ -75,11 +77,11 @@ final class FileTask extends StagingTask {
                 throw new IllegalStateException(sourceFile + " does not exist");
             }
             ctx.logInfo("Copying %s to %s", sourceFile, targetFile);
-            Files.copy(sourceFile, targetFile);
+            Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
         } else {
             Files.createFile(targetFile);
             if (resolvedContent != null && !resolvedContent.isEmpty()) {
-                Files.writeString(targetFile, resolvedContent);
+                Files.writeString(targetFile, resolvedContent, StandardOpenOption.CREATE);
             } else {
                 try (BufferedWriter writer = Files.newBufferedWriter(targetFile)) {
                     for (TextAction task : tasks()) {

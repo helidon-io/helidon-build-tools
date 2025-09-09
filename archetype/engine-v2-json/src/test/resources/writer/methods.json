@@ -1,6 +1,4 @@
 {
-    "expressions": {
-    },
     "methods": {
         "method1": [
             {
@@ -24,7 +22,5 @@
                 ]
             }
         ]
-    },
-    "children": [
-    ]
+    }
 }

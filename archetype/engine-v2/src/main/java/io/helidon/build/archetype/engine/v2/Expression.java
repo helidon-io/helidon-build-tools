@@ -35,6 +35,7 @@ import java.util.Spliterator;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -87,7 +88,7 @@ public final class Expression implements Comparable<Expression> {
         this(parse(expression), false);
     }
 
-    private Expression(List<Token> tokens, boolean reduced) {
+    Expression(List<Token> tokens, boolean reduced) {
         if (tokens.isEmpty()) {
             throw new IllegalArgumentException("Empty expression");
         }
@@ -168,6 +169,16 @@ public final class Expression implements Comparable<Expression> {
      */
     public Set<String> variables() {
         return variables.get();
+    }
+
+    /**
+     * Map this expression.
+     *
+     * @param mapper mapper
+     * @return Expression
+     */
+    public Expression map(UnaryOperator<Token> mapper) {
+        return new Expression(Lists.map(tokens, mapper), false);
     }
 
     /**

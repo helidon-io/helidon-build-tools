@@ -548,10 +548,10 @@ public class IntegrationTestMojo extends AbstractMojo {
     }
 
     private void helidonEmbedded(Path archetypeFile, Map<String, String> externalValues, Path outputDir) {
-        try {
-            FileSystem fileSystem = newFileSystem(archetypeFile, this.getClass().getClassLoader());
+        try (FileSystem fs = newFileSystem(archetypeFile, this.getClass().getClassLoader())) {
+            Path root = fs.getRootDirectories().iterator().next();
             ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
-                    .fileSystem(fileSystem)
+                    .cwd(root)
                     .batch(true)
                     .externalValues(externalValues)
                     .output(() -> outputDir)

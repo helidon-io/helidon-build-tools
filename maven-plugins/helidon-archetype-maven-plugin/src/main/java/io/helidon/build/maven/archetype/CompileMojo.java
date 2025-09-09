@@ -27,6 +27,8 @@ import java.util.stream.Stream;
 
 import io.helidon.build.archetype.engine.v2.Script;
 import io.helidon.build.archetype.engine.v2.ScriptCompiler;
+import io.helidon.build.archetype.engine.v2.ScriptCompiler.Options;
+import io.helidon.build.archetype.engine.v2.ScriptCompiler.ValidationException;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.VirtualFileSystem;
 
@@ -80,14 +82,12 @@ public class CompileMojo extends AbstractMojo {
                 Path cwd = fs.getPath("/");
                 ScriptCompiler compiler = new ScriptCompiler(entrypoint(cwd), cwd);
                 List<ScriptCompiler.Option> options = Lists.addAll(
-                        Lists.map(compilerOptions, ScriptCompiler.Options::valueOf),
-                        VALIDATE_REGEX,
-                        VALIDATE_SCHEMA);
-                if (!compiler.compile(archetypeDirectory.toPath(), options)) {
-                    compiler.errors().forEach(getLog()::error);
-                    throw new MojoExecutionException("Validation failed");
-                }
+                        Lists.map(compilerOptions, Options::valueOf), VALIDATE_REGEX, VALIDATE_SCHEMA);
+                compiler.compile(options).write(archetypeDirectory.toPath());
             }
+        } catch (ValidationException ex) {
+            ex.errors().forEach(getLog()::error);
+            throw new MojoExecutionException("Validation failed");
         } catch (IOException ioe) {
             throw new MojoExecutionException(ioe.getMessage(), ioe);
         }

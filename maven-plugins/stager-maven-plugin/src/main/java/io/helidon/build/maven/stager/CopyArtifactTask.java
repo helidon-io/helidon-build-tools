@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.build.maven.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
 import io.helidon.build.common.Maps;
@@ -55,7 +56,7 @@ final class CopyArtifactTask extends StagingTask {
         Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
         ctx.ensureDirectory(targetFile.getParent());
-        Files.copy(artifact, targetFile);
+        Files.copy(artifact, targetFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private ArtifactGAV resolveGAV(Map<String, String> variables) {

@@ -41,7 +41,6 @@ class MetadataAccess {
     private static MetadataServer SERVER;
     private static String METADATA_URL;
     private static Metadata METADATA;
-    private static UserConfig USER_CONFIG;
 
     /**
      * Start the metadata server.
@@ -54,8 +53,7 @@ class MetadataAccess {
         Path cwd = targetDir(MetadataAccess.class).resolve("metadata-access");
         Path userHome = unique(cwd, "server");
         Config.setUserHome(userHome);
-        USER_CONFIG = UserConfig.create(userHome);
-        Config.setUserConfig(USER_CONFIG);
+        Config.setUserConfig(UserConfig.create(userHome));
         Plugins.reset(false);
 
         MavenVersion testServerVersion = toMavenVersion(TestVersion.RC1.toString());
@@ -87,9 +85,5 @@ class MetadataAccess {
 
     Metadata metadata() {
         return METADATA;
-    }
-
-    UserConfig userConfig() {
-        return USER_CONFIG;
     }
 }

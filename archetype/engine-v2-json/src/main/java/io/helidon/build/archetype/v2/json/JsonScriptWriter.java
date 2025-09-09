@@ -16,7 +16,7 @@
 package io.helidon.build.archetype.v2.json;
 
 import java.io.Writer;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,7 +33,7 @@ import io.helidon.build.archetype.engine.v2.Value;
  */
 public class JsonScriptWriter implements Script.Writer {
 
-    private final Map<Expression, String> expressions = new HashMap<>();
+    private final Map<Expression, String> expressions = new LinkedHashMap<>();
     private final JsonGenerator generator;
 
     /**
@@ -54,23 +54,40 @@ public class JsonScriptWriter implements Script.Writer {
     @Override
     public void writeScript(Node script) {
         generator.writeStartObject();
-        generator.writeStartObject("expressions");
-        for (Node node : script.traverse()) {
-            if (node.kind() == Kind.CONDITION) {
-                writeExpression(node.expression());
-            }
+
+        // compute expression ids
+        for (Node node : script.traverse(Kind.CONDITION::equals)) {
+            expressions.computeIfAbsent(node.expression(), k -> String.valueOf(expressions.size() + 1));
         }
-        generator.writeEnd();
-        generator.writeStartObject("methods");
-        script.script().methods().forEach((k, v) -> {
-            generator.writeStartArray(k);
-            writeDirectives(v);
+
+        // write expressions
+        if (!expressions.isEmpty()) {
+            generator.writeStartObject("expressions");
+            expressions.forEach(this::writeExpression);
             generator.writeEnd();
-        });
+        }
+
+        // write methods
+        Map<String, Node> methods = script.script().methods();
+        if (!methods.isEmpty()) {
+            generator.writeStartObject("methods");
+            methods.forEach(this::writeMethod);
+            generator.writeEnd();
+        }
+
+        // write children
+        if (!script.children().isEmpty()) {
+            generator.writeStartArray("children");
+            writeDirectives(script);
+            generator.writeEnd();
+        }
+
         generator.writeEnd();
-        generator.writeStartArray("children");
-        writeDirectives(script);
-        generator.writeEnd();
+    }
+
+    private void writeMethod(String methodName, Node method) {
+        generator.writeStartArray(methodName);
+        writeDirectives(method);
         generator.writeEnd();
     }
 
@@ -140,8 +157,7 @@ public class JsonScriptWriter implements Script.Writer {
         }
     }
 
-    private void writeExpression(Expression expr) {
-        String id = expressions.computeIfAbsent(expr, k -> String.valueOf(expressions.size() + 1));
+    private void writeExpression(Expression expr, String id) {
         generator.writeStartArray(id);
         for (Expression.Token token : expr.tokens()) {
             generator.writeStartObject();
