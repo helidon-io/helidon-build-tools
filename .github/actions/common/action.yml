@@ -85,8 +85,7 @@ runs:
       if: ${{ inputs.native-image == 'true' }}
       uses: graalvm/setup-graalvm@v1.2.1
       with:
-        java-version: ${{ env.GRAALVM_JAVA_VERSION }}
-        version: ${{ env.GRAALVM_VERSION }}
+        java-version: ${{ env.GRAALVM_VERSION || env.JAVA_VERSION }}
         components: 'native-image'
         check-for-updates: 'false'
         set-java-home: 'false'
