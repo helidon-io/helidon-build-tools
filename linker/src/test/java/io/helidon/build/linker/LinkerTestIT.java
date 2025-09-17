@@ -26,7 +26,6 @@ import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -124,7 +123,6 @@ class LinkerTestIT {
     }
 
     @Tag("mp")
-    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @Order(4)
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")

@@ -25,7 +25,6 @@ import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.common.test.utils.TestLogLevel;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -57,7 +56,6 @@ class ClassDataSharingTestIT {
     }
 
     @Tag("mp")
-    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void testQuickstartMp(String basedir) throws Exception {
