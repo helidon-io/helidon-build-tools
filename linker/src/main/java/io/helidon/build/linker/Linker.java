@@ -193,7 +193,7 @@ public final class Linker {
         jlinkArgs.add("--no-header-files");
         jlinkArgs.add("--no-man-pages");
         jlinkArgs.add("--compress");
-        jlinkArgs.add("2");
+        jlinkArgs.add("zip-6");
 
         // user provided args
         jlinkArgs.addAll(config.additionalJlinkArgs());
