@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -371,7 +371,10 @@ public final class ClassDataSharing {
         }
 
         private List<String> loadClassList() throws IOException {
-            return Files.readAllLines(classListFile).stream().filter(ClassDataSharing.Builder::isNotComment).map(ClassDataSharing.Builder::head).collect(Collectors.toList());
+            return Files.readAllLines(classListFile).stream()
+                    .filter(ClassDataSharing.Builder::isNotComment)
+                    .map(ClassDataSharing.Builder::head)
+                    .collect(Collectors.toList());
         }
 
         private static String head(String s) {
@@ -380,7 +383,7 @@ public final class ClassDataSharing {
         }
 
         private static boolean isNotComment(String s) {
-            return ! s.startsWith("# ");
+            return !s.startsWith("# ");
         }
 
         private void execute(String action, String... jvmArgs) throws Exception {
