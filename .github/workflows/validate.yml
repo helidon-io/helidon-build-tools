@@ -29,7 +29,7 @@ on:
         default: ''
 
 env:
-  JAVA_VERSION: 17
+  JAVA_VERSION: 17.0.16
   JAVA_DISTRO: oracle
   GRAALVM_VERSION: 21.3.3.1
   MVN_ARGS: |
