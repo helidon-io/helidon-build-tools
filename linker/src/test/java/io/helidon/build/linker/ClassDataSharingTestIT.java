@@ -15,6 +15,7 @@
  */
 package io.helidon.build.linker;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -59,12 +60,12 @@ class ClassDataSharingTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void testQuickstartMp(String basedir) throws Exception {
-        Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
+        Path mainJar = Path.of(basedir).resolve("target" + File.separator + "quickstart-mp.jar");
         Path archiveFile = Files.createTempFile("start", "jsa");
         String exitOnStarted = "!";
         ClassDataSharing cds = ClassDataSharing.builder()
                                                .jri(JAVA_HOME)
-                                               .applicationJar(mainJar)
+                                               .applicationJar(mainJar.toRealPath())
                                                .createArchive(false)
                                                .logOutput(true)
                                                .exitOnStartedValue(exitOnStarted)
