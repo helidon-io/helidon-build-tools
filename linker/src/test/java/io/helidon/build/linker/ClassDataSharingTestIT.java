@@ -28,7 +28,9 @@ import io.helidon.build.common.test.utils.TestLogLevel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.javaHome;
@@ -59,13 +61,16 @@ class ClassDataSharingTestIT {
     @Tag("mp")
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
+    // ClassDataSharing uses relativize with jri location and mainJar.
+    // relativize on Windows requires a shared root which is not true for this test.
+    @DisabledOnOs(OS.WINDOWS)
     void testQuickstartMp(String basedir) throws Exception {
-        Path mainJar = Path.of(basedir).resolve("target" + File.separator + "quickstart-mp.jar");
+        Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
         Path archiveFile = Files.createTempFile("start", "jsa");
         String exitOnStarted = "!";
         ClassDataSharing cds = ClassDataSharing.builder()
                                                .jri(JAVA_HOME)
-                                               .applicationJar(mainJar.toRealPath())
+                                               .applicationJar(mainJar)
                                                .createArchive(false)
                                                .logOutput(true)
                                                .exitOnStartedValue(exitOnStarted)
