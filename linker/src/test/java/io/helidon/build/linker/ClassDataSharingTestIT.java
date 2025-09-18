@@ -15,7 +15,6 @@
  */
 package io.helidon.build.linker;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
