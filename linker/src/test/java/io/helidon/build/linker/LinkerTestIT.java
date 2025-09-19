@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.linker.util.Constants;
 import io.helidon.build.linker.util.JavaRuntime;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -124,7 +123,6 @@ class LinkerTestIT {
     }
 
     @Tag("mp")
-    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @Order(4)
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")

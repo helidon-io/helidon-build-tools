@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.common.test.utils.TestLogLevel;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.javaHome;
@@ -57,9 +58,11 @@ class ClassDataSharingTestIT {
     }
 
     @Tag("mp")
-    @Disabled("https://github.com/oracle/helidon-build-tools/issues/537")
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
+    // ClassDataSharing uses relativize with jri location and mainJar.
+    // relativize on Windows requires a shared root which is not true for this test.
+    @DisabledOnOs(OS.WINDOWS)
     void testQuickstartMp(String basedir) throws Exception {
         Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
         Path archiveFile = Files.createTempFile("start", "jsa");

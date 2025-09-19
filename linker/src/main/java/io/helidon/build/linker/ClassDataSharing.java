@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.PrintStreams;
@@ -370,7 +371,19 @@ public final class ClassDataSharing {
         }
 
         private List<String> loadClassList() throws IOException {
-            return Files.readAllLines(classListFile);
+            return Files.readAllLines(classListFile).stream()
+                    .filter(ClassDataSharing.Builder::isNotComment)
+                    .map(ClassDataSharing.Builder::head)
+                    .collect(Collectors.toList());
+        }
+
+        private static String head(String s) {
+            // Get first field in string. Assume whitespace delimiter
+            return s.split("\\s+")[0];
+        }
+
+        private static boolean isNotComment(String s) {
+            return !s.startsWith("# ");
         }
 
         private void execute(String action, String... jvmArgs) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,13 @@ public final class Linker {
         jlinkArgs.add("--no-header-files");
         jlinkArgs.add("--no-man-pages");
         jlinkArgs.add("--compress");
-        jlinkArgs.add("2");
+
+        // The options used with --compress changed in 21
+        if (config.jdk().version().feature() >= 21) {
+            jlinkArgs.add("zip-6");
+        } else {
+            jlinkArgs.add("2");
+        }
 
         // user provided args
         jlinkArgs.addAll(config.additionalJlinkArgs());
