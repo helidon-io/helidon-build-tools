@@ -58,7 +58,7 @@ public final class EngineFacade {
     /**
      * Generate a project.
      *
-     * @param request   archetype generation request
+     * @param request      archetype generation request
      * @param dependencies Maven coordinates to resolve for running the engine
      */
     @SuppressWarnings("unused")
@@ -99,14 +99,14 @@ public final class EngineFacade {
 
         // create a class-loader with the engine dependencies
         URL[] urls = aether.resolveDependencies(dependencies)
-                           .stream()
-                           .map(f -> {
-                               try {
-                                   return f.toURI().toURL();
-                               } catch (MalformedURLException e) {
-                                   throw new UncheckedIOException(e);
-                               }
-                           }).toArray(URL[]::new);
+                .stream()
+                .map(f -> {
+                    try {
+                        return f.toURI().toURL();
+                    } catch (MalformedURLException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }).toArray(URL[]::new);
 
         URLClassLoader ecl = new URLClassLoader(urls, EngineFacade.class.getClassLoader());
 
@@ -119,13 +119,19 @@ public final class EngineFacade {
                 "jar", request.getArchetypeVersion());
 
         try {
-            FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader());
+            // delete the dummy pom.xml
             Path projectDir = Paths.get(request.getOutputDirectory()).resolve(request.getArtifactId());
             Files.delete(projectDir.resolve("pom.xml"));
-            boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
-            new ReflectedEngine(ecl, fileSystem, interactiveMode, props, emptyMap(), () -> projectDir).generate();
+
+            // generate the project
+            try (FileSystem fileSystem = FileSystems.newFileSystem(archetypeFile.toPath(), EngineFacade.class.getClassLoader())) {
+                for (Path root : fileSystem.getRootDirectories()) {
+                    boolean interactiveMode = !"false".equals(System.getProperty("interactiveMode"));
+                    new ReflectedEngine(ecl, root, interactiveMode, props, emptyMap(), () -> projectDir).generate();
+                }
+            }
         } catch (IOException ioe) {
-            throw new IllegalStateException(ioe);
+            throw new UncheckedIOException(ioe);
         }
     }
 
@@ -170,7 +176,7 @@ public final class EngineFacade {
     @SuppressWarnings("unchecked")
     private static <T> Optional<T> invoke(Object object, String methodName) {
         try {
-            Method method =  object.getClass().getMethod(methodName);
+            Method method = object.getClass().getMethod(methodName);
             return Optional.ofNullable((T) method.invoke(object));
         } catch (NoSuchMethodException ex) {
             return Optional.empty();
