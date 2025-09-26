@@ -1,8 +1,4 @@
 {
-    "expressions": {
-    },
-    "methods": {
-    },
     "children": [
         {
             "kind": "validations",

@@ -16,7 +16,6 @@
 
 package io.helidon.build.archetype.engine.v2;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
@@ -195,13 +194,13 @@ public class ArchetypeEngineV2 {
         }
 
         /**
-         * Set the archetype file system.
+         * Set the current working directory.
          *
-         * @param fileSystem archetype file system
+         * @param cwd cwd
          * @return this builder
          */
-        public Builder fileSystem(FileSystem fileSystem) {
-            this.cwd = fileSystem.getPath("/");
+        public Builder cwd(Path cwd) {
+            this.cwd = cwd;
             return this;
         }
 

@@ -77,6 +77,77 @@ import static java.util.Objects.requireNonNull;
 public class ScriptCompiler {
 
     /**
+     * Compiler validation exception.
+     */
+    public static class ValidationException extends RuntimeException {
+        private final List<String> errors;
+
+        ValidationException(List<String> errors) {
+            this.errors = errors;
+        }
+
+        /**
+         * Get the errors.
+         *
+         * @return errors
+         */
+        public List<String> errors() {
+            return errors;
+        }
+
+        @Override
+        public String getMessage() {
+            return System.lineSeparator() + String.join(System.lineSeparator(), errors);
+        }
+    }
+
+    /**
+     * Compiler image.
+     */
+    public static final class Image {
+        private final Node node = Nodes.script();
+        private final Map<String, byte[]> blobs = new HashMap<>();
+
+        private Image() {
+        }
+
+        /**
+         * Get the node.
+         *
+         * @return Node
+         */
+        public Node node() {
+            return node;
+        }
+
+        /**
+         * Write the image.
+         *
+         * @param outputDir output directory
+         */
+        public void write(Path outputDir) {
+            try {
+                // write entrypoint
+                ensureDirectory(outputDir);
+                Path entrypoint = outputDir.resolve("main.xml");
+                try (XMLScriptWriter writer = new XMLScriptWriter(Files.newBufferedWriter(entrypoint), true)) {
+                    writer.writeScript(node);
+                }
+
+                // write blobs
+                if (!blobs.isEmpty()) {
+                    Path blobsDir = ensureDirectory(outputDir.resolve("blobs"));
+                    for (Entry<String, byte[]> entry : blobs.entrySet()) {
+                        Files.write(blobsDir.resolve(entry.getKey()), entry.getValue());
+                    }
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+    }
+
+    /**
      * Compiler option.
      */
     public interface Option {
@@ -130,7 +201,7 @@ public class ScriptCompiler {
     static final String OPTION_VALUE_ALREADY_DECLARED = "Option value is already declared";
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final Map<Node, Scope> scopes = new HashMap<>();
+    private final Map<Node, String> scopes = new HashMap<>();
     private final Map<Node, Map<String, Value<?>>> paths = new HashMap<>();
     private final Map<String, Set<Node>> declaredValues = new HashMap<>();
     private final Map<Node, Expression> expressions = new HashMap<>();
@@ -156,22 +227,10 @@ public class ScriptCompiler {
     /**
      * Compile the given script.
      *
-     * @param outputDir output directory
-     * @param opts      options
+     * @param options options
      * @return {@code true} if successful, {@code false} otherwise
      */
-    public boolean compile(Path outputDir, Option... opts) {
-        return compile(outputDir, List.of(opts));
-    }
-
-    /**
-     * Compile the given script.
-     *
-     * @param outputDir output directory
-     * @param options   options
-     * @return {@code true} if successful, {@code false} otherwise
-     */
-    public boolean compile(Path outputDir, List<Option> options) {
+    public Image compile(List<Option> options) {
         this.options = options;
         init();
 
@@ -187,36 +246,14 @@ public class ScriptCompiler {
 
         // exit on error
         if (!errors.isEmpty() && !options.contains(Options.IGNORE_ERRORS)) {
-            return false;
+            throw new ValidationException(Lists.drain(errors));
         }
 
-        // exit if validate only
-        if (options.contains(Options.VALIDATE_ONLY)) {
-            return true;
+        Image image = new Image();
+        if (!options.contains(Options.VALIDATE_ONLY)) {
+            compile(image);
         }
-
-        // compile
-        try {
-            Image image = compile0();
-
-            // write entrypoint
-            ensureDirectory(outputDir);
-            Path entrypoint = outputDir.resolve("main.xml");
-            try (XMLScriptWriter writer = new XMLScriptWriter(Files.newBufferedWriter(entrypoint), true)) {
-                writer.writeScript(image.node);
-            }
-
-            // write blobs
-            if (!image.blobs.isEmpty()) {
-                Path blobsDir = ensureDirectory(outputDir.resolve("blobs"));
-                for (Entry<String, byte[]> entry : image.blobs.entrySet()) {
-                    Files.write(blobsDir.resolve(entry.getKey()), entry.getValue());
-                }
-            }
-            return true;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        return image;
     }
 
     /**
@@ -258,13 +295,16 @@ public class ScriptCompiler {
         }
     }
 
-    private Image compile0() {
-        Image image = new Image();
-        sourceNode.visit(new InputVisitor(image)); // render inputs
-        sourceNode.visit(new OutputVisitor(image)); // render outputs
-        image.node.visit(new StubsVisitor(image)); // render stubs
+    private void compile(Image image) {
+        Map<Node, Node> mirrors = new HashMap<>();
+        mirrors.put(sourceNode, image.node);
+        mirrors.put(image.node, sourceNode);
+        sourceNode.visit(new InputVisitor(image, mirrors)); // render inputs
+        if (!options.contains(Options.NO_OUTPUT)) {
+            sourceNode.visit(new OutputVisitor(image)); // render outputs
+        }
+        image.node.visit(new StubsVisitor(mirrors)); // render stubs
         image.node.visit(new DedupVisitor()); // de-dup steps
-        return image;
     }
 
     private void validate() {
@@ -279,7 +319,7 @@ public class ScriptCompiler {
     private void validatePresets() {
         Map<String, List<Node>> inputs = new HashMap<>();
         for (Node node : sourceNode.traverse(Kind::isInput)) {
-            inputs.computeIfAbsent(scope(node).key(), k -> new ArrayList<>()).add(node);
+            inputs.computeIfAbsent(scopeId(node), k -> new ArrayList<>()).add(node);
         }
         for (Node node : sourceNode.traverse(Kind::isPreset)) {
             String path = node.attribute("path").getString();
@@ -310,20 +350,19 @@ public class ScriptCompiler {
     private void validateInputTypes() {
         Map<String, Kind> kinds = new HashMap<>();
         for (Node node : sourceNode.traverse(Kind::isInput)) {
-            Scope scope = scope(node);
-            Kind expected = kinds.computeIfAbsent(scope.key(), k -> node.kind());
+            String scopeId = scopeId(node);
+            Kind expected = kinds.computeIfAbsent(scopeId, k -> node.kind());
             if (expected != node.kind()) {
                 errors.add(String.format("%s %s: '%s'",
                         node.location(),
                         INPUT_TYPE_MISMATCH,
-                        scope.key()));
+                        scopeId));
             }
         }
     }
 
     private void validateExpressions() {
         for (Node node : sourceNode.traverse(Kind.CONDITION::equals)) {
-            Scope scope = scope(node);
             Expression expr = node.expression();
 
             // check operators compatibility
@@ -349,6 +388,7 @@ public class ScriptCompiler {
             }
 
             boolean resolved = true;
+            Scope scope = scope(node);
             Expression blockExpr = expression(node.parent());
             Map<String, Expression> refMap = refs.getOrDefault(node, Map.of());
             for (String variable : expr.variables()) {
@@ -491,12 +531,18 @@ public class ScriptCompiler {
         }
     }
 
-    private Scope scope(Node node) {
-        Scope scope = scopes.get(node);
-        if (scope == null) {
-            throw new IllegalStateException("Scope not found: " + node);
+    private String scopeId(Node node) {
+        for (Node n = node; n != null; n = n.parent()) {
+            String scopeId = scopes.get(n);
+            if (scopeId != null) {
+                return scopeId;
+            }
         }
-        return scope;
+        return "";
+    }
+
+    private Scope scope(Node node) {
+        return ctx.scope().get("~" + scopeId(node));
     }
 
     private Value<?> declaredValue(Node node, String key) {
@@ -554,12 +600,12 @@ public class ScriptCompiler {
         for (Node n = node; n != null; n = n.parent()) {
             switch (n.kind()) {
                 case INPUT_BOOLEAN:
-                    values.put(scope(n).key(), Value.TRUE);
+                    values.put(scopeId(n), Value.TRUE);
                     break;
                 case INPUT_OPTION:
                     Node input = n.ancestor(Kind::isInput).orElseThrow();
                     if (input.kind() == Kind.INPUT_ENUM) {
-                        values.put(scope(input).key(), Value.of(n.value().getString()));
+                        values.put(scopeId(input), Value.of(n.value().getString()));
                     }
                     break;
                 default:
@@ -568,8 +614,17 @@ public class ScriptCompiler {
         return values;
     }
 
+    private Expression normalize(Expression expr, Scope scope) {
+        return expr.map(t -> {
+            if (t.isVariable()) {
+                return Token.of(scope.key(t.variable()));
+            }
+            return t;
+        }).reduce();
+    }
+
     private Expression expression(Node node) {
-        return expressions.computeIfAbsent(node, k -> expression(k, n -> scope(n).key()));
+        return expressions.computeIfAbsent(node, k -> expression(k, this::scopeId));
     }
 
     private Expression expression(Node node, Function<Node, String> key) {
@@ -716,14 +771,14 @@ public class ScriptCompiler {
             switch (node.kind()) {
                 case SOURCE:
                 case EXEC:
-                    scopes.put(node, scope);
+                    scopes.put(node, scope.key());
                     if (node.attribute("url").isPresent()) {
                         // skip url invocation
                         return false;
                     }
                     break;
                 case CONDITION:
-                    scopes.put(node, scope);
+                    scopes.put(node, scope.key());
                     Expression expr = inline(node, node.expression());
                     if (expr != Expression.FALSE) {
                         node.expression(expr);
@@ -739,7 +794,7 @@ public class ScriptCompiler {
                 case INPUT_LIST:
                 case INPUT_ENUM:
                     scope = ctx.pushScope(s -> s.getOrCreate(node));
-                    scopes.put(node, scope);
+                    scopes.put(node, scope.key());
                     refTypes.putIfAbsent(scope.key(), node.kind().valueType());
                     currentRefs.compute(scope.key(), (k, v) -> expression(node.parent()).or(v).reduce());
                     if (inline(node, expression(node)) == Expression.FALSE) {
@@ -747,7 +802,7 @@ public class ScriptCompiler {
                     }
                     break;
                 case INPUT_OPTION:
-                    scopes.put(node, scope);
+                    scopes.put(node, scope.key());
                     break;
                 case VARIABLE_TEXT:
                 case VARIABLE_ENUM:
@@ -758,7 +813,7 @@ public class ScriptCompiler {
                 case PRESET_BOOLEAN:
                 case PRESET_LIST:
                     scope = scope.getOrCreate("~" + Context.Key.normalize(node.attribute("path").getString()));
-                    scopes.put(node, scope);
+                    scopes.put(node, scope.key());
                     declaredValues.computeIfAbsent(scope.key(), k -> new LinkedHashSet<>()).add(node);
                     refTypes.putIfAbsent(scope.key(), node.kind().valueType());
                     currentRefs.compute(scope.key(), (k, v) -> expression(node.parent()).or(v).reduce());
@@ -832,32 +887,14 @@ public class ScriptCompiler {
         }
     }
 
-    private class Image {
-        private final Node node = Nodes.script();
-        private final Map<String, byte[]> blobs = new HashMap<>();
-        private final Map<Node, Node> mirrors = new HashMap<>();
-
-        Image() {
-            mirrors.put(sourceNode, node);
-            mirrors.put(node, sourceNode);
-        }
-
-        Node mirror(Node node) {
-            Node mirror = mirrors.get(node);
-            if (mirror != null) {
-                return mirror;
-            } else {
-                throw new IllegalStateException("Mirror not found: " + node);
-            }
-        }
-    }
-
     private class InputVisitor implements Node.Visitor {
         private final Deque<Node> stack = new ArrayDeque<>();
+        private final Map<Node, Node> mirrors;
         private final Image image;
 
-        InputVisitor(Image image) {
+        InputVisitor(Image image, Map<Node, Node> mirrors) {
             this.image = image;
+            this.mirrors = mirrors;
             this.stack.push(image.node);
         }
 
@@ -871,7 +908,7 @@ public class ScriptCompiler {
                     // use ~ to be parented at the root context node
                     // to maintain scope.key == scope.internalKey
                     Node preset = process(node, (b, n) -> Nodes.ensureLast(b, Kind.PRESETS).append(n));
-                    preset.attribute("path", "~" + scope(node).key());
+                    preset.attribute("path", "~" + scopeId(node));
                     stack.push(preset);
                     break;
                 case VARIABLE_BOOLEAN:
@@ -884,7 +921,7 @@ public class ScriptCompiler {
                         // use ~ to be parented at the root context node
                         // to maintain scope.key == scope.internalKey
                         Node variable = process(node, (b, n) -> Nodes.ensureLast(b, Kind.VARIABLES).append(n));
-                        variable.attribute("path", "~" + scope(node).key());
+                        variable.attribute("path", "~" + scopeId(node));
                         stack.push(variable);
                     }
                     break;
@@ -906,7 +943,7 @@ public class ScriptCompiler {
                     Node block = node.ancestor(Kind::isBlock).orElseThrow();
                     if (block.kind() == Kind.STEP || discrete) {
                         Node step = node.ancestor(Kind.STEP::equals).orElseThrow();
-                        Node stepCopy = image.mirrors.get(step);
+                        Node stepCopy = mirrors.get(step);
                         if (stepCopy == null) {
                             if (discrete) {
                                 if (image.node != stack.peek()) {
@@ -954,7 +991,7 @@ public class ScriptCompiler {
                     Map<String, Set<Node>> refs = new LinkedHashMap<>();
                     for (Node step : steps) {
                         for (Node input : step.traverse(Kind::isInput)) {
-                            refs.computeIfAbsent(scope(image.mirror(input)).key(), k -> new LinkedHashSet<>()).add(step);
+                            refs.computeIfAbsent(scopeId(mirror(input)), k -> new LinkedHashSet<>()).add(step);
                         }
                     }
 
@@ -964,7 +1001,7 @@ public class ScriptCompiler {
 
                     // sort the groups using the highest depth first index in the source tree
                     List<List<Node>> sortedGroups = Lists.sorted(groups,
-                            Comparator.comparingInt(g -> Lists.max(g, n -> image.mirror(n.unwrap()).id())));
+                            Comparator.comparingInt(g -> Lists.max(g, n -> mirror(n.unwrap()).id())));
 
                     // flatten the groups
                     List<Node> sortedSteps = Lists.flatMap(sortedGroups);
@@ -977,7 +1014,7 @@ public class ScriptCompiler {
                     }
                 }
             } else {
-                Node copy = image.mirrors.get(node);
+                Node copy = mirrors.get(node);
                 if (copy != null) {
                     while (!stack.isEmpty()) {
                         Node n = stack.pop();
@@ -991,18 +1028,29 @@ public class ScriptCompiler {
 
         Node process(Node node, BiConsumer<Node, Node> appender) {
             Node blockCopy = stack.getFirst();
-            Node block = image.mirrors.get(blockCopy);
+            Node block = mirrors.get(blockCopy);
+
+            Scope scope = scope(block);
 
             // "relativize" the expression within the block
-            Expression expr = expression(block).relativize(expression(node.parent()));
+            Expression expr = normalize(expression(block).relativize(expression(node.parent())), scope);
 
             // create copy
             Node copy = node.copy();
             appender.accept(blockCopy, copy.wrap(expr));
 
-            image.mirrors.put(node, copy);
-            image.mirrors.put(copy, node);
+            mirrors.put(node, copy);
+            mirrors.put(copy, node);
             return copy;
+        }
+
+        Node mirror(Node node) {
+            Node mirror = mirrors.get(node);
+            if (mirror != null) {
+                return mirror;
+            } else {
+                throw new IllegalStateException("Mirror not found: " + node);
+            }
         }
     }
 
@@ -1029,7 +1077,7 @@ public class ScriptCompiler {
                     fileOps.computeIfAbsent(node.attribute("id").getString(), k -> new HashMap<>())
                             .compute(ops, (k, v) -> {
                                 Expression expr = v != null ? v : Expression.FALSE;
-                                return expr.or(expression(node));
+                                return expr.or(normalize(expression(node), scope(node)));
                             });
                     break;
                 case FILE:
@@ -1089,7 +1137,7 @@ public class ScriptCompiler {
             String checksum = checksum(path);
             image.blobs.putIfAbsent(checksum, readAllBytes(path));
             List<FileOp> fileOps = List.of(new FileOp(Pattern.quote(checksum), target));
-            return new FileObject(checksum, fileOps, expression(node));
+            return new FileObject(checksum, fileOps, normalize(expression(node), scope(node)));
         }
 
         Set<FileObject> resolveFiles(Node node) {
@@ -1101,6 +1149,8 @@ public class ScriptCompiler {
 
             Map<String, Expression> includes = new HashMap<>();
             Map<String, Expression> excludes = new HashMap<>();
+
+            Scope scope = scope(node);
             for (Node n : node.traverse()) {
                 switch (n.kind()) {
                     case INCLUDE:
@@ -1109,7 +1159,7 @@ public class ScriptCompiler {
                         map.compute(n.value().getString(), (k, v) -> {
                             Expression expr = v == null ? Expression.TRUE : v;
                             if (n.parent().kind() == Kind.CONDITION) {
-                                expr = expr.and(n.parent().expression());
+                                expr = expr.and(normalize(n.parent().expression(), scope));
                             }
                             return expr;
                         });
@@ -1130,7 +1180,7 @@ public class ScriptCompiler {
                     filterExpr = filterExpr.and(v.negate());
                 }
 
-                Expression blobExpr = expression(node).and(filterExpr).reduce();
+                Expression blobExpr = normalize(expression(node), scope).and(filterExpr).reduce();
                 if (includes.isEmpty() || blobExpr != Expression.FALSE) {
                     String source = file.asString(false);
                     Path path = directory.resolve(source);
@@ -1235,10 +1285,15 @@ public class ScriptCompiler {
                     if (basedir == null) {
                         throw new IllegalStateException("Unresolved cwd");
                     }
-                    Expression expr = expression(node);
+                    Scope scope = scope(node);
+                    Expression expr = normalize(expression(node), scope).reduce();
                     if (expr != Expression.FALSE) {
                         Node copy = node.deepCopy();
                         for (Node n : copy.traverse(Kind.MODEL_VALUE::equals)) {
+                            Node p = n.parent();
+                            if (p.kind() == Kind.CONDITION) {
+                                p.expression(normalize(p.expression(), scope));
+                            }
                             String value = n.value().asString().orElse("");
                             if (value.matches("^\\s+.*") || value.matches(".*\\s+$") || value.contains("\n")) {
                                 // move text model with leading, trailing whitespaces or newlines to blobs
@@ -1279,10 +1334,10 @@ public class ScriptCompiler {
     private class StubsVisitor implements Node.Visitor {
         private final Map<String, Expression> currentRefs = new HashMap<>();
         private final Map<Node, Map<String, Expression>> refs = new LinkedHashMap<>();
-        private final Image image;
+        private final Map<Node, Node> mirrors;
 
-        StubsVisitor(Image image) {
-            this.image = image;
+        StubsVisitor(Map<Node, Node> mirrors) {
+            this.mirrors = mirrors;
         }
 
         @Override
@@ -1301,11 +1356,11 @@ public class ScriptCompiler {
                 case INPUT_TEXT:
                 case INPUT_LIST:
                     // NOTE: should substitute truthy expressions (E.g. ${flavor} == 'se' || ${flavor} == 'mp')
-                    Node mirror = image.mirror(node);
+                    Node mirror = mirror(node);
                     Scope scope = scope(mirror);
-                    Expression expr0 = expression(node.parent(), n -> scope(image.mirror(n)).key());
+                    Expression expr0 = expression(node.parent(), n -> scopeId(mirror(n)));
                     Expression expr = expr0.inline(s -> declaredValue(mirror, scope.get(s).key()));
-                    currentRefs.compute(scope(mirror).key(), (k, v) -> expr.or(v).reduce());
+                    currentRefs.compute(scopeId(mirror), (k, v) -> expr.or(v).reduce());
                     break;
                 case CONDITION:
                     refs.put(node, Map.copyOf(currentRefs));
@@ -1393,8 +1448,8 @@ public class ScriptCompiler {
 
             List<Node> nodes = new ArrayList<>();
             Node block = node.ancestor(Kind::isBlock).orElseThrow();
-            Scope scope = scopes.getOrDefault(image.mirror(block), ctx.scope());
-            Expression blockExpr = expression(block, n -> scope(image.mirror(n)).key());
+            Scope scope = ctx.scope().get("~" + scopes.getOrDefault(mirror(block), ""));
+            Expression blockExpr = expression(block, n -> scopeId(mirror(n)));
             for (String ref : variables) {
 
                 // normalize the ref
@@ -1415,6 +1470,15 @@ public class ScriptCompiler {
                 nodes.add(Nodes.variable(type, "~" + key).wrap(stubExpr));
             }
             return nodes;
+        }
+
+        Node mirror(Node node) {
+            Node mirror = mirrors.get(node);
+            if (mirror != null) {
+                return mirror;
+            } else {
+                throw new IllegalStateException("Mirror not found: " + node);
+            }
         }
     }
 
@@ -1491,13 +1555,13 @@ public class ScriptCompiler {
         class Table {
             private final List<Column> columns = new ArrayList<>();
             private final Set<BitSet> rows = new LinkedHashSet<>();
-            private final Node node;
             private final String id;
+            private final Node node;
             private final Expression expr;
 
             Table(Node node) {
+                this.id = scopeId(node);
                 this.node = node;
-                this.id = scope(node).key();
                 this.expr = expression(node.parent());
             }
 
@@ -1722,7 +1786,7 @@ public class ScriptCompiler {
 
         boolean eval(Node node, Expression expr, Map<String, String> variation) {
             try {
-                Scope scope = scopes.getOrDefault(node, ctx.scope());
+                Scope scope = ctx.scope().get("~" + scopes.getOrDefault(node, ""));
                 return expr.eval(s -> {
                     String v = variation.get(scope.key(s));
                     if (v != null) {

@@ -16,6 +16,7 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -441,9 +442,11 @@ class ArchetypeEngineV2Test {
         Path testOutputDir = targetDir.resolve("engine-ut");
         Path zipFile = unique(testOutputDir, "archetype", ".zip");
         zip(zipFile, sourceDir);
-        FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader());
-        Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, outputPropsFile, externalValues, externalDefaults);
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader())) {
+            Path root = fs.getRootDirectories().iterator().next();
+            Path outputDir = unique(testOutputDir, name);
+            return e2e(root, outputDir, outputPropsFile, externalValues, externalDefaults);
+        }
     }
 
     Path e2eDir(String name, Map<String, String> externalValues) {
@@ -454,28 +457,33 @@ class ArchetypeEngineV2Test {
         Path targetDir = targetDir(this.getClass());
         Path sourceDir = targetDir.resolve("test-classes/e2e");
         Path testOutputDir = targetDir.resolve("engine-ut");
-        FileSystem fs = VirtualFileSystem.create(sourceDir);
-        Path outputDir = unique(testOutputDir, name);
-        return e2e(fs, outputDir, null, externalValues, externalDefaults);
+        try (FileSystem fs = VirtualFileSystem.create(sourceDir)) {
+            Path root = fs.getRootDirectories().iterator().next();
+            Path outputDir = unique(testOutputDir, name);
+            return e2e(root, outputDir, null, externalValues, externalDefaults);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    Path e2e(FileSystem archetype,
-             Path directory,
+    Path e2e(Path cwd,
+             Path outputDir,
              String outputPropsFile,
              Map<String, String> externalValues,
              Map<String, String> externalDefaults) {
 
         ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
-                .fileSystem(archetype)
+                .cwd(cwd)
                 .batch(true)
-                .output(c -> unique(directory, c.scope().get("artifactId").value().getString()))
+                .output(c -> unique(outputDir, c.scope().get("artifactId").value().getString()))
                 .externalDefaults(externalDefaults)
                 .externalValues(externalValues)
                 .outputPropsFile(outputPropsFile)
                 .build();
-        Path outputDir = engine.generate();
-        assertThat(Files.exists(outputDir), is(true));
-        return outputDir;
+
+        Path projectDir = engine.generate();
+        assertThat(Files.exists(projectDir), is(true));
+        return projectDir;
     }
 
     static String readFile(Path file) throws IOException {

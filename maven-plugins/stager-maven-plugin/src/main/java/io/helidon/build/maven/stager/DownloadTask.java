@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -79,7 +80,7 @@ final class DownloadTask extends StagingTask {
             throws IOException {
 
         try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx));
-             OutputStream fos = Files.newOutputStream(file)) {
+             OutputStream fos = Files.newOutputStream(file, StandardOpenOption.CREATE)) {
             int n;
             long startTime = System.currentTimeMillis();
             long progressTime = startTime;

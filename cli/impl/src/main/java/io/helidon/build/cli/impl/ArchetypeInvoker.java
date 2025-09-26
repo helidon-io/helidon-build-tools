@@ -45,7 +45,6 @@ import io.helidon.build.cli.common.ProjectConfig;
 import io.helidon.build.cli.impl.InitOptions.Flavor;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.RequirementFailure;
-import io.helidon.build.common.Requirements;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 
@@ -74,7 +73,6 @@ abstract class ArchetypeInvoker {
      * The first Helidon version that uses the archetype engine V2.
      */
     private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0-alpha");
-
 
     private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
 
@@ -276,7 +274,7 @@ abstract class ArchetypeInvoker {
          * Build the invoker instance.
          *
          * @return {@link V1Invoker} if the configured Helidon archetype version is associated with the V1 engine,
-         * otherwise {@link V2Invoker}
+         *         otherwise {@link V2Invoker}
          */
         ArchetypeInvoker build() {
             if (isHelidonV3()) {
@@ -307,7 +305,7 @@ abstract class ArchetypeInvoker {
 
             if (isInteractive()) {
                 // Select flavor interactively
-                String[] flavorOptions = new String[]{"SE", "MP"};
+                String[] flavorOptions = new String[] {"SE", "MP"};
                 int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
                 flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
                 initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
@@ -324,17 +322,17 @@ abstract class ArchetypeInvoker {
             if (isInteractive()) {
                 // Select archetype interactively
                 List<String> descriptions = archetypes.stream()
-                                                      .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
-                                                      .collect(Collectors.toList());
+                        .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
+                        .collect(Collectors.toList());
                 int archetypeIndex = prompt("Select archetype", descriptions, 0);
                 archetype = archetypes.get(archetypeIndex);
                 initOptions.archetypeName(archetype.name());
             } else {
                 // find the archetype that matches archetypeName
                 archetype = archetypes.stream()
-                                      .filter(a -> a.name().equals(initOptions().archetypeName()))
-                                      .findFirst()
-                                      .orElse(null);
+                        .filter(a -> a.name().equals(initOptions().archetypeName()))
+                        .findFirst()
+                        .orElse(null);
             }
 
             initOptions.applyConfig(userConfig(), EngineVersion.V1);
@@ -357,8 +355,8 @@ abstract class ArchetypeInvoker {
 
                 // Process input flow from template and updates properties
                 inputFlow.nodes().stream()
-                         .map(n -> FlowNodeControllers.create(n, initProperties))
-                         .forEach(FlowNodeController::execute);
+                        .map(n -> FlowNodeControllers.create(n, initProperties))
+                        .forEach(FlowNodeController::execute);
             }
 
             Path projectDir = projectDirSupplier().apply(initProperties.get("name"));
@@ -451,18 +449,20 @@ abstract class ArchetypeInvoker {
                 externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
             }
 
-            //noinspection ConstantConditions
-            ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
-                                                        .fileSystem(archetype())
-                                                        .batch(initOptions.batch())
-                                                        .externalValues(externalValues)
-                                                        .externalDefaults(externalDefaults)
-                                                        .onResolved(onResolved())
-                                                        .output(this::resolveProjectDir)
-                                                        .outputPropsFile(initOptions.outputPropsFileOption())
-                                                        .build();
-            try {
+            try (FileSystem fs = jarFileSystem()) {
+                Path root = fs.getRootDirectories().iterator().next();
+                ArchetypeEngineV2 engine = ArchetypeEngineV2.builder()
+                        .cwd(root)
+                        .batch(initOptions.batch())
+                        .externalValues(externalValues)
+                        .externalDefaults(externalDefaults)
+                        .onResolved(onResolved())
+                        .output(this::resolveProjectDir)
+                        .outputPropsFile(initOptions.outputPropsFileOption())
+                        .build();
                 return engine.generate();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             } catch (InvocationException ie) {
                 Throwable cause = ie.getCause();
                 if (cause instanceof InputUnresolvedException) {
@@ -486,14 +486,13 @@ abstract class ArchetypeInvoker {
             return EngineVersion.V2;
         }
 
-        private FileSystem archetype() {
+        private FileSystem jarFileSystem() {
             String helidonVersion = initOptions().helidonVersion();
             try {
                 Path archetype = metadata().archetypeV2Of(helidonVersion);
                 return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
             } catch (Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
-                Requirements.failed(HELIDON_VERSION_NOT_FOUND, helidonVersion);
-                return null;
+                throw new RequirementFailure(HELIDON_VERSION_NOT_FOUND, helidonVersion);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }

@@ -15,10 +15,8 @@
  */
 package io.helidon.build.maven.archetype.postgenerate;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -38,40 +36,30 @@ final class ReflectedEngine {
      * Create a new engine.
      *
      * @param cl               class loader
-     * @param fileSystem       archetype file system
+     * @param cwd              cwd
      * @param isInteractive    {@code true} if interactive
      * @param externalValues   external values
      * @param externalDefaults external defaults
      * @param dirSupplier      directory supplier
      */
     ReflectedEngine(ClassLoader cl,
-                    FileSystem fileSystem,
+                    Path cwd,
                     boolean isInteractive,
                     Map<String, String> externalValues,
                     Map<String, String> externalDefaults,
                     Supplier<Path> dirSupplier) {
         try {
             Class<?> engineClass = cl.loadClass(ENGINE_FCN);
-            Class<?> engineBuilderClass = cl.loadClass(ENGINE_FCN_BUILDER);
-            Constructor<?> builderClassConstructor = engineBuilderClass.getDeclaredConstructor();
-            builderClassConstructor.setAccessible(true);
-            Object builder = builderClassConstructor.newInstance();
-            engineBuilderClass.getDeclaredMethod("output", Supplier.class)
-                    .invoke(builder, dirSupplier);
-            engineBuilderClass.getDeclaredMethod("externalDefaults", Map.class)
-                    .invoke(builder, externalDefaults);
-            engineBuilderClass.getDeclaredMethod("externalValues", Map.class)
-                    .invoke(builder, externalValues);
-            engineBuilderClass.getDeclaredMethod("batch", boolean.class)
-                    .invoke(builder, !isInteractive);
-            engineBuilderClass.getDeclaredMethod("fileSystem", FileSystem.class)
-                    .invoke(builder, fileSystem);
-            Constructor<?> constructor = engineClass.getDeclaredConstructor(engineBuilderClass);
-            constructor.setAccessible(true);
-            engineInstance = constructor.newInstance(builder);
+            Class<?> builderClass = cl.loadClass(ENGINE_FCN_BUILDER);
+            Object builder = engineClass.getDeclaredMethod("builder").invoke(null);
+            builderClass.getDeclaredMethod("output", Supplier.class).invoke(builder, dirSupplier);
+            builderClass.getDeclaredMethod("externalDefaults", Map.class).invoke(builder, externalDefaults);
+            builderClass.getDeclaredMethod("externalValues", Map.class).invoke(builder, externalValues);
+            builderClass.getDeclaredMethod("batch", boolean.class).invoke(builder, !isInteractive);
+            builderClass.getDeclaredMethod("cwd", Path.class).invoke(builder, cwd);
+            engineInstance = builderClass.getDeclaredMethod("build").invoke(builder);
             generateMethod = engineClass.getDeclaredMethod("generate");
-        } catch (InstantiationException
-                 | IllegalAccessException
+        } catch (IllegalAccessException
                  | NoSuchMethodException
                  | ClassNotFoundException ex) {
             throw new IllegalStateException(ex);

@@ -609,7 +609,6 @@
             }
         ]
     },
-    "methods": {},
     "children": [
         {
             "kind": "step",

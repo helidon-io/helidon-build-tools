@@ -22,7 +22,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import io.helidon.build.archetype.engine.v2.ScriptCompiler.ValidationException;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Strings;
@@ -229,12 +229,18 @@ class ScriptCompilerTest {
     }
 
     @Test
+    void testNormalizedExpressions() {
+        Path outputDir = compile("compiler/normalized-expr", "main.xml");
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/normalized-expr.xml")));
+    }
+
+    @Test
     void testOptionalInputWithoutDefault() {
         try {
             compile("compiler/validate", "optional-input-no-default.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(INPUT_OPTIONAL_NO_DEFAULT))));
         }
     }
@@ -244,8 +250,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "optional-step-required-input.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(STEP_DECLARED_OPTIONAL))));
         }
     }
@@ -255,8 +261,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "required-step-optional-input.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(STEP_NOT_DECLARED_OPTIONAL))));
         }
     }
@@ -266,8 +272,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "required-step-within-optional-step.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(STEP_DECLARED_OPTIONAL))));
         }
     }
@@ -277,8 +283,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "step-with-no-inputs.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(STEP_NO_INPUT))));
         }
     }
@@ -293,8 +299,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "unresolved-preset.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(PRESET_UNRESOLVED))));
         }
     }
@@ -304,8 +310,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "preset-type-mismatch.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_EVAL_ERROR),
                     containsString(PRESET_TYPE_MISMATCH))));
         }
@@ -316,8 +322,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-incompatible-operators.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_INCOMPATIBLE_OPERATOR),
                     containsString(EXPR_INCOMPATIBLE_OPERATOR),
                     containsString(EXPR_INCOMPATIBLE_OPERATOR))));
@@ -329,8 +335,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-unresolved-variable1.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_UNRESOLVED_VARIABLE))));
         }
     }
@@ -340,8 +346,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-unresolved-variable2.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_UNRESOLVED_VARIABLE))));
         }
     }
@@ -356,8 +362,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-unresolved-variable4.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_UNRESOLVED_VARIABLE),
                     containsString(EXPR_UNRESOLVED_VARIABLE))));
         }
@@ -368,8 +374,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-type-mismatch1.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_EVAL_ERROR))));
         }
     }
@@ -379,8 +385,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "expression-type-mismatch2.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(EXPR_EVAL_ERROR))));
         }
     }
@@ -390,8 +396,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "input-already-declared1.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(INPUT_ALREADY_DECLARED))));
         }
     }
@@ -401,8 +407,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "input-already-declared2.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(INPUT_ALREADY_DECLARED))));
         }
     }
@@ -412,8 +418,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "input-type-mismatch.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(INPUT_TYPE_MISMATCH))));
         }
     }
@@ -423,8 +429,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "input-not-in-step.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(INPUT_NOT_IN_STEP))));
         }
     }
@@ -434,8 +440,8 @@ class ScriptCompilerTest {
         try {
             compile("compiler/validate", "option-value-already-declared.xml", VALIDATE_ONLY);
             fail("An exception should have been thrown");
-        } catch (ValidationErrors ex) {
-            assertThat(ex.errors, contains(List.of(
+        } catch (ValidationException ex) {
+            assertThat(ex.errors(), contains(List.of(
                     containsString(OPTION_VALUE_ALREADY_DECLARED))));
         }
     }
@@ -571,9 +577,7 @@ class ScriptCompilerTest {
             Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
             ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
             Path outputDir = unique(targetDir.resolve("compiler-ut"), fileName(cwd));
-            if (!compiler.compile(outputDir, features)) {
-                throw new ValidationErrors(compiler.errors());
-            }
+            compiler.compile(List.of(features)).write(outputDir);
             return outputDir;
         } catch (IOException ex) {
             throw new UncheckedIOException(ex.getMessage(), ex);
@@ -639,18 +643,5 @@ class ScriptCompilerTest {
     static String normalizeXmlString(String xml) {
         String str = XML_COMMENT.matcher(xml).replaceAll("").trim();
         return XML_NAMESPACE.matcher(str).replaceAll("\n        $1");
-    }
-
-    static class ValidationErrors extends RuntimeException {
-        private final Collection<String> errors;
-
-        ValidationErrors(Collection<String> errors) {
-            this.errors = errors;
-        }
-
-        @Override
-        public String getMessage() {
-            return String.join(System.lineSeparator(), errors);
-        }
     }
 }

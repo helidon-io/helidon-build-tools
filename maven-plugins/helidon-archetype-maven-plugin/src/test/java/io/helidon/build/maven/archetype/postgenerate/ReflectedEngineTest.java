@@ -40,15 +40,20 @@ class ReflectedEngineTest {
     @Test
     void testGenerate() throws IOException {
         Path targetDir = targetDir(this.getClass());
-        Path sourceDir = targetDir.resolve("test-classes/simple");
-        Path outputDir = targetDir.resolve("reflected-engine-ut");
-        FileSystem fs = VirtualFileSystem.create(sourceDir);
-        Map<String, String> externalValues = Map.of("color", "red", "artifactId", "testGenerate");
-        ReflectedEngine engine = new ReflectedEngine(
-                this.getClass().getClassLoader(), fs, false,
-                externalValues, Map.of(), () -> unique(outputDir, "testGenerate"));
-        Path projectDir = engine.generate();
+        Path projectDir = generate(targetDir.resolve("test-classes/simple"), targetDir.resolve("reflected-engine-ut"));
         assertThat(Files.exists(projectDir.resolve("color.txt")), is(true));
         assertThat(normalizeNewLines(readString(projectDir.resolve("color.txt"))), is("red\n"));
+    }
+
+    static Path generate(Path sourceDir, Path outputDir) throws IOException {
+        try (FileSystem fs = VirtualFileSystem.create(sourceDir)) {
+            Path root = fs.getRootDirectories().iterator().next();
+            Map<String, String> externalValues = Map.of("color", "red", "artifactId", "testGenerate");
+            ReflectedEngine engine = new ReflectedEngine(
+                    ReflectedEngineTest.class.getClassLoader(), root, false,
+                    externalValues, Map.of(), () -> unique(outputDir, "testGenerate"));
+
+            return engine.generate();
+        }
     }
 }
