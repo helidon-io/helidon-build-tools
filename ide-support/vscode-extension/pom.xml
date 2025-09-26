@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools.ide-support</groupId>
         <artifactId>helidon-ide-support-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.23-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-vscode-extension</artifactId>
     <packaging>pom</packaging>
