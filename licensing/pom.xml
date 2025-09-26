@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-tools-project</artifactId>
-        <version>4.0.23-SNAPSHOT</version>
+        <version>4.0.23</version>
     </parent>
     <artifactId>helidon-build-licensing</artifactId>
     <name>Helidon Licensing Tools</name>
