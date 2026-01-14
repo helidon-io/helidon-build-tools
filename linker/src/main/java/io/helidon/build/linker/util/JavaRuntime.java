@@ -21,15 +21,18 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -44,7 +47,6 @@ import static io.helidon.build.common.FileUtils.WORKING_DIR;
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.findExecutableInPath;
 import static io.helidon.build.common.FileUtils.javaHome;
-import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.OSType.Linux;
@@ -58,7 +60,6 @@ public final class JavaRuntime implements ResourceContainer {
     private static final OSType OS = OSType.currentOS();
     private static final AtomicReference<Path> CURRENT_JAVA_HOME_DIR = new AtomicReference<>();
     private static final String JMODS_DIR = "jmods";
-    private static final String JMOD_SUFFIX = ".jmod";
     private static final String JAVA_BASE_JMOD = "java.base.jmod";
     private static final String JMOD_CLASSES_PREFIX = "classes/";
     private static final String JMOD_MODULE_INFO_PATH = JMOD_CLASSES_PREFIX + "module-info.class";
@@ -87,7 +88,7 @@ public final class JavaRuntime implements ResourceContainer {
     private final Runtime.Version version;
     private final boolean isJdk;
     private final Path jmodsDir;
-    private final Map<String, Jar> modules;
+    private final Map<String, ModuleReference> jdkModules;
 
     private static Path currentJavaHomeDir() {
         Path result = CURRENT_JAVA_HOME_DIR.get();
@@ -225,16 +226,13 @@ public final class JavaRuntime implements ResourceContainer {
         this.javaHome = requireDirectory(javaHome);
         this.jmodsDir = javaHome.resolve(JMODS_DIR);
         if (isJdk) {
-            final List<Path> jmodFiles = listFiles(jmodsDir, fileName -> fileName.endsWith(JMOD_SUFFIX));
             this.version = isCurrent() ? Runtime.version() : findVersion();
-            this.modules = jmodFiles.stream()
-                                    .filter(file -> !Constants.EXCLUDED_MODULES.contains(moduleNameOf(file)))
-                                    .collect(Collectors.toMap(JavaRuntime::moduleNameOf, jmod -> Jar.open(jmod, this.version)));
+            this.jdkModules = ModuleFinder.ofSystem().findAll().stream().collect(Collectors.toMap(t -> t.descriptor().name(), Function.identity()));
         } else if (version == null) {
             throw new IllegalArgumentException("Version required in a Java Runtime without 'jmods' dir: " + javaHome);
         } else {
             this.version = version;
-            this.modules = Map.of();
+            this.jdkModules = Map.of();
         }
         this.isJdk = isJdk;
     }
@@ -268,8 +266,17 @@ public final class JavaRuntime implements ResourceContainer {
 
     @Override
     public boolean containsResource(String resourcePath) {
-        final String path = resourcePath.endsWith(".class") ? JMOD_CLASSES_PREFIX + resourcePath : resourcePath;
-        return modules.values().stream().anyMatch(jar -> jar.containsResource(path));
+        return jdkModules.values().stream().anyMatch(ref -> moduleContainsResource(ref, resourcePath));
+    }
+
+    private boolean moduleContainsResource(ModuleReference ref, String resourcePath) {
+        try (ModuleReader reader = ref.open()) {
+            Optional<URI> resource = reader.find(resourcePath);
+            return resource.isPresent();
+        } catch (IOException ex) {
+            System.out.println("XXXXXX moduleContainResource " + ex);
+        }
+        return false;
     }
 
     /**
@@ -287,7 +294,7 @@ public final class JavaRuntime implements ResourceContainer {
      * @return The module names. Empty if this instance does not contain {@code .jmod} files.
      */
     public Set<String> moduleNames() {
-        return modules.keySet();
+        return jdkModules.keySet();
     }
 
     /**
@@ -297,8 +304,8 @@ public final class JavaRuntime implements ResourceContainer {
      * @return The jar.
      * @throws IllegalArgumentException If the jar cannot be found.
      */
-    public Jar jmod(String moduleName) {
-        final Jar result = modules.get(moduleName);
+    public ModuleDescriptor jmod(String moduleName) {
+        final ModuleDescriptor result = jdkModules.get(moduleName).descriptor();
         if (result == null) {
             throw new IllegalArgumentException("Cannot find .jmod file for module '" + moduleName + "' in " + path());
         }
@@ -411,10 +418,5 @@ public final class JavaRuntime implements ResourceContainer {
                             .anyMatch(path -> path.getFileName().toString().startsWith(HELIDON_JAR_NAME_PREFIX));
         }
         return false;
-    }
-
-    private static String moduleNameOf(Path jmodFile) {
-        final String fileName = fileName(jmodFile);
-        return fileName.substring(0, fileName.length() - JMOD_SUFFIX.length());
     }
 }
