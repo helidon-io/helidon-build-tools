@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.spi.ToolProvider;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.logging.Log;
@@ -62,7 +63,6 @@ public final class Linker {
     private Application application;
     private String exitOnStarted;
     private Set<String> javaDependencies;
-    private JavaRuntime jri;
     private Path jriMainJar;
     private long cdsArchiveSize;
     private StartScript startScript;
@@ -174,10 +174,6 @@ public final class Linker {
 
     private void buildJlinkArguments() {
 
-        // On JDK 9, jlink insists on a --module-path so give it the jmods directory
-        jlinkArgs.add("--module-path");
-        jlinkArgs.add(config.jdk().jmodsDir().normalize().toString());
-
         // Tell jlink which jdk modules to include
         jlinkArgs.add("--add-modules");
         jlinkArgs.add(String.join(",", javaDependencies));
@@ -211,7 +207,6 @@ public final class Linker {
         if (result != 0) {
             throw new Error("JRI creation failed.");
         }
-        jri = JavaRuntime.jri(config.jriDirectory(), config.jdk().version());
     }
 
     private void installJars() {
@@ -219,14 +214,14 @@ public final class Linker {
         final Path appDir = jriDirectory().resolve(Application.APP_DIR);
         final String message = stripDebug ? ", stripping debug information from all classes" : "";
         Log.info("Installing %d application jars in %s%s", application.size(), appDir, message);
-        this.jriMainJar = application.install(jri, stripDebug);
+        this.jriMainJar = application.install(config.jriDirectory(), stripDebug);
     }
 
     private void installCdsArchive() {
         if (config.cds()) {
             try {
                 final ClassDataSharing cds = ClassDataSharing.builder()
-                                                             .jri(jri.path())
+                                                             .jri(config.jriDirectory())
                                                              .applicationJar(jriMainJar)
                                                              .jvmOptions(config.defaultJvmOptions())
                                                              .args((config.defaultArgs()))
@@ -238,7 +233,7 @@ public final class Linker {
 
                 // Get the archive size
 
-                cdsArchiveSize = sizeOf(jri.path().resolve(application.archivePath()));
+                cdsArchiveSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
 
                 // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
                 // just count one and subtract since some classes in the class list may not have been
@@ -353,9 +348,9 @@ public final class Linker {
         try {
             final long app = application.diskSize();
             final long jdk = config.jdk().diskSize();
-            final long jri = this.jri.diskSize();
+            final long jri = FileUtils.sizeOf(config.jriDirectory());
             final long cds = cdsArchiveSize;
-            final long jriApp = config.stripDebug() ? application.installedSize(this.jri) : app;
+            final long jriApp = config.stripDebug() ? application.installedSize(config.jriDirectory()) : app;
             final long jriOnly = jri - cds - jriApp;
             final long initial = app + jdk;
             final float reduction = (1F - (float) jri / (float) initial) * 100F;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class ApplicationTestIT {
     @ConfigurationParameterSource("basedir")
     void testHelidonVersion(String basedir) {
         Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
-        Application app = Application.create(JavaRuntime.current(true), mainJar);
+        Application app = Application.create(JavaRuntime.current(), mainJar);
         String version = app.helidonVersion();
         assertThat(version, is(notNullValue()));
         assertThat(version, is(not("0.0.0")));
