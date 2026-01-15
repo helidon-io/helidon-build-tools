@@ -124,7 +124,8 @@ public final class JavaRuntime implements ResourceContainer {
     private JavaRuntime(Path javaHome) {
         this.javaHome = requireDirectory(javaHome);
         this.version = Runtime.version();
-        this.jdkModules = ModuleFinder.ofSystem().findAll().stream().collect(Collectors.toMap(t -> t.descriptor().name(), Function.identity()));
+        this.jdkModules = ModuleFinder.ofSystem().findAll().stream()
+                .collect(Collectors.toMap(t -> t.descriptor().name(), Function.identity()));
     }
 
     /**
