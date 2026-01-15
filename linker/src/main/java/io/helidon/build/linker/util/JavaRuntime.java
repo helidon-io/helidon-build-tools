@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.OSType;
-import io.helidon.build.linker.Jar;
 import io.helidon.build.linker.ResourceContainer;
 
 import static io.helidon.build.common.FileUtils.WORKING_DIR;
@@ -181,23 +180,23 @@ public final class JavaRuntime implements ResourceContainer {
     /**
      * Returns the module names.
      *
-     * @return The module names. Empty if this instance does not contain {@code .jmod} files.
+     * @return The module names.
      */
     public Set<String> moduleNames() {
         return jdkModules.keySet();
     }
 
     /**
-     * Returns the {@code .jmod} file for the given name as a {@link Jar}.
+     * Returns the {@link java.lang.module.ModuleDescriptor} for the given name
      *
      * @param moduleName The module name.
-     * @return The jar.
+     * @return The ModuleDescriptor
      * @throws IllegalArgumentException If the jar cannot be found.
      */
     public ModuleDescriptor jmod(String moduleName) {
         final ModuleDescriptor result = jdkModules.get(moduleName).descriptor();
         if (result == null) {
-            throw new IllegalArgumentException("Cannot find .jmod file for module '" + moduleName + "' in " + path());
+            throw new IllegalArgumentException("Cannot find ModuleDescriptor for module '" + moduleName + "' in " + path());
         }
         return result;
     }
