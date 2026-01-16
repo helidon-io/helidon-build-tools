@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ class LinkerTestIT {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, false);
         assertScript(jri);
-        assertHelidonJri(jri);
     }
 
     @Tag("se")
@@ -119,7 +118,6 @@ class LinkerTestIT {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
         assertScript(jri);
-        assertHelidonJri(jri);
     }
 
     @Tag("mp")
@@ -141,7 +139,6 @@ class LinkerTestIT {
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
         assertScript(jri);
-        assertHelidonJri(jri);
     }
 
     @Tag("mp")
@@ -162,7 +159,6 @@ class LinkerTestIT {
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertScript(jri);
-        assertHelidonJri(jri);
     }
 
     private static void assertApplication(Path jri, String mainJarName) throws IOException {
@@ -180,17 +176,6 @@ class LinkerTestIT {
         Path binDir = requireDirectory(jri.resolve("bin"));
         Path scriptFile = requireFile(binDir.resolve(Constants.OS.withScriptExtension("start")));
         assertExecutable(scriptFile);
-    }
-
-    private static void assertHelidonJri(Path jri) {
-        try {
-            JavaRuntime.assertJdk(jri);
-            fail("should have failed");
-        } catch (Exception e) {
-            String message = e.getMessage();
-            assertThat(message, containsString("required *.jmod files (e.g. jmods/java.base.jmod) are missing"));
-            assertThat(message, containsString("custom Helidon JRI"));
-        }
     }
 
     private static void assertCdsArchive(Path jri, boolean archiveExists) {

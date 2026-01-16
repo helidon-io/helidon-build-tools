@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -505,7 +505,7 @@ public final class Configuration {
             if (mainJar == null) {
                 throw new IllegalArgumentException("applicationJar required");
             }
-            jdk = JavaRuntime.current(true);
+            jdk = JavaRuntime.current();
             if (jdk.version().feature() < Constants.MINIMUM_JDK_VERSION) {
                 throw new IllegalArgumentException(jdk + " is an unsupported version,"
                                                    + Constants.MINIMUM_JDK_VERSION + " or higher required");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,8 +108,8 @@ public final class JavaDependencies {
     private void addDependency(String moduleName, Set<String> result) {
         if (!result.contains(moduleName)) {
             result.add(moduleName);
-            final Jar jar = javaHome.jmod(moduleName);
-            jar.moduleDescriptor().requires().forEach(r -> addDependency(r.name(), result));
+            final ModuleDescriptor moduleDescriptor = javaHome.jmod(moduleName);
+            moduleDescriptor.requires().forEach(r -> addDependency(r.name(), result));
         }
     }
 

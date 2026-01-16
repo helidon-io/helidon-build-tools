@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.linker.util.JavaRuntime;
@@ -88,17 +89,17 @@ public final class Application implements ResourceContainer {
     /**
      * Copy this application into the given Java Runtime Image.
      *
-     * @param jri The JRI in which to install this application.
+     * @param jriDirectory Path to the JRI in which to install this application.
      * @param stripDebug {@code true} if debug information should be stripped from classes.
      * @return The location of the installed application jar.
      */
-    public Path install(JavaRuntime jri, boolean stripDebug) {
+    public Path install(Path jriDirectory, boolean stripDebug) {
         final Path appRootDir = mainJar.path().getParent();
-        final Path appInstallDir = jri.ensureDirectory(APP_DIR);
+        final Path appInstallDir = FileUtils.ensureDirectory(jriDirectory.resolve(APP_DIR));
         final Path installedAppJar = mainJar.copyToDirectory(appInstallDir, isMicroprofile(), stripDebug);
         classPath.forEach(jar -> {
             final Path relativeDir = appRootDir.relativize(jar.path().getParent());
-            final Path installDir = jri.ensureDirectory(appInstallDir.resolve(relativeDir));
+            final Path installDir = FileUtils.ensureDirectory(appInstallDir.resolve(relativeDir));
             jar.copyToDirectory(installDir, isMicroprofile(), stripDebug);
         });
         return installedAppJar;
@@ -107,12 +108,12 @@ public final class Application implements ResourceContainer {
     /**
      * Returns the on disk size of the installed application.
      *
-     * @param jri The JRI in which the application is installed.
+     * @param jriDirectory Path to The JRI in which the application is installed.
      * @return The size, in bytes.
      * @throws UncheckedIOException If an error occurs.
      */
-    public long installedSize(JavaRuntime jri) {
-        return sizeOf(jri.path().resolve(APP_DIR));
+    public long installedSize(Path jriDirectory) {
+        return sizeOf(jriDirectory.resolve(APP_DIR));
     }
 
     /**
