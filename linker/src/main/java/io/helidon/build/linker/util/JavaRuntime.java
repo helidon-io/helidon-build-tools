@@ -187,7 +187,7 @@ public final class JavaRuntime implements ResourceContainer {
     }
 
     /**
-     * Returns the {@link java.lang.module.ModuleDescriptor} for the given name
+     * Returns the {@link java.lang.module.ModuleDescriptor} for the given name.
      *
      * @param moduleName The module name.
      * @return The ModuleDescriptor
