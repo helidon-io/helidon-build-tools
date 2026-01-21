@@ -317,9 +317,10 @@ public final class Jar implements ResourceContainer {
                 index = loadIndex();
                 if (index == null) {
                     if (isSigned) {
-                        Log.warn("Cannot add Jandex index to signed jar %s", name());
+                        Log.warn("  Cannot add Jandex index to signed jar %s", this);
                     } else {
                         indexer = new Indexer();
+                        Log.info("  Creating missing index for CDI beans archive %s", this);
                     }
                 }
             }
@@ -338,7 +339,7 @@ public final class Jar implements ResourceContainer {
                                 try {
                                     indexer.index(jar.getInputStream(entry));
                                 } catch (IOException e) {
-                                    Log.warn("\tCould not index class %s in %s: %s", entryName, this, e.getMessage());
+                                    Log.warn("  Could not index class %s in %s: %s", entryName, this, e.getMessage());
                                 }
                             }
                             if (isClassFile && stripDebug && !isSigned) {
@@ -416,17 +417,17 @@ public final class Jar implements ResourceContainer {
     private byte[] loadIndex() {
         JarEntry entry = jar.getJarEntry("META-INF/jandex.idx");
         if (entry != null) {
-            Log.info("\tChecking index in CDI beans archive %s", this);
+            Log.info("  Checking index in CDI beans archive %s", this);
             try (InputStream in = jar.getInputStream(entry)) {
                 byte[] bytes = in.readAllBytes();
                 new IndexReader(new ByteArrayInputStream(bytes)).read();
                 return bytes;
             } catch (IllegalArgumentException e) {
-                Log.warn("\tJandex index in %s is not valid, will re-create: %s", path, e.getMessage());
+                Log.warn("  Jandex index in %s is not valid, will re-create: %s", path, e.getMessage());
             } catch (UnsupportedVersion e) {
-                Log.warn("\tJandex index in %s is an unsupported version, will re-create: %s", path, e.getMessage());
+                Log.warn("  Jandex index in %s is an unsupported version, will re-create: %s", path, e.getMessage());
             } catch (IOException e) {
-                Log.warn("\tJandex index in %s cannot be read, will re-create: %s", path, e.getMessage());
+                Log.warn("  Jandex index in %s cannot be read, will re-create: %s", path, e.getMessage());
             }
         }
         return null;

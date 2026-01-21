@@ -232,7 +232,7 @@ public final class Application implements ResourceContainer {
         }
         Log.debug("Application classpath:");
         for (Jar jar : classPath) {
-            Log.debug("\t%s", jar);
+            Log.debug("  %s", jar);
         }
         return List.copyOf(classPath);
     }

@@ -28,12 +28,14 @@ import java.util.spi.ToolProvider;
 import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.logging.LogLevel;
 
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.fromWorking;
+import static io.helidon.build.common.FileUtils.measuredSize;
 import static io.helidon.build.common.FileUtils.sizeOf;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
@@ -45,7 +47,6 @@ import static io.helidon.build.linker.JavaRuntime.CURRENT_JDK;
  */
 public final class Linker {
     private static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
-    private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
     private final Configuration config;
@@ -55,17 +56,16 @@ public final class Linker {
     private String exitOnStarted;
     private Set<String> javaDependencies;
     private Path jriMainJar;
-    private long cdsArchiveSize;
     private StartScript startScript;
     private List<String> startCommand;
-    private float appSize;
-    private float jdkSize;
-    private float jriSize;
-    private float cdsSize;
-    private float jriAppSize;
-    private float initialSize;
-    private float imageSize;
-    private float percent;
+    private long appSize;
+    private long jdkSize;
+    private long jriSize;
+    private long cdsSize;
+    private long jriAppSize;
+    private long initialSize;
+    private long imageSize;
+    private float reduction;
 
     /**
      * Main entry point.
@@ -146,7 +146,7 @@ public final class Linker {
     }
 
     private void collectJavaDependencies() {
-        Log.info("Collecting Java module dependencies");
+        Log.info("Collecting Java module dependencies...");
         javaDependencies = application.dependencies();
         javaDependencies.addAll(config.additionalModules());
         List<String> sorted = new ArrayList<>(javaDependencies);
@@ -220,7 +220,7 @@ public final class Linker {
                         .build();
 
                 // Get the archive size
-                cdsArchiveSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
+                cdsSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
 
                 // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
                 // just count one and subtract since some classes in the class list may not have been
@@ -243,12 +243,12 @@ public final class Linker {
                     if (!CURRENT_JDK.cdsRequiresUnlock()) {
                         Log.warn("CDS archive does not contain any application classes, but should!");
                     }
-                    Log.info("CDS archive is $(bold,blue %.1fM) for $(bold,blue %d) JDK classes",
-                            mb(cdsArchiveSize), jdkCount);
+                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) JDK classes",
+                            measuredSize(cdsSize), jdkCount);
                 } else {
-                    Log.info("CDS archive is $(bold,blue %.1fM) for $(bold,blue %d) classes:"
+                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) classes:"
                              + " $(bold,blue %d) JDK and $(bold,blue %d) application",
-                            mb(cdsArchiveSize), jdkCount + appCount, jdkCount, appCount);
+                            measuredSize(cdsSize), jdkCount + appCount, jdkCount, appCount);
                 }
 
             } catch (Exception e) {
@@ -330,53 +330,45 @@ public final class Linker {
 
     private void computeSizes() {
         try {
-            long app = application.diskSize();
-            long jdk = FileUtils.sizeOf(CURRENT_JDK.path());
-            long jri = FileUtils.sizeOf(config.jriDirectory());
-            long cds = cdsArchiveSize;
-            long jriApp = config.stripDebug() ? application.installedSize(config.jriDirectory()) : app;
-            long jriOnly = jri - cds - jriApp;
-            long initial = app + jdk;
-            float reduction = (1F - (float) jri / (float) initial) * 100F;
-
-            appSize = mb(app);
-            jdkSize = mb(jdk);
-            jriSize = mb(jriOnly);
-            cdsSize = config.cds() ? mb(cds) : 0;
-            jriAppSize = mb(jriApp);
-            initialSize = mb(initial);
-            imageSize = mb(jri);
-            percent = reduction;
+            appSize = application.diskSize();
+            jdkSize = FileUtils.sizeOf(CURRENT_JDK.path());
+            imageSize = FileUtils.sizeOf(config.jriDirectory());
+            jriAppSize = config.stripDebug() ? application.installedSize(config.jriDirectory()) : appSize;
+            jriSize = imageSize - cdsSize - jriAppSize;
+            initialSize = appSize + jdkSize;
+            reduction = (1F - (float) imageSize / (float) initialSize) * 100F;
         } catch (UncheckedIOException e) {
             Log.debug("Could not compute disk size: %s", e.getMessage());
         }
     }
 
     private void end() {
-        long elapsed = System.currentTimeMillis() - startTime;
-        float startSeconds = elapsed / 1000F;
+        float startSeconds = (System.currentTimeMillis() - startTime) / 1000F;
         Log.info();
         Log.info("Java Runtime Image $(cyan %s) completed in %.1f seconds", imageName, startSeconds);
         Log.info();
-        Log.info("\t\tInitial size: $(bold,blue %5.1fM)  (%.1f JDK + %.1f application)", initialSize, jdkSize, appSize);
-        if (config.cds()) {
-            Log.info("\t\tImage size: $(bold,bright,green %5.1fM)  (%5.1f JDK + %.1f application + %.1f CDS)",
-                    imageSize,
-                    jriSize,
-                    jriAppSize,
-                    cdsSize);
-        } else {
-            Log.info("\t\tImage size: $(bold,bright,green %5.1fM)  (%5.1f JDK + %.1f application)",
-                    imageSize,
-                    jriSize,
-                    jriAppSize);
-        }
-        Log.info("\t\tReduction: $(bold,bright,green %5.1fM)", percent);
-        Log.info();
-    }
 
-    private static float mb(final long bytes) {
-        return ((float) bytes) / BYTES_PER_MEGABYTE;
+        String measuredInitialSize = measuredSize(initialSize);
+        String measuredJdkSize = measuredSize(jdkSize);
+        String measuredAppSize = measuredSize(appSize);
+        Log.info("Initial size: $(bold,blue %s) (JDK: %s, application: %s)",
+                measuredInitialSize,
+                measuredJdkSize,
+                measuredAppSize);
+        if (config.cds()) {
+            Log.info("  Image size: $(bold,bright,green %s) (JDK: %s, application: %s, CDS: %s)",
+                    Strings.padded(" ", measuredInitialSize.length(), measuredSize(imageSize)),
+                    Strings.padded(" ", measuredJdkSize.length(), measuredSize(jriSize)),
+                    Strings.padded(" ", measuredAppSize.length(), measuredSize(jriAppSize)),
+                    measuredSize(cdsSize));
+        } else {
+            Log.info("  Image size: $(bold,bright,green %s) (JDK: %s, application: %s)",
+                    Strings.padded(" ", measuredInitialSize.length(), measuredSize(imageSize)),
+                    Strings.padded(" ", measuredJdkSize.length(), measuredSize(jriSize)),
+                    Strings.padded(" ", measuredAppSize.length(), measuredSize(jriAppSize)));
+        }
+        Log.info("   Reduction: $(bold,bright,green %5.1f%%)", reduction);
+        Log.info();
     }
 
     private Path jriDirectory() {

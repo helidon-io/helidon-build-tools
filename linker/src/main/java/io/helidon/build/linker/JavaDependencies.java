@@ -60,7 +60,7 @@ public final class JavaDependencies {
         for (Jar jar : jars) {
             ModuleDescriptor descriptor = jar.moduleDescriptor();
             if (descriptor != null) {
-                Log.info("\tChecking module %s", descriptor.name());
+                Log.info("  Checking module %s", descriptor.name());
                 for (ModuleDescriptor.Requires require : descriptor.requires()) {
                     String name = require.name();
                     if (CURRENT_JDK.moduleNames().contains(name)) {

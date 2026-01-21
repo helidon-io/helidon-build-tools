@@ -1109,28 +1109,28 @@ public final class FileUtils {
     private static final long MB = KB * 1024;
     private static final long GB = MB * 1024;
     private static final long TB = GB * 1024;
-    private static final DecimalFormat DF = new DecimalFormat("0.00");
+    private static final DecimalFormat DF = new DecimalFormat("0.#");
 
     /**
-     * Get a size in bytes in units (E.g., 1024 bytes is "1 KB").
+     * Get a size in bytes in units (E.g., 1024 bytes is "1K").
      *
      * @param size size in bytes
      * @return size in units
      */
     public static String measuredSize(long size) {
         if (size < KB) {
-            return size + " B";
+            return size + "B";
         }
         if (size < MB) {
-            return (size / KB) + " KB";
+            return (size / KB) + "K";
         }
         if (size < GB) {
-            return DF.format(size / (double) MB) + " MB";
+            return DF.format(size / (double) MB) + "M";
         }
         if (size < TB) {
-            return DF.format(size / (double) GB) + " GB";
+            return DF.format(size / (double) GB) + "G";
         }
-        return DF.format(size / (double) TB) + " GB";
+        return DF.format(size / (double) TB) + "T";
     }
 
     /**
