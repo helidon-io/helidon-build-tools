@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ import static java.util.stream.Collectors.toSet;
 @SuppressWarnings("SpellCheckingInspection")
 public class JavadocMojo extends AbstractMojo {
 
-    private static final String JAVADOC_EXE = OSType.currentOS() == OSType.Windows ? "javadoc.exe" : "javadoc";
+    private static final String JAVADOC_EXE = OSType.CURRENT_OS == OSType.Windows ? "javadoc.exe" : "javadoc";
 
     @Component
     @SuppressWarnings("unused")

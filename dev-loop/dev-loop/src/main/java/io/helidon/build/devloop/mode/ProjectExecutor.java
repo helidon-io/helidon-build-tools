@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATI
  */
 public class ProjectExecutor {
 
-    private static final String JAVA_EXEC = OSType.currentOS().javaExecutable();
+    private static final String JAVA_EXEC = OSType.CURRENT_OS.javaExecutable();
     private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
     private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
     private static final String STARTING = BoldBrightGreen.apply(DEV_LOOP_APPLICATION_STARTING);

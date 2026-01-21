@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.build.linker;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -37,28 +38,28 @@ import io.helidon.build.common.InputStreams;
 import io.helidon.build.common.OSType;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.common.RichTextRenderer;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.logging.LogLevel;
-import io.helidon.build.linker.util.Constants;
 
 import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
-import static io.helidon.build.common.OSType.Unknown;
+import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
-import static java.util.Collections.emptyList;
+import static io.helidon.build.linker.JavaRuntime.CURRENT_JDK;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Installs a start script for a main jar.
  */
 public class StartScript {
-    /**
-     * The script file name.
-     */
-    public static final String SCRIPT_FILE_NAME = Constants.OS.withScriptExtension("start");
+
+    private static final String SCRIPT_FILE_NAME = CURRENT_OS.withScriptExtension("start");
+    private static final String EOL = System.lineSeparator();
+
     private final Path installDirectory;
     private final Path scriptFile;
     private final String script;
@@ -81,7 +82,7 @@ public class StartScript {
     }
 
     /**
-     * Returns the install directory.
+     * Returns the installation directory.
      *
      * @return The directory.
      */
@@ -97,15 +98,15 @@ public class StartScript {
     Path install() {
         try {
             Files.copy(new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8)), scriptFile);
-            if (Constants.OS.isPosix()) {
+            if (CURRENT_OS.isPosix()) {
                 Files.setPosixFilePermissions(scriptFile, Set.of(
-                    PosixFilePermission.OWNER_READ,
-                    PosixFilePermission.OWNER_WRITE,
-                    PosixFilePermission.OWNER_EXECUTE,
-                    PosixFilePermission.GROUP_READ,
-                    PosixFilePermission.GROUP_EXECUTE,
-                    PosixFilePermission.OTHERS_READ,
-                    PosixFilePermission.OTHERS_EXECUTE
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.OWNER_EXECUTE,
+                        PosixFilePermission.GROUP_READ,
+                        PosixFilePermission.GROUP_EXECUTE,
+                        PosixFilePermission.OTHERS_READ,
+                        PosixFilePermission.OTHERS_EXECUTE
                 ));
             }
             return scriptFile;
@@ -118,28 +119,28 @@ public class StartScript {
      * Execute the script with the given arguments.
      *
      * @param transform the output transform.
-     * @param args The arguments.
+     * @param args      The arguments.
      * @throws RuntimeException If the process fails.
      */
     public void execute(Function<String, String> transform, String... args) {
-        final ProcessBuilder processBuilder = new ProcessBuilder();
-        final List<String> command = new ArrayList<>();
-        final Path root = requireNonNull(requireNonNull(scriptFile.getParent()).getParent());
-        if (Constants.OS.scriptExecutor() != null) {
-            command.add(Constants.OS.scriptExecutor());
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        List<String> command = new ArrayList<>();
+        Path root = requireNonNull(requireNonNull(scriptFile.getParent()).getParent());
+        if (CURRENT_OS.scriptExecutor() != null) {
+            command.add(CURRENT_OS.scriptExecutor());
         }
         command.add(scriptFile.toString());
         command.addAll(Arrays.asList(args));
         Log.debug("Commands: %s", command.toString());
         processBuilder.command(command);
         processBuilder.directory(root.toFile());
-        final ProcessMonitor monitor = ProcessMonitor.builder()
-                                                     .processBuilder(processBuilder)
-                                                     .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                                                     .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.WARN)))
-                                                     .transform(transform)
-                                                     .capture(true)
-                                                     .build();
+        ProcessMonitor monitor = ProcessMonitor.builder()
+                .processBuilder(processBuilder)
+                .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.WARN)))
+                .transform(transform)
+                .capture(true)
+                .build();
         try {
             monitor.execute(maxAppStartSeconds, TimeUnit.SECONDS);
             checkWindowsExecutionPolicyError(monitor, false);
@@ -152,34 +153,35 @@ public class StartScript {
     }
 
     private void checkWindowsExecutionPolicyError(ProcessMonitor monitor, boolean failed) {
-        if (Constants.OS == OSType.Windows) {
+        if (CURRENT_OS == OSType.Windows) {
 
             // We might have silently failed (but with warnings), and we have to deal with output that
             // is split across lines, so join stderr output
 
-            final String stdErr = String.join(" ", monitor.stdErr());
-            if (failed || stdErr.contains(Constants.WINDOWS_SCRIPT_EXECUTION_ERROR)) {
-                final StringBuilder msg = new StringBuilder();
-                msg.append("Generated ").append(scriptFile.getFileName()).append(" script failed.");
+            String stdErr = String.join(" ", monitor.stdErr());
+            if (failed || stdErr.contains("FullyQualifiedErrorId")) {
 
                 // Add help message if this is the execution policy error
+                if (stdErr.contains("UnauthorizedAccess")
+                    && stdErr.contains("Execution")
+                    && stdErr.contains("Policies")) {
 
-                if (containsAll(stdErr, Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR)) {
-                    msg.append(Constants.WINDOWS_SCRIPT_EXECUTION_POLICY_ERROR_HELP);
+                    //noinspection SpellCheckingInspection
+                    throw new RuntimeException(RichTextRenderer.render(
+                            "Generated %s script failed."
+                            + "%n%n"
+                            + "$(bold To enable script execution, run the following command: )"
+                            + "%n%n"
+                            + "    $(bold,bright,yellow powershell Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy "
+                            + "RemoteSigned)"
+                            + "%n%n"
+                            + "$(bold and answer 'Y' if prompted.)",
+                            scriptFile.getFileName()));
+                } else {
+                    throw new RuntimeException(String.format("Generated %s script failed.", scriptFile.getFileName()));
                 }
-
-                throw new RuntimeException(msg.toString());
             }
         }
-    }
-
-    /**
-     * Returns the script.
-     *
-     * @return The script.
-     */
-    public String script() {
-        return script;
     }
 
     /**
@@ -199,15 +201,6 @@ public class StartScript {
     @Override
     public String toString() {
         return script;
-    }
-
-    private static boolean containsAll(String message, List<String> words) {
-        for (final String word : words) {
-            if (!message.contains(word)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -246,13 +239,6 @@ public class StartScript {
         Path installHomeDirectory();
 
         /**
-         * Returns the path to the script install directory.
-         *
-         * @return The path.
-         */
-        Path scriptInstallDirectory();
-
-        /**
          * Returns the path to the main jar.
          *
          * @return The path.
@@ -281,14 +267,14 @@ public class StartScript {
         List<String> defaultArgs();
 
         /**
-         * Returns whether or not CDS is installed.
+         * Returns whether CDS is installed.
          *
          * @return {@code true} if installed.
          */
         boolean cdsInstalled();
 
         /**
-         * Returns whether or not debug support is installed.
+         * Returns whether debug support is installed.
          *
          * @return {@code true} if installed.
          */
@@ -302,21 +288,21 @@ public class StartScript {
         String exitOnStartedValue();
 
         /**
-         * Returns whether or not CDS requires the unlock option.
+         * Returns whether CDS requires the unlock option.
          *
          * @return {@code true} if required.
          */
         default boolean cdsRequiresUnlock() {
-            return cdsInstalled() && Constants.CDS_REQUIRES_UNLOCK_OPTION;
+            return cdsInstalled() && CURRENT_JDK.cdsRequiresUnlock();
         }
 
         /**
-         * Returns whether or not CDS supports copying the image.
+         * Returns whether CDS supports copying the image.
          *
          * @return {@code true} if supported.
          */
         default boolean cdsSupportsImageCopy() {
-            return cdsInstalled() && Constants.CDS_SUPPORTS_IMAGE_COPY;
+            return cdsInstalled() && CURRENT_JDK.cdsSupportsImageCopy();
         }
 
         /**
@@ -327,17 +313,17 @@ public class StartScript {
          */
         default List<String> toCommand() {
             final List<String> command = new ArrayList<>();
-            command.add("bin" + Constants.DIR_SEP + "java");
+            command.add("bin" + File.separator + "java");
             if (cdsInstalled()) {
                 if (cdsRequiresUnlock()) {
-                    command.add(Constants.CDS_UNLOCK_OPTIONS);
+                    command.add("-XX:+UnlockDiagnosticVMOptions");
                 }
-                command.add("-XX:SharedArchiveFile=lib" + Constants.DIR_SEP + "start.jsa");
+                command.add("-XX:SharedArchiveFile=lib" + File.separator + "start.jsa");
                 command.add("-Xshare:auto");
             }
             command.addAll(defaultJvmOptions());
             command.add("-jar");
-            command.add("app" + Constants.DIR_SEP + mainJar().getFileName());
+            command.add("app" + File.separator + mainJar().getFileName());
             command.addAll(defaultArgs());
             return command;
         }
@@ -386,10 +372,9 @@ public class StartScript {
          * Removes any lines that contain the given substring.
          *
          * @param substring The substring.
-         * @param ignoreCase {@code true} if substring match should ignore case.
          */
-        protected void removeLines(String substring, boolean ignoreCase) {
-            removeLines((index, line) -> contains(line, substring, ignoreCase));
+        protected void removeLines(String substring) {
+            removeLines((index, line) -> contains(line, substring, true));
         }
 
         /**
@@ -408,53 +393,37 @@ public class StartScript {
         /**
          * Returns the index of the first line that contains the given substring.
          *
-         * @param startIndex The start index.
          * @param substring The substring.
-         * @param ignoreCase {@code true} if substring match should ignore case.
          * @return The index.
          * @throws IllegalStateException if no matching line is found.
          */
-        protected int indexOf(int startIndex, String substring, boolean ignoreCase) {
-            return indexOf(startIndex, (index, line) -> contains(line, substring, ignoreCase));
-        }
-
-        /**
-         * Returns the index of the first line that is equals to the given str.
-         *
-         * @param startIndex The start index.
-         * @param str The string.
-         * @return The index.
-         * @throws IllegalStateException if no matching line is found.
-         */
-        protected int indexOfEquals(int startIndex, String str) {
-            return indexOf(startIndex, (index, line) -> line.equals(str));
+        protected int indexOf(String substring) {
+            return indexOf(0, (index, line) -> contains(line, substring, false));
         }
 
         /**
          * Returns the index of the first line that matches the given predicate.
          *
          * @param startIndex The start index.
-         * @param predicate The predicate.
+         * @param predicate  The predicate.
          * @return The index.
          * @throws IllegalStateException if no matching line is found.
          */
         protected int indexOf(int startIndex, BiPredicate<Integer, String> predicate) {
             return IntStream.range(startIndex, template.size())
-                            .filter(index -> predicate.test(index, template.get(index)))
-                            .findFirst()
-                            .orElseThrow(IllegalStateException::new);
+                    .filter(index -> predicate.test(index, template.get(index)))
+                    .findFirst()
+                    .orElseThrow(IllegalStateException::new);
         }
 
         /**
          * Replaces the given substring in each line.
          *
-         * @param substring The substring.
+         * @param substring   The substring.
          * @param replacement The replacement.
          */
         protected void replace(String substring, String replacement) {
-            for (int i = 0; i < template.size(); i++) {
-                template.set(i, template.get(i).replace(substring, replacement));
-            }
+            template.replaceAll(s -> s.replace(substring, replacement));
         }
 
         /**
@@ -469,7 +438,7 @@ public class StartScript {
 
         @Override
         public String toString() {
-            return String.join(Constants.EOL, template);
+            return String.join(EOL, template);
         }
 
         private static boolean contains(String line, String substring, boolean ignoreCase) {
@@ -497,30 +466,23 @@ public class StartScript {
         private Path installHomeDirectory;
         private Path scriptInstallDirectory;
         private Path mainJar;
-        private List<String> defaultJvmOptions;
-        private List<String> defaultDebugOptions;
-        private List<String> defaultArgs;
-        private boolean cdsInstalled;
-        private boolean debugInstalled;
-        private String exitOnStartedValue;
+        private List<String> defaultJvmOptions = List.of();
+        private List<String> defaultDebugOptions = List.of(Configuration.DEFAULT_DEBUG);
+        private List<String> defaultArgs = List.of();
+        private boolean cdsInstalled = true;
+        private boolean debugInstalled = true;
+        private String exitOnStartedValue = "!";
         private Template template;
         private TemplateConfig config;
         private Path scriptFile;
         private String script;
-        private int maxAppStartSeconds;
+        private int maxAppStartSeconds = Configuration.DEFAULT_MAX_APP_START_SECONDS;
 
         private Builder() {
-            this.defaultJvmOptions = emptyList();
-            this.defaultDebugOptions = List.of(Configuration.Builder.DEFAULT_DEBUG);
-            this.cdsInstalled = true;
-            this.debugInstalled = true;
-            this.exitOnStartedValue = "!";
-            this.defaultArgs = emptyList();
-            this.maxAppStartSeconds = Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
         }
 
         /**
-         * Sets the install home directory.
+         * Sets the installation home directory.
          *
          * @param installHomeDirectory The target.
          * @return The builder.
@@ -582,7 +544,7 @@ public class StartScript {
         }
 
         /**
-         * Sets whether or not a CDS archive was installed.
+         * Sets whether a CDS archive was installed.
          *
          * @param cdsInstalled {@code true} if installed.
          * @return The builder.
@@ -593,7 +555,7 @@ public class StartScript {
         }
 
         /**
-         * Sets whether or not a debug classes and module were installed.
+         * Sets whether a debug classes and module were installed.
          *
          * @param debugInstalled {@code true} if debug is installed.
          * @return The builder.
@@ -657,7 +619,7 @@ public class StartScript {
 
         private Template template() {
             if (template == null) {
-                if (Constants.OS == Unknown) {
+                if (CURRENT_OS == OSType.Unknown) {
                     throw new PlatformNotSupportedError(config.toCommand());
                 } else {
                     return new StartScriptTemplate();
@@ -672,11 +634,6 @@ public class StartScript {
                 @Override
                 public Path installHomeDirectory() {
                     return installHomeDirectory;
-                }
-
-                @Override
-                public Path scriptInstallDirectory() {
-                    return scriptInstallDirectory;
                 }
 
                 @Override

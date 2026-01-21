@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.build.linker;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -33,17 +32,17 @@ import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.logging.LogLevel;
-import io.helidon.build.linker.util.Constants;
-import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.javaExecutableInDir;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
+import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.PrintStreams.DEVNULL;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
-import static io.helidon.build.linker.Configuration.Builder.DEFAULT_MAX_APP_START_SECONDS;
-import static java.util.Collections.emptyList;
+import static io.helidon.build.linker.Configuration.DEFAULT_MAX_APP_START_SECONDS;
+import static io.helidon.build.linker.JavaRuntime.CURRENT_JDK;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,8 +51,6 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ClassDataSharing {
     private final Path applicationJar;
-    private final String applicationModule;
-    private final Path jri;
     private final Path classListFile;
     private final Path archiveFile;
     private final List<String> classList;
@@ -69,8 +66,6 @@ public final class ClassDataSharing {
 
     private ClassDataSharing(Builder builder) {
         this.applicationJar = builder.mainJar;
-        this.applicationModule = builder.applicationModule;
-        this.jri = builder.jri;
         this.classListFile = builder.classListFile;
         this.archiveFile = builder.archiveFile;
         this.classList = builder.classList;
@@ -83,24 +78,6 @@ public final class ClassDataSharing {
      */
     public Path applicationJar() {
         return applicationJar;
-    }
-
-    /**
-     * Returns the name of the main application module.
-     *
-     * @return The name. Will be {@code null} if a jar was used.
-     */
-    public String applicationModule() {
-        return applicationModule;
-    }
-
-    /**
-     * Returns the path to the JRI used to build the archive.
-     *
-     * @return The path.
-     */
-    public Path jri() {
-        return jri;
     }
 
     /**
@@ -134,45 +111,23 @@ public final class ClassDataSharing {
      * Builder.
      */
     public static final class Builder {
-        private static final String FILE_PREFIX = "start";
-        private static final String ARCHIVE_NAME = FILE_PREFIX + ".jsa";
-        private static final String CLASS_LIST_FILE_SUFFIX = ".classlist";
-        private static final String JAR_SUFFIX = ".jar";
-        private static final String XSHARE_OFF = "-Xshare:off";
-        private static final String XSHARE_DUMP = "-Xshare:dump";
-        private static final String XX_DUMP_LOADED_CLASS_LIST = "-XX:DumpLoadedClassList=";
-        private static final String XX_SHARED_ARCHIVE_FILE = "-XX:SharedArchiveFile=";
-        private static final String XX_SHARED_CLASS_LIST_FILE = "-XX:SharedClassListFile=";
-        private static final String EXIT_ON_STARTED = "-Dexit.on.started=";
-        private static final String EXIT_ON_STARTED_VALUE = "!";
-        private static final String UTF_8_ENCODING = "-Dfile.encoding=UTF-8";
-        private static final String SKIPPED_CLASS_PREFIX = "skip writing class";
-        private static final String CANNOT_FIND_PREFIX = "Preload Warning: Cannot find";
-        private static final String LIB_DIR_NAME = "lib";
         private Path jri;
-        private String archiveDir;
         private String applicationModule;
         private Path mainJar;
         private Path classListFile;
         private Path archiveFile;
         private List<String> classList;
-        private boolean createArchive;
         private String target;
         private String targetOption;
         private String targetDescription;
         private boolean logOutput;
-        private List<String> jvmOptions;
-        private List<String> args;
-        private String exitOnStartedValue;
-        private int maxWaitSeconds;
+        private boolean createArchive = true;
+        private List<String> jvmOptions = List.of();
+        private List<String> args = List.of();
+        private String exitOnStartedValue = "!";
+        private int maxWaitSeconds = DEFAULT_MAX_APP_START_SECONDS;
 
         private Builder() {
-            this.createArchive = true;
-            this.archiveDir = LIB_DIR_NAME;
-            this.jvmOptions = emptyList();
-            this.args = emptyList();
-            this.exitOnStartedValue = EXIT_ON_STARTED_VALUE;
-            this.maxWaitSeconds = DEFAULT_MAX_APP_START_SECONDS;
         }
 
         /**
@@ -205,7 +160,7 @@ public final class ClassDataSharing {
         /**
          * Sets the name of the main application module.
          *
-         * @param mainModuleName The the name of the main application module.
+         * @param mainModuleName The name of the main application module.
          * @return The builder.
          */
         public Builder applicationModule(String mainModuleName) {
@@ -251,7 +206,7 @@ public final class ClassDataSharing {
         }
 
         /**
-         * Sets whether or not to create the CDS archive. Defaults to {@code true}.
+         * Sets whether to create the CDS archive. Defaults to {@code true}.
          *
          * @param createArchive {@code true} if the archive should be created.
          * @return The builder.
@@ -262,7 +217,7 @@ public final class ClassDataSharing {
         }
 
         /**
-         * Sets whether or not to output from the build process(es) should be logged.
+         * Sets whether to output from the build process(es) should be logged.
          * Defaults to {@code false} and will include the output in any exception message.
          *
          * @param logOutput {@code true} if output should be logged.
@@ -332,7 +287,7 @@ public final class ClassDataSharing {
             }
 
             if (classListFile == null) {
-                this.classListFile = tempFile(CLASS_LIST_FILE_SUFFIX);
+                this.classListFile = tempFile();
                 this.classList = buildClassList();
             } else {
                 this.classList = loadClassList();
@@ -340,7 +295,7 @@ public final class ClassDataSharing {
 
             if (createArchive) {
                 if (archiveFile == null) {
-                    archiveFile = requireDirectory(jri.resolve(archiveDir)).resolve(ARCHIVE_NAME);
+                    archiveFile = requireDirectory(jri.resolve("lib")).resolve("start.jsa");
                 }
                 buildCdsArchive();
             }
@@ -350,21 +305,30 @@ public final class ClassDataSharing {
 
         private List<String> buildClassList() throws Exception {
             execute("Creating startup class list for " + targetDescription,
-                    XSHARE_OFF, XX_DUMP_LOADED_CLASS_LIST + classListFile, UTF_8_ENCODING);
+                    "-Xshare:off",
+                    "-XX:DumpLoadedClassList=" + classListFile,
+                    "-Dfile.encoding=UTF-8");
             return loadClassList();
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
         private void buildCdsArchive() throws Exception {
-            final String action = "Creating Class Data Sharing archive for " + targetDescription;
-            if (Constants.CDS_REQUIRES_UNLOCK_OPTION) {
-                execute(action, Constants.CDS_UNLOCK_OPTIONS, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
-                        XX_SHARED_CLASS_LIST_FILE + classListFile, UTF_8_ENCODING);
+            String action = "Creating Class Data Sharing archive for " + targetDescription;
+            if (CURRENT_JDK.cdsRequiresUnlock()) {
+                execute(action,
+                        "-XX:+UnlockDiagnosticVMOptions",
+                        "-Xshare:dump",
+                        "-XX:SharedArchiveFile=" + archiveFile,
+                        "-XX:SharedClassListFile=" + classListFile,
+                        "-Dfile.encoding=UTF-8");
             } else {
-                execute(action, XSHARE_DUMP, XX_SHARED_ARCHIVE_FILE + archiveFile,
-                        XX_SHARED_CLASS_LIST_FILE + classListFile, UTF_8_ENCODING);
+                execute(action,
+                        "-Xshare:dump",
+                        "-XX:SharedArchiveFile=" + archiveFile,
+                        "-XX:SharedClassListFile=" + classListFile,
+                        "-Dfile.encoding=UTF-8");
             }
-            if (Constants.OS == OSType.Windows) {
+            if (CURRENT_OS == OSType.Windows) {
                 // Try to make the archive file writable so that a second run can delete the image
                 jri.resolve(archiveFile).toFile().setWritable(true);
             }
@@ -372,27 +336,18 @@ public final class ClassDataSharing {
 
         private List<String> loadClassList() throws IOException {
             return Files.readAllLines(classListFile).stream()
-                    .filter(ClassDataSharing.Builder::isNotComment)
-                    .map(ClassDataSharing.Builder::head)
+                    .filter(s -> !s.startsWith("#"))
+                    .map(s -> s.split("\\s+")[0])
                     .collect(Collectors.toList());
         }
 
-        private static String head(String s) {
-            // Get first field in string. Assume whitespace delimiter
-            return s.split("\\s+")[0];
-        }
-
-        private static boolean isNotComment(String s) {
-            return !s.startsWith("# ");
-        }
-
         private void execute(String action, String... jvmArgs) throws Exception {
-            final ProcessBuilder processBuilder = new ProcessBuilder();
-            final List<String> command = new ArrayList<>();
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            List<String> command = new ArrayList<>();
 
             command.add(javaPath().toString());
             command.addAll(jvmOptions);
-            command.add(EXIT_ON_STARTED + exitOnStartedValue);
+            command.add("-Dexit.on.started=" + exitOnStartedValue);
             command.addAll(Arrays.asList(jvmArgs));
             command.add(targetOption);
             command.add(target);
@@ -421,26 +376,27 @@ public final class ClassDataSharing {
         }
 
         private static boolean filter(String line) {
-            return !line.startsWith(SKIPPED_CLASS_PREFIX) && !line.startsWith(CANNOT_FIND_PREFIX);
+            return !line.startsWith("skip writing class") && !line.startsWith("Preload Warning: Cannot find");
         }
 
         private Path javaPath() {
-            return JavaRuntime.javaCommand(jri);
+            return requireFile(javaExecutableInDir(jri));
         }
 
         private static boolean isValid(Collection<?> value) {
             return value != null && !value.isEmpty();
         }
 
-        private static Path tempFile(String suffix) throws IOException {
-            final File file = File.createTempFile(FILE_PREFIX, suffix);
-            file.deleteOnExit();
-            return file.toPath();
+        private static Path tempFile() throws IOException {
+            //noinspection SpellCheckingInspection
+            Path tempFile = Files.createTempFile("start", ".classlist");
+            tempFile.toFile().deleteOnExit();
+            return tempFile;
         }
 
         private static Path assertJar(Path path) {
             final String fileName = fileName(requireFile(path));
-            if (!fileName.endsWith(JAR_SUFFIX)) {
+            if (!fileName.endsWith(".jar")) {
                 throw new IllegalArgumentException(path + " is not a jar");
             }
             return path;

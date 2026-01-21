@@ -31,29 +31,20 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogFormatter;
 import io.helidon.build.common.logging.LogLevel;
-import io.helidon.build.linker.util.JavaRuntime;
 
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.fromWorking;
 import static io.helidon.build.common.FileUtils.sizeOf;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
-import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
-import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightGreen;
-import static io.helidon.build.common.ansi.AnsiTextStyles.BoldYellow;
-import static io.helidon.build.common.ansi.AnsiTextStyles.Cyan;
-import static io.helidon.build.linker.util.Constants.CDS_REQUIRES_UNLOCK_OPTION;
-import static io.helidon.build.linker.util.Constants.DEBUGGER_MODULE;
-import static io.helidon.build.linker.util.Constants.DIR_SEP;
-import static io.helidon.build.linker.util.Constants.INDENT;
+import static io.helidon.build.linker.JavaRuntime.CURRENT_JDK;
 
 /**
  * Create a custom runtime image by finding the Java modules required of a Helidon application and linking them via jlink,
  * then adding the jars, a start script and, optionally, a CDS archive. Adds Jandex indices as needed.
  */
 public final class Linker {
-    private static final String JLINK_TOOL_NAME = "jlink";
-    private static final String JLINK_DEBUG_PROPERTY = JLINK_TOOL_NAME + ".debug";
+    private static final String DEBUGGER_MODULE = "jdk.jdwp.agent";
     private static final float BYTES_PER_MEGABYTE = 1024F * 1024F;
     private final ToolProvider jlink;
     private final List<String> jlinkArgs;
@@ -72,9 +63,9 @@ public final class Linker {
     private float jriSize;
     private float cdsSize;
     private float jriAppSize;
-    private String initialSize;
-    private String imageSize;
-    private String percent;
+    private float initialSize;
+    private float imageSize;
+    private float percent;
 
     /**
      * Main entry point.
@@ -85,9 +76,9 @@ public final class Linker {
      */
     public static void main(String... args) throws Exception {
         linker(Configuration.builder()
-                            .commandLine(args)
-                            .build())
-            .link();
+                .commandLine(args)
+                .build())
+                .link();
     }
 
     /**
@@ -101,13 +92,13 @@ public final class Linker {
     }
 
     private Linker(Configuration config) {
-        this.jlink = ToolProvider.findFirst(JLINK_TOOL_NAME).orElseThrow(() -> new IllegalStateException("jlink not found"));
+        this.jlink = ToolProvider.findFirst("jlink").orElseThrow(() -> new IllegalStateException("jlink not found"));
         this.jlinkArgs = new ArrayList<>();
         this.config = config;
         this.imageName = fileName(config.jriDirectory());
 
         if (config.verbose()) {
-            System.setProperty(JLINK_DEBUG_PROPERTY, "true");
+            System.setProperty("jlink.debug", "true");
         }
     }
 
@@ -147,25 +138,22 @@ public final class Linker {
     }
 
     private void buildApplication() {
-        this.application = Application.create(config.jdk(), config.mainJar());
+        this.application = Application.create(config.mainJar());
         this.exitOnStarted = application.exitOnStartedValue();
         final String version = application.helidonVersion();
-        Log.info("Creating Java Runtime Image %s from %s and %s, built with Helidon %s",
-                 Cyan.apply(imageName),
-                 Cyan.apply("JDK " + config.jdk().version()),
-                 Cyan.apply(config.mainJar().getFileName()),
-                 Cyan.apply(version));
+        Log.info("Creating Java Runtime Image $(cyan %s) from $(cyan JDK %s) and $(cyan %s), built with Helidon $(cyan %s)",
+                imageName, CURRENT_JDK.version(), config.mainJar().getFileName(), version);
     }
 
     private void collectJavaDependencies() {
         Log.info("Collecting Java module dependencies");
-        this.javaDependencies = application.javaDependencies();
-        this.javaDependencies.addAll(config.additionalModules());
-        final List<String> sorted = new ArrayList<>(javaDependencies);
+        javaDependencies = application.dependencies();
+        javaDependencies.addAll(config.additionalModules());
+        List<String> sorted = new ArrayList<>(javaDependencies);
         sorted.sort(null);
         Log.info("Including %d Java dependencies: %s", sorted.size(), String.join(", ", sorted));
         if (config.stripDebug()) {
-            Log.info("Excluding debug support: %s", DEBUGGER_MODULE);
+            Log.info("Excluding debug support: jdk.jdwp.agent", DEBUGGER_MODULE);
         } else {
             javaDependencies.add(DEBUGGER_MODULE);
             Log.info("Including debug support: %s", DEBUGGER_MODULE);
@@ -191,7 +179,7 @@ public final class Linker {
         jlinkArgs.add("--compress");
 
         // The options used with --compress changed in 21
-        if (config.jdk().version().feature() >= 21) {
+        if (CURRENT_JDK.version().feature() >= 21) {
             jlinkArgs.add("zip-6");
         } else {
             jlinkArgs.add("2");
@@ -210,9 +198,9 @@ public final class Linker {
     }
 
     private void installJars() {
-        final boolean stripDebug = config.stripDebug();
-        final Path appDir = jriDirectory().resolve(Application.APP_DIR);
-        final String message = stripDebug ? ", stripping debug information from all classes" : "";
+        boolean stripDebug = config.stripDebug();
+        Path appDir = jriDirectory().resolve(Application.APP_DIR);
+        String message = stripDebug ? ", stripping debug information from all classes" : "";
         Log.info("Installing %d application jars in %s%s", application.size(), appDir, message);
         this.jriMainJar = application.install(config.jriDirectory(), stripDebug);
     }
@@ -220,32 +208,30 @@ public final class Linker {
     private void installCdsArchive() {
         if (config.cds()) {
             try {
-                final ClassDataSharing cds = ClassDataSharing.builder()
-                                                             .jri(config.jriDirectory())
-                                                             .applicationJar(jriMainJar)
-                                                             .jvmOptions(config.defaultJvmOptions())
-                                                             .args((config.defaultArgs()))
-                                                             .archiveFile(application.archivePath())
-                                                             .exitOnStartedValue(exitOnStarted)
-                                                             .maxWaitSeconds(config.maxAppStartSeconds())
-                                                             .logOutput(config.verbose())
-                                                             .build();
+                ClassDataSharing cds = ClassDataSharing.builder()
+                        .jri(config.jriDirectory())
+                        .applicationJar(jriMainJar)
+                        .jvmOptions(config.defaultJvmOptions())
+                        .args((config.defaultArgs()))
+                        .archiveFile(application.archivePath())
+                        .exitOnStartedValue(exitOnStarted)
+                        .maxWaitSeconds(config.maxAppStartSeconds())
+                        .logOutput(config.verbose())
+                        .build();
 
                 // Get the archive size
-
                 cdsArchiveSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
 
                 // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
                 // just count one and subtract since some classes in the class list may not have been
                 // put in the archive (see verbose output for examples).
 
-                final JavaRuntime jdk = config.jdk();
-                final Application app = application;
+                Application app = application;
                 int jdkCount = 0;
                 int appCount = 0;
                 for (String name : cds.classList()) {
-                    final String resourcePath = name + ".class";
-                    if (jdk.containsResource(resourcePath)) {
+                    String resourcePath = name + ".class";
+                    if (CURRENT_JDK.containsResource(resourcePath)) {
                         jdkCount++;
                     } else if (app.containsResource(resourcePath)) {
                         appCount++;
@@ -253,18 +239,16 @@ public final class Linker {
                 }
 
                 // Report the stats
-
-                final String cdsSize = BoldBlue.format("%.1fM", mb(cdsArchiveSize));
-                final String jdkSize = BoldBlue.format("%d", jdkCount);
-                final String appSize = BoldBlue.format("%d", appCount);
                 if (appCount == 0) {
-                    if (!CDS_REQUIRES_UNLOCK_OPTION) {
+                    if (!CURRENT_JDK.cdsRequiresUnlock()) {
                         Log.warn("CDS archive does not contain any application classes, but should!");
                     }
-                    Log.info("CDS archive is %s for %s JDK classes", cdsSize, jdkSize);
+                    Log.info("CDS archive is $(bold,blue %.1fM) for $(bold,blue %d) JDK classes",
+                            mb(cdsArchiveSize), jdkCount);
                 } else {
-                    final String total = BoldBlue.format("%d", jdkCount + appCount);
-                    Log.info("CDS archive is %s for %s classes: %s JDK and %s application", cdsSize, total, jdkSize, appSize);
+                    Log.info("CDS archive is $(bold,blue %.1fM) for $(bold,blue %d) classes:"
+                             + " $(bold,blue %d) JDK and $(bold,blue %d) application",
+                            mb(cdsArchiveSize), jdkCount + appCount, jdkCount, appCount);
                 }
 
             } catch (Exception e) {
@@ -276,23 +260,23 @@ public final class Linker {
     private void installStartScript() {
         try {
             startScript = StartScript.builder()
-                                     .installHomeDirectory(config.jriDirectory())
-                                     .defaultJvmOptions(config.defaultJvmOptions())
-                                     .defaultDebugOptions(config.defaultDebugOptions())
-                                     .mainJar(jriMainJar)
-                                     .defaultArgs(config.defaultArgs())
-                                     .cdsInstalled(config.cds())
-                                     .debugInstalled(!config.stripDebug())
-                                     .exitOnStartedValue(exitOnStarted)
-                                     .build();
+                    .installHomeDirectory(config.jriDirectory())
+                    .defaultJvmOptions(config.defaultJvmOptions())
+                    .defaultDebugOptions(config.defaultDebugOptions())
+                    .mainJar(jriMainJar)
+                    .defaultArgs(config.defaultArgs())
+                    .cdsInstalled(config.cds())
+                    .debugInstalled(!config.stripDebug())
+                    .exitOnStartedValue(exitOnStarted)
+                    .build();
 
             Log.info("Installing start script in %s", startScript.installDirectory());
             startScript.install();
-            startCommand = List.of(imageName + DIR_SEP + "bin" + DIR_SEP + startScript.scriptFile().getFileName());
+            startCommand = List.of(imageName + File.separator + "bin" + File.separator + startScript.scriptFile().getFileName());
         } catch (StartScript.PlatformNotSupportedError e) {
             if (config.cds()) {
-                Log.warn("Start script cannot be created for this platform; for CDS to function, the jar path %s"
-                         + " be relative as shown below.", BoldYellow.apply("must"));
+                Log.warn("Start script cannot be created for this platform;"
+                         + " for CDS to function, the jar path $(bold,yellow must) be relative as shown below.");
             } else {
                 Log.warn("Start script cannot be created for this platform.");
             }
@@ -310,20 +294,20 @@ public final class Linker {
                 executeStartScript("--test");
             } else {
                 Log.info();
-                Log.info("Executing %s", Cyan.apply(startCommand()));
+                Log.info("Executing $(cyan %s)", startCommand());
                 Log.info();
-                final List<String> command = new ArrayList<>(startCommand);
+                List<String> command = new ArrayList<>(startCommand);
                 command.add(command.indexOf("-jar"), "-Dexit.on.started=!");
-                final File root = config.jriDirectory().toFile();
+                File root = config.jriDirectory().toFile();
                 try {
                     ProcessMonitor.builder()
-                                  .processBuilder(new ProcessBuilder().command(command).directory(root))
-                                  .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
-                                  .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.WARN)))
-                                  .transform(INDENT)
-                                  .capture(false)
-                                  .build()
-                                  .execute(config.maxAppStartSeconds(), TimeUnit.SECONDS);
+                            .processBuilder(new ProcessBuilder().command(command).directory(root))
+                            .stdOut(PrintStreams.apply(STDOUT, LogFormatter.of(LogLevel.INFO)))
+                            .stdErr(PrintStreams.apply(STDERR, LogFormatter.of(LogLevel.WARN)))
+                            .transform(line -> "    " + line)
+                            .capture(false)
+                            .build()
+                            .execute(config.maxAppStartSeconds(), TimeUnit.SECONDS);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -338,49 +322,56 @@ public final class Linker {
     private void executeStartScript(String option) {
         if (startScript != null) {
             Log.info();
-            Log.info("Executing %s", Cyan.apply(startCommand() + " " + option));
+            Log.info("Executing $(cyan %s)", startCommand() + " " + option);
             Log.info();
-            startScript.execute(INDENT, option);
+            startScript.execute(line -> "    " + line, option);
         }
     }
 
     private void computeSizes() {
         try {
-            final long app = application.diskSize();
-            final long jdk = config.jdk().diskSize();
-            final long jri = FileUtils.sizeOf(config.jriDirectory());
-            final long cds = cdsArchiveSize;
-            final long jriApp = config.stripDebug() ? application.installedSize(config.jriDirectory()) : app;
-            final long jriOnly = jri - cds - jriApp;
-            final long initial = app + jdk;
-            final float reduction = (1F - (float) jri / (float) initial) * 100F;
+            long app = application.diskSize();
+            long jdk = FileUtils.sizeOf(CURRENT_JDK.path());
+            long jri = FileUtils.sizeOf(config.jriDirectory());
+            long cds = cdsArchiveSize;
+            long jriApp = config.stripDebug() ? application.installedSize(config.jriDirectory()) : app;
+            long jriOnly = jri - cds - jriApp;
+            long initial = app + jdk;
+            float reduction = (1F - (float) jri / (float) initial) * 100F;
 
             appSize = mb(app);
             jdkSize = mb(jdk);
             jriSize = mb(jriOnly);
             cdsSize = config.cds() ? mb(cds) : 0;
             jriAppSize = mb(jriApp);
-            initialSize = BoldBlue.format("%5.1fM", mb(initial));
-            imageSize = BoldBrightGreen.format("%5.1fM", mb(jri));
-            percent = BoldBrightGreen.format("%5.1f%%", reduction);
+            initialSize = mb(initial);
+            imageSize = mb(jri);
+            percent = reduction;
         } catch (UncheckedIOException e) {
             Log.debug("Could not compute disk size: %s", e.getMessage());
         }
     }
 
     private void end() {
-        final long elapsed = System.currentTimeMillis() - startTime;
-        final float startSeconds = elapsed / 1000F;
+        long elapsed = System.currentTimeMillis() - startTime;
+        float startSeconds = elapsed / 1000F;
         Log.info();
-        Log.info("Java Runtime Image %s completed in %.1f seconds", Cyan.apply(imageName), startSeconds);
+        Log.info("Java Runtime Image $(cyan %s) completed in %.1f seconds", imageName, startSeconds);
         Log.info();
-        Log.info("     initial size: %s  (%.1f JDK + %.1f application)", initialSize, jdkSize, appSize);
+        Log.info("\t\tInitial size: $(bold,blue %5.1fM)  (%.1f JDK + %.1f application)", initialSize, jdkSize, appSize);
         if (config.cds()) {
-            Log.info("       image size: %s  (%5.1f JDK + %.1f application + %.1f CDS)", imageSize, jriSize, jriAppSize, cdsSize);
+            Log.info("\t\tImage size: $(bold,bright,green %5.1fM)  (%5.1f JDK + %.1f application + %.1f CDS)",
+                    imageSize,
+                    jriSize,
+                    jriAppSize,
+                    cdsSize);
         } else {
-            Log.info("       image size: %s  (%5.1f JDK + %.1f application)", imageSize, jriSize, jriAppSize);
+            Log.info("\t\tImage size: $(bold,bright,green %5.1fM)  (%5.1f JDK + %.1f application)",
+                    imageSize,
+                    jriSize,
+                    jriAppSize);
         }
-        Log.info("        reduction: %s", percent);
+        Log.info("\t\tReduction: $(bold,bright,green %5.1fM)", percent);
         Log.info();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public final class FileUtils {
             "create", "true", // enable creation of new zip files
             "enablePosixFileAttributes", "true" // enable reading of posix attributes
     );
-    private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
+    private static final boolean IS_WINDOWS = OSType.CURRENT_OS == OSType.Windows;
     private static final Path TMPDIR = Path.of(System.getProperty("java.io.tmpdir"));
     private static final Random RANDOM = new Random();
 
@@ -88,8 +88,7 @@ public final class FileUtils {
      */
     public static final Path USER_HOME_DIR = requiredDirectoryFromProperty("user.home", false);
 
-    private static final OSType OS = OSType.currentOS();
-    private static final String JAVA_BINARY_NAME = OS.javaExecutable();
+    private static final String JAVA_BINARY_NAME = OSType.CURRENT_OS.javaExecutable();
     private static final String JAVA_HOME_VAR = "JAVA_HOME";
     private static final String PATH_VAR = "PATH";
     private static final String BIN_DIR_NAME = "bin";
@@ -351,7 +350,7 @@ public final class FileUtils {
      * @throws IllegalArgumentException If the path does not exist or is not a directory.
      */
     public static Path requireDirectory(Path directory) {
-        final Path result = requireExistent(directory);
+        Path result = requireExistent(directory);
         if (Files.isDirectory(result)) {
             return result;
         } else {
@@ -667,9 +666,8 @@ public final class FileUtils {
      * @throws IllegalStateException if not found.
      */
     public static Path requireJavaExecutable() {
-        return javaExecutable().orElseThrow(() -> new IllegalStateException(JAVA_BINARY_NAME
-                                                                            + " not found. Please add it to"
-                                                                            + " your PATH or set the JAVA_HOME or variable."));
+        return javaExecutable().orElseThrow(() -> new IllegalStateException(
+                JAVA_BINARY_NAME + " not found. Please add it to your PATH or set the JAVA_HOME or variable."));
     }
 
     /**
@@ -679,6 +677,17 @@ public final class FileUtils {
      */
     public static Optional<Path> javaExecutableInPath() {
         return findExecutableInPath(JAVA_BINARY_NAME);
+    }
+
+    /**
+     * Returns the path to the {@code java} executable in the given directory.
+     *
+     * @param dir The directory.
+     * @return The normalized, absolute directory path.
+     * @throws IllegalArgumentException If the provided path is not a directory.
+     */
+    public static Path javaExecutableInDir(Path dir) {
+        return requireDirectory(dir.resolve(BIN_DIR_NAME)).resolve(JAVA_BINARY_NAME);
     }
 
     /**

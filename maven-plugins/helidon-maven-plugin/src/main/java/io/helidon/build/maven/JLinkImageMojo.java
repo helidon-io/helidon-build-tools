@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-
-import static io.helidon.build.linker.util.Constants.JRI_DIR_SUFFIX;
 
 /**
  * Maven goal to create a custom Java Runtime Image.
@@ -130,7 +128,7 @@ public class JLinkImageMojo extends AbstractMojo {
         }
         final Path buildDir = buildDirectory.toPath();
         final Path mainJar = mainJar(buildDir);
-        final Path outputDir = buildDir.resolve(finalName + JRI_DIR_SUFFIX);
+        final Path outputDir = buildDir.resolve(finalName + "-jri");
         try {
             Configuration config = Configuration.builder()
                                                 .verbose(getLog().isDebugEnabled())

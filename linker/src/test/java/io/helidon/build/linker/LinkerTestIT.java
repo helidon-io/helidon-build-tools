@@ -23,8 +23,6 @@ import java.util.Set;
 
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.JUnitLauncher;
-import io.helidon.build.linker.util.Constants;
-import io.helidon.build.linker.util.JavaRuntime;
 
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -37,11 +35,10 @@ import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireFile;
 import static io.helidon.build.common.FileUtils.sizeOf;
+import static io.helidon.build.common.OSType.CURRENT_OS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration test for class {@link Linker}.
@@ -174,7 +171,7 @@ class LinkerTestIT {
 
     private static void assertScript(Path jri) throws IOException {
         Path binDir = requireDirectory(jri.resolve("bin"));
-        Path scriptFile = requireFile(binDir.resolve(Constants.OS.withScriptExtension("start")));
+        Path scriptFile = requireFile(binDir.resolve(CURRENT_OS.withScriptExtension("start")));
         assertExecutable(scriptFile);
     }
 
@@ -185,7 +182,7 @@ class LinkerTestIT {
     }
 
     private static void assertReadOnly(Path file) throws IOException {
-        if (Constants.OS.isPosix()) {
+        if (CURRENT_OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_WRITE,
@@ -195,7 +192,7 @@ class LinkerTestIT {
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        if (Constants.OS.isPosix()) {
+        if (CURRENT_OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_EXECUTE,

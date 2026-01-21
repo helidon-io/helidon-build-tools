@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ package io.helidon.build.linker;
 public interface ResourceContainer {
 
     /**
-     * Returns whether or not the given resource path is present.
+     * Returns whether the given resource path is present.
      *
      * @param resourcePath The path, e.g. "com/acme/Dynamite.class".
      * @return {@code true} if present.

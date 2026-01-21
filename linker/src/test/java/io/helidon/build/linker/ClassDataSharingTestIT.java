@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.build.linker;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
@@ -35,7 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import static io.helidon.build.common.FileUtils.javaHome;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -83,10 +82,11 @@ class ClassDataSharingTestIT {
 
         if (Runtime.version().feature() > 9) {
             // Application classes should be included in CDS archive
-            assertContains(cds.classList(), APP_CLASS);
+            assertThat(cds.classList(), hasItem(APP_CLASS));
         } else {
-            assertDoesNotContain(cds.classList(), APP_CLASS);
+            assertThat(cds.classList(), not(hasItem(APP_CLASS)));
         }
+
         cds = ClassDataSharing.builder()
                               .jri(JAVA_HOME)
                               .applicationJar(mainJar)
@@ -100,13 +100,5 @@ class ClassDataSharingTestIT {
         assertThat(archive, is(not(nullValue())));
         assertThat(Files.exists(archive), is(true));
         assertThat(Files.isRegularFile(archive), is(true));
-    }
-
-    private static void assertContains(List<String> list, String value) {
-        assertThat(list.indexOf(value), is(greaterThan(-1)));
-    }
-
-    private static void assertDoesNotContain(List<String> list, String value) {
-        assertThat(list.indexOf(value), is(-1));
     }
 }
