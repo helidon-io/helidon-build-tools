@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,11 @@ public enum OSType {
      */
     Unknown("java", true, null, null, "mvn", "\\\"");
 
+    /**
+     * The current os.
+     */
+    public static final OSType CURRENT_OS = currentOS();
+
     private final String javaExecutable;
     private final boolean posix;
     private final String scriptExecutor;
@@ -74,7 +79,7 @@ public enum OSType {
      * @return The type.
      */
     public static OSType currentOS() {
-        final String name = System.getProperty("os.name", "unknown").toLowerCase(Locale.ENGLISH);
+        String name = System.getProperty("os.name", "unknown").toLowerCase(Locale.ENGLISH);
         if (name.contains("win")) {
             return OSType.Windows;
         } else if (name.contains("mac")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,18 +108,31 @@ public class Strings {
     /**
      * Generate a padding string.
      *
-     * @param pad         the value of a single "pad"
-     * @param maxKeyWidth the max width of the padding to generate
-     * @param key         the object being padded
+     * @param pad the value of a single "pad"
+     * @param max the max width of the padding to generate
+     * @param str the object being padded
      * @return the padding
      */
-    public static String padding(String pad, int maxKeyWidth, String key) {
-        final int keyLen = key.length();
-        if (maxKeyWidth > keyLen) {
-            return pad.repeat(maxKeyWidth - keyLen);
+    public static String padding(String pad, int max, String str) {
+        int keyLen = str.length();
+        if (max > keyLen) {
+            return pad.repeat(max - keyLen);
         } else {
             return "";
         }
+    }
+
+    /**
+     * Generate a padded string.
+     *
+     * @param pad the value of a single "pad"
+     * @param max the max width of the padding to generate
+     * @param str the str being padded
+     * @return the padding
+     */
+    public static String padded(String pad, int max, String str) {
+        String padding = padding(pad, max, str);
+        return padding + str;
     }
 
     /**

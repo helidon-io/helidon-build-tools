@@ -17,6 +17,7 @@
 package io.helidon.build.linker;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -24,21 +25,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.LogLevel;
-import io.helidon.build.linker.util.Constants;
-import io.helidon.build.linker.util.JavaRuntime;
 
+import static io.helidon.build.common.FileUtils.WORKING_DIR;
+import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.requireExistent;
 import static io.helidon.build.common.FileUtils.requireFile;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+import static io.helidon.build.linker.JavaRuntime.CURRENT_JDK;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Linker configuration.
  */
 public final class Configuration {
-    private final JavaRuntime jdk;
+    static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
+    static final int DEFAULT_MAX_APP_START_SECONDS = 1000;
     private final Path mainJar;
     private final List<String> defaultJvm;
     private final List<String> defaultArgs;
@@ -62,7 +65,6 @@ public final class Configuration {
     }
 
     private Configuration(Builder builder) {
-        this.jdk = builder.jdk;
         this.mainJar = builder.mainJar;
         this.defaultJvm = builder.defaultJvm;
         this.defaultArgs = builder.defaultArgs;
@@ -75,15 +77,6 @@ public final class Configuration {
         this.cds = builder.cds;
         this.test = builder.test;
         this.maxAppStartSeconds = builder.maxAppStartSeconds;
-    }
-
-    /**
-     * Returns the JDK from which to create the JRI.
-     *
-     * @return The {@link JavaRuntime}.
-     */
-    public JavaRuntime jdk() {
-        return jdk;
     }
 
     /**
@@ -199,32 +192,21 @@ public final class Configuration {
      */
     @SuppressWarnings("UnusedReturnValue")
     public static final class Builder {
-        static final String DEFAULT_DEBUG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005";
-        static final int DEFAULT_MAX_APP_START_SECONDS = 1000;
-        private JavaRuntime jdk;
         private Path mainJar;
-        private List<String> defaultJvm;
-        private List<String> defaultArgs;
-        private List<String> defaultDebug;
-        private List<String> additionalJlinkArgs;
-        private Set<String> additionalModules;
+        private List<String> defaultJvm = List.of();
+        private List<String> defaultArgs = List.of();
+        private List<String> defaultDebug = List.of(DEFAULT_DEBUG);
+        private List<String> additionalJlinkArgs = List.of();
+        private Set<String> additionalModules = Set.of();
         private Path jriDirectory;
         private boolean replace;
         private boolean verbose;
         private boolean stripDebug;
-        private boolean cds;
-        private boolean test;
-        private int maxAppStartSeconds;
+        private boolean cds = true;
+        private boolean test = true;
+        private int maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
 
         private Builder() {
-            defaultJvm = emptyList();
-            defaultArgs = emptyList();
-            defaultDebug = List.of(DEFAULT_DEBUG);
-            additionalJlinkArgs = emptyList();
-            additionalModules = emptySet();
-            maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
-            cds = true;
-            test = true;
         }
 
         /**
@@ -505,24 +487,42 @@ public final class Configuration {
             if (mainJar == null) {
                 throw new IllegalArgumentException("applicationJar required");
             }
-            jdk = JavaRuntime.current();
-            if (jdk.version().feature() < Constants.MINIMUM_JDK_VERSION) {
-                throw new IllegalArgumentException(jdk + " is an unsupported version,"
-                                                   + Constants.MINIMUM_JDK_VERSION + " or higher required");
+            int feature = CURRENT_JDK.version().feature();
+            if (feature < 9) {
+                throw new IllegalArgumentException(CURRENT_JDK.version() + " is an unsupported version, 9 or higher required");
             }
-            if (cds
-                && Constants.DOCKER_BUILD
-                && jdk.version().feature() < Constants.MINIMUM_DOCKER_JDK_VERSION) {
-                throw new IllegalArgumentException("Class Data Sharing cannot be used in Docker with JDK "
-                                                   + jdk.version().feature() + ". Use JDK " + Constants.MINIMUM_DOCKER_JDK_VERSION
-                                                   + "+ or disable CDS by setting addClassDataSharingArchive to false "
-                                                   + "in the plugin configuration.");
+            boolean dockerBuild = "true".equals(System.getProperty("docker.build"));
+            if (cds && dockerBuild && feature < 10) {
+                throw new IllegalArgumentException(
+                        "Class Data Sharing cannot be used in Docker with JDK " + feature
+                        + ". Use JDK 10 or disable CDS by setting addClassDataSharingArchive to false "
+                        + "in the plugin configuration.");
             }
-            jriDirectory = JavaRuntime.prepareJriDirectory(jriDirectory, mainJar, replace);
+            jriDirectory = prepareJriDirectory(jriDirectory, mainJar, replace);
             if (verbose) {
                 LogLevel.set(LogLevel.DEBUG);
             }
             return new Configuration(this);
+        }
+
+        private static Path prepareJriDirectory(Path jriDirectory, Path mainJar, boolean replaceExisting) {
+            if (jriDirectory == null) {
+                String jarName = fileName(requireNonNull(mainJar));
+                String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + "-jri";
+                jriDirectory = WORKING_DIR.resolve(dirName);
+            }
+            if (Files.exists(jriDirectory)) {
+                if (Files.isDirectory(jriDirectory)) {
+                    if (replaceExisting) {
+                        FileUtils.deleteDirectory(jriDirectory);
+                    } else {
+                        throw new IllegalArgumentException(jriDirectory + " is an existing directory");
+                    }
+                } else {
+                    throw new IllegalArgumentException(jriDirectory + " is an existing file");
+                }
+            }
+            return jriDirectory;
         }
 
         private static List<String> toList(String value) {

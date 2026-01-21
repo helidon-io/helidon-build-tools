@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("resource")
 class VirtualFileSystemTest {
 
-    private static final boolean IS_WINDOWS = OSType.currentOS() == OSType.Windows;
+    private static final boolean IS_WINDOWS = OSType.CURRENT_OS == OSType.Windows;
     private static final Path ROOT = TestFiles.targetDir(VirtualFileSystemTest.class)
                                               .resolve("test-classes/vfs")
                                               .normalize();

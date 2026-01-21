@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.OSType;
 import io.helidon.build.common.PrintStreams;
 import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.Requirements;
@@ -45,6 +44,7 @@ import static io.helidon.build.common.FileUtils.javaHome;
 import static io.helidon.build.common.FileUtils.listFiles;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
+import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.PrintStreams.STDERR;
 import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.ansi.AnsiConsoleInstaller.IS_HELIDON_CHILD_PROCESS;
@@ -60,8 +60,7 @@ public class MavenCommand {
 
     private static final String EOL = System.lineSeparator();
     private static final PrintStream RED_STDERR = PrintStreams.apply(STDERR, Red::apply);
-    private static final OSType OS = OSType.currentOS();
-    private static final String MAVEN_BINARY_NAME = OS.mavenExec();
+    private static final String MAVEN_BINARY_NAME = CURRENT_OS.mavenExec();
     private static final String MAVEN_HOME_VAR = "MAVEN_HOME";
     private static final String MVN_HOME_VAR = "MVN_HOME";
     private static final String MAVEN_CORE_PREFIX = "maven-core";
@@ -279,7 +278,7 @@ public class MavenCommand {
         if (mavenHome != null) {
             if (Files.isDirectory(mavenHome)) {
                 Path executable = mavenHome.resolve("bin").resolve(MAVEN_BINARY_NAME);
-                if (Files.exists(executable) && (!OSType.currentOS().isPosix() || Files.isExecutable(executable))) {
+                if (Files.exists(executable) && (!CURRENT_OS.isPosix() || Files.isExecutable(executable))) {
                     return executable;
                 }
             }
@@ -297,7 +296,7 @@ public class MavenCommand {
      */
     @SuppressWarnings("unused")
     public static class Builder {
-        private static final String DEFAULT_MAVEN_EXEC = OS.mavenExec();
+        private static final String DEFAULT_MAVEN_EXEC = CURRENT_OS.mavenExec();
         private static final String PATH_VAR = "PATH";
         private static final String JAVA_HOME_VAR = "JAVA_HOME";
         private static final String MAVEN_OPTS_VAR = "MAVEN_OPTS";

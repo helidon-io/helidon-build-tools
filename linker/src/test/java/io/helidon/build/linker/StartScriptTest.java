@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.Set;
 
 import io.helidon.build.common.InputStreams;
 
-import io.helidon.build.linker.util.Constants;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Order;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
+import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.OSType.Linux;
 import static io.helidon.build.common.OSType.Windows;
 import static io.helidon.build.common.test.utils.TestFiles.targetDir;
@@ -56,34 +56,7 @@ class StartScriptTest {
     private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
     private static final String EXIT_ON_STARTED_VALUE = "!";
     private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
-    private static final String NOT_EQUAL = Constants.OS == Windows ? "-ne" : "!=";
-
-    private StartScript.Builder builder() {
-        return StartScript.builder()
-                          .mainJar(INSTALLED_JAR_FILE)
-                          .installHomeDirectory(INSTALL_DIR)
-                          .exitOnStartedValue(EXIT_ON_STARTED_VALUE);
-    }
-
-    private static String modulesTimeStampComparison() {
-        return timeStampComparison("modules", INSTALLED_MODULES_FILE);
-    }
-
-    private static String jarTimeStampComparison() {
-        return timeStampComparison("jar", INSTALLED_JAR_FILE);
-    }
-
-    private static String timeStampComparison(String name, Path file) {
-        final String timestamp = Long.toString(lastModifiedSeconds(file));
-        return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
-    }
-
-    static Matcher<String> containsString(String substring) {
-        if (Constants.OS == Windows) {
-            substring = substring.replace(Linux.escapedQuote(), Windows.escapedQuote());
-        }
-        return StringContains.containsString(substring);
-    }
+    private static final String NOT_EQUAL = CURRENT_OS == Windows ? "-ne" : "!=";
 
     @Test
     void testExitOnStarted() {
@@ -114,7 +87,7 @@ class StartScriptTest {
     void testDefaultDebugOptions() {
         String script = builder().build().toString();
         assertThat(script, containsString("DEFAULT_APP_DEBUG   Overrides "));
-        assertThat(script, containsString("defaultDebug=\"" + Configuration.Builder.DEFAULT_DEBUG + "\""));
+        assertThat(script, containsString("defaultDebug=\"" + Configuration.DEFAULT_DEBUG + "\""));
 
         script = builder().defaultDebugOptions(List.of("-Xdebug", "-Xnoagent")).build().toString();
         assertThat(script, containsString("DEFAULT_APP_DEBUG   Overrides "));
@@ -234,7 +207,7 @@ class StartScriptTest {
 
     @Test
     void testInstall() throws Exception {
-        Path installedScript = BIN_DIR.resolve(Constants.OS.withScriptExtension("start"));
+        Path installedScript = BIN_DIR.resolve(CURRENT_OS.withScriptExtension("start"));
         Files.deleteIfExists(installedScript);
         StartScript script = builder().build();
         Path scriptFile = script.install();
@@ -246,7 +219,7 @@ class StartScriptTest {
     }
 
     private static void assertExecutable(Path file) throws IOException {
-        if (Constants.OS.isPosix()) {
+        if (CURRENT_OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
                                                          PosixFilePermission.OWNER_EXECUTE,
@@ -256,5 +229,32 @@ class StartScriptTest {
                                                          PosixFilePermission.OTHERS_READ,
                                                          PosixFilePermission.OTHERS_EXECUTE)));
         }
+    }
+
+    static StartScript.Builder builder() {
+        return StartScript.builder()
+                .mainJar(INSTALLED_JAR_FILE)
+                .installHomeDirectory(INSTALL_DIR)
+                .exitOnStartedValue(EXIT_ON_STARTED_VALUE);
+    }
+
+    static String modulesTimeStampComparison() {
+        return timeStampComparison("modules", INSTALLED_MODULES_FILE);
+    }
+
+    static String jarTimeStampComparison() {
+        return timeStampComparison("jar", INSTALLED_JAR_FILE);
+    }
+
+    static String timeStampComparison(String name, Path file) {
+        final String timestamp = Long.toString(lastModifiedSeconds(file));
+        return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
+    }
+
+    static Matcher<String> containsString(String substring) {
+        if (CURRENT_OS == Windows) {
+            substring = substring.replace(Linux.escapedQuote(), Windows.escapedQuote());
+        }
+        return StringContains.containsString(substring);
     }
 }
