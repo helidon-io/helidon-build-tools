@@ -205,6 +205,14 @@ public final class Linker {
         this.jriMainJar = application.install(config.jriDirectory(), stripDebug);
     }
 
+    private Path archiveFile() {
+        if (config().aot()) {
+            return application.aotCachePath();
+        } else {
+            return application.archivePath();
+        }
+    }
+
     private void installCdsArchive() {
         if (config.cds()) {
             try {
@@ -213,44 +221,49 @@ public final class Linker {
                         .applicationJar(jriMainJar)
                         .jvmOptions(config.defaultJvmOptions())
                         .args((config.defaultArgs()))
-                        .archiveFile(application.archivePath())
+                        .archiveFile(archiveFile())
+                        .aot(config.aot())
                         .exitOnStartedValue(exitOnStarted)
                         .maxWaitSeconds(config.maxAppStartSeconds())
                         .logOutput(config.verbose())
                         .build();
 
                 // Get the archive size
-                cdsSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
+                cdsSize = sizeOf(config.jriDirectory().resolve(archiveFile()));
 
-                // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
-                // just count one and subtract since some classes in the class list may not have been
-                // put in the archive (see verbose output for examples).
-
-                Application app = application;
-                int jdkCount = 0;
-                int appCount = 0;
-                for (String name : cds.classList()) {
-                    String resourcePath = name + ".class";
-                    if (CURRENT_JDK.containsResource(resourcePath)) {
-                        jdkCount++;
-                    } else if (app.containsResource(resourcePath)) {
-                        appCount++;
-                    }
-                }
-
-                // Report the stats
-                if (appCount == 0) {
-                    if (!CURRENT_JDK.cdsRequiresUnlock()) {
-                        Log.warn("CDS archive does not contain any application classes, but should!");
-                    }
-                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) JDK classes",
-                            measuredSize(cdsSize), jdkCount);
+                if (cds.aot()) {
+                    // For aot we do not have the class list so just report archive size.
+                    Log.info("AOT Cache %s is %s", cds.archiveFile(), cdsSize);
                 } else {
-                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) classes:"
-                             + " $(bold,blue %d) JDK and $(bold,blue %d) application",
-                            measuredSize(cdsSize), jdkCount + appCount, jdkCount, appCount);
-                }
+                    // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
+                    // just count one and subtract since some classes in the class list may not have been
+                    // put in the archive (see verbose output for examples).
 
+                    Application app = application;
+                    int jdkCount = 0;
+                    int appCount = 0;
+                    for (String name : cds.classList()) {
+                        String resourcePath = name + ".class";
+                        if (CURRENT_JDK.containsResource(resourcePath)) {
+                            jdkCount++;
+                        } else if (app.containsResource(resourcePath)) {
+                            appCount++;
+                        }
+                    }
+
+                    // Report the stats
+                    if (appCount == 0) {
+                        if (!CURRENT_JDK.cdsRequiresUnlock()) {
+                            Log.warn("CDS archive does not contain any application classes, but should!");
+                        }
+                        Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) JDK classes",
+                                measuredSize(cdsSize), jdkCount);
+                    } else {
+                        Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) classes:"
+                                        + " $(bold,blue %d) JDK and $(bold,blue %d) application",
+                                measuredSize(cdsSize), jdkCount + appCount, jdkCount, appCount);
+                    }
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -266,6 +279,7 @@ public final class Linker {
                     .mainJar(jriMainJar)
                     .defaultArgs(config.defaultArgs())
                     .cdsInstalled(config.cds())
+                    .useAot(config.aot())
                     .debugInstalled(!config.stripDebug())
                     .exitOnStartedValue(exitOnStarted)
                     .build();

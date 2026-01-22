@@ -45,8 +45,9 @@ public final class Application implements ResourceContainer {
      * The relative path of the application directory.
      */
     public static final Path APP_DIR = Paths.get("app");
-
+    private static final Path CACHE_PATH   = Paths.get("lib/start.aot");
     private static final Path ARCHIVE_PATH = Paths.get("lib/start.jsa");
+
 
     private final Jar mainJar;
     private final List<Jar> classPath;
@@ -118,6 +119,15 @@ public final class Application implements ResourceContainer {
      */
     public Path archivePath() {
         return ARCHIVE_PATH;
+    }
+
+    /**
+     * Returns the relative path at which to create the AOT Cache.
+     *
+     * @return The path.
+     */
+    public Path aotCachePath() {
+        return CACHE_PATH;
     }
 
     /**

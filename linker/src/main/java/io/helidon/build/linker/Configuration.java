@@ -52,6 +52,7 @@ public final class Configuration {
     private final boolean verbose;
     private final boolean stripDebug;
     private final boolean cds;
+    private final boolean aot;
     private final boolean test;
     private final int maxAppStartSeconds;
 
@@ -75,6 +76,7 @@ public final class Configuration {
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
         this.cds = builder.cds;
+        this.aot = JavaRuntime.CURRENT_JDK.version().feature() >= 25 && builder.aot;
         this.test = builder.test;
         this.maxAppStartSeconds = builder.maxAppStartSeconds;
     }
@@ -152,6 +154,16 @@ public final class Configuration {
     }
 
     /**
+     * Returns whether to create an AOT cache.
+     * If running with JDK 24 or earlier will always return false.
+     *
+     * @return {@code true} if an AOT cache should be created.
+     */
+    public boolean aot() {
+        return aot;
+    }
+
+    /**
      * Returns whether to test the start script.
      *
      * @return {@code true} if the start script should be tested.
@@ -203,6 +215,7 @@ public final class Configuration {
         private boolean verbose;
         private boolean stripDebug;
         private boolean cds = true;
+        private boolean aot = true;
         private boolean test = true;
         private int maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
 
@@ -249,6 +262,7 @@ public final class Configuration {
                         replace(true);
                     } else if (arg.equalsIgnoreCase("--skipCds")) {
                         cds(false);
+                        aot(false);
                     } else if (arg.equalsIgnoreCase("--skipTest")) {
                         test(false);
                     } else if (arg.equalsIgnoreCase("--verbose")) {
@@ -430,6 +444,18 @@ public final class Configuration {
          */
         public Builder cds(boolean cds) {
             this.cds = cds;
+            return this;
+        }
+
+        /**
+         * Sets whether to build an AOT cache. Defaults to {@code true}.
+         * Ignored if not Java 25 or newer.
+         *
+         * @param aot {@code true} if an AOT cache should be created.
+         * @return The builder.
+         */
+        public Builder aot(boolean aot) {
+            this.aot = aot;
             return this;
         }
 

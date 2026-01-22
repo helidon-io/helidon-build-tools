@@ -58,9 +58,11 @@ init() {
     local -r defaultJvm="<DEFAULT_APP_JVM>"
     local -r defaultArgs="<DEFAULT_APP_ARGS>"
     local -r cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=${homeDir}/lib/start.jsa -Xshare:"
+    local -r aotOption="-XX:AOTCache=${homeDir}/lib/start.aot"
     local -r exitOption="-Dexit.on.started=<EXIT_ON_STARTED>"
     local -r jvmDefaults="${DEFAULT_APP_JVM:-${defaultJvm}}"
     local -r argDefaults="${DEFAULT_APP_ARGS:-${defaultArgs}}"
+    local -r useAot=<USE_AOT>
     local pathPrefix="${homeDir}/"
     local args jvm test share=auto
     local useCds=true
@@ -96,7 +98,11 @@ appendVar() {
 }
 
 setupCds() {
-    appendVar jvmOptions "${cdsOption}${share}"
+    if [[ ${useAot} ]]; then
+        appendVar jvmOptions "${aotOption}"
+    else
+        appendVar jvmOptions "${cdsOption}${share}"
+    fi
     pathPrefix=
     # shellcheck disable=SC2164
     cd "${homeDir}"

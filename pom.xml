@@ -200,7 +200,7 @@
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
-        <version.plugin.invoker>3.8.0</version.plugin.invoker>
+        <version.plugin.invoker>3.9.1</version.plugin.invoker>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.plexus>2.2.0</version.plugin.plexus>
         <version.plugin.plugin-plugin>3.10.2</version.plugin.plugin-plugin>

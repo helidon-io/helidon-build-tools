@@ -100,6 +100,7 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
         replace("<JAR_TIME_STAMP>", jarModTime);
         replace("<COPY_INSTRUCTIONS>", copyInstructions);
         replace("<EXIT_ON_STARTED>", config.exitOnStartedValue());
+        replace("<USE_AOT>", config.useAot() ? "true" : "");
 
         return toString();
     }

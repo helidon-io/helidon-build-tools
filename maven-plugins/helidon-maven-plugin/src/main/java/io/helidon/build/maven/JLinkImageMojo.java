@@ -67,6 +67,12 @@ public class JLinkImageMojo extends AbstractMojo {
     private boolean addClassDataSharingArchive;
 
     /**
+     * Add an AOT cache to reduce startup time.
+     */
+    @Parameter(defaultValue = "true", property = "jlink.image.addAotCache")
+    private boolean addAotCache;
+
+    /**
      * Test the image after creation.
      */
     @Parameter(defaultValue = "true", property = "jlink.image.testImage")
@@ -139,6 +145,7 @@ public class JLinkImageMojo extends AbstractMojo {
                                                 .additionalJlinkArgs(additionalJlinkArgs)
                                                 .additionalModules(additionalModules)
                                                 .cds(addClassDataSharingArchive)
+                                                .aot(addAotCache)
                                                 .stripDebug(stripDebug)
                                                 .test(testImage)
                                                 .jriDirectory(outputDir)
