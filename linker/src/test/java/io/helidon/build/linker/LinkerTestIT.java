@@ -48,7 +48,6 @@ import static org.hamcrest.Matchers.lessThan;
 @Order(4)
 @TestMethodOrder(OrderAnnotation.class)
 @EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
-//@EnabledForJreRange(min = JRE.JAVA_17, max = JRE.OTHER)
 class LinkerTestIT {
 
     @Tag("se")

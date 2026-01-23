@@ -231,7 +231,7 @@ public final class ClassDataSharing {
         /**
          * Sets whether or not to enable Aot features. Default is false.
          *
-         * @param aot {@code true} if Aot features should be used iff JRI is >= 25.
+         * @param aot {@code true} if Aot features should be used.
          * @return The builder.
          */
         public Builder aot(boolean aot) {

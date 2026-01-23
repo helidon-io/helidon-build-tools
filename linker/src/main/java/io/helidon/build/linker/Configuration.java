@@ -163,7 +163,7 @@ public final class Configuration {
     /**
      * Returns type of cache to use (CDS, AOT, NONE).
      *
-     * @return {@code CDS_ARCHIVE, AOT_CACHE, NONE}
+     * @return {@code CDS, AOT, NONE}
      */
     public CacheType cacheType() {
         return cacheType;
