@@ -28,7 +28,9 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import static io.helidon.build.common.FileUtils.listFiles;
@@ -46,6 +48,7 @@ import static org.hamcrest.Matchers.lessThan;
 @Order(4)
 @TestMethodOrder(OrderAnnotation.class)
 @EnabledIfSystemProperty(named = JUnitLauncher.IDENTITY_PROP, matches = "true")
+//@EnabledForJreRange(min = JRE.JAVA_17, max = JRE.OTHER)
 class LinkerTestIT {
 
     @Tag("se")
@@ -59,13 +62,14 @@ class LinkerTestIT {
                                             .jriDirectory(targetDir.resolve("se-jri-no-cds"))
                                             .mainJar(mainJar)
                                             .replace(true)
-                                            .cds(false)
+                                            .cacheType(Configuration.CacheType.NONE)
                                             .build();
         Path jri = Linker.linker(config).link();
 
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, false);
+        assertAotCache(jri, false);
         assertScript(jri);
     }
 
@@ -81,7 +85,7 @@ class LinkerTestIT {
                                             .mainJar(mainJar)
                                             .additionalModules("jdk.crypto.ec")
                                             .replace(true)
-                                            .cds(false)
+                                            .cacheType(Configuration.CacheType.NONE)
                                             .stripDebug(true)
                                             .build();
         Path jri = Linker.linker(config).link();
@@ -89,6 +93,7 @@ class LinkerTestIT {
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, false);
+        assertAotCache(jri, false);
         assertScript(jri);
         long origSize = sizeOf(mainJar);
         long copySize = sizeOf(jri.resolve("app").resolve(mainJar.getFileName()));
@@ -107,13 +112,14 @@ class LinkerTestIT {
                                             .mainJar(mainJar)
                                             .replace(true)
                                             .verbose(false)
-                                            .cds(true)
+                                            .cacheType(Configuration.CacheType.CDS)
                                             .build();
         Path jri = Linker.linker(config).link();
 
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
+        assertAotCache(jri, false);
         assertScript(jri);
     }
 
@@ -128,13 +134,14 @@ class LinkerTestIT {
                                             .jriDirectory(targetDir.resolve("mp-jri"))
                                             .mainJar(mainJar)
                                             .replace(true)
-                                            .cds(true)
+                                            .cacheType(Configuration.CacheType.CDS)
                                             .build();
         Path jri = Linker.linker(config).link();
 
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
         assertCdsArchive(jri, true);
+        assertAotCache(jri, false);
         assertScript(jri);
     }
 
@@ -146,15 +153,63 @@ class LinkerTestIT {
         Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
         Path targetDir = mainJar.getParent();
         Configuration config = Configuration.builder()
-                                            .jriDirectory(targetDir.resolve("mp-jri"))
+                                            .jriDirectory(targetDir.resolve("mp-jri-no-cds"))
                                             .mainJar(mainJar)
                                             .replace(true)
-                                            .cds(false)
+                                            .cacheType(Configuration.CacheType.NONE)
                                             .build();
         Path jri = Linker.linker(config).link();
 
         requireDirectory(jri);
         assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, false);
+        assertAotCache(jri, false);
+        assertScript(jri);
+    }
+
+    @Tag("mp")
+    @Order(7)
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    @EnabledForJreRange(min = JRE.JAVA_25)
+    void testQuickstartMpAot25(String basedir) throws Exception {
+        Path mainJar = Path.of(basedir).resolve("target/quickstart-mp.jar");
+        Path targetDir = mainJar.getParent();
+        Configuration config = Configuration.builder()
+                .jriDirectory(targetDir.resolve("mp-jri-aot-25"))
+                .mainJar(mainJar)
+                .cacheType(Configuration.CacheType.AOT)
+                .replace(true)
+                .build();
+        Path jri = Linker.linker(config).link();
+
+        requireDirectory(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, false);
+        assertAotCache(jri, true);
+        assertScript(jri);
+    }
+
+    @Tag("se")
+    @Order(8)
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    @EnabledForJreRange(min = JRE.JAVA_25)
+    void testQuickstartSeAot25(String basedir) throws Exception {
+        Path mainJar = Path.of(basedir).resolve("target/quickstart-se.jar");
+        Path targetDir = mainJar.getParent();
+        Configuration config = Configuration.builder()
+                .jriDirectory(targetDir.resolve("se-jri-aot-25"))
+                .mainJar(mainJar)
+                .cacheType(Configuration.CacheType.AOT)
+                .replace(true)
+                .build();
+        Path jri = Linker.linker(config).link();
+
+        requireDirectory(jri);
+        assertApplication(jri, mainJar.getFileName().toString());
+        assertCdsArchive(jri, false);
+        assertAotCache(jri, true);
         assertScript(jri);
     }
 
@@ -179,6 +234,12 @@ class LinkerTestIT {
         Path libDir = requireDirectory(jri.resolve("lib"));
         Path archiveFile = libDir.resolve("start.jsa");
         assertThat(Files.exists(archiveFile), is(archiveExists));
+    }
+
+    private static void assertAotCache(Path jri, boolean cacheExists) {
+        Path libDir = requireDirectory(jri.resolve("lib"));
+        Path archiveFile = libDir.resolve("start.aot");
+        assertThat(Files.exists(archiveFile), is(cacheExists));
     }
 
     private static void assertReadOnly(Path file) throws IOException {

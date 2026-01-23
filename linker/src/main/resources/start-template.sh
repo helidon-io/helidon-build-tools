@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ usage() {
     echo
     echo "    --jvm <option>  Add one or more JVM options, replacing defaults."
     echo "    --noCds         Do not use CDS."
+    echo "    --noAot         Do not use AOT Cache."
     echo "    --debug         Add JVM debug options."
     echo "    --test          Exit when started."
     echo "    --dryRun        Display the command rather than executing it."
@@ -62,10 +63,10 @@ init() {
     local -r exitOption="-Dexit.on.started=<EXIT_ON_STARTED>"
     local -r jvmDefaults="${DEFAULT_APP_JVM:-${defaultJvm}}"
     local -r argDefaults="${DEFAULT_APP_ARGS:-${defaultArgs}}"
-    local -r useAot=<USE_AOT>
     local pathPrefix="${homeDir}/"
     local args jvm test share=auto
     local useCds=true
+    local useAot=true
     local debug
     action="exec"
 
@@ -73,6 +74,7 @@ init() {
         case "${1}" in
             --jvm) shift; appendVar jvm "${1}" ;;
             --noCds) useCds= ;;
+            --noAot) useAot= ;;
             --debug) debug=true ;;
             --test) test=true; share=on ;;
             --dryRun) action="echo" ;;
@@ -84,6 +86,7 @@ init() {
 
     local jvmOptions=${jvm:-${jvmDefaults}}
     [[ ${useCds} ]] && setupCds
+    [[ ${useAot} ]] && setupAot
     [[ ${debug} ]] && appendVar jvmOptions "${DEFAULT_APP_DEBUG:-${defaultDebug}}"
     if [[ ${test} ]]; then
         appendVar jvmOptions "${exitOption}"
@@ -98,11 +101,14 @@ appendVar() {
 }
 
 setupCds() {
-    if [[ ${useAot} ]]; then
-        appendVar jvmOptions "${aotOption}"
-    else
-        appendVar jvmOptions "${cdsOption}${share}"
-    fi
+    appendVar jvmOptions "${cdsOption}${share}"
+    pathPrefix=
+    # shellcheck disable=SC2164
+    cd "${homeDir}"
+}
+
+setupAot() {
+    appendVar jvmOptions "${aotOption}"
     pathPrefix=
     # shellcheck disable=SC2164
     cd "${homeDir}"

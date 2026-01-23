@@ -51,10 +51,15 @@ public final class Configuration {
     private final Path jriDirectory;
     private final boolean verbose;
     private final boolean stripDebug;
-    private final boolean cds;
-    private final boolean aot;
     private final boolean test;
     private final int maxAppStartSeconds;
+    private final CacheType cacheType;
+
+    public enum CacheType {
+        CDS,
+        AOT,
+        NONE
+    }
 
     /**
      * Returns a new configuration builder.
@@ -75,10 +80,9 @@ public final class Configuration {
         this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
-        this.cds = builder.cds;
-        this.aot = JavaRuntime.CURRENT_JDK.version().feature() >= 25 && builder.aot;
         this.test = builder.test;
         this.maxAppStartSeconds = builder.maxAppStartSeconds;
+        this.cacheType = builder.cacheType;
     }
 
     /**
@@ -145,22 +149,12 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether to create a CDS archive.
+     * Returns type of cache to use (CDS, AOT, NONE)
      *
-     * @return {@code true} if a CDS archive should be created.
+     * @return {@code CDS_ARCHIVE, AOT_CACHE, NONE}
      */
-    public boolean cds() {
-        return cds;
-    }
-
-    /**
-     * Returns whether to create an AOT cache.
-     * If running with JDK 24 or earlier will always return false.
-     *
-     * @return {@code true} if an AOT cache should be created.
-     */
-    public boolean aot() {
-        return aot;
+    public CacheType cacheType() {
+        return cacheType;
     }
 
     /**
@@ -214,9 +208,8 @@ public final class Configuration {
         private boolean replace;
         private boolean verbose;
         private boolean stripDebug;
-        private boolean cds = true;
-        private boolean aot = true;
         private boolean test = true;
+        private CacheType cacheType = CacheType.NONE;
         private int maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
 
         private Builder() {
@@ -261,8 +254,7 @@ public final class Configuration {
                     } else if (arg.equalsIgnoreCase("--replace")) {
                         replace(true);
                     } else if (arg.equalsIgnoreCase("--skipCds")) {
-                        cds(false);
-                        aot(false);
+                        cacheType(CacheType.NONE);
                     } else if (arg.equalsIgnoreCase("--skipTest")) {
                         test(false);
                     } else if (arg.equalsIgnoreCase("--verbose")) {
@@ -436,26 +428,8 @@ public final class Configuration {
             return this;
         }
 
-        /**
-         * Sets whether to build a CDS archive. Defaults to {@code true}.
-         *
-         * @param cds {@code true} if a CDS archive should be created.
-         * @return The builder.
-         */
-        public Builder cds(boolean cds) {
-            this.cds = cds;
-            return this;
-        }
-
-        /**
-         * Sets whether to build an AOT cache. Defaults to {@code true}.
-         * Ignored if not Java 25 or newer.
-         *
-         * @param aot {@code true} if an AOT cache should be created.
-         * @return The builder.
-         */
-        public Builder aot(boolean aot) {
-            this.aot = aot;
+        public Builder cacheType(CacheType cacheType) {
+            this.cacheType = cacheType;
             return this;
         }
 
@@ -516,13 +490,6 @@ public final class Configuration {
             int feature = CURRENT_JDK.version().feature();
             if (feature < 9) {
                 throw new IllegalArgumentException(CURRENT_JDK.version() + " is an unsupported version, 9 or higher required");
-            }
-            boolean dockerBuild = "true".equals(System.getProperty("docker.build"));
-            if (cds && dockerBuild && feature < 10) {
-                throw new IllegalArgumentException(
-                        "Class Data Sharing cannot be used in Docker with JDK " + feature
-                        + ". Use JDK 10 or disable CDS by setting addClassDataSharingArchive to false "
-                        + "in the plugin configuration.");
             }
             jriDirectory = prepareJriDirectory(jriDirectory, mainJar, replace);
             if (verbose) {

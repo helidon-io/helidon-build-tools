@@ -278,7 +278,7 @@ public class StartScript {
          *
          * @return {@code true} if use AOT Cache
          */
-        boolean useAot();
+        boolean aotInstalled();
 
         /**
          * Returns whether debug support is installed.
@@ -322,7 +322,7 @@ public class StartScript {
             final List<String> command = new ArrayList<>();
             command.add("bin" + File.separator + "java");
             if (cdsInstalled()) {
-                if (useAot()) {
+                if (aotInstalled()) {
                     command.add("-Xlog:aot");
                     command.add("-XX:AotCache=lib" + File.separator + "start.aot");
                 } else {
@@ -482,7 +482,7 @@ public class StartScript {
         private List<String> defaultDebugOptions = List.of(Configuration.DEFAULT_DEBUG);
         private List<String> defaultArgs = List.of();
         private boolean cdsInstalled = true;
-        private boolean useAot = true;
+        private boolean aotInstalled = true;
         private boolean debugInstalled = true;
         private String exitOnStartedValue = "!";
         private Template template;
@@ -568,13 +568,13 @@ public class StartScript {
         }
 
         /**
-         * Sets whether or not to use AOT Cache
+         * Sets whether an AOT cache was installed.
          *
-         * @param useAot {@code true} to use AOT Cache
+         * @param aotInstalled {@code true} to use AOT Cache
          * @return The builder.
          */
-        public Builder useAot(boolean useAot) {
-            this.useAot = useAot;
+        public Builder aotInstalled(boolean aotInstalled) {
+            this.aotInstalled = aotInstalled;
             return this;
         }
 
@@ -686,8 +686,8 @@ public class StartScript {
                 }
 
                 @Override
-                public boolean useAot() {
-                    return useAot;
+                public boolean aotInstalled() {
+                    return aotInstalled;
                 }
 
                 @Override

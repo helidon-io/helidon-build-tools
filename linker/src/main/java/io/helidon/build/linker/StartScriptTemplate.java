@@ -51,6 +51,15 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
             removeLines("cds");
         }
 
+        if (!config.aotInstalled()) {
+            if (CURRENT_OS == Windows) {
+                removeFunction("function setupAot");
+            } else {
+                removeFunction("setupAot()");
+            }
+            removeLines("aot");
+        }
+
         if (!config.debugInstalled()) {
             removeLines("debug");
         }
@@ -100,7 +109,6 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
         replace("<JAR_TIME_STAMP>", jarModTime);
         replace("<COPY_INSTRUCTIONS>", copyInstructions);
         replace("<EXIT_ON_STARTED>", config.exitOnStartedValue());
-        replace("<USE_AOT>", config.useAot() ? "true" : "");
 
         return toString();
     }
