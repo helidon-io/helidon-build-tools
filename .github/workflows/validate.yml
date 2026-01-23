@@ -137,7 +137,7 @@ jobs:
           - { os: ubuntu-24.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
-    name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}
+    name: tests25/${{ matrix.moduleSet }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -145,7 +145,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.os }}
+          test-artifact-name: tests25-${{ matrix.moduleSet }}-${{ matrix.os }}
           run: |
             mvn ${MVN_ARGS} \
               -DreactorRule=tests \
