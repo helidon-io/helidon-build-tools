@@ -274,6 +274,13 @@ public class StartScript {
         boolean cdsInstalled();
 
         /**
+         * Returns whether we should use AOT Cache.
+         *
+         * @return {@code true} if use AOT Cache
+         */
+        boolean aotInstalled();
+
+        /**
          * Returns whether debug support is installed.
          *
          * @return {@code true} if installed.
@@ -315,11 +322,16 @@ public class StartScript {
             final List<String> command = new ArrayList<>();
             command.add("bin" + File.separator + "java");
             if (cdsInstalled()) {
-                if (cdsRequiresUnlock()) {
-                    command.add("-XX:+UnlockDiagnosticVMOptions");
+                if (aotInstalled()) {
+                    command.add("-Xlog:aot");
+                    command.add("-XX:AotCache=lib" + File.separator + "start.aot");
+                } else {
+                    if (cdsRequiresUnlock()) {
+                        command.add("-XX:+UnlockDiagnosticVMOptions");
+                    }
+                    command.add("-XX:SharedArchiveFile=lib" + File.separator + "start.jsa");
+                    command.add("-Xshare:auto");
                 }
-                command.add("-XX:SharedArchiveFile=lib" + File.separator + "start.jsa");
-                command.add("-Xshare:auto");
             }
             command.addAll(defaultJvmOptions());
             command.add("-jar");
@@ -470,6 +482,7 @@ public class StartScript {
         private List<String> defaultDebugOptions = List.of(Configuration.DEFAULT_DEBUG);
         private List<String> defaultArgs = List.of();
         private boolean cdsInstalled = true;
+        private boolean aotInstalled = true;
         private boolean debugInstalled = true;
         private String exitOnStartedValue = "!";
         private Template template;
@@ -551,6 +564,17 @@ public class StartScript {
          */
         public Builder cdsInstalled(boolean cdsInstalled) {
             this.cdsInstalled = cdsInstalled;
+            return this;
+        }
+
+        /**
+         * Sets whether an AOT cache was installed.
+         *
+         * @param aotInstalled {@code true} to use AOT Cache
+         * @return The builder.
+         */
+        public Builder aotInstalled(boolean aotInstalled) {
+            this.aotInstalled = aotInstalled;
             return this;
         }
 
@@ -659,6 +683,11 @@ public class StartScript {
                 @Override
                 public boolean cdsInstalled() {
                     return cdsInstalled;
+                }
+
+                @Override
+                public boolean aotInstalled() {
+                    return aotInstalled;
                 }
 
                 @Override

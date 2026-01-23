@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.build.linker.Configuration;
+import io.helidon.build.linker.JavaRuntime;
 import io.helidon.build.linker.Linker;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -65,6 +66,12 @@ public class JLinkImageMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "true", property = "jlink.image.addClassDataSharingArchive")
     private boolean addClassDataSharingArchive;
+
+    /**
+     * Add an AOT cache to reduce startup time.
+     */
+    @Parameter(defaultValue = "true", property = "jlink.image.addAotCache")
+    private boolean addAotCache;
 
     /**
      * Test the image after creation.
@@ -138,7 +145,7 @@ public class JLinkImageMojo extends AbstractMojo {
                                                 .defaultDebugOptions(defaultDebugOptions)
                                                 .additionalJlinkArgs(additionalJlinkArgs)
                                                 .additionalModules(additionalModules)
-                                                .cds(addClassDataSharingArchive)
+                                                .cacheType(determinCacheType())
                                                 .stripDebug(stripDebug)
                                                 .test(testImage)
                                                 .jriDirectory(outputDir)
@@ -163,5 +170,30 @@ public class JLinkImageMojo extends AbstractMojo {
             throw new MojoFailureException("Artifact does not exist: " + result.toAbsolutePath());
         }
         return result;
+    }
+
+    /**
+     * Determine the type of startup cache to use, if any.
+     * We can only support AOT Cache if Java 25 or newer.
+     *
+     * @return Startup cache type to use
+     */
+    private Configuration.CacheType determinCacheType() {
+        if (JavaRuntime.CURRENT_JDK.version().feature() <= 24) {
+            if (addClassDataSharingArchive) {
+                return Configuration.CacheType.CDS;
+            } else {
+                return Configuration.CacheType.NONE;
+            }
+        }
+
+        // Java 25 or newer
+        if (addAotCache) {
+            return Configuration.CacheType.AOT;
+        } else if (addClassDataSharingArchive) {
+            return Configuration.CacheType.CDS;
+        } else {
+            return Configuration.CacheType.NONE;
+        }
     }
 }

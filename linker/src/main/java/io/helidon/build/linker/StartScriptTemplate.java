@@ -51,6 +51,15 @@ public class StartScriptTemplate extends StartScript.SimpleTemplate {
             removeLines("cds");
         }
 
+        if (!config.aotInstalled()) {
+            if (CURRENT_OS == Windows) {
+                removeFunction("function setupAot");
+            } else {
+                removeFunction("setupAot()");
+            }
+            removeLines("aot");
+        }
+
         if (!config.debugInstalled()) {
             removeLines("debug");
         }

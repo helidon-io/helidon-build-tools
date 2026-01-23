@@ -139,17 +139,18 @@ This goal binds to the `package` phase by default.
 | defaultDebugOptions        | List    | []                | JVM debug options to use if the `--debug` flag is passed to the `start` script |
 | additionalModules          | Set     | []                | Add any modules that may not be found automatically                            |
 | addClassDataSharingArchive | boolean | `true`            | Add a Class Data Sharing archive to reduce startup time                        |
+| addAotCache                | boolean | `true`            | Add an Aot Cache to reduce startup/warmup time. Ignored if Java 24 or earlier  |
 | testImage                  | boolean | `true`            | Start the application after the image is built                                 |
 | stripDebug                 | boolean | `false`           | Remove all debug support from the image, including within `.class` files       |
 | skipJavaImage              | boolean | `false`           | Skip this goal execution                                                       |
 | additionalJlinkArgs        | List    | []                | Additional arguments to use when invoking `jlink`                              |
 | maxAppStartSeconds         | int     | `60`              | Maximum seconds to wait for application startup                                |
 
-
-The above parameters are mapped to user properties of the form `jlink.image.PROPERTY`, e.g.
-`-Djlink.image.addClassDataSharingArchive=false`. Multiple arguments for the `jlink.image.additionalJlinkArgs` 
-property must be comma separated.
-
+Notes:
+* The above parameters are mapped to user properties of the form `jlink.image.PROPERTY`, e.g.  
+  `-Djlink.image.addClassDataSharingArchive=false`
+* Multiple arguments for the `jlink.image.additionalJlinkArgs` property must be comma separated.
+* If both `addClassDataSharingArchive` and `addAotCache` are true then an Aot Cache will be created if Java 25 or newer.
 
 ### General usage
 
