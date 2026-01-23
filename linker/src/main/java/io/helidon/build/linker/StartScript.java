@@ -274,7 +274,7 @@ public class StartScript {
         boolean cdsInstalled();
 
         /**
-         * Returns whether we should use AOT Cache
+         * Returns whether we should use AOT Cache.
          *
          * @return {@code true} if use AOT Cache
          */

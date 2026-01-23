@@ -55,9 +55,21 @@ public final class Configuration {
     private final int maxAppStartSeconds;
     private final CacheType cacheType;
 
+    /**
+     *  Type of cache.
+     */
     public enum CacheType {
+        /**
+         * CDS Archive.
+         */
         CDS,
+        /**
+         * AOT Cache.
+         */
         AOT,
+        /**
+         * No AOT or CDS cache.
+         */
         NONE
     }
 
@@ -149,7 +161,7 @@ public final class Configuration {
     }
 
     /**
-     * Returns type of cache to use (CDS, AOT, NONE)
+     * Returns type of cache to use (CDS, AOT, NONE).
      *
      * @return {@code CDS_ARCHIVE, AOT_CACHE, NONE}
      */
@@ -428,6 +440,12 @@ public final class Configuration {
             return this;
         }
 
+        /**
+         *  Cache type.
+         *
+         * @param cacheType one of CDS, AOT, NONE.
+         * @return The builder.
+         */
         public Builder cacheType(CacheType cacheType) {
             this.cacheType = cacheType;
             return this;
