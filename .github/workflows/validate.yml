@@ -137,7 +137,7 @@ jobs:
           - { os: ubuntu-24.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
-    name: tests-jdk25/${{ matrix.moduleSet }}-${{ matrix.platform }}
+    name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}-jdk25
     steps:
       - uses: actions/checkout@v4
         with:
