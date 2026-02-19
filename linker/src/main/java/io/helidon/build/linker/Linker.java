@@ -205,52 +205,65 @@ public final class Linker {
         this.jriMainJar = application.install(config.jriDirectory(), stripDebug);
     }
 
+    private Path archiveFile() {
+        if (config().cacheType() == Configuration.CacheType.AOT) {
+            return application.aotCachePath();
+        } else {
+            return application.archivePath();
+        }
+    }
+
     private void installCdsArchive() {
-        if (config.cds()) {
+        if (config.cacheType() != Configuration.CacheType.NONE) {
             try {
                 ClassDataSharing cds = ClassDataSharing.builder()
                         .jri(config.jriDirectory())
                         .applicationJar(jriMainJar)
                         .jvmOptions(config.defaultJvmOptions())
                         .args((config.defaultArgs()))
-                        .archiveFile(application.archivePath())
+                        .archiveFile(archiveFile())
+                        .aot(config.cacheType() == Configuration.CacheType.AOT)
                         .exitOnStartedValue(exitOnStarted)
                         .maxWaitSeconds(config.maxAppStartSeconds())
                         .logOutput(config.verbose())
                         .build();
 
                 // Get the archive size
-                cdsSize = sizeOf(config.jriDirectory().resolve(application.archivePath()));
+                cdsSize = sizeOf(config.jriDirectory().resolve(archiveFile()));
 
-                // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
-                // just count one and subtract since some classes in the class list may not have been
-                // put in the archive (see verbose output for examples).
-
-                Application app = application;
-                int jdkCount = 0;
-                int appCount = 0;
-                for (String name : cds.classList()) {
-                    String resourcePath = name + ".class";
-                    if (CURRENT_JDK.containsResource(resourcePath)) {
-                        jdkCount++;
-                    } else if (app.containsResource(resourcePath)) {
-                        appCount++;
-                    }
-                }
-
-                // Report the stats
-                if (appCount == 0) {
-                    if (!CURRENT_JDK.cdsRequiresUnlock()) {
-                        Log.warn("CDS archive does not contain any application classes, but should!");
-                    }
-                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) JDK classes",
-                            measuredSize(cdsSize), jdkCount);
+                if (cds.aot()) {
+                    // For aot we do not have the class list so just report archive size.
+                    Log.info("AOT Cache %s is %s", cds.archiveFile(), measuredSize(cdsSize));
                 } else {
-                    Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) classes:"
-                             + " $(bold,blue %d) JDK and $(bold,blue %d) application",
-                            measuredSize(cdsSize), jdkCount + appCount, jdkCount, appCount);
-                }
+                    // Count how many classes in the archive are from the JDK vs the app. Note that we cannot
+                    // just count one and subtract since some classes in the class list may not have been
+                    // put in the archive (see verbose output for examples).
 
+                    Application app = application;
+                    int jdkCount = 0;
+                    int appCount = 0;
+                    for (String name : cds.classList()) {
+                        String resourcePath = name + ".class";
+                        if (CURRENT_JDK.containsResource(resourcePath)) {
+                            jdkCount++;
+                        } else if (app.containsResource(resourcePath)) {
+                            appCount++;
+                        }
+                    }
+
+                    // Report the stats
+                    if (appCount == 0) {
+                        if (!CURRENT_JDK.cdsRequiresUnlock()) {
+                            Log.warn("CDS archive does not contain any application classes, but should!");
+                        }
+                        Log.info("CDS archive is $(bold,blue %6s) for $(bold,blue %d) JDK classes",
+                                measuredSize(cdsSize), jdkCount);
+                    } else {
+                        Log.info("CDS archive %s is $(bold,blue %6s) for $(bold,blue %d) classes:"
+                                        + " $(bold,blue %d) JDK and $(bold,blue %d) application",
+                                cds.archiveFile(), measuredSize(cdsSize), jdkCount + appCount, jdkCount, appCount);
+                    }
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -265,7 +278,8 @@ public final class Linker {
                     .defaultDebugOptions(config.defaultDebugOptions())
                     .mainJar(jriMainJar)
                     .defaultArgs(config.defaultArgs())
-                    .cdsInstalled(config.cds())
+                    .cdsInstalled(config.cacheType() == Configuration.CacheType.CDS)
+                    .aotInstalled(config.cacheType() == Configuration.CacheType.AOT)
                     .debugInstalled(!config.stripDebug())
                     .exitOnStartedValue(exitOnStarted)
                     .build();
@@ -274,9 +288,9 @@ public final class Linker {
             startScript.install();
             startCommand = List.of(imageName + File.separator + "bin" + File.separator + startScript.scriptFile().getFileName());
         } catch (StartScript.PlatformNotSupportedError e) {
-            if (config.cds()) {
+            if (config.cacheType() != Configuration.CacheType.NONE) {
                 Log.warn("Start script cannot be created for this platform;"
-                         + " for CDS to function, the jar path $(bold,yellow must) be relative as shown below.");
+                         + " for CDS/AOTCach to function, the jar path $(bold,yellow must) be relative as shown below.");
             } else {
                 Log.warn("Start script cannot be created for this platform.");
             }
@@ -355,11 +369,12 @@ public final class Linker {
                 measuredInitialSize,
                 measuredJdkSize,
                 measuredAppSize);
-        if (config.cds()) {
-            Log.info("  Image size: $(bold,bright,green %s) (JDK: %s, application: %s, CDS: %s)",
+        if (config.cacheType() != Configuration.CacheType.NONE) {
+            Log.info("  Image size: $(bold,bright,green %s) (JDK: %s, application: %s, %s: %s)",
                     Strings.padded(" ", measuredInitialSize.length(), measuredSize(imageSize)),
                     Strings.padded(" ", measuredJdkSize.length(), measuredSize(jriSize)),
                     Strings.padded(" ", measuredAppSize.length(), measuredSize(jriAppSize)),
+                    config.cacheType(),
                     measuredSize(cdsSize));
         } else {
             Log.info("  Image size: $(bold,bright,green %s) (JDK: %s, application: %s)",

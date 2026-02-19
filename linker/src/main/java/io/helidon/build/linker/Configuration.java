@@ -51,9 +51,27 @@ public final class Configuration {
     private final Path jriDirectory;
     private final boolean verbose;
     private final boolean stripDebug;
-    private final boolean cds;
     private final boolean test;
     private final int maxAppStartSeconds;
+    private final CacheType cacheType;
+
+    /**
+     *  Type of cache.
+     */
+    public enum CacheType {
+        /**
+         * CDS Archive.
+         */
+        CDS,
+        /**
+         * AOT Cache.
+         */
+        AOT,
+        /**
+         * No AOT or CDS cache.
+         */
+        NONE
+    }
 
     /**
      * Returns a new configuration builder.
@@ -74,9 +92,9 @@ public final class Configuration {
         this.jriDirectory = builder.jriDirectory;
         this.verbose = builder.verbose;
         this.stripDebug = builder.stripDebug;
-        this.cds = builder.cds;
         this.test = builder.test;
         this.maxAppStartSeconds = builder.maxAppStartSeconds;
+        this.cacheType = builder.cacheType;
     }
 
     /**
@@ -143,12 +161,12 @@ public final class Configuration {
     }
 
     /**
-     * Returns whether to create a CDS archive.
+     * Returns type of cache to use (CDS, AOT, NONE).
      *
-     * @return {@code true} if a CDS archive should be created.
+     * @return {@code CDS, AOT, NONE}
      */
-    public boolean cds() {
-        return cds;
+    public CacheType cacheType() {
+        return cacheType;
     }
 
     /**
@@ -202,8 +220,8 @@ public final class Configuration {
         private boolean replace;
         private boolean verbose;
         private boolean stripDebug;
-        private boolean cds = true;
         private boolean test = true;
+        private CacheType cacheType = CacheType.NONE;
         private int maxAppStartSeconds = DEFAULT_MAX_APP_START_SECONDS;
 
         private Builder() {
@@ -248,7 +266,7 @@ public final class Configuration {
                     } else if (arg.equalsIgnoreCase("--replace")) {
                         replace(true);
                     } else if (arg.equalsIgnoreCase("--skipCds")) {
-                        cds(false);
+                        cacheType(CacheType.NONE);
                     } else if (arg.equalsIgnoreCase("--skipTest")) {
                         test(false);
                     } else if (arg.equalsIgnoreCase("--verbose")) {
@@ -423,13 +441,13 @@ public final class Configuration {
         }
 
         /**
-         * Sets whether to build a CDS archive. Defaults to {@code true}.
+         *  Cache type.
          *
-         * @param cds {@code true} if a CDS archive should be created.
+         * @param cacheType one of CDS, AOT, NONE.
          * @return The builder.
          */
-        public Builder cds(boolean cds) {
-            this.cds = cds;
+        public Builder cacheType(CacheType cacheType) {
+            this.cacheType = cacheType;
             return this;
         }
 
@@ -490,13 +508,6 @@ public final class Configuration {
             int feature = CURRENT_JDK.version().feature();
             if (feature < 9) {
                 throw new IllegalArgumentException(CURRENT_JDK.version() + " is an unsupported version, 9 or higher required");
-            }
-            boolean dockerBuild = "true".equals(System.getProperty("docker.build"));
-            if (cds && dockerBuild && feature < 10) {
-                throw new IllegalArgumentException(
-                        "Class Data Sharing cannot be used in Docker with JDK " + feature
-                        + ". Use JDK 10 or disable CDS by setting addClassDataSharingArchive to false "
-                        + "in the plugin configuration.");
             }
             jriDirectory = prepareJriDirectory(jriDirectory, mainJar, replace);
             if (verbose) {

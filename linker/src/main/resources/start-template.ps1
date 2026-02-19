@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ function usage {
     Write-Host
     Write-Host "    --jvm <option>  Add one or more JVM options, replacing defaults."
     Write-Host "    --noCds         Do not use CDS."
+    Write-Host "    --noAot         Do not use AOT Cache."
     Write-Host "    --debug         Add JVM debug options."
     Write-Host "    --test          Exit when started."
     Write-Host "    --dryRun        Display the command rather than executing it."
@@ -57,6 +58,7 @@ function init {
     $defaultJvm="<DEFAULT_APP_JVM>"
     $defaultArgs="<DEFAULT_APP_ARGS>"
     $cdsOption="<CDS_UNLOCK>-XX:SharedArchiveFile=$homeDir\lib\start.jsa -Xshare:"
+    $aotOption="-XX:AOTCache=$homeDir\lib\start.aot"
     $exitOption="`"-Dexit.on.started=<EXIT_ON_STARTED>`""
     $debugDefaults = if (Test-Path env:DEFAULT_APP_DEBUG) { $env:DEFAULT_APP_DEBUG } else { $defaultDebug }
     $jvmDefaults = if (Test-Path env:DEFAULT_APP_JVM) { $env:DEFAULT_APP_JVM } else { $defaultJvm }
@@ -66,12 +68,14 @@ function init {
     $test=$false
     $share="auto"
     $useCds=$true
+    $useAot=$true
     $debug=$false
     $i=0
     while ($i -lt $arguments.Length) {
         switch ($($arguments[$i])) {
            "--jvm"  {$jvm = appendVar $jvm $($arguments[++$i]); break}
            "--noCds"   {$useCds=$false; break}
+           "--noAot"   {$useAot=$false; break}
            "--debug" {$debug=$true; break}
            "--test"  {$test=$true; $share="on"; break}
            "--dryRun" {$global:action="Write-Host"; break}
@@ -83,6 +87,7 @@ function init {
     }
     $jvmOptions = if ($jvm) { $jvm } else { $jvmDefaults }
     if (${useCds}) { setupCds }
+    if (${useAot}) { setupAot }
     if (${debug}) { $jvmOptions = appendVar "$jvmOptions" "$debugDefaults" }
     if ($test) {
     	$jvmOptions = appendVar "$jvmOptions" "$exitOption"
@@ -109,6 +114,12 @@ function checkTimeStamps {
 
 function setupCds {
     $jvmOptions = appendVar "$jvmOptions" "${cdsOption}${share}"
+    Set-Location -Path "$homeDir"
+    $pathPrefix=""
+}
+
+function setupAot {
+    $jvmOptions = appendVar "$jvmOptions" "${aotOption}"
     Set-Location -Path "$homeDir"
     $pathPrefix=""
 }
