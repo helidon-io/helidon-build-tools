@@ -358,7 +358,7 @@ public final class Jar implements ResourceContainer {
                     // (re)build index
                     if (indexer != null) {
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        IndexWriter writer = new IndexWriter(out);
+                        IndexWriter writer = new IndexWriter(bos);
                         writer.write(indexer.complete());
                         index = bos.toByteArray();
                     }
