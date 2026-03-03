@@ -180,7 +180,7 @@ public class JLinkImageMojo extends AbstractMojo {
      */
     private Configuration.CacheType determinCacheType() throws MojoFailureException {
 
-        if (! addClassDataSharingArchive) {
+        if (!addClassDataSharingArchive) {
             // For backwards compatibility we don't generate any cache if old CDS flag is false
             // No matter what JDK we are running on.
             return Configuration.CacheType.NONE;
