@@ -68,10 +68,10 @@ public class JLinkImageMojo extends AbstractMojo {
     private boolean addClassDataSharingArchive;
 
     /**
-     * Add an AOT cache to reduce startup time.
+     * Add an AOT cache to reduce startup time if Java 25 or newer: true, false, cds.
      */
-    @Parameter(defaultValue = "true", property = "jlink.image.addAotCache")
-    private boolean addAotCache;
+    @Parameter(defaultValue = "true", property = "jlink.image.aotCache")
+    private String aotCache;
 
     /**
      * Test the image after creation.
@@ -178,22 +178,28 @@ public class JLinkImageMojo extends AbstractMojo {
      *
      * @return Startup cache type to use
      */
-    private Configuration.CacheType determinCacheType() {
+    private Configuration.CacheType determinCacheType() throws MojoFailureException {
+
+        if (! addClassDataSharingArchive) {
+            // For backwards compatibility we don't generate any cache if old CDS flag is false
+            // No matter what JDK we are running on.
+            return Configuration.CacheType.NONE;
+        }
+
         if (JavaRuntime.CURRENT_JDK.version().feature() <= 24) {
-            if (addClassDataSharingArchive) {
-                return Configuration.CacheType.CDS;
-            } else {
-                return Configuration.CacheType.NONE;
-            }
+            return Configuration.CacheType.CDS;
         }
 
         // Java 25 or newer
-        if (addAotCache) {
+        if (aotCache.equalsIgnoreCase("true")) {
+            // Default case under Java 25
             return Configuration.CacheType.AOT;
-        } else if (addClassDataSharingArchive) {
+        } else if (aotCache.equalsIgnoreCase("false")) {
+            return Configuration.CacheType.NONE;
+        } else if (aotCache.equalsIgnoreCase("cds")) {
             return Configuration.CacheType.CDS;
         } else {
-            return Configuration.CacheType.NONE;
+            throw new MojoFailureException("Invalid aotCache value " + aotCache + ": must be one of: true, false, cds");
         }
     }
 }
