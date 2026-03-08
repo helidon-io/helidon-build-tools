@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class Context {
      * @return value optional
      */
     public <T> Optional<T> option(String key, Class<T> type) {
-        return Optional.ofNullable(site.options().get(key)).map(type::cast);
+        return site.options().get(key).as(type);
     }
 
     /**
@@ -316,7 +316,7 @@ public class Context {
     /**
      * Get the resolved static assets.
      *
-     * @return map of assets, key is the asset path, value is the target directory
+     * @return list of assets, key is the asset path, value is the target directory
      */
     public List<String> resolvedAssets() {
         return resolvedAssets.get();

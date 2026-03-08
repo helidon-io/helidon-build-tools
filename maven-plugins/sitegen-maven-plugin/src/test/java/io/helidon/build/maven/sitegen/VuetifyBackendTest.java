@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ class VuetifyBackendTest {
         Path sourceDir = targetDir.resolve("test-classes/vuetify2");
         Path outputDir = targetDir.resolve("vuetify/testvuetify2");
         Site site = Site.builder()
-                        .options(Map.of(STRICT_IMAGES, false))
+                        .options(Map.of(STRICT_IMAGES, "false"))
                         .page(PageFilter.builder().includes("**/*.adoc"))
                         .backend(VuetifyBackend.builder().home("home.adoc"))
                         .build();
