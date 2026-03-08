@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class Site {
     private final Header header;
     private final List<PageFilter> pages;
     private final Backend backend;
-    private final Map<String, Object> options;
+    private final Config options;
 
     private Site(Builder builder) {
         backend = Optional.ofNullable(builder.backend)
@@ -57,7 +57,7 @@ public class Site {
                          .build();
         header = Optional.ofNullable(builder.header)
                          .orElseGet(Header::create);
-        options = builder.options;
+        options = Config.create(builder.options);
         assets = builder.assets;
         pages = builder.pages;
     }
@@ -141,7 +141,7 @@ public class Site {
      * @return options
      * @see Options
      */
-    public Map<String, Object> options() {
+    public Config options() {
         return options;
     }
 
@@ -182,7 +182,7 @@ public class Site {
         private Backend backend;
         private SiteEngine.Builder engine;
         private Header header;
-        private final Map<String, Object> options = new HashMap<>();
+        private final Map<String, String> options = new HashMap<>();
         private final List<StaticAsset> assets = new ArrayList<>();
         private final List<PageFilter> pages = new ArrayList<>();
 
@@ -192,7 +192,7 @@ public class Site {
          * @param options map of options
          * @return this builder
          */
-        public Builder options(Map<String, Object> options) {
+        public Builder options(Map<String, String> options) {
             if (options != null) {
                 this.options.putAll(options);
             }

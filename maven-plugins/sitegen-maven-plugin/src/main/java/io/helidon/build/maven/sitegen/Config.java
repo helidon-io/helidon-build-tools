@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -273,6 +273,16 @@ public final class Config {
             return Optional.of(values);
         }
         throw new MappingException(value.getClass(), Map.class);
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @param value underlying value
+     * @return new instance
+     */
+    public static Config create(Object value) {
+        return new Config(value, Map.of());
     }
 
     /**

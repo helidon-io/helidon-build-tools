@@ -33,12 +33,9 @@
 <router-link to="/${link.target}"<#if link.rel??> rel="${link.rel}"</#if><#if link.role??> class="${link.role}"</#if>><#nested></router-link>
 <#break>
 <#case "ref">
-<#-- link to an external page -->
-<a href="${link.source}"<#if link.rel??> rel="${link.rel}"</#if><#if link.role??> class="${link.role}"</#if>><#nested></a>
-<#break>
 <#case "bibref">
 <#-- anchor -->
-<a id="${link.source}"<#if link.rel??> rel="${link.rel}"</#if><#if link.role??> class="${link.role}"</#if>><#nested></a>
+<a id="${link.id}"><#nested></a>
 <#break>
 <#default>
 <a<#if link.title??> title="${link.title}"</#if><#if link.window??> target="${link.window}"</#if> href="${link.target}"<#if link.rel??> rel="${link.rel}"</#if><#if link.role??> class="${link.role}"</#if>><#nested></a>
