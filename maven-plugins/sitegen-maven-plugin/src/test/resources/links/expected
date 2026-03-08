@@ -66,6 +66,34 @@
 
 <p><router-link to="#bottom" @click.native="this.scrollFix('#bottom')">Bottom</router-link></p>
 
+
+<div class="table__overflow elevation-1  ">
+<table class="datatable table">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th>Key</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class=""
+
+
+><a id="boolean-properties"></a><router-link :to="{path: '/b', hash: '#bottom'}">B Bottom</router-link></td>
+<td class=""
+
+
+>Jsonb <code>boolean</code> configuration properties</td>
+</tr>
+</tbody>
+</table>
+</div>
+
 <p>(scroll-down)
 <br>
 
