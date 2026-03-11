@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://helidon.io/archetype-plans/1.0"
+           xmlns:p="https://helidon.io/archetype-plans/1.0"
+           elementFormDefault="qualified">
+
+    <xs:element name="plans">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Root element for archetype variation plans.
+                It lets the plugin cluster variation computation into smaller, focused runs when generating the
+                test projects.
+                Each plan is computed independently, and the final variation set is the union of the variations
+                produced by all plans.
+                This constrains the generated scenarios and helps prevent the Cartesian-product blow-up that can
+                occur when list inputs are expanded all at once.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="fragment" type="p:fragment-type"/>
+                <xs:element name="plan" type="p:plan-type"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="plan-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                A named variation plan. A plan can set explicit values and defaults, inherit one or more fragments,
+                and declare exclusion rules used while computing variations.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="values" type="p:entries-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Explicit values to pin while computing this plan.
+                        Each entry fixes the corresponding input to the given value, so that input no longer expands
+                        into additional combinations for this plan's variation computation.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaults" type="p:entries-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Default values available while computing this plan.
+                        These entries are used as fallbacks when expressions, derived defaults, or inputs resolve
+                        through the default-value path during variation computation.
+                        They influence how this plan is computed, but unlike <code>values</code> they do not pin an
+                        input by themselves.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="rules" type="p:rules-type" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Plan identifier used in build output. When omitted, the plugin generates a default identifier.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="extends" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Comma-separated list of fragment identifiers to inherit, merged from left to right.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="fragment-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                A reusable plan fragment. Fragments can contribute values, defaults, and rules, and they
+                can inherit other fragments.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="values" type="p:entries-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Explicit values contributed by this fragment.
+                        When inherited by a plan, these entries pin the corresponding inputs before that plan's
+                        variations are computed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaults" type="p:entries-type" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Default values contributed by this fragment.
+                        When inherited by a plan, these entries participate in that plan's variation computation as
+                        fallback values for expressions and default resolution.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="rules" type="p:rules-type" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="id" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Fragment identifier referenced by the <code>extends</code> attribute on plans and fragments.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="extends" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Comma-separated list of fragment identifiers to inherit, merged from left to right.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="entries-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Map-like element where each child element name is treated as a key and the element text is the value.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Arbitrary value entries. Each direct child element represents one key/value pair.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:any>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="rules-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Rule set used to exclude variations. Rules can be nested; nested rule conditions are combined with
+                descendant excludes.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="exclude" type="p:exclude-type"/>
+            <xs:element name="rule" type="p:rule-type"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="rule-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Conditional rule that groups nested excludes or nested rules.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="exclude" type="p:exclude-type"/>
+            <xs:element name="rule" type="p:rule-type"/>
+        </xs:choice>
+        <xs:attribute name="if" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Expression that guards the nested excludes and nested rules.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="exclude-type">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Expression that excludes matching variations.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="if" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Boolean expression evaluated against the current variation.
+                    Supported operators match the Helidon archetype engine expression language.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+</xs:schema>

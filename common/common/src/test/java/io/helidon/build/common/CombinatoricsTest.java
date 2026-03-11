@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +26,19 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link Variations}.
+ * Tests {@link Combinatorics}.
  */
 @SuppressWarnings("unchecked")
-class VariationsTest {
+class CombinatoricsTest {
 
     @Test
     void testEmpty() {
-        assertThat(Variations.of(List.of()), is(List.of(List.of())));
+        assertThat(Combinatorics.powerSet(List.of()), is(List.of(List.of())));
     }
 
     @Test
     void testVariations() {
-        assertThat(Variations.of(List.of("foo", "bar")),
+        assertThat(Combinatorics.powerSet(List.of("foo", "bar")),
                 contains(
                         List.of(),
                         List.of("foo"),
@@ -48,7 +48,7 @@ class VariationsTest {
 
     @Test
     void testVariations32() {
-        assertThat(Variations.of(List.of("foo", "bar", "bob", "alice", "joe")),
+        assertThat(Combinatorics.powerSet(List.of("foo", "bar", "bob", "alice", "joe")),
                 contains(
                         List.of(),
                         List.of("foo"),
@@ -85,8 +85,8 @@ class VariationsTest {
     }
 
     @Test
-    void testOfList() {
-        List<List<String>> variations = Variations.ofList(List.of(
+    void testCartesianProduct() {
+        List<List<String>> variations = Combinatorics.cartesianProduct(List.of(
                 List.of("", "foo", "bar", "foo bar"),
                 List.of("black", "white", "grey"),
                 List.of("green", "red")));
@@ -120,18 +120,18 @@ class VariationsTest {
 
     @Test
     void testListVariationsEmpty() {
-        assertThat(Variations.ofList(List.of(List.of())), is(empty()));
+        assertThat(Combinatorics.cartesianProduct(List.of(List.of())), is(empty()));
     }
 
     @Test
     void testListVariationsEmptyElement() {
-        assertThat(Variations.ofList(List.of(List.of(), List.of("dark", "light"), List.of("red"))),
+        assertThat(Combinatorics.cartesianProduct(List.of(List.of(), List.of("dark", "light"), List.of("red"))),
                 contains(List.of("dark", "red"), List.of("light", "red")));
     }
 
     @Test
     void testMapVariations() {
-        List<List<Map<String, String>>> computed = Variations.ofList(List.of(
+        List<List<Map<String, String>>> computed = Combinatorics.cartesianProduct(List.of(
                 List.of(Map.of("foo", "foo1"), Map.of("foo", "foo2")),
                 List.of(Map.of("bar", "bar1"), Map.of("bar", "bar2"))));
 

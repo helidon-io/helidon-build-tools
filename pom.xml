@@ -312,6 +312,9 @@
                         <!-- DO NOT override argLine instead use failsafe.argLine -->
                         <argLine>${failsafe.argLine} ${failsafe.coverage.argLine}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <systemPropertyVariables>
+                            <io.helidon.build.fast.streams>false</io.helidon.build.fast.streams>
+                        </systemPropertyVariables>
                         <includes>
                             <include>**/*IT.java</include>
                         </includes>

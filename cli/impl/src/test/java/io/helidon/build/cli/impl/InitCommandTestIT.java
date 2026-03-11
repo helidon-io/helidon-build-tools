@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Tests {@link InitCommand}.
  */
-class InitCommandTest extends MetadataAccess {
+class InitCommandTestIT extends MetadataAccess {
 
-    static final Path TARGET_DIR = targetDir(InitCommandTest.class);
+    static final Path TARGET_DIR = targetDir(InitCommandTestIT.class);
     static final Path CWD = TARGET_DIR.resolve("init-ut");
 
     @Test
@@ -213,7 +213,7 @@ class InitCommandTest extends MetadataAccess {
 
     @Test
     void testInteractiveSe() {
-        Path stdIn = testResourcePath(InitCommandTest.class, "init/input.txt");
+        Path stdIn = testResourcePath(InitCommandTestIT.class, "init/input.txt");
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-se"))
                 .stdIn(stdIn)
@@ -231,7 +231,7 @@ class InitCommandTest extends MetadataAccess {
 
     @Test
     void testInteractiveMp() {
-        Path stdIn = testResourcePath(InitCommandTest.class, "init/input.txt");
+        Path stdIn = testResourcePath(InitCommandTestIT.class, "init/input.txt");
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-mp"))
                 .stdIn(stdIn)
@@ -254,7 +254,7 @@ class InitCommandTest extends MetadataAccess {
         String helidonVersion = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
 
-        Path stdIn = testResourcePath(InitCommandTest.class, "init/input-full-version-list.txt");
+        Path stdIn = testResourcePath(InitCommandTestIT.class, "init/input-full-version-list.txt");
         URL cliDataUrl = urlOf(testResourcePath(getClass(), "versions").resolve("cli-data"));
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-all-versions"))
@@ -286,7 +286,7 @@ class InitCommandTest extends MetadataAccess {
         String helidonVersion = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
 
-        Path stdIn = testResourcePath(InitCommandTest.class, "init/input-latest-version-list.txt");
+        Path stdIn = testResourcePath(InitCommandTestIT.class, "init/input-latest-version-list.txt");
         URL cliDataUrl = urlOf(testResourcePath(getClass(), "versions").resolve("cli-data"));
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-latest-versions"))

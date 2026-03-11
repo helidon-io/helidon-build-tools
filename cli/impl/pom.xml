@@ -111,11 +111,13 @@
             <artifactId>jackson-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>io.helidon.build-tools.common</groupId>
             <artifactId>helidon-build-common-test-utils</artifactId>
@@ -197,6 +199,24 @@
                     <environmentVariables>
                         <formatEnv>%s</formatEnv>
                     </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <reuseForks>false</reuseForks>
+                    <systemPropertyVariables>
+                        <helidon.test.version>2.5.0</helidon.test.version>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,9 +20,13 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step name="boolean1">
+    <step name="Color">
         <inputs>
-            <boolean id="colors" name="Use colors" />
+            <enum id="color" name="Select a color">
+                <option value="red" name="Red"/>
+                <option value="blue" name="Blue"/>
+            </enum>
+            <boolean id="docker" name="Docker" default="false" optional="true"/>
         </inputs>
     </step>
 </archetype-script>
