@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,12 +20,16 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <step name="list1">
+    <step name="boolean2">
         <inputs>
-            <list id="colors" name="Select colors">
-                <option value="red" name="Red"/>
-                <option value="orange" name="Orange"/>
-            </list>
+            <boolean id="colors" name="Use colors">
+                <inputs>
+                    <list id="tones" name="Tones">
+                        <option value="dark" name="Dark"/>
+                        <option value="light" name="Light"/>
+                    </list>
+                </inputs>
+            </boolean>
         </inputs>
     </step>
 </archetype-script>

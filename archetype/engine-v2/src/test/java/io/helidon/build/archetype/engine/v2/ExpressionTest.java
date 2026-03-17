@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -680,6 +680,23 @@ class ExpressionTest {
                 is(expr("${v2}")));
         assertThat(expr("${v1} contains ['a'] && ${v2}").inline(Map.of("v1", Value.of(List.of("a", "b")))::get),
                 is(expr("${v2}")));
+    }
+
+    @Test
+    void testInlineDynamicValue() {
+        Expression actual = expr("${v1} == ${v2}").inline(Map.of("v1", Value.dynamic("a"))::get);
+        assertThat(actual.eval(Map.of("v2", Value.of("a"))::get), is(true));
+        assertThat(actual.eval(Map.of("v2", Value.of("b"))::get), is(false));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, actual::literal);
+        assertThat(ex.getMessage(), is("Unexpected operand type: DYNAMIC"));
+    }
+
+    @Test
+    void testInlineDynamicValueSignatureDoesNotAliasString() {
+        Expression actual = expr("'1' == ${v2} || ${v1} == ${v2}")
+                .inline(Map.of("v1", Value.dynamic("1"))::get);
+        assertThat(actual.eval(Map.of("v2", Value.of("1"))::get), is(true));
+        assertThat(actual.eval(Map.of("v2", Value.of(1))::get), is(true));
     }
 
     @Test

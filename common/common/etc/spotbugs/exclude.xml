@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -66,13 +66,13 @@
 
     <Match>
         <!-- May expose internal representation by storing an externally mutable object -->
-        <Class name="io.helidon.build.common.Variations$ListIterator"/>
+        <Class name="io.helidon.build.common.Combinatorics$ListIterator"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 
     <Match>
         <!-- cannot throw NoSuchElementException -->
-        <Class name="io.helidon.build.common.Variations$ListIterator"/>
+        <Class name="io.helidon.build.common.Combinatorics$ListIterator"/>
         <Bug pattern="IT_NO_SUCH_ELEMENT"/>
     </Match>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,17 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.build.archetype.engine.v2.ScriptCompiler.ValidationException;
-import io.helidon.build.common.Lists;
-import io.helidon.build.common.Maps;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.VirtualFileSystem;
-import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 
@@ -446,130 +438,6 @@ class ScriptCompilerTest {
         }
     }
 
-    @Test
-    void testVariationsList1() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list1.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "list1.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsList2() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list2.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "list2.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsList3() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/list3.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "list3.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsEnum1() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum1.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "enum1.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsEnum2() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum2.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "enum2.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsEnum3() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/enum3.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "enum3.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsBoolean1() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean1.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "boolean1.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsBoolean2() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean2.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "boolean2.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsBoolean3() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/boolean3.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "boolean3.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsText1() {
-        Set<Map<String, String>> expected = new LinkedHashSet<>();
-        expected.add(Map.of("name", "Foo"));
-
-        Set<Map<String, String>> actual = variations("compiler/variations", "text1.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsText2() {
-        Set<Map<String, String>> expected = new LinkedHashSet<>();
-        expected.add(Maps.of("name", "<?>"));
-
-        Set<Map<String, String>> actual = variations("compiler/variations", "text2.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsSubstitutions() {
-        Set<Map<String, String>> expected = new LinkedHashSet<>();
-        expected.add(Maps.of("text", "a-foo-a-bar", "list-things", "a-bar"));
-        expected.add(Maps.of("text", "a-foo-a-bar", "list-things", "none"));
-
-        Set<Map<String, String>> actual = variations("compiler/variations", "substitutions.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsConditionals() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/conditionals.xml");
-        Set<Map<String, String>> actual = variations("compiler/variations", "conditionals.xml", List.of());
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    @Test
-    void testVariationsE2e() {
-        Set<Map<String, String>> actual = variations("e2e", "main.xml", List.of());
-        assertThat(actual.size(), is(65604));
-    }
-
-    @Test
-    void testVariationsFilters() {
-        Set<Map<String, String>> expected = loadVariations("compiler/variations/expected/filtered.xml");
-        List<Expression> filters = filters("compiler/variations/filters.xml");
-        Set<Map<String, String>> actual = variations("e2e", "main.xml", filters);
-        assertThat(toString(actual), is(toString(expected)));
-    }
-
-    static Set<Map<String, String>> variations(String path, String entrypoint, List<Expression> filters) {
-        Path targetDir = targetDir(ScriptCompilerTest.class);
-        try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
-            Path cwd = fs.getPath(path);
-            Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
-            ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
-            return compiler.variations(filters);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex.getMessage(), ex);
-        }
-    }
-
     static Path compile(String path, String entrypoint, ScriptCompiler.Options... features) {
         Path targetDir = targetDir(ScriptCompilerTest.class);
         try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
@@ -584,48 +452,8 @@ class ScriptCompilerTest {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
-    static List<Expression> filters(String path) {
-        List<Expression> excludes = new ArrayList<>();
-        XMLElement root = loadXml(path);
-        for (XMLElement elt : root.traverse(it -> it.name().equals("exclude"))) {
-            Expression exclude = Expression.TRUE;
-            for (XMLElement n = elt; n.parent() != null; n = n.parent()) {
-                exclude = exclude.and(Expression.create(n.attribute("if")));
-            }
-            excludes.add(exclude);
-        }
-        return excludes;
-    }
-
-    static Set<Map<String, String>> loadVariations(String path) {
-        Set<Map<String, String>> result = new LinkedHashSet<>();
-        for (XMLElement e : loadXml(path).children("variation")) {
-            Map<String, String> map = new LinkedHashMap<>();
-            for (XMLElement entry : e.children()) {
-                map.put(entry.name(), entry.value());
-            }
-            result.add(map);
-        }
-        return result;
-    }
-
-    static XMLElement loadXml(String path) {
-        Path targetDir = targetDir(ScriptCompilerTest.class);
-        Path testClasses = targetDir.resolve("test-classes");
-        try (InputStream is = Files.newInputStream(testClasses.resolve(path))) {
-            return XMLElement.parse(is);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex.getMessage(), ex);
-        }
-    }
-
     static final Pattern XML_COMMENT = Pattern.compile("[^\\S\\r\\n]*<!--[^>]*-->\n", Pattern.DOTALL);
     static final Pattern XML_NAMESPACE = Pattern.compile("\\s+((xmlns|xsi)(:\\w+)?=\"[^\"]+)");
-
-    static String toString(Set<Map<String, String>> map) {
-        return String.join(System.lineSeparator(), Lists.map(map, Map::toString));
-    }
 
     static String normalizeXml(String path) {
         return normalizeXml(testResourcePath(XMLScriptWriterTest.class, path));

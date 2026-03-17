@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -722,7 +722,7 @@ public final class Expression implements Comparable<Expression> {
             if (token.operator != null) {
                 List<Token> op1 = stack.pop();
                 Token t1 = op1.get(0);
-                String s1 = t1.variable != null ? t1.variable : t1.toString();
+                String s1 = t1.variable != null ? t1.variable : t1.signature();
                 String varName;
                 switch (token.operator) {
                     case NOT:
@@ -733,7 +733,7 @@ public final class Expression implements Comparable<Expression> {
                     case AS_LIST:
                     case AS_STRING:
                         // t1 is always a variable (enforced in parse)
-                        varName = token.toString() + ' ' + s1;
+                        varName = token.operator.symbol() + ' ' + s1;
                         tempVars.putIfAbsent(varName, Lists.addAll(vars.getOrDefault(s1, op1), token));
                         stack.push(List.of(Token.of(varName)));
                         break;
@@ -755,7 +755,7 @@ public final class Expression implements Comparable<Expression> {
                         } else if (t2 == Token.FALSE && t1.variable != null) {
                             stack.push(List.of(t1, Token.NOT));
                         } else if (t1.variable != null || t2.variable != null) {
-                            String s2 = t2.variable != null ? t2.variable : t2.toString();
+                            String s2 = t2.variable != null ? t2.variable : t2.signature();
                             op2 = tempVars.getOrDefault(s2, op2);
                             op1 = tempVars.getOrDefault(s1, op1);
                             List<Token> next = new ArrayList<>();
@@ -1213,7 +1213,7 @@ public final class Expression implements Comparable<Expression> {
             if (operand != null) {
                 switch (operand.type()) {
                     case STRING:
-                        return "'" + operand.getString() + "'";
+                        return quoted(operand.getString());
                     case BOOLEAN:
                         return String.valueOf(operand.getBoolean());
                     case INTEGER:
@@ -1221,7 +1221,7 @@ public final class Expression implements Comparable<Expression> {
                     case LIST:
                         return "["
                                + operand.getList().stream()
-                                       .map(s -> "'" + s + "'")
+                                       .map(Token::quoted)
                                        .collect(Collectors.joining(","))
                                + "]";
                     default:
@@ -1234,6 +1234,34 @@ public final class Expression implements Comparable<Expression> {
             } else {
                 return "?";
             }
+        }
+
+        private String signature() {
+            if (operand != null) {
+                switch (operand.type()) {
+                    case DYNAMIC:
+                        return "<dynamic>" + quoted(operand.getString());
+                    case STRING:
+                        return "<string>" + quoted(operand.getString());
+                    case BOOLEAN:
+                        return "<boolean>" + operand.getBoolean();
+                    case INTEGER:
+                        return "<integer>" + operand.getInt();
+                    case LIST:
+                        return "<list>["
+                               + operand.getList().stream()
+                                       .map(Token::quoted)
+                                       .collect(Collectors.joining(","))
+                               + "]";
+                    default:
+                        throw new IllegalStateException("Unexpected operand type: " + operand.type());
+                }
+            }
+            throw new IllegalStateException("Expected operand token");
+        }
+
+        private static String quoted(String value) {
+            return "'" + value + "'";
         }
 
         private static List<String> parseArray(String symbol) {

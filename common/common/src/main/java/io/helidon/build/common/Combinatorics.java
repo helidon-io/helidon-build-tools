@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,16 @@ import java.util.stream.StreamSupport;
 import static java.lang.Long.numberOfTrailingZeros;
 
 /**
- * Variation utility.
+ * Combinatorics utilities for cartesian products and ordered power sets.
  */
-public final class Variations {
+public final class Combinatorics {
 
-    private Variations() {
+    private Combinatorics() {
         // cannot be instantiated
     }
 
     /**
-     * An iterator that computes the non-repetitive variations of the given lists.
+     * Iterator over the cartesian product of the given lists.
      *
      * @param <T> element type
      */
@@ -53,7 +53,7 @@ public final class Variations {
         /**
          * Create a new instance.
          *
-         * @param elements elements for which to compute the variations
+         * @param elements lists that contribute one element each to the current product row
          */
         public ListIterator(List<List<T>> elements) {
             this.elements = elements;
@@ -116,37 +116,37 @@ public final class Variations {
     }
 
     /**
-     * Compute the non-repetitive variation of the given lists.
+     * Compute the cartesian product of the given lists.
      *
-     * @param lists elements for which to compute the variations
+     * @param lists input lists
      * @param <T>   element type
-     * @return stream of variations
+     * @return stream of product rows
      */
-    public static <T> Stream<List<T>> ofList0(List<List<T>> lists) {
+    public static <T> Stream<List<T>> cartesianProductStream(List<List<T>> lists) {
         Iterator<List<T>> iterator = new ListIterator<>(lists);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL), false);
     }
 
     /**
-     * Compute the non-repetitive variations of the given lists.
+     * Compute the cartesian product of the given lists.
      *
-     * @param lists elements for which to compute the variations
+     * @param lists input lists
      * @param <T>   element type
-     * @return list of variations
+     * @return list of product rows
      */
-    public static <T> List<List<T>> ofList(List<List<T>> lists) {
-        return ofList0(lists).collect(Collectors.toList());
+    public static <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
+        return cartesianProductStream(lists).collect(Collectors.toList());
     }
 
     /**
-     * Compute the non-repetitive variations of the given elements.
+     * Compute the ordered power set of the given elements.
      *
-     * @param elements list for which to compute the variations
+     * @param elements input elements
      * @param <T>      element type
-     * @return variations
+     * @return all subsets, preserving the source element order within each subset
      * @throws UnsupportedOperationException if the collection size is greater or equal to 64
      */
-    public static <T> List<List<T>> of(List<T> elements) {
+    public static <T> List<List<T>> powerSet(List<T> elements) {
         if (elements.size() >= 64) {
             throw new UnsupportedOperationException("size >= 64");
         }
