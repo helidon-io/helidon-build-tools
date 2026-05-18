@@ -27,8 +27,7 @@ record Mapper(String match, String replace) implements StagingElement {
     static final String ELEMENT_NAME = "mapper";
 
     Mapper(Map<String, String> attrs) {
-        this(
-                Strings.requireValid(attrs.get("match"), "match is required"),
+        this(Strings.requireValid(attrs.get("match"), "match is required"),
                 Strings.requireValid(attrs.get("replace"), "replace is required"));
     }
 

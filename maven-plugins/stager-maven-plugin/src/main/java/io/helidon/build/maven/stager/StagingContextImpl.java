@@ -48,6 +48,8 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
+import static io.helidon.build.common.Strings.normalizePath;
+
 /**
  * Staging context implementation.
  */
@@ -278,10 +280,10 @@ final class StagingContextImpl implements StagingContext {
                 .toArray(FileMapper[]::new);
     }
 
-    private static FileMapper fileMapper(Mapper mapper, Map<String, String> vars) {
-        RegExpFileMapper fileMapper = new RegExpFileMapper();
-        fileMapper.setPattern(mapper.match(vars));
-        fileMapper.setReplacement(mapper.replace(vars));
-        return fileMapper;
+    static FileMapper fileMapper(Mapper mapper, Map<String, String> vars) {
+        RegExpFileMapper regexMapper = new RegExpFileMapper();
+        regexMapper.setPattern(mapper.match(vars));
+        regexMapper.setReplacement(mapper.replace(vars));
+        return name -> normalizePath(regexMapper.getMappedFileName(normalizePath(name)));
     }
 }
