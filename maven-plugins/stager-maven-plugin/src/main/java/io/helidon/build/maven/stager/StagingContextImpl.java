@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +39,7 @@ import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.components.io.filemappers.FileMapper;
 import org.codehaus.plexus.components.io.filemappers.RegExpFileMapper;
+import org.codehaus.plexus.components.io.fileselectors.FileSelector;
 import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelector;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
@@ -48,6 +50,7 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
+import static io.helidon.build.common.Strings.isValid;
 import static io.helidon.build.common.Strings.normalizePath;
 
 /**
@@ -129,19 +132,13 @@ final class StagingContextImpl implements StagingContext {
         }
         unArchiver.setSourceFile(archiveFile);
         unArchiver.setDestDirectory(target.toFile());
+        FileMapper[] fileMappers = new FileMapper[0];
         if (!mappers.isEmpty()) {
-            unArchiver.setFileMappers(fileMappers(mappers, vars));
+            fileMappers = fileMappers(mappers, vars);
+            unArchiver.setFileMappers(fileMappers);
         }
-        if (StringUtils.isNotEmpty(excludes) || StringUtils.isNotEmpty(includes)) {
-            IncludeExcludeFileSelector[] selectors = new IncludeExcludeFileSelector[] {
-                    new IncludeExcludeFileSelector()
-            };
-            if (StringUtils.isNotEmpty(excludes)) {
-                selectors[0].setExcludes(excludes.split(","));
-            }
-            if (StringUtils.isNotEmpty(includes)) {
-                selectors[0].setIncludes(includes.split(","));
-            }
+        FileSelector[] selectors = fileSelectors(excludes, includes, fileMappers);
+        if (selectors.length > 0) {
             unArchiver.setFileSelectors(selectors);
         }
         unArchiver.extract();
@@ -274,10 +271,39 @@ final class StagingContextImpl implements StagingContext {
         return maxRetries;
     }
 
-    private static FileMapper[] fileMappers(List<Mapper> mappers, Map<String, String> vars) {
+    static FileMapper[] fileMappers(List<Mapper> mappers, Map<String, String> vars) {
         return mappers.stream()
                 .map(mapper -> fileMapper(mapper, vars))
                 .toArray(FileMapper[]::new);
+    }
+
+    static String applyFileMappers(String name, FileMapper[] fileMappers) {
+        String mappedName = normalizePath(name);
+        for (FileMapper fileMapper : fileMappers) {
+            if (mappedName == null || mappedName.isEmpty()) {
+                return mappedName;
+            }
+            mappedName = normalizePath(fileMapper.getMappedFileName(mappedName));
+        }
+        return mappedName;
+    }
+
+    static FileSelector[] fileSelectors(String excludes, String includes, FileMapper[] fileMappers) {
+        List<FileSelector> selectors = new ArrayList<>(2);
+        if (isValid(excludes) || isValid(includes)) {
+            IncludeExcludeFileSelector selector = new IncludeExcludeFileSelector();
+            if (isValid(excludes)) {
+                selector.setExcludes(excludes.split(","));
+            }
+            if (isValid(includes)) {
+                selector.setIncludes(includes.split(","));
+            }
+            selectors.add(selector);
+        }
+        if (fileMappers.length > 0) {
+            selectors.add(fileInfo -> isValid(applyFileMappers(fileInfo.getName(), fileMappers)));
+        }
+        return selectors.toArray(FileSelector[]::new);
     }
 
     static FileMapper fileMapper(Mapper mapper, Map<String, String> vars) {
