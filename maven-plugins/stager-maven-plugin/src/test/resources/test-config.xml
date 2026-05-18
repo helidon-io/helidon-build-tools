@@ -34,6 +34,9 @@
                     version="{version}"
                     excludes="META-INF/**"
                     target="docs/{version}">
+                <mappers>
+                    <mapper match="^apidocs/(.*)$" replace="$1"/>
+                </mappers>
                 <iterators>
                     <variables>
                         <variable ref="version" />
@@ -193,8 +196,13 @@
             </file>
         </files>
         <unpacks>
-            <unpack url="https://repo1.maven.org/maven2/io/helidon/helidon-project/3.2.10/helidon-project-3.2.10-site.jar"
-                target="3.2.10"/>
+            <unpack url="https://repo1.maven.org/maven2/com/example/archive/1.0.0/archive-1.0.0.jar"
+                    includes="apidocs/**"
+                    target="1.0.0">
+                <mappers>
+                    <mapper match="^apidocs/(.*)$" replace="$1"/>
+                </mappers>
+            </unpack>
         </unpacks>
     </directory>
 </directories>

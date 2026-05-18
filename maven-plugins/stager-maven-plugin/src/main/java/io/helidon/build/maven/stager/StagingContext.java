@@ -18,6 +18,8 @@ package io.helidon.build.maven.stager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -56,6 +58,25 @@ interface StagingContext {
      */
     default void unpack(Path archive, Path target, String excludes, String includes) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Unpack the given archive to a target location.
+     *
+     * @param archive  archive to unpack
+     * @param target   where to unpack the archive
+     * @param excludes exclude filters
+     * @param includes include filters
+     * @param mappers  path mappers
+     * @param vars     variables used to resolve mapper values
+     */
+    default void unpack(Path archive,
+                        Path target,
+                        String excludes,
+                        String includes,
+                        List<Mapper> mappers,
+                        Map<String, String> vars) {
+        unpack(archive, target, excludes, includes);
     }
 
     /**

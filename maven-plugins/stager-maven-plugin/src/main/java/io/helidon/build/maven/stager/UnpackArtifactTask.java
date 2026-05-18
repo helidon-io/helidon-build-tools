@@ -17,6 +17,7 @@ package io.helidon.build.maven.stager;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,12 +30,14 @@ final class UnpackArtifactTask extends StagingTask {
     private final ArtifactGAV gav;
     private final String includes;
     private final String excludes;
+    private final List<Mapper> mappers;
 
-    UnpackArtifactTask(ActionIterators iterators, Map<String, String> attrs) {
+    UnpackArtifactTask(ActionIterators iterators, List<Mapper> mappers, Map<String, String> attrs) {
         super(ELEMENT_NAME, null, iterators, attrs);
         this.gav = new ArtifactGAV(attrs);
         this.includes = attrs.get("includes");
         this.excludes = attrs.get("excludes");
+        this.mappers = mappers;
     }
 
     /**
@@ -64,6 +67,15 @@ final class UnpackArtifactTask extends StagingTask {
         return includes;
     }
 
+    /**
+     * Get the mappers.
+     *
+     * @return mappers, never {@code null}
+     */
+    List<Mapper> mappers() {
+        return mappers;
+    }
+
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         ArtifactGAV resolvedGav = gav.resolve(vars);
@@ -73,6 +85,6 @@ final class UnpackArtifactTask extends StagingTask {
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
         ctx.ensureDirectory(targetDir);
-        ctx.unpack(artifact, targetDir, excludes, includes);
+        ctx.unpack(artifact, targetDir, excludes, includes, mappers, resolvedVars);
     }
 }

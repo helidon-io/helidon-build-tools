@@ -209,6 +209,10 @@ class ProjectsTestIT {
         assertThat(docsDir.resolve("1.4.3"), fileExists());
         assertThat(docsDir.resolve("1.4.4"), fileExists());
         assertThat(docsDir.resolve("2.0.0-RC1"), fileExists());
+
+        Path apidocsDir = stageDir.resolve("apidocs/1.4.3");
+        assertThat(apidocsDir.resolve("index.html"), fileExists());
+        assertThat(Files.exists(apidocsDir.resolve("apidocs/index.html")), is(false));
     }
 
     @ParameterizedTest
@@ -221,6 +225,10 @@ class ProjectsTestIT {
         assertThat(docsDir, fileExists());
         assertThat(docsDir.resolve("3.2.10"), fileExists());
         assertThat(docsDir.resolve("3.2.9"), fileExists());
+
+        Path apidocsDir = stageDir.resolve("apidocs/3.2.10");
+        assertThat(apidocsDir.resolve("index.html"), fileExists());
+        assertThat(Files.exists(apidocsDir.resolve("apidocs/index.html")), is(false));
     }
 
     private String symlinkTarget(Path file) {

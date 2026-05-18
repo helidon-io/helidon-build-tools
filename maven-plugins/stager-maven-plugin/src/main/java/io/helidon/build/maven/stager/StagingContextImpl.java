@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -35,6 +36,8 @@ import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
+import org.codehaus.plexus.components.io.filemappers.FileMapper;
+import org.codehaus.plexus.components.io.filemappers.RegExpFileMapper;
 import org.codehaus.plexus.components.io.fileselectors.IncludeExcludeFileSelector;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
@@ -105,6 +108,16 @@ final class StagingContextImpl implements StagingContext {
 
     @Override
     public void unpack(Path archive, Path target, String excludes, String includes) {
+        unpack(archive, target, excludes, includes, List.of(), Map.of());
+    }
+
+    @Override
+    public void unpack(Path archive,
+                       Path target,
+                       String excludes,
+                       String includes,
+                       List<Mapper> mappers,
+                       Map<String, String> vars) {
         File archiveFile = archive.toFile();
         UnArchiver unArchiver;
         try {
@@ -114,6 +127,9 @@ final class StagingContextImpl implements StagingContext {
         }
         unArchiver.setSourceFile(archiveFile);
         unArchiver.setDestDirectory(target.toFile());
+        if (!mappers.isEmpty()) {
+            unArchiver.setFileMappers(fileMappers(mappers, vars));
+        }
         if (StringUtils.isNotEmpty(excludes) || StringUtils.isNotEmpty(includes)) {
             IncludeExcludeFileSelector[] selectors = new IncludeExcludeFileSelector[] {
                     new IncludeExcludeFileSelector()
@@ -254,5 +270,18 @@ final class StagingContextImpl implements StagingContext {
     @Override
     public int maxRetries() {
         return maxRetries;
+    }
+
+    private static FileMapper[] fileMappers(List<Mapper> mappers, Map<String, String> vars) {
+        return mappers.stream()
+                .map(mapper -> fileMapper(mapper, vars))
+                .toArray(FileMapper[]::new);
+    }
+
+    private static FileMapper fileMapper(Mapper mapper, Map<String, String> vars) {
+        RegExpFileMapper fileMapper = new RegExpFileMapper();
+        fileMapper.setPattern(mapper.match(vars));
+        fileMapper.setReplacement(mapper.replace(vars));
+        return fileMapper;
     }
 }

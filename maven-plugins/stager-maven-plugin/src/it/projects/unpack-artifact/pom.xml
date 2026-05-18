@@ -74,6 +74,16 @@
                                             </variables>
                                         </iterators>
                                     </unpack-artifact>
+                                    <unpack-artifact
+                                            groupId="io.helidon"
+                                            artifactId="helidon-docs"
+                                            version="1.4.3"
+                                            includes="apidocs/**"
+                                            target="apidocs/1.4.3">
+                                        <mappers>
+                                            <mapper match="^apidocs/(.*)$" replace="$1"/>
+                                        </mappers>
+                                    </unpack-artifact>
                                 </unpack-artifacts>
                             </directory>
                         </directories>

@@ -48,6 +48,13 @@
                                             </variables>
                                         </iterators>
                                     </unpack>
+                                    <unpack url="https://repo1.maven.org/maven2/io/helidon/helidon-project/3.2.10/helidon-project-3.2.10-site.jar"
+                                            includes="apidocs/**"
+                                            target="apidocs/3.2.10">
+                                        <mappers>
+                                            <mapper match="^apidocs/(.*)$" replace="$1"/>
+                                        </mappers>
+                                    </unpack>
                                 </unpacks>
                             </directory>
                         </directories>

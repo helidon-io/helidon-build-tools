@@ -48,6 +48,7 @@ class StagingElementFactory {
     private static final Set<String> SYNTHETIC_ELEMENTS = Set.of(
             Include.ELEMENT_NAME,
             Exclude.ELEMENT_NAME,
+            Mapper.ELEMENT_NAME,
             Substitution.ELEMENT_NAME);
 
     private static final Map<String, String> WRAPPER_ELEMENTS = Stream.of(ACTION_ELEMENTS, SYNTHETIC_ELEMENTS)
@@ -96,13 +97,14 @@ class StagingElementFactory {
 
         Supplier<ActionIterators> iterators = () -> firstChild(children, ActionIterators.class, () -> null);
         Supplier<Variables> variables = () -> firstChild(children, Variables.class, Variables::new);
+        Supplier<List<Mapper>> mappers = () -> filterChildren(children, Mapper.class);
         switch (name) {
             case StagingDirectory.ELEMENT_NAME:
                 return new StagingDirectory(filterChildren(children, StagingAction.class), attrs);
             case UnpackTask.ELEMENT_NAME:
-                return new UnpackTask(iterators.get(), attrs);
+                return new UnpackTask(iterators.get(), mappers.get(), attrs);
             case UnpackArtifactTask.ELEMENT_NAME:
-                return new UnpackArtifactTask(iterators.get(), attrs);
+                return new UnpackArtifactTask(iterators.get(), mappers.get(), attrs);
             case CopyArtifactTask.ELEMENT_NAME:
                 return new CopyArtifactTask(iterators.get(), attrs);
             case SymlinkTask.ELEMENT_NAME:
@@ -186,6 +188,7 @@ class StagingElementFactory {
         return switch (name) {
             case Include.ELEMENT_NAME -> new Include(text);
             case Exclude.ELEMENT_NAME -> new Exclude(text);
+            case Mapper.ELEMENT_NAME -> new Mapper(attrs);
             case Substitution.ELEMENT_NAME -> new Substitution(attrs);
             default -> throw new IllegalStateException("Unknown element: " + name);
         };

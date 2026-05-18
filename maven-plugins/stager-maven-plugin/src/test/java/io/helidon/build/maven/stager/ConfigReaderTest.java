@@ -69,6 +69,10 @@ class ConfigReaderTest {
         assertThat(unpackGAV1.excludes(), is("META-INF/**"));
         assertThat(unpackGAV1.includes(), is(nullValue()));
         assertThat(unpackGAV1.target(), is("docs/{version}"));
+        assertThat(unpackGAV1.mappers().size(), is(1));
+        Mapper unpackGAV1Mapper = unpackGAV1.mappers().get(0);
+        assertThat(unpackGAV1Mapper.match(), is("^apidocs/(.*)$"));
+        assertThat(unpackGAV1Mapper.replace(), is("$1"));
         assertThat(unpackGAV1.iterators().size(), is(1));
         assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("${docs.1.version}"));
         assertThat(unpackGAV1.iterators().get(0).next().get("version"), is("1.4.3"));
@@ -320,8 +324,13 @@ class ConfigReaderTest {
         assertThat(unpacks.size(), is(1));
 
         UnpackTask unpack1 = (UnpackTask) unpacks.get(0);
-        assertThat(unpack1.url(), is("https://repo1.maven.org/maven2/io/helidon/helidon-project/3.2.10/helidon-project-3.2.10-site.jar"));
-        assertThat(unpack1.target(), is("3.2.10"));
+        assertThat(unpack1.url(), is("https://repo1.maven.org/maven2/com/example/archive/1.0.0/archive-1.0.0.jar"));
+        assertThat(unpack1.target(), is("1.0.0"));
+        assertThat(unpack1.includes(), is("apidocs/**"));
+        assertThat(unpack1.mappers().size(), is(1));
+        Mapper unpack1Mapper = unpack1.mappers().get(0);
+        assertThat(unpack1Mapper.match(), is("^apidocs/(.*)$"));
+        assertThat(unpack1Mapper.replace(), is("$1"));
         assertThat(unpack1.tasks(), is(empty()));
     }
 }
