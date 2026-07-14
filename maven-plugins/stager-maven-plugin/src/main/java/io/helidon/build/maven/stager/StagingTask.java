@@ -227,7 +227,25 @@ class StagingTask implements StagingAction {
     protected static String resolveVar(String source, Map<String, String> vars) {
         if (Strings.isValid(source)) {
             for (Map.Entry<String, String> variable : vars.entrySet()) {
-                source = source.replaceAll("\\{" + variable.getKey() + "}", variable.getValue());
+                String placeholder = "{" + variable.getKey() + "}";
+                int placeholderIndex = source.indexOf(placeholder);
+                if (placeholderIndex < 0) {
+                    continue;
+                }
+                StringBuilder resolved = new StringBuilder(source.length());
+                int sourceIndex = 0;
+                while (placeholderIndex >= 0) {
+                    resolved.append(source, sourceIndex, placeholderIndex);
+                    if (placeholderIndex > 0 && source.charAt(placeholderIndex - 1) == '$') {
+                        resolved.append(placeholder);
+                    } else {
+                        resolved.append(variable.getValue());
+                    }
+                    sourceIndex = placeholderIndex + placeholder.length();
+                    placeholderIndex = source.indexOf(placeholder, sourceIndex);
+                }
+                resolved.append(source, sourceIndex, source.length());
+                source = resolved.toString();
             }
         }
         return source;

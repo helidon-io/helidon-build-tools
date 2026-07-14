@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.xml.XMLElement;
+import io.helidon.build.common.xml.XMLException;
 
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
@@ -85,6 +86,117 @@ class ConfigProcessorTest {
                         hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "{iteratorVar}")))
                 )
         )));
+    }
+
+    @Test
+    void testMavenStylePropertiesInterpolateAttributesAndText() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <stage.path>target/stage</stage.path>
+                        <major>4</major>
+                        <version>${major}.0.0</version>
+                        <message>Helidon ${version}</message>
+                    </properties>
+                    <directories>
+                        <directory target="${stage.path}/${version}">
+                            <files>
+                                <file target="${version}/index.txt">${message}</file>
+                            </files>
+                        </directory>
+                    </directories>
+                </configuration>
+                """, Map.of());
+
+        assertThat(config.childrenAt("directory"), contains(List.of(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/4.0.0")))
+        )));
+        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(allOf(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "4.0.0/index.txt"))),
+                hasProperty("value", XMLElement::value, is("Helidon 4.0.0"))
+        ))));
+    }
+
+    @Test
+    void testMixedPropertyFormsUseEffectiveOrder() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <property name="stage.path" value="target/old"/>
+                        <version>4.0.0</version>
+                        <stage.path>target/new</stage.path>
+                        <property name="message" value="Version ${version}"/>
+                    </properties>
+                    <directories>
+                        <directory target="${stage.path}">
+                            <files>
+                                <file target="${version}/info.txt">${message}</file>
+                            </files>
+                        </directory>
+                    </directories>
+                </configuration>
+                """, Map.of());
+
+        assertThat(config.childrenAt("directory"), contains(List.of(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/new")))
+        )));
+        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(allOf(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "4.0.0/info.txt"))),
+                hasProperty("value", XMLElement::value, is("Version 4.0.0"))
+        ))));
+    }
+
+    @Test
+    void testDuplicateMavenStylePropertiesUseLaterDefinition() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <stage.path>target/one</stage.path>
+                        <stage.path>target/two</stage.path>
+                    </properties>
+                    <directories>
+                        <directory target="${stage.path}"/>
+                    </directories>
+                </configuration>
+                """, Map.of());
+
+        assertThat(config.childrenAt("directory"), contains(List.of(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/two")))
+        )));
+    }
+
+    @Test
+    void testFallbackResolverUsedWhenNoStagerPropertyExists() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <stage.path>target/stage</stage.path>
+                    </properties>
+                    <directories>
+                        <directory target="${stage.path}/${version}"/>
+                    </directories>
+                </configuration>
+                """, Map.of("version", "4.0.0"));
+
+        assertThat(config.childrenAt("directory"), contains(List.of(
+                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/4.0.0")))
+        )));
+    }
+
+    @Test
+    void testMalformedLegacyPropertyMissingNameFailsAtRuntime() {
+        XMLException ex = assertThrows(XMLException.class, () -> process("""
+                        <configuration>
+                            <properties>
+                                <property value="ignored"/>
+                            </properties>
+                            <directories>
+                                <directory target="${version}"/>
+                            </directories>
+                        </configuration>
+                        """, Map.of("version", "4.0.0")));
+
+        assertThat(ex.getMessage(), containsString("Missing required attribute 'name'"));
     }
 
     @Test

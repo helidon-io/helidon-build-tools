@@ -17,8 +17,7 @@
 
 -->
 <stager xmlns="https://helidon.io/stager/1.0">
-    <properties>
-        <property value="4.0.0"/>
-    </properties>
-    <directories/>
+    <directories>
+        <directory/>
+    </directories>
 </stager>

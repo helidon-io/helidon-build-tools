@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,15 +20,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.build-tools.stager.tests</groupId>
-    <artifactId>archive</artifactId>
+    <artifactId>copy</artifactId>
     <version>@project.version@</version>
-    <name>Test Stager Archive task</name>
+    <name>Test Stager Copy task</name>
     <packaging>pom</packaging>
-
-    <properties>
-        <cli.data.latest.version>2.0.0-RC1</cli.data.latest.version>
-        <cli.latest.version>2.0.0-RC1</cli.latest.version>
-    </properties>
 
     <build>
         <pluginManagement>
@@ -40,15 +35,30 @@
                     <configuration>
                         <directories>
                             <directory target="${project.build.directory}/stage">
-                                <archives>
-                                    <archive target="cli-data/${cli.data.latest.version}/cli-data.zip">
-                                        <templates>
-                                            <template source="versions.json.hbs" target="versions.json">
-                                                <model><versions><v1>3.0.0-SNAPSHOT</v1><v2>2.5.0</v2><v3>2.4.2</v3><v4>2.4.0</v4><v5>2.0.1</v5><v6>2.0.0</v6></versions></model>
-                                            </template>
-                                        </templates>
-                                    </archive>
-                                </archives>
+                                <copies>
+                                    <copy source="src/files" target="files"/>
+                                    <copy source="src/tree" target="dirs"/>
+                                    <copy source="src/filter" target="filtered">
+                                        <includes>
+                                            <include>**/*.txt</include>
+                                        </includes>
+                                        <excludes>
+                                            <exclude>draft/**</exclude>
+                                        </excludes>
+                                    </copy>
+                                    <copy source="src/links" target="links-copy"/>
+                                    <copy source="src/replace" target="replace"/>
+                                    <copy source="src/iter/{name}" target="iter/{name}">
+                                        <iterators>
+                                            <variables>
+                                                <variable name="name">
+                                                    <value>one</value>
+                                                    <value>two</value>
+                                                </variable>
+                                            </variables>
+                                        </iterators>
+                                    </copy>
+                                </copies>
                             </directory>
                         </directories>
                     </configuration>

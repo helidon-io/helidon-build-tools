@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.SourcePath.wildcardMatch;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -62,6 +63,42 @@ class SourcePathTest {
         assertPath(true, ".//abc/def/index.html", "abc/def/index.html");
         assertPath(true, ".//abc//def/index.html", "abc/def/index.html");
         assertPath(true, "/././abc//def/index.html", "abc/def/index.html");
+    }
+
+    @Test
+    void testPrefixPathsAreNotEqual() {
+        assertPath(false, "a", "a/b");
+        assertPath(false, "a/b", "a");
+    }
+
+    @Test
+    void testSortPrefixPathsParentBeforeChild() {
+        List<SourcePath> paths = new ArrayList<>(List.of(
+                new SourcePath("a/b/c"),
+                new SourcePath("a/b"),
+                new SourcePath("a")));
+
+        SourcePath.sort(paths);
+
+        assertThat(paths, contains(
+                new SourcePath("a"),
+                new SourcePath("a/b"),
+                new SourcePath("a/b/c")));
+    }
+
+    @Test
+    void testSortNonPrefixPathsLexicographicallyBySegment() {
+        List<SourcePath> paths = new ArrayList<>(List.of(
+                new SourcePath("b/a"),
+                new SourcePath("a/c"),
+                new SourcePath("a/b")));
+
+        SourcePath.sort(paths);
+
+        assertThat(paths, contains(
+                new SourcePath("a/b"),
+                new SourcePath("a/c"),
+                new SourcePath("b/a")));
     }
 
     @Test

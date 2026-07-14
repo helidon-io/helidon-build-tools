@@ -17,19 +17,13 @@
 
 -->
 <stager xmlns="https://helidon.io/stager/1.0">
-    <include src="fragments/stager.xml"/>
-    <properties>
-        <version>4.0.0</version>
-        <stage.path>target/stage</stage.path>
-    </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-    </variables>
     <directories>
-        <directory target="${stage.path}">
-            <files>
-                <file target="${version}/index.txt">content</file>
-            </files>
+        <directory target="target/stage">
+            <templates>
+                <template source="page.mustache" target="index.html">
+                    <variables><variable name="title" value="Helidon"/></variables>
+                </template>
+            </templates>
         </directory>
     </directories>
 </stager>

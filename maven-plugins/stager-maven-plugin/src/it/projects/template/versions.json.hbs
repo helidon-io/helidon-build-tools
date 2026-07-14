@@ -7,11 +7,11 @@
     "preview-versions": [
     {{#preview-versions}}
         {
-            "order": {{value.order}},
-            "version": "{{value.version}}"
+            "order": {{order}},
+            "version": "{{version}}"
         }{{^last}},{{/last}}
     {{/preview-versions}}
     ],
     "latest": "{{latest}}",
-    "latest-release": "{{replace latest "-SNAPSHOT" ""}}"
+    "latest-release": "{{latest-release}}"
 }

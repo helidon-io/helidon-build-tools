@@ -39,7 +39,7 @@ final class CopyArtifactTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        ArtifactGAV resolvedGav = resolveGAV(vars);
+        ArtifactGAV resolvedGav = gav.resolve(vars);
         Map<String, String> resolvedVars = resolvedGav.variables();
         String resolveTarget = resolveVar(target(), resolvedVars);
         ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
@@ -51,14 +51,5 @@ final class CopyArtifactTask extends StagingTask {
 
     ArtifactGAV gav() {
         return gav;
-    }
-
-    private ArtifactGAV resolveGAV(Map<String, String> variables) {
-        return new ArtifactGAV(
-                resolveVar(gav.groupId(), variables),
-                resolveVar(gav.artifactId(), variables),
-                resolveVar(gav.version(), variables),
-                resolveVar(gav.type(), variables),
-                resolveVar(gav.classifier(), variables));
     }
 }

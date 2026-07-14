@@ -130,6 +130,24 @@ class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
+    void testCopy(String basedir) throws IOException {
+        Path stageDir = Path.of(basedir).resolve("target/stage");
+        assertThat(stageDir, fileExists());
+
+        assertThat(readString(stageDir.resolve("files/alpha.txt")), is("alpha"));
+        assertThat(readString(stageDir.resolve("dirs/nested/bravo.txt")), is("bravo"));
+        assertThat(readString(stageDir.resolve("filtered/keep/readme.txt")), is("keep"));
+        assertThat(Files.exists(stageDir.resolve("filtered/keep/readme.md")), is(false));
+        assertThat(Files.exists(stageDir.resolve("filtered/draft/readme.txt")), is(false));
+        assertThat(Files.isSymbolicLink(stageDir.resolve("links-copy/link.txt")), is(true));
+        assertThat(Files.readSymbolicLink(stageDir.resolve("links-copy/link.txt")).toString(), is("real.txt"));
+        assertThat(readString(stageDir.resolve("replace/alpha.txt")), is("new"));
+        assertThat(readString(stageDir.resolve("iter/one/value.txt")), is("one"));
+        assertThat(readString(stageDir.resolve("iter/two/value.txt")), is("two"));
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
     void testDownload(String basedir) {
         Path stageDir = Path.of(basedir).resolve("target/stage");
         assertThat(stageDir, fileExists());

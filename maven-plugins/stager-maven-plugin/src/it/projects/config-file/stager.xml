@@ -18,11 +18,11 @@
 -->
 <stager>
     <properties>
-        <property name="stage.path" value="${project.build.directory}/stage"/>
-        <property name="major" value="4"/>
-        <property name="version" value="${major}.0.0"/>
-        <property name="path.version" value="${version}"/>
-        <property name="message" value="Version ${version}"/>
+        <stage.path>${project.build.directory}/stage</stage.path>
+        <major>4</major>
+        <version>${major}.0.0</version>
+        <path.version>${version}</path.version>
+        <message>Version ${version}</message>
     </properties>
     <directories>
         <directory target="${stage.path}">

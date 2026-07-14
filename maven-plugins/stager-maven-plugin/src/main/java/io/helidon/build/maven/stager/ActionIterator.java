@@ -29,7 +29,7 @@ import io.helidon.build.common.Maps;
  */
 final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
 
-    private final Map.Entry<String, List<String>>[] entries;
+    private final List<Map<String, String>>[] entries;
     private final int[] indexes;
     private final int maxIterations;
     private int iteration;
@@ -40,32 +40,34 @@ final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
     ActionIterator(Variables variables) {
         this.variables = new HashMap<>();
         this.join = variables.join();
-        Map<String, List<String>> iteratorVariables = new HashMap<>();
+        Map<String, List<Map<String, String>>> iteratorVariables = new HashMap<>();
         for (Variable variable : variables) {
-            List<String> values = new LinkedList<>();
+            List<Map<String, String>> values = new LinkedList<>();
             iteratorVariables.put(variable.name(), values);
             if (variable.value() instanceof VariableValue.EmptyValue) {
                 continue;
             }
             Object unwrappedValue = variable.value().unwrap();
-            if (unwrappedValue instanceof String) {
-                values.add((String) unwrappedValue);
-            } else if (unwrappedValue instanceof List) {
-                for (Object o : (List<?>) unwrappedValue) {
-                    if (o instanceof String) {
-                        values.add((String) o);
+            if (unwrappedValue instanceof String value) {
+                values.add(Map.of(variable.name(), value));
+            } else if (unwrappedValue instanceof List<?> list) {
+                for (Object value : list) {
+                    if (value instanceof String string) {
+                        values.add(Map.of(variable.name(), string));
+                    } else if (value instanceof Map<?, ?> map) {
+                        values.add(stringMap(variable.name(), map));
                     }
                 }
             }
         }
         int n = 1;
-        for (List<String> values : iteratorVariables.values()) {
+        for (List<Map<String, String>> values : iteratorVariables.values()) {
             n *= values.size();
         }
         maxIterations = n;
         iteration = 1;
         indexes = new int[iteratorVariables.size()];
-        entries = iteratorVariables.entrySet().toArray(Map.Entry[]::new);
+        entries = iteratorVariables.values().toArray(List[]::new);
     }
 
     ActionIterator(ActionIterator it, Map<String, String> variables) {
@@ -95,16 +97,16 @@ final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
         Map<String, String> next = new HashMap<>(variables);
         int p = 1;
         for (int idx = 0; idx < entries.length; idx++) {
-            int size = entries[idx].getValue().size();
+            int size = entries[idx].size();
             if (indexes[idx] == size) {
                 indexes[idx] = 0;
             }
             p *= size;
-            String val = entries[idx].getValue().get(indexes[idx]);
+            Map<String, String> values = entries[idx].get(indexes[idx]);
             if (iteration % (maxIterations / p) == 0) {
                 indexes[idx]++;
             }
-            next.put(entries[idx].getKey(), val);
+            next.putAll(values);
         }
         return next;
     }
@@ -116,5 +118,18 @@ final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
      */
     ActionIterator forVariables(Map<String, String> variables) {
         return new ActionIterator(this, variables);
+    }
+
+    private static Map<String, String> stringMap(String name, Map<?, ?> map) {
+        Map<String, String> values = new HashMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof String value)) {
+                throw new IllegalArgumentException(
+                        "Iterator variable '%s' requires string map entries"
+                                .formatted(name));
+            }
+            values.put(key, value);
+        }
+        return values;
     }
 }
