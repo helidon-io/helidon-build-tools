@@ -61,32 +61,15 @@
                 Properties available to ${...} interpolation before staging tasks are created.
             </xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:element name="property" type="p:property-type" minOccurs="0" maxOccurs="unbounded">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:any namespace="##targetNamespace" processContents="skip">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Single property name and value for configuration interpolation.
+                        Property entry, either named property elements or Maven-style name elements.
                     </xs:documentation>
                 </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="property-type">
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Property name referenced by ${...} expressions.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Property value used for interpolation.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
+            </xs:any>
+        </xs:choice>
     </xs:complexType>
 
     <xs:group name="preprocessor-include">
@@ -181,6 +164,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="copy" type="p:copy-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Copy project directory contents to a target directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="file" type="p:file-type">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -248,6 +238,13 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Container for copy-artifact tasks.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="copies" type="p:copies-wrapper-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Container for copy tasks.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -374,6 +371,46 @@
         </xs:choice>
     </xs:group>
 
+    <xs:group name="copy-content">
+        <xs:choice>
+            <xs:element name="iterators" type="p:iterators-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Iterators nested under copy to create loops over {name} variable substitutions.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="include" type="p:text-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Glob-style include filter relative to the copy source directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="includes" type="p:includes-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Container for include filters relative to the copy source directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="exclude" type="p:text-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Glob-style exclude filter relative to the copy source directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludes" type="p:excludes-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Container for exclude filters relative to the copy source directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:group>
+
     <xs:complexType name="text-type" mixed="true"/>
 
     <xs:complexType name="variables-type">
@@ -415,26 +452,40 @@
     </xs:complexType>
 
     <xs:complexType name="variable-type">
-        <xs:sequence>
-            <xs:element name="value" type="p:value-type" minOccurs="0" maxOccurs="unbounded">
+        <xs:choice minOccurs="0">
+            <xs:element name="value" type="p:value-type" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        One value for the variable.
+                        One value for the variable; value children cannot be mixed with variable references.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:element name="variable" type="p:variable-type" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Reference to a previously declared list variable whose values are appended to this aggregate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="description">
-                    Variable name used by templates or task definitions.
+                    Variable name used by templates or task definitions, or an alias for a referenced variable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ref" type="xs:string">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Reference to an enclosing or earlier sibling variable; ref takes precedence over other content.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="value" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="description">
-                    Inline variable value used instead of nested value elements.
+                    Inline variable value used when ref and nested children are absent.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -453,14 +504,14 @@
         <xs:attribute name="name" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="description">
-                    Iterator variable name referenced with {name} syntax in task definitions.
+                    Iterator variable name referenced with {name} syntax, or an alias for a referenced variable.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="ref" type="xs:string">
             <xs:annotation>
                 <xs:documentation source="description">
-                    Reference to an existing variable definition.
+                    Reference to an enclosing or earlier sibling variable; ref takes precedence over other content.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -634,6 +685,33 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="copy-type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:group ref="p:copy-content"/>
+        </xs:choice>
+        <xs:attribute name="source" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Project directory path whose contents are copied.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="target" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Target directory path relative to the current staging directory.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="join" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Executes iterator-driven task invocations sequentially when true.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="file-type" mixed="true">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:group ref="p:iterator-content"/>
@@ -696,16 +774,16 @@
     </xs:complexType>
 
     <xs:complexType name="template-type">
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:group ref="p:iterator-content"/>
-            <xs:element name="variables" type="p:variables-type">
+        <xs:sequence>
+            <xs:element name="model" type="p:model-type" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Variables defining values referenced by the Mustache template.
+                        Free-form data model available to the Mustache template.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-        </xs:choice>
+            <xs:group ref="p:iterator-content" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
         <xs:attribute name="target" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="description">
@@ -727,6 +805,12 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="model-type" mixed="true">
+        <xs:sequence>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="unpack-type">
@@ -1020,6 +1104,25 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Copy a resolved Maven artifact to a target location.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="join" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Executes nested joinable actions sequentially when true.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="copies-wrapper-type">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="copy" type="p:copy-type">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Copy project directory contents to a target directory.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

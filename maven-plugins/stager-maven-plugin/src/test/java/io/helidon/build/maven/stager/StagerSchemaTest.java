@@ -96,6 +96,11 @@ class StagerSchemaTest {
     }
 
     @Test
+    void testValidateTemplateVariablesFail() {
+        assertThrows(SAXException.class, () -> validate("stager-template-variables-invalid.xml"));
+    }
+
+    @Test
     void testElementsAndAttributesHaveDocumentation() throws Exception {
         try (InputStream is = Files.newInputStream(targetDir(StagerSchemaTest.class)
                      .resolve("classes/schema/stager-1.0.xsd"))) {

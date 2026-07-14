@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,24 @@ package io.helidon.build.common;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.helidon.build.common.Strings.normalizePath;
 
 /**
  * Utility class to parse and match path segments.
  */
-public class SourcePath {
+public class SourcePath implements Comparable<SourcePath> {
 
     private static final char WILDCARD_CHAR = '*';
     private static final String WILDCARD = "*";
@@ -133,20 +133,20 @@ public class SourcePath {
     /**
      * Filter the given {@code Collection} of {@link SourcePath} with the given filter.
      *
-     * @param paths            the paths to filter
-     * @param includesPatterns a {@code Collection} of {@code String} as include patterns
-     * @param excludesPatterns a {@code Collection} of {@code String} as exclude patterns
+     * @param paths    the paths to filter
+     * @param includes a {@code Collection} of {@code String} as include patterns
+     * @param excludes a {@code Collection} of {@code String} as exclude patterns
      * @return the filtered {@code Collection} of pages
      */
     public static List<SourcePath> filter(Collection<SourcePath> paths,
-                                          Collection<String> includesPatterns,
-                                          Collection<String> excludesPatterns) {
+                                          Collection<String> includes,
+                                          Collection<String> excludes) {
 
         if (paths == null || paths.isEmpty()) {
             return Collections.emptyList();
         }
         return paths.stream()
-                .filter(p -> p.matches(includesPatterns, excludesPatterns))
+                .filter(p -> p.matches(includes, excludes))
                 .collect(Collectors.toList());
     }
 
@@ -162,19 +162,26 @@ public class SourcePath {
             return false;
         }
         final SourcePath other = (SourcePath) obj;
-        for (int i = 0; i < this.segments.length; i++) {
-            if (!this.segments[i].equals(other.segments[i])) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.equals(this.segments, other.segments);
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 59 * hash + Objects.hashCode(this.segments);
+        hash = 59 * hash + Arrays.hashCode(this.segments);
         return hash;
+    }
+
+    @Override
+    public int compareTo(SourcePath o) {
+        int len = Math.min(segments.length, o.segments.length);
+        for (int i = 0; i < len; i++) {
+            int cmp = segments[i].compareTo(o.segments[i]);
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return Integer.compare(segments.length, o.segments.length);
     }
 
     private static boolean doRecursiveMatch(String[] segments,
@@ -222,15 +229,15 @@ public class SourcePath {
     /**
      * Tests if this {@link SourcePath} matches any of the given include patterns and none of the excludes patterns.
      *
-     * @param includesPatterns includes patterns, if {@code null} or empty matches everything
-     * @param excludesPatterns excludes patterns, if {@code null} or empty matches nothing
+     * @param includes includes patterns, if {@code null} or empty matches everything
+     * @param excludes excludes patterns, if {@code null} or empty matches nothing
      * @return {@code true} if this {@link SourcePath} matches, {@code false} otherwise
      */
-    public boolean matches(Collection<String> includesPatterns, Collection<String> excludesPatterns) {
-        if (includesPatterns == null || includesPatterns.isEmpty()) {
-            includesPatterns = DEFAULT_INCLUDES;
+    public boolean matches(Collection<String> includes, Collection<String> excludes) {
+        if (includes == null || includes.isEmpty()) {
+            includes = DEFAULT_INCLUDES;
         }
-        return matches(includesPatterns) && !matches(excludesPatterns);
+        return matches(includes) && !matches(excludes);
     }
 
     /**
@@ -383,32 +390,16 @@ public class SourcePath {
         return asString(false);
     }
 
-    private static class SourceFileComparator implements Comparator<SourcePath> {
-
-        @Override
-        public int compare(SourcePath o1, SourcePath o2) {
-            for (int i = 0; i < o1.segments.length; i++) {
-                int cmp = o1.segments[i].compareTo(o2.segments[i]);
-                if (cmp != 0) {
-                    return cmp;
-                }
-            }
-            return 0;
-        }
-    }
-
-    private static final Comparator<SourcePath> COMPARATOR = new SourceFileComparator();
-
     /**
      * Sort the given {@code List} of {@link SourcePath} with natural ordering.
      *
-     * @param sourcePaths the {@code List} of {@link SourcePath} to sort
+     * @param paths the {@code List} of {@link SourcePath} to sort
      * @return the sorted {@code List}
      */
-    public static List<SourcePath> sort(List<SourcePath> sourcePaths) {
-        Objects.requireNonNull(sourcePaths, "sourcePaths");
-        sourcePaths.sort(COMPARATOR);
-        return sourcePaths;
+    public static List<SourcePath> sort(List<SourcePath> paths) {
+        Objects.requireNonNull(paths, "sourcePaths");
+        paths.sort(SourcePath::compareTo);
+        return paths;
     }
 
     /**
@@ -422,31 +413,33 @@ public class SourcePath {
     }
 
     /**
-     * Scan all files recursively as {@link SourcePath} instance in the given directory.
+     * Scan all files as {@link SourcePath} instance in the given directory.
      *
      * @param dir the directory to scan
-     * @return the {@code List} of scanned {@link SourcePath}
+     * @return {@code List} of scanned {@link SourcePath}
      */
     public static List<SourcePath> scan(Path dir) {
-        return doScan(dir, dir);
+        try (Stream<SourcePath> paths = stream(dir)) {
+            return paths.sorted().collect(Collectors.toList());
+        }
     }
 
-    private static List<SourcePath> doScan(Path root, Path dir) {
-        if (!Files.exists(dir)) {
-            return List.of();
-        }
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
-            List<SourcePath> sourcePaths = new ArrayList<>();
-            for (Path next : dirStream) {
-                if (Files.isDirectory(next)) {
-                    sourcePaths.addAll(doScan(root, next));
-                } else {
-                    sourcePaths.add(new SourcePath(root, next));
-                }
-            }
-            return sort(sourcePaths);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+    /**
+     * Stream all files as {@link SourcePath} instance in the given directory.
+     * The returned stream owns open file-system traversal resources and must
+     * be closed by the caller, preferably with try-with-resources.
+     *
+     * @param dir the directory to scan
+     * @return {@code Stream} of scanned {@link SourcePath}
+     */
+    @SuppressWarnings("resource")
+    public static Stream<SourcePath> stream(Path dir) {
+        try {
+            return Files.walk(dir)
+                    .filter(p -> !Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS))
+                    .map(p -> new SourcePath(dir, p));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

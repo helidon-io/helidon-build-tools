@@ -29,7 +29,7 @@ import io.helidon.build.common.CurrentThreadExecutorService;
 @SuppressWarnings("unused")
 public class ExecutorConfig {
 
-    private ExecutorKind kind = ExecutorKind.DEFAULT;
+    private ExecutorKind kind;
     private Map<String, String> parameters;
 
     /**
@@ -40,13 +40,15 @@ public class ExecutorConfig {
      */
     ExecutorConfig(ExecutorKind kind, Map<String, String> parameters) {
         this.kind = kind;
-        this.parameters = parameters;
+        this.parameters = Objects.requireNonNull(parameters, "parameters is null");
     }
 
     /**
      * Create a new executor config.
      */
     public ExecutorConfig() {
+        kind = ExecutorKind.DEFAULT;
+        parameters = Map.of();
     }
 
     /**
@@ -82,7 +84,7 @@ public class ExecutorConfig {
      * @param parameters parameters map
      */
     public void setParameters(Map<String, String> parameters) {
-        this.parameters = parameters;
+        this.parameters = Objects.requireNonNull(parameters, "parameters is null");
     }
 
     /**
@@ -95,11 +97,11 @@ public class ExecutorConfig {
             case DEFAULT -> new CurrentThreadExecutorService();
             case CACHED -> Executors.newCachedThreadPool();
             case SINGLE -> Executors.newSingleThreadExecutor();
-            case FIXED -> Executors.newFixedThreadPool(getParameter("nThreads", 5));
-            case SCHEDULED -> Executors.newScheduledThreadPool(getParameter("corePoolSize", 5));
+            case FIXED -> Executors.newFixedThreadPool(parameter("nThreads", 5));
+            case SCHEDULED -> Executors.newScheduledThreadPool(parameter("corePoolSize", 5));
             case SINGLESCHEDULED -> Executors.newSingleThreadScheduledExecutor();
             case WORKSTEALINGPOOL -> {
-                int parallelism = getParameter("parallelism", -1);
+                int parallelism = parameter("parallelism", -1);
                 yield parallelism == -1
                         ? Executors.newWorkStealingPool()
                         : Executors.newWorkStealingPool(parallelism);
@@ -109,10 +111,7 @@ public class ExecutorConfig {
         };
     }
 
-    private int getParameter(String key, int defaultValue) {
-        if (Objects.isNull(parameters)) {
-            return defaultValue;
-        }
+    private int parameter(String key, int defaultValue) {
         return parameters.get(key) != null ? Integer.parseInt(parameters.get(key)) : defaultValue;
     }
 

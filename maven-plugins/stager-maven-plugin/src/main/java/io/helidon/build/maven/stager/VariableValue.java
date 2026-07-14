@@ -15,7 +15,8 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import io.helidon.build.common.Strings;
  * @see VariableValue.ListValue
  * @see VariableValue.EmptyValue
  */
-interface VariableValue extends StagingElement {
+public interface VariableValue extends StagingElement {
 
     /**
      * Convert this value to a plain object.
@@ -42,6 +43,17 @@ interface VariableValue extends StagingElement {
     @Override
     default String elementName() {
         return "value";
+    }
+
+    /**
+     * Merge a value.
+     *
+     * @param path  path
+     * @param other value to merge
+     * @return merged value
+     */
+    default VariableValue merge(String path, VariableValue other) {
+        throw new IllegalArgumentException("Conflicting variable '%s'".formatted(path));
     }
 
     /**
@@ -59,6 +71,14 @@ interface VariableValue extends StagingElement {
         public Object unwrap() {
             throw new IllegalStateException("Variable '" + name + "' does not have a value");
         }
+
+        @Override
+        public VariableValue merge(String path, VariableValue other) {
+            if (other instanceof EmptyValue) {
+                return this;
+            }
+            return VariableValue.super.merge(path, other);
+        }
     }
 
     /**
@@ -75,6 +95,15 @@ interface VariableValue extends StagingElement {
         @Override
         public String unwrap() {
             return text;
+        }
+
+        @Override
+        public VariableValue merge(String path, VariableValue other) {
+            if (other instanceof SimpleValue otherSimple
+                && text.equals(otherSimple.unwrap())) {
+                return this;
+            }
+            return VariableValue.super.merge(path, other);
         }
     }
 
@@ -102,6 +131,21 @@ interface VariableValue extends StagingElement {
                     .map(VariableValue::unwrap)
                     .collect(Collectors.toList());
         }
+
+        @Override
+        public VariableValue merge(String path, VariableValue other) {
+            if (other instanceof ListValue otherList) {
+                List<VariableValue> merged = new ArrayList<>(value.size() + otherList.value.size());
+                merged.addAll(value);
+                merged.addAll(otherList.value);
+                return new ListValue(merged);
+            }
+            return VariableValue.super.merge(path, other);
+        }
+
+        List<VariableValue> values() {
+            return value;
+        }
     }
 
     /**
@@ -115,17 +159,38 @@ interface VariableValue extends StagingElement {
             if (value == null) {
                 this.value = Map.of();
             } else {
-                this.value = new HashMap<>();
+                this.value = new LinkedHashMap<>();
                 for (Variable variable : value) {
                     this.value.put(variable.name(), variable.value());
                 }
             }
         }
 
+        MapValue(Map<String, VariableValue> value) {
+            this.value = value;
+        }
+
+        @Override
+        public VariableValue merge(String path, VariableValue other) {
+            if (other instanceof MapValue otherMap) {
+                Map<String, VariableValue> merged = new LinkedHashMap<>(value);
+                otherMap.value.forEach((k, v) -> merged.merge(k, v, (l, r) -> l.merge(path + "." + k, r)));
+                return new MapValue(merged);
+            }
+            return VariableValue.super.merge(path, other);
+        }
+
         @Override
         public Map<String, Object> unwrap() {
-            return value.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().unwrap()));
+            Map<String, Object> result = new LinkedHashMap<>();
+            for (Map.Entry<String, VariableValue> entry : value.entrySet()) {
+                result.put(entry.getKey(), entry.getValue().unwrap());
+            }
+            return result;
+        }
+
+        Map<String, VariableValue> values() {
+            return value;
         }
     }
 }

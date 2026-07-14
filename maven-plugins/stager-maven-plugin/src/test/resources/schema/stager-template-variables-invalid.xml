@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<stager xmlns="https://helidon.io/stager/1.0">
+    <directories>
+        <directory target="target/stage">
+            <templates>
+                <template source="page.mustache" target="index.html">
+                    <variables><variable name="title" value="Helidon"/></variables>
+                </template>
+            </templates>
+        </directory>
+    </directories>
+</stager>

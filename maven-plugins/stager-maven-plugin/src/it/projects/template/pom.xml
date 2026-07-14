@@ -1,6 +1,6 @@
 <!--
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,33 +49,10 @@
                                     <directory target="${project.build.directory}/stage">
                                         <templates>
                                             <template source="versions.json.hbs" target="versions1.json">
-                                                <variables>
-                                                    <variable name="versions">
-                                                        <value>3.0.0-SNAPSHOT</value>
-                                                        <value>2.5.0</value>
-                                                        <value>2.4.2</value>
-                                                        <value>2.4.0</value>
-                                                        <value>2.0.1</value>
-                                                        <value>2.0.0</value>
-                                                    </variable>
-                                                    <variable name="preview-versions">
-                                                        <value>
-                                                            <variable name="order" value="199" />
-                                                            <variable name="version" value="4.0.0-M1" />
-                                                        </value>
-                                                        <value>
-                                                            <variable name="order" value="200" />
-                                                            <variable name="version" value="4.0.0-ALPHA6" />
-                                                        </value>
-                                                    </variable>
-                                                    <variable name="latest" value="3.0.0-SNAPSHOT"/>
-                                                </variables>
+                                                <model><versions><v1>3.0.0-SNAPSHOT</v1><v2>2.5.0</v2><v3>2.4.2</v3><v4>2.4.0</v4><v5>2.0.1</v5><v6>2.0.0</v6></versions><preview-versions><m1><order>199</order><version>4.0.0-M1</version></m1><m2><order>200</order><version>4.0.0-ALPHA6</version></m2></preview-versions><latest>3.0.0-SNAPSHOT</latest><latest-release>3.0.0</latest-release></model>
                                             </template>
                                             <template source="versions.json.hbs" target="versions2.json">
-                                                <variables>
-                                                    <variable ref="versions"/>
-                                                    <variable ref="latest"/>
-                                                </variables>
+                                                <model><versions><v1>4.0.0-SNAPSHOT</v1><v2>3.0.0</v2></versions><preview-versions/><latest>4.0.0-SNAPSHOT</latest><latest-release>4.0.0</latest-release></model>
                                             </template>
                                         </templates>
                                     </directory>

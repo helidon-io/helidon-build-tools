@@ -19,10 +19,12 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 /**
  * Generate or copy a file to a given target location.
@@ -51,13 +53,12 @@ final class FileTask extends StagingTask {
                 throw new IllegalStateException(sourceFile + " does not exist");
             }
             ctx.logInfo("Copying %s to %s", sourceFile, targetFile);
-            Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sourceFile, targetFile, REPLACE_EXISTING);
         } else {
-            Files.createFile(targetFile);
             if (resolvedContent != null && !resolvedContent.isEmpty()) {
-                Files.writeString(targetFile, resolvedContent, StandardOpenOption.CREATE);
+                Files.writeString(targetFile, resolvedContent, CREATE, TRUNCATE_EXISTING);
             } else {
-                try (BufferedWriter writer = Files.newBufferedWriter(targetFile)) {
+                try (BufferedWriter writer = Files.newBufferedWriter(targetFile, CREATE, TRUNCATE_EXISTING)) {
                     for (StagingAction task : tasks()) {
                         if (task instanceof TextAction textAction) {
                             writer.write(textAction.text(vars));

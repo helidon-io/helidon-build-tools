@@ -54,10 +54,6 @@ record ArtifactGAV(String groupId,
         this.variables = addVariables(new HashMap<>(variables));
     }
 
-    ArtifactGAV(String groupId, String artifactId, String version, String type, String classifier) {
-        this(groupId, artifactId, version, type, classifier, Map.of());
-    }
-
     ArtifactGAV(Map<String, String> vars) {
         this(
                 vars.get("groupId"),

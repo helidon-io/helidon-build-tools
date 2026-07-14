@@ -17,6 +17,7 @@ package io.helidon.build.maven.stager;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,6 +28,7 @@ import io.helidon.build.common.Proxies;
 import io.helidon.build.common.Unchecked;
 import io.helidon.build.common.maven.plugin.Xpp3DomAdapter;
 import io.helidon.build.common.xml.XMLElement;
+import io.helidon.build.maven.stager.ExecutorConfig.ExecutorKind;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.PluginExecution;
@@ -180,7 +182,7 @@ public class StagerMojo extends AbstractMojo {
     private boolean skip;
 
     @Parameter
-    private ExecutorConfig executor = new ExecutorConfig();
+    private ExecutorConfig executor;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -193,7 +195,7 @@ public class StagerMojo extends AbstractMojo {
             return;
         }
 
-        ExecutorService executorService = executor.select();
+        ExecutorService executorService = executor();
         Path outputDir = outputDir();
         StagingContext context = new StagingContextImpl(
                 baseDir().toFile(),
@@ -219,6 +221,22 @@ public class StagerMojo extends AbstractMojo {
         } catch (ExecutionException ex) {
             throw Unchecked.wrap(ex.getCause());
         }
+    }
+
+    ExecutorService executor() {
+        if (executor == null) {
+            Properties userProperties = session.getUserProperties();
+            Map<String, String> parameters = new HashMap<>();
+            for (String s : userProperties.stringPropertyNames()) {
+                if (s.startsWith("stager.executor.")) {
+                    parameters.put(s.substring("stager.executor.".length()), userProperties.getProperty(s));
+                }
+            }
+            ExecutorKind kind = ExecutorKind.valueOf(parameters.getOrDefault("kind", "DEFAULT"));
+            ExecutorConfig config = new ExecutorConfig(kind, parameters);
+            return config.select();
+        }
+        return executor.select();
     }
 
     private XMLElement effectiveConfig() throws MojoExecutionException {

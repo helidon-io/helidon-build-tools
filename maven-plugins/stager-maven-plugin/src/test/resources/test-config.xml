@@ -20,6 +20,9 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://helidon.io/stager/1.0 https://helidon.io/xsd/stager-1.0.xsd">
 
+    <properties>
+        <foo>bar</foo>
+    </properties>
     <directories>
         <variables>
             <variable name="version">
@@ -115,67 +118,56 @@
                     <templates>
                         <template source="src/cli-metadata.properties.mustache"
                                   target="metadata.properties">
-                            <variables>
-                                <variable name="helidonVersion"
-                                          value="${cli.data.latest.version}"/>
-                                <variable name="buildToolsVersion"
-                                          value="${cli.maven.plugin.version}"/>
-                                <variable name="cliVersion"
-                                          value="${cli.latest.version}"/>
-                                <variable name="cliUpdateMessages">
-                                    <value>
-                                        <variable name="version"
-                                                  value="2.0.0-M2"/>
-                                        <variable name="message"
-                                                  value="Major dev command enhancements"/>
-                                    </value>
-                                    <value>
-                                        <variable name="version"
-                                                  value="2.0.0-M4"/>
-                                        <variable name="message"
-                                                  value="Helidon archetype support"/>
-                                    </value>
-                                    <value>
-                                        <variable name="version"
-                                                  value="2.0.0-RC1"/>
-                                        <variable name="message"
-                                                  value="Performance improvements"/>
-                                    </value>
-                                </variable>
-                            </variables>
+                            <model>
+                                <helidonVersion>${cli.data.latest.version}</helidonVersion>
+                                <buildToolsVersion>${cli.maven.plugin.version}</buildToolsVersion>
+                                <cliVersion>${cli.latest.version}</cliVersion>
+                                <cliUpdateMessages>
+                                    <major>
+                                        <version>2.0.0-M2</version>
+                                        <message>Major dev command enhancements</message>
+                                    </major>
+                                    <archetype>
+                                        <version>2.0.0-M4</version>
+                                        <message>Helidon archetype support</message>
+                                    </archetype>
+                                    <performance>
+                                        <version>2.0.0-RC1</version>
+                                        <message>Performance improvements</message>
+                                    </performance>
+                                </cliUpdateMessages>
+                            </model>
                         </template>
                     </templates>
                 </archive>
             </archives>
             <templates>
                 <template source="redirect.html.mustache" target="docs/index.html">
-                    <variables>
-                        <variable name="location" value="./latest/index.html"/>
-                        <variable name="title" value="Helidon Documentation"/>
-                        <variable name="description" value="Helidon Documentation"/>
-                        <variable name="og-url" value="https://helidon.io/docs"/>
-                        <variable name="og-description" value="Documentation"/>
-                    </variables>
+                    <model>
+                        <location>./latest/index.html</location>
+                        <title>Helidon Documentation</title>
+                        <description>Helidon Documentation</description>
+                        <og-url>https://helidon.io/docs</og-url>
+                        <og-description>Documentation</og-description>
+                    </model>
                 </template>
                 <template source="redirect.html.mustache" target="guides/index.html">
-                    <variables>
-                        <variable name="location"
-                                  value="../docs/latest/index.html#/guides/01_overview"/>
-                        <variable name="title" value="Helidon Guides"/>
-                        <variable name="description" value="Helidon Guides"/>
-                        <variable name="og-url" value="https://helidon.io/guides"/>
-                        <variable name="og-description" value="Guides"/>
-                    </variables>
+                    <model>
+                        <location>../docs/latest/index.html#/guides/01_overview</location>
+                        <title>Helidon Guides</title>
+                        <description>Helidon Guides</description>
+                        <og-url>https://helidon.io/guides</og-url>
+                        <og-description>Guides</og-description>
+                    </model>
                 </template>
                 <template source="redirect.html.mustache" target="javadocs/index.html">
-                    <variables>
-                        <variable name="location"
-                                  value="../docs/latest/apidocs/index.html?overview-summary.html"/>
-                        <variable name="title" value="Helidon Javadocs"/>
-                        <variable name="description" value="Helidon Javadocs"/>
-                        <variable name="og-url" value="https://helidon.io/javadocs"/>
-                        <variable name="og-description" value="Javadocs"/>
-                    </variables>
+                    <model>
+                        <location>../docs/latest/apidocs/index.html?overview-summary.html</location>
+                        <title>Helidon Javadocs</title>
+                        <description>Helidon Javadocs</description>
+                        <og-url>https://helidon.io/javadocs</og-url>
+                        <og-description>Javadocs</og-description>
+                    </model>
                 </template>
             </templates>
             <files>

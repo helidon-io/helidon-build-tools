@@ -126,8 +126,14 @@ final class ConfigProcessor {
     private void interpolate(XMLElement config) {
         // collect properties
         Map<String, String> properties = new LinkedHashMap<>();
-        for (XMLElement property : config.childrenAt("properties", "property")) {
-            properties.put(property.attribute("name"), property.attribute("value"));
+        for (XMLElement propertiesElt : config.children("properties")) {
+            for (XMLElement property : propertiesElt.children()) {
+                if ("property".equals(property.name())) {
+                    properties.put(property.attribute("name"), property.attribute("value"));
+                } else {
+                    properties.put(property.name(), property.value());
+                }
+            }
         }
 
         SubstitutionVariables substitution = SubstitutionVariables.of(NotFoundAction.AsIs, k -> {

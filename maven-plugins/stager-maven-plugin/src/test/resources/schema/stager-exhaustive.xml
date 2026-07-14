@@ -20,10 +20,16 @@
     <include src="fragments/stager.xml"/>
     <properties>
         <property name="stage.path" value="target/stage"/>
-        <property name="version" value="1.0.0"/>
+        <version>1.0.0</version>
     </properties>
     <variables>
         <variable name="channel" value="stable"/>
+        <variable name="stable.channels">
+            <value>stable</value>
+        </variable>
+        <variable name="all.channels">
+            <variable ref="stable.channels"/>
+        </variable>
     </variables>
     <directories>
         <variables>
@@ -58,6 +64,21 @@
                     </iterators>
                 </copy-artifact>
             </copy-artifacts>
+            <copies>
+                <copy source="src/static" target="assets">
+                    <includes>
+                        <include>**/*.txt</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/draft/**</exclude>
+                    </excludes>
+                    <iterators>
+                        <variables>
+                            <variable ref="version"/>
+                        </variables>
+                    </iterators>
+                </copy>
+            </copies>
             <archives>
                 <archive target="archives/site.zip" includes="**/*.html" excludes="tmp/**">
                     <files>
@@ -80,19 +101,14 @@
                     </files>
                     <templates>
                         <template source="src/templates/page.mustache" target="docs/{version}/index.html">
-                            <variables>
-                                <variable name="title" value="Helidon"/>
-                                <variable name="releases">
-                                    <value>
-                                        <variable name="version" value="1.0.0"/>
-                                        <variable name="latest" value="false"/>
-                                    </value>
-                                    <value>
-                                        <variable name="version" value="1.0.1"/>
-                                        <variable name="latest" value="true"/>
-                                    </value>
-                                </variable>
-                            </variables>
+                            <model>
+                                <title>Helidon</title>
+                                <templateVersions>{version}</templateVersions>
+                                <releases>
+                                    <first><version>1.0.0</version><latest>false</latest></first>
+                                    <second><version>1.0.1</version><latest>true</latest></second>
+                                </releases>
+                            </model>
                             <iterators>
                                 <variables>
                                     <variable ref="version"/>

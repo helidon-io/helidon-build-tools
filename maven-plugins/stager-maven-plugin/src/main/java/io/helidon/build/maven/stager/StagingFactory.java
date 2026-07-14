@@ -41,6 +41,7 @@ final class StagingFactory implements XMLElement.Visitor {
             "directory",
             "archive",
             "download",
+            "copy",
             "copy-artifact",
             "file",
             "symlink",
@@ -98,6 +99,12 @@ final class StagingFactory implements XMLElement.Visitor {
     @Override
     public void postVisitElement(XMLElement elt) {
         XMLElement parent = elt.parent();
+        if (hasReferencedVariableAncestor(elt) || hasModelAncestor(elt)) {
+            mappings.computeIfAbsent(elt, n -> new ArrayList<>());
+            mappings.computeIfAbsent(parent, n -> new ArrayList<>());
+            scopes.pop();
+            return;
+        }
         String name = elt.name();
         mappings.computeIfAbsent(elt, n -> new ArrayList<>());
         mappings.computeIfAbsent(parent, n -> new ArrayList<>());
@@ -113,11 +120,15 @@ final class StagingFactory implements XMLElement.Visitor {
         List<StagingElement> children = mappings.get(elt);
         StagingElement element = switch (name) {
             case "variables" -> variables(elt.attributes(), children);
-            case "variable" -> variable(elt.attributes(), children, scope);
+            case "variable" -> variable(elt, children, scope);
             case "value" -> variableValue(children, value);
+            case "model" -> TemplateModel.create(elt);
             case "iterators" -> actionIterators(children, elt.attributes());
             default -> createDefault(name, elt.attributes(), children, value);
         };
+        if (element instanceof Variable variable) {
+            scope.parent.variables.put(variable.name(), variable);
+        }
         if (element instanceof Variables variables) {
             for (Variable variable : variables) {
                 scope.parent.variables.putIfAbsent(variable.name(), variable);
@@ -138,17 +149,19 @@ final class StagingFactory implements XMLElement.Visitor {
                                               String text) {
 
         Supplier<ActionIterators> iterators = () -> firstChild(children, ActionIterators.class, () -> null);
-        Supplier<Variables> variables = () -> firstChild(children, Variables.class, Variables::new);
+        Supplier<TemplateModel> model = () -> firstChild(children, TemplateModel.class, TemplateModel::empty);
         Supplier<List<Mapper>> mappers = () -> filterChildren(children, Mapper.class);
         return switch (name) {
             case "directory" -> new StagingDirectory(filterChildren(children, StagingAction.class), attrs);
             case "unpack" -> new UnpackTask(iterators.get(), mappers.get(), attrs);
             case "unpack-artifact" -> new UnpackArtifactTask(iterators.get(), mappers.get(), attrs);
+            case "copy" -> new CopyTask(iterators.get(), filterChildren(children, Include.class),
+                    filterChildren(children, Exclude.class), attrs);
             case "copy-artifact" -> new CopyArtifactTask(iterators.get(), attrs);
             case "symlink" -> new SymlinkTask(iterators.get(), attrs);
             case "download" -> new DownloadTask(iterators.get(), attrs);
             case "archive" -> new ArchiveTask(iterators.get(), filterChildren(children, StagingAction.class), attrs);
-            case "template" -> new TemplateTask(iterators.get(), attrs, variables.get());
+            case "template" -> new TemplateTask(iterators.get(), attrs, model.get());
             case "file" -> new FileTask(iterators.get(), filterChildren(children, TextAction.class), attrs, text);
             case "list-files" -> {
                 List<Include> includes = filterChildren(children, Include.class);
@@ -188,15 +201,33 @@ final class StagingFactory implements XMLElement.Visitor {
         return new Variables(filterChildren(children, Variable.class), attrs);
     }
 
-    private static Variable variable(Map<String, String> attrs, List<StagingElement> children, Scope scope) {
+    private static Variable variable(XMLElement elt, List<StagingElement> children, Scope scope) {
+        Map<String, String> attrs = elt.attributes();
         if (attrs.containsKey("ref")) {
-            return scope.resolve(attrs.get("ref"));
+            Variable resolved = scope.resolve(attrs.get("ref"));
+            String name = attrs.getOrDefault("name", resolved.name());
+            return new Variable(name, resolved.value());
+        }
+        for (XMLElement child : elt.children()) {
+            if ("variable".equals(child.name()) && !child.attributes().containsKey("ref")) {
+                throw new IllegalArgumentException(
+                        "Aggregate variable '" + attrs.get("name") + "' requires direct variable children to use ref");
+            }
         }
         return variable(attrs.get("name"), children, attrs.get("value"));
     }
 
     private static Variable variable(String name, List<StagingElement> children, String text) {
         List<VariableValue> values = filterChildren(children, VariableValue.class);
+        List<Variable> variables = filterChildren(children, Variable.class);
+        if (!values.isEmpty() && !variables.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Variable '%s' cannot mix <value> and <variable> children"
+                            .formatted(name));
+        }
+        if (!variables.isEmpty()) {
+            return aggregateVariable(name, variables);
+        }
         if (!values.isEmpty()) {
             return new Variable(name, new VariableValue.ListValue(values));
         }
@@ -204,6 +235,40 @@ final class StagingFactory implements XMLElement.Visitor {
             return new Variable(name, new VariableValue.EmptyValue(name));
         }
         return new Variable(name, new VariableValue.SimpleValue(text));
+    }
+
+    private static Variable aggregateVariable(String name, List<Variable> variables) {
+        List<VariableValue> aggregate = new ArrayList<>();
+        for (Variable variable : variables) {
+            if (!(variable.value() instanceof VariableValue.ListValue list)) {
+                throw new IllegalArgumentException(
+                        "Aggregate variable '" + name + "' requires list-valued reference '" + variable.name() + "'");
+            }
+            aggregate.addAll(list.values());
+        }
+        return new Variable(name, new VariableValue.ListValue(aggregate));
+    }
+
+    private static boolean hasReferencedVariableAncestor(XMLElement elt) {
+        XMLElement p = elt.parent();
+        while (p != null) {
+            if ("variable".equals(p.name()) && p.attributes().containsKey("ref")) {
+                return true;
+            }
+            p = p.parent();
+        }
+        return false;
+    }
+
+    private static boolean hasModelAncestor(XMLElement elt) {
+        XMLElement parent = elt.parent();
+        while (parent != null) {
+            if ("model".equals(parent.name())) {
+                return true;
+            }
+            parent = parent.parent();
+        }
+        return false;
     }
 
     private static VariableValue variableValue(List<StagingElement> children, String text) {
