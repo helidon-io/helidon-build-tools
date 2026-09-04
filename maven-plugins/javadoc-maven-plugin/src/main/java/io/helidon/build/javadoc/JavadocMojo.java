@@ -19,6 +19,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
@@ -104,8 +105,8 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * A goal to produce javadocs.
- * Provides a <strong>simple</strong> way to produce aggregated javadocs.
+ * A goal to produce Javadocs.
+ * Provides a <strong>simple</strong> way to produce aggregated Javadocs.
  * <br/>
  * Project dependencies can be mapped to project modules, or downloaded via "sources" jar.
  * Only supports JDK >= 17.
@@ -545,11 +546,15 @@ public class JavadocMojo extends AbstractMojo {
                     module = new JarModule(artifact, moduleDescriptor(artifact), true);
                 }
             } catch (Throwable ex) {
-                Log.error(ex, "Unable to resolve javadoc module: %s (class-path only)", artifact);
-                if (LogLevel.isDebug()) {
-                    // Logging the full exception for troubleshooting
-                    Log.log(LogLevel.DEBUG, ex, "Unable to resolve javadoc module");
+                LogLevel level;
+                if (ex.getCause() instanceof IOException) {
+                    level = LogLevel.ERROR;
+                } else if (ex instanceof FindException) {
+                    level = LogLevel.DEBUG;
+                } else {
+                    level = LogLevel.ERROR;
                 }
+                Log.log(level, ex, "Unable to resolve javadoc module: %s (class-path only)", artifact);
                 module = new JarModule(artifact, null, true);
             }
 
@@ -560,10 +565,8 @@ public class JavadocMojo extends AbstractMojo {
                 computed = jars.compute(module.name(), module::merge);
             }
             if (computed instanceof CompositeJavadocModule cm) {
-                if (!cm.name().equals(JavadocModule.INVALID)) {
-                    Log.debug("Found module '%s' in multiple locations: %s",
-                            cm.name(), Lists.join(cm.artifacts(), MavenArtifact::file, " "));
-                }
+                Log.debug("Found module '%s' in multiple locations: %s",
+                        cm.name(), Lists.join(cm.artifacts(), MavenArtifact::file, " "));
             }
         }
     }
@@ -734,7 +737,15 @@ public class JavadocMojo extends AbstractMojo {
                     try {
                         return Stream.of(new JarModule(it, moduleDescriptor(it), false));
                     } catch (Throwable ex) {
-                        Log.error(ex, ex.getMessage());
+                        LogLevel level;
+                        if (ex.getCause() instanceof IOException) {
+                            level = LogLevel.ERROR;
+                        } else if (ex instanceof FindException) {
+                            level = LogLevel.DEBUG;
+                        } else {
+                            level = LogLevel.ERROR;
+                        }
+                        Log.log(level, ex, ex.getMessage());
                         return Stream.empty();
                     }
                 })
