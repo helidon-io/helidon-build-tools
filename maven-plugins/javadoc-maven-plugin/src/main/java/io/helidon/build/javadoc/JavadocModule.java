@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,6 @@ import static java.util.stream.Collectors.toSet;
 interface JavadocModule {
 
     /**
-     * The constant for the name of the modules without a {@link ModuleDescriptor}.
-     */
-    String INVALID = "INVALID!";
-
-    /**
      * The Maven artifact of this module.
      *
      * @return ArtifactInfo
@@ -68,11 +63,19 @@ interface JavadocModule {
     /**
      * Get this module name.
      *
-     * @return module name or {@link #INVALID} if {@link #descriptor()} is {@code null}
+     * @return module descriptor name or name derived from the Maven coordinates.
      */
     default String name() {
         ModuleDescriptor md = descriptor();
-        return md != null ? md.name() : INVALID;
+        if (md != null) {
+            return md.name();
+        }
+        String name = "coords:" + artifact().groupId() + ":" + artifact().artifactId();
+        String classifier = artifact().classifier();
+        if (classifier != null && !classifier.isBlank()) {
+            name += ":" + classifier;
+        }
+        return name;
     }
 
     /**

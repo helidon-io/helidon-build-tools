@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,5 +41,12 @@ class ProjectsTestIT {
         assertThat(apidocsDir.resolve("test.module2a/com/acme2a/Acme2a.html"), fileExists());
         assertThat(apidocsDir.resolve("test.module2a/com/acme2a/Acme2a__Excluded.html"), not(fileExists()));
         assertThat(apidocsDir.resolve("test.module2b/com/acme2b/Acme2b.html"), fileExists());
+    }
+
+    @ParameterizedTest
+    @ConfigurationParameterSource("basedir")
+    void test2(String basedir) {
+        Path apidocsDir = Path.of(basedir).resolve("module4/target/apidocs");
+        assertThat(apidocsDir.resolve("test.module1/com/acme1/Acme1.html"), fileExists());
     }
 }
