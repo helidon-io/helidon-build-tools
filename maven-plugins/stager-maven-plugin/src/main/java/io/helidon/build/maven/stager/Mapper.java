@@ -18,20 +18,16 @@ package io.helidon.build.maven.stager;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Archive entry path mapper.
  */
-record Mapper(String match, String replace) implements StagingElement {
+record Mapper(String match, String replace) {
 
-    Mapper(Map<String, String> attrs) {
-        this(Strings.requireValid(attrs.get("match"), "match is required"),
-                Strings.requireValid(attrs.get("replace"), "replace is required"));
-    }
-
-    @Override
-    public String elementName() {
-        return "mapper";
+    Mapper(XMLElement element) {
+        this(Strings.requireValid(element.attribute("match", null), "match is required"),
+                Strings.requireValid(element.attribute("replace", null), "replace is required"));
     }
 
     String match(Map<String, String> vars) {

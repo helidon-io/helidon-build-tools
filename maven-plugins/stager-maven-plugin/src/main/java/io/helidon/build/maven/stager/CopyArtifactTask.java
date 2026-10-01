@@ -21,27 +21,28 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
-import io.helidon.build.common.Maps;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Copy an artifact to a given target location.
  */
 final class CopyArtifactTask extends StagingTask {
 
-    private static final String DEFAULT_TARGET = "{artifactId}-{version}.{type}";
-
     private final ArtifactGAV gav;
+    private final String target;
 
-    CopyArtifactTask(ActionIterators iterators, Map<String, String> attrs) {
-        super("copy-artifact", null, iterators, Maps.computeIfAbsent(attrs, Map.of("target", t -> DEFAULT_TARGET)));
-        this.gav = new ArtifactGAV(attrs);
+    CopyArtifactTask(XMLElement element) {
+        super(element);
+        this.gav = new ArtifactGAV(element);
+        this.target = element.attribute("target", "{artifactId}-{version}.{type}");
+
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         ArtifactGAV resolvedGav = gav.resolve(vars);
         Map<String, String> resolvedVars = resolvedGav.variables();
-        String resolveTarget = resolveVar(target(), resolvedVars);
+        String resolveTarget = resolveVar(target, resolvedVars);
         ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
         Path artifact = ctx.resolve(resolvedGav);
         Path targetFile = dir.resolve(resolveTarget);
@@ -51,5 +52,9 @@ final class CopyArtifactTask extends StagingTask {
 
     ArtifactGAV gav() {
         return gav;
+    }
+
+    String target() {
+        return target;
     }
 }

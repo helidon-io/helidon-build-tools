@@ -132,13 +132,14 @@ public final class Xpp3DomAdapter implements XMLElement {
             private Xpp3DomAdapter last;
 
             @Override
-            public void visitElement(XMLElement elt) {
+            public boolean visitElement(XMLElement elt) {
                 if (elt instanceof Xpp3DomAdapter pcn) {
                     node = new Xpp3DomAdapter(pcn.orig, node);
                     if (node.parent != null) {
                         node.parent.children.add(node);
                     }
                 }
+                return true;
             }
 
             @Override

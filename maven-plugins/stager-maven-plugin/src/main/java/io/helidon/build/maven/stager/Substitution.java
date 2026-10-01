@@ -21,25 +21,21 @@ import java.util.function.BiFunction;
 
 import io.helidon.build.common.Patterns;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Substitution.
  */
-final class Substitution implements StagingElement {
+final class Substitution {
 
     private final String match;
     private final String replace;
     private final boolean regex;
 
-    Substitution(Map<String, String> attrs) {
-        match = Strings.requireValid(attrs.get("match"), "match is required");
-        replace = Strings.requireValid(attrs.get("replace"), "replace is required");
-        regex = Boolean.parseBoolean(attrs.getOrDefault("regex", "true"));
-    }
-
-    @Override
-    public String elementName() {
-        return "substitution";
+    Substitution(XMLElement element) {
+        match = Strings.requireValid(element.attribute("match", null), "match is required");
+        replace = Strings.requireValid(element.attribute("replace", null), "replace is required");
+        regex = element.attributeBoolean("regex", true);
     }
 
     String match() {

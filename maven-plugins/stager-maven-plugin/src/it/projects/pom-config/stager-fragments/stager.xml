@@ -27,7 +27,10 @@
                 <file target="${version}/{channel}/marker.txt">
                     <iterators>
                         <variables>
-                            <variable ref="channel"/>
+                            <variable name="releases">
+                                <value version="${version}" channel="stable"/>
+                                <value version="${version}" channel="preview"/>
+                            </variable>
                         </variables>
                     </iterators>
                 </file>

@@ -16,25 +16,21 @@
 package io.helidon.build.maven.stager;
 
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Internal model for action iterators.
  */
-final class ActionIterators extends LinkedList<ActionIterator> implements StagingElement, Joinable {
+final class ActionIterators extends LinkedList<ActionIterator> implements Joinable {
 
     private final boolean join;
 
-    ActionIterators(List<ActionIterator> iterators, Map<String, String> attrs) {
-        super();
-        join = attrs != null && Boolean.parseBoolean(attrs.get("join"));
-        addAll(iterators);
-    }
-
-    @Override
-    public String elementName() {
-        return "iterators";
+    ActionIterators(XMLElement element) {
+        join = element.attributeBoolean("join", false);
+        for (XMLElement variables : element.children("variables")) {
+            add(new ActionIterator(new Variables(variables)));
+        }
     }
 
     @Override

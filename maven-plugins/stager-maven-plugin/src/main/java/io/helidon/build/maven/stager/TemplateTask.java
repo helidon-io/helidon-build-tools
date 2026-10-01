@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 
@@ -34,18 +35,24 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
  */
 final class TemplateTask extends StagingTask {
 
-    private final String source;
-    private final TemplateModel model;
+    private static final TemplateHandler MODEL_HANDLER = new TemplateHandler();
 
-    TemplateTask(ActionIterators iterators, Map<String, String> attrs, TemplateModel model) {
-        super("template", null, iterators, attrs);
-        this.source = Strings.requireValid(attrs.get("source"), "source is required");
-        this.model = model == null ? TemplateModel.empty() : model;
+    private final String source;
+    private final String target;
+    private final XMLElement model;
+
+    TemplateTask(XMLElement element) {
+        super(element);
+        this.source = Strings.requireValid(element.attribute("source", null), "source is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+        this.model = element.child("model")
+                .map(XMLElement::builder)
+                .orElseGet(() -> XMLElement.builder().name("model"));
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedTarget = resolveVar(target, vars);
         String resolvedSource = resolveVar(source, vars);
         Path sourceFile = ctx.resolve(resolvedSource);
         if (!Files.exists(sourceFile)) {
@@ -55,8 +62,10 @@ final class TemplateTask extends StagingTask {
         ctx.ensureDirectory(targetFile.getParent());
         try (Reader reader = Files.newBufferedReader(sourceFile);
                 Writer writer = Files.newBufferedWriter(targetFile, CREATE, TRUNCATE_EXISTING)) {
-            new DefaultMustacheFactory().compile(reader, resolvedSource)
-                    .execute(writer, model.resolve(vars).root())
+            DefaultMustacheFactory factory = new DefaultMustacheFactory();
+            factory.setObjectHandler(MODEL_HANDLER);
+            factory.compile(reader, resolvedSource)
+                    .execute(writer, resolve(model, vars))
                     .flush();
         }
     }
@@ -65,7 +74,28 @@ final class TemplateTask extends StagingTask {
         return source;
     }
 
-    TemplateModel model() {
+    XMLElement model() {
         return model;
+    }
+
+    private static XMLElement resolve(XMLElement model, Map<String, String> vars) {
+        XMLElement resolved = XMLElement.builder(model);
+        resolved.visit(new XMLElement.Visitor() {
+            @Override
+            public boolean visitElement(XMLElement elt) {
+                elt.value(resolve(elt.value(), vars));
+                elt.attributes().replaceAll((name, value) -> resolve(value, vars));
+                return true;
+            }
+        });
+        return resolved;
+    }
+
+    private static String resolve(String value, Map<String, String> vars) {
+        String result = value;
+        for (Map.Entry<String, String> variable : vars.entrySet()) {
+            result = result.replace("{" + variable.getKey() + "}", variable.getValue());
+        }
+        return result;
     }
 }

@@ -15,33 +15,50 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.helidon.build.common.xml.XMLElement;
+
+import static io.helidon.build.common.Strings.requireValid;
 
 /**
  * Internal model for a list of variables.
  */
-final class Variables extends LinkedList<Variable> implements StagingElement, Joinable {
+final class Variables extends LinkedHashMap<String, List<Map<String, String>>> {
 
     private final boolean join;
 
-    Variables() {
-        join = false;
+    Variables(XMLElement element) {
+        join = element.attributeBoolean("join", false);
+        for (XMLElement variableElt : element.children()) {
+            if ("variable".equals(variableElt.name())) {
+                String name = requireValid(variableElt.attribute("name", null), "name is required");
+                List<Map<String, String>> values = new ArrayList<>();
+                for (XMLElement valueElt : variableElt.children()) {
+                    if ("value".equals(valueElt.name())) {
+                        Map<String, String> value = new HashMap<>();
+                        String text = valueElt.value();
+                        if (!text.isBlank()) {
+                            value.put(name, text);
+                        } else {
+                            Map<String, String> attributes = valueElt.attributes();
+                            if (!attributes.isEmpty()) {
+                                value.putAll(attributes);
+                            }
+                        }
+                        values.add(value);
+                    }
+                }
+                put(name, values);
+            }
+        }
     }
 
-    Variables(List<Variable> variables, Map<String, String> attrs) {
-        join = attrs != null && Boolean.parseBoolean(attrs.get("join"));
-        addAll(variables);
-    }
-
-    @Override
-    public String elementName() {
-        return "variables";
-    }
-
-    @Override
-    public boolean join() {
+    boolean join() {
         return join;
     }
 }

@@ -22,6 +22,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
+
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -33,16 +36,18 @@ final class FileTask extends StagingTask {
 
     private final String content;
     private final String source;
+    private final String target;
 
-    FileTask(ActionIterators iterators, List<TextAction> nested, Map<String, String> attrs, String content) {
-        super("file", nested, iterators, attrs);
-        this.content = content;
-        this.source = attrs.get("source");
+    FileTask(XMLElement element, List<StagingTask> tasks) {
+        super(element, tasks);
+        this.content = element.value().isEmpty() && !element.children().isEmpty() ? null : element.value();
+        this.source = element.attribute("source", null);
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedTarget = resolveVar(target, vars);
         String resolvedSource = resolveVar(source, vars);
         String resolvedContent = resolveVar(content, vars);
         Path targetFile = dir.resolve(resolvedTarget).normalize();
@@ -59,9 +64,9 @@ final class FileTask extends StagingTask {
                 Files.writeString(targetFile, resolvedContent, CREATE, TRUNCATE_EXISTING);
             } else {
                 try (BufferedWriter writer = Files.newBufferedWriter(targetFile, CREATE, TRUNCATE_EXISTING)) {
-                    for (StagingAction task : tasks()) {
-                        if (task instanceof TextAction textAction) {
-                            writer.write(textAction.text(vars));
+                    for (StagingTask task : tasks()) {
+                        if (task instanceof TextTask textTask) {
+                            writer.write(textTask.text(vars));
                         }
                     }
                 }
@@ -69,20 +74,14 @@ final class FileTask extends StagingTask {
         }
     }
 
-    /**
-     * Get the source.
-     *
-     * @return source, may be {@code null}
-     */
     String source() {
         return source;
     }
 
-    /**
-     * Get the content.
-     *
-     * @return content, may be {@code null}
-     */
+    String target() {
+        return target;
+    }
+
     String content() {
         return content;
     }

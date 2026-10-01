@@ -18,6 +18,7 @@ package io.helidon.build.maven.stager;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
@@ -30,9 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.build.common.Lists;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.Unchecked;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.Unchecked.unchecked;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -43,48 +44,54 @@ import static java.util.concurrent.CompletableFuture.runAsync;
 /**
  * Base class for all tasks.
  */
-class StagingTask implements StagingAction {
+class StagingTask implements Joinable {
 
-    private final String elementName;
-    private final List<? extends StagingAction> nested;
+    private final String name;
+    private final Map<String, String> attributes;
+    private final List<StagingTask> tasks;
     private final ActionIterators iterators;
-    private final Map<String, String> attrs;
-    private final String target;
-    private final boolean join;
 
-    StagingTask() {
-        this(null, null, null, null);
+    StagingTask(XMLElement element) {
+        this(element, null);
     }
 
-    StagingTask(String elementName, List<? extends StagingAction> nested, ActionIterators iterators, Map<String, String> attrs) {
-        this.elementName = elementName != null ? elementName : "unknown";
-        this.nested = nested == null ? List.of() : nested;
-        this.iterators = iterators;
-        this.attrs = attrs != null ? attrs : Map.of();
-        this.target = this.attrs.get("target");
-        this.join = Boolean.parseBoolean(this.attrs.get("join"));
-    }
-
-    @Override
-    public String elementName() {
-        return elementName;
+    StagingTask(XMLElement element, List<StagingTask> tasks) {
+        this.name = element.name();
+        this.attributes = element.attributes();
+        this.tasks = tasks == null ? List.of() : tasks;
+        this.iterators = element.child("iterators")
+                .map(ActionIterators::new)
+                .orElse(null);
     }
 
     @Override
     public boolean join() {
-        return join;
+        return Boolean.parseBoolean(attributes.get("join"));
     }
 
-    @Override
+    /**
+     * Describe the task.
+     *
+     * @param dir  stage directory
+     * @param vars variables for the current iteration
+     * @return String that describes the task
+     */
     public String toString(Path dir, Map<String, String> vars) {
-        return elementName + "{"
-                + "attrs=" + attrs
+        return name + "{"
+                + "attrs=" + attributes
                 + ", dir=" + dir
                 + ", vars=" + vars
                 + "}";
     }
 
-    @Override
+    /**
+     * Execute the action.
+     *
+     * @param ctx  staging context
+     * @param dir  directory
+     * @param vars substitution variables
+     * @return completion stage that is completed when all tasks have been executed
+     */
     public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
         if (iterators == null || iterators.isEmpty()) {
             return execTask(ctx, dir, vars);
@@ -120,7 +127,7 @@ class StagingTask implements StagingAction {
                                                      Map<String, String> vars) {
 
         Span span = new Span(ctx, dir, vars);
-        List<Map<String, String>> itVars = Lists.of(it.forVariables(vars));
+        List<Map<String, String>> itVars = it.forVariables(vars);
         CompletableFuture<Void> future = allOf(itVars, m -> it.join(), m -> execTask(ctx, dir, m));
         return future.thenRun(span::end);
     }
@@ -150,7 +157,7 @@ class StagingTask implements StagingAction {
      */
     protected CompletableFuture<Void> execNestedTasks(StagingContext ctx, Path dir, Map<String, String> vars) {
         Span span = new Span(ctx, dir, vars);
-        CompletableFuture<Void> future = allOf(nested, task -> task.execute(ctx, dir, vars).toCompletableFuture());
+        CompletableFuture<Void> future = allOf(tasks, task -> task.execute(ctx, dir, vars).toCompletableFuture());
         return future.thenRun(span::end);
     }
 
@@ -292,16 +299,28 @@ class StagingTask implements StagingAction {
         return handleRetry(() -> supplier.get().orTimeout(timeout, TimeUnit.MILLISECONDS), ctx, 1, maxAttempts);
     }
 
-    List<? extends StagingAction> tasks() {
-        return nested;
+    String name() {
+        return name;
     }
 
-    ActionIterators iterators() {
-        return iterators;
+    List<StagingTask> tasks() {
+        return tasks;
     }
 
-    String target() {
-        return target;
+    static List<XMLElement> elements(XMLElement element, String name, String wrapper) {
+        List<XMLElement> result = new ArrayList<>();
+        for (XMLElement child : element.children()) {
+            if (name.equals(child.name())) {
+                result.add(child);
+            } else if (wrapper.equals(child.name())) {
+                for (XMLElement wrapped : child.children()) {
+                    if (name.equals(wrapped.name())) {
+                        result.add(wrapped);
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private static <T> CompletableFuture<Void> allOf(List<T> items,
@@ -374,11 +393,11 @@ class StagingTask implements StagingAction {
             start();
         }
 
-        private void start() {
+        void start() {
             if (ctx.isDebugEnabled()) {
                 startTime = System.currentTimeMillis();
                 ctx.logDebug("[trace] [id=%d,t=%d] [start] %s.%s(attrs=%s,dir=%s,vars=%s)",
-                        id, startTime, elementName, method, attrs, dir, vars);
+                        id, startTime, name, method, attributes, dir, vars);
             }
         }
 
@@ -386,7 +405,7 @@ class StagingTask implements StagingAction {
             if (ctx.isDebugEnabled()) {
                 long endTime = System.currentTimeMillis();
                 ctx.logDebug("[trace] [id=%d,t=%d] [end] %s.%s(attrs=%s,dir=%s,vars=%s) [total-time=%d]",
-                        id, startTime, elementName, method, attrs, dir, vars, endTime - startTime);
+                        id, startTime, name, method, attributes, dir, vars, endTime - startTime);
             }
         }
     }

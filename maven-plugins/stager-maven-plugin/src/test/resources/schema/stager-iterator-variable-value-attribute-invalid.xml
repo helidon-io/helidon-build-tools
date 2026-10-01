@@ -17,6 +17,15 @@
 
 -->
 <stager xmlns="https://helidon.io/stager/1.0">
-    <variables/>
-    <include src="fragments/stager.xml"/>
+    <directories>
+        <directory target="target/stage">
+            <file target="{channel}/marker.txt">
+                <iterators>
+                    <variables>
+                        <variable name="channel" value="stable"/>
+                    </variables>
+                </iterators>
+            </file>
+        </directory>
+    </directories>
 </stager>

@@ -21,7 +21,9 @@
         <directory target="target/stage">
             <templates>
                 <template source="page.mustache" target="index.html">
-                    <variables/>
+                    <model type="release">
+                        <version>4.2.0</version>
+                    </model>
                 </template>
             </templates>
         </directory>

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.maven.stager.StagingTask.resolveVar;
 
@@ -54,14 +55,13 @@ record ArtifactGAV(String groupId,
         this.variables = addVariables(new HashMap<>(variables));
     }
 
-    ArtifactGAV(Map<String, String> vars) {
-        this(
-                vars.get("groupId"),
-                vars.get("artifactId"),
-                vars.get("version"),
-                vars.get("type"),
-                vars.get("classifier"),
-                vars);
+    ArtifactGAV(XMLElement element) {
+        this(element.attribute("groupId", null),
+                element.attribute("artifactId", null),
+                element.attribute("version", null),
+                element.attribute("type", null),
+                element.attribute("classifier", null),
+                element.attributes());
     }
 
     /**

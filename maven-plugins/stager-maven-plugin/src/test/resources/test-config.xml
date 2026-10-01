@@ -24,15 +24,6 @@
         <foo>bar</foo>
     </properties>
     <directories>
-        <variables>
-            <variable name="version">
-                <value>${docs.1.version}</value>
-                <value>1.4.3</value>
-                <value>1.4.2</value>
-                <value>1.4.1</value>
-                <value>1.4.0</value>
-            </variable>
-        </variables>
         <directory target="${project.build.directory}/site">
             <unpack-artifacts>
                 <unpack-artifact
@@ -46,7 +37,13 @@
                     </mappers>
                     <iterators>
                         <variables>
-                            <variable ref="version" />
+                            <variable name="version">
+                                <value>${docs.1.version}</value>
+                                <value>1.4.3</value>
+                                <value>1.4.2</value>
+                                <value>1.4.1</value>
+                                <value>1.4.0</value>
+                            </variable>
                         </variables>
                     </iterators>
                 </unpack-artifact>

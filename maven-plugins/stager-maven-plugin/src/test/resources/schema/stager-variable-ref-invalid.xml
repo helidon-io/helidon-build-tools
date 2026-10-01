@@ -19,11 +19,13 @@
 <stager xmlns="https://helidon.io/stager/1.0">
     <directories>
         <directory target="target/stage">
-            <templates>
-                <template source="page.mustache" target="index.html">
-                    <variables/>
-                </template>
-            </templates>
+            <file target="marker.txt">
+                <iterators>
+                    <variables>
+                        <variable name="version" ref="versions"/>
+                    </variables>
+                </iterators>
+            </file>
         </directory>
     </directories>
 </stager>

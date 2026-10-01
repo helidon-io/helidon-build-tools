@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.FileUtils.measuredSize;
 
@@ -37,10 +38,12 @@ import static io.helidon.build.common.FileUtils.measuredSize;
 final class DownloadTask extends StagingTask {
 
     private final String url;
+    private final String target;
 
-    DownloadTask(ActionIterators iterators, Map<String, String> attrs) {
-        super("download", null, iterators, attrs);
-        this.url = Strings.requireValid(attrs.get("url"), "url is required");
+    DownloadTask(XMLElement element) {
+        super(element);
+        this.url = Strings.requireValid(element.attribute("url", null), "url is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
     }
 
     @Override
@@ -50,7 +53,7 @@ final class DownloadTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String path = resolveVar(target(), vars);
+        String path = resolveVar(target, vars);
         Path file = dir.resolve(path).normalize();
         ctx.ensureDirectory(file.getParent());
         URL url = new URL(resolveVar(this.url, vars));
@@ -59,6 +62,10 @@ final class DownloadTask extends StagingTask {
 
     String url() {
         return url;
+    }
+
+    String target() {
+        return target;
     }
 
     /**

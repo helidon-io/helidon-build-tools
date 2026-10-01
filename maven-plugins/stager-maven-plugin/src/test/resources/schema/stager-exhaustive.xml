@@ -22,30 +22,17 @@
         <property name="stage.path" value="target/stage"/>
         <version>1.0.0</version>
     </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-        <variable name="stable.channels">
-            <value>stable</value>
-        </variable>
-        <variable name="all.channels">
-            <variable ref="stable.channels"/>
-        </variable>
-    </variables>
     <directories>
-        <variables>
-            <variable name="version">
-                <value>${version}</value>
-                <value>1.0.1</value>
-            </variable>
-            <variable name="platform" value="linux"/>
-        </variables>
         <directory target="${stage.path}">
             <downloads>
                 <download url="https://example.com/{version}/archive.zip"
                           target="downloads/{version}/archive.zip">
                     <iterators join="true">
                         <variables>
-                            <variable ref="version"/>
+                            <variable name="release">
+                                <value version="${version}" channel="stable"/>
+                                <value version="1.0.1" channel="preview"/>
+                            </variable>
                         </variables>
                     </iterators>
                 </download>
@@ -59,7 +46,13 @@
                                target="artifacts/{artifactId}-{version}-{classifier}.{type}">
                     <iterators>
                         <variables>
-                            <variable ref="version"/>
+                            <variable name="version">
+                                <value>${version}</value>
+                                <value>1.0.1</value>
+                            </variable>
+                            <variable name="platform">
+                                <value>linux</value>
+                            </variable>
                         </variables>
                     </iterators>
                 </copy-artifact>
@@ -74,7 +67,10 @@
                     </excludes>
                     <iterators>
                         <variables>
-                            <variable ref="version"/>
+                            <variable name="version">
+                                <value>${version}</value>
+                                <value>1.0.1</value>
+                            </variable>
                         </variables>
                     </iterators>
                 </copy>
@@ -111,7 +107,10 @@
                             </model>
                             <iterators>
                                 <variables>
-                                    <variable ref="version"/>
+                                    <variable name="version">
+                                        <value>${version}</value>
+                                        <value>1.0.1</value>
+                                    </variable>
                                 </variables>
                             </iterators>
                         </template>
@@ -142,7 +141,10 @@
                     <mapper match="^apidocs/(.*)$" replace="$1"/>
                     <iterators>
                         <variables>
-                            <variable ref="version"/>
+                            <variable name="version">
+                                <value>${version}</value>
+                                <value>1.0.1</value>
+                            </variable>
                         </variables>
                     </iterators>
                 </unpack-artifact>

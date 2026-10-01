@@ -38,12 +38,6 @@
                         <property name="major" value="4"/>
                         <property name="version" value="${major}.0.0"/>
                     </properties>
-                    <variables>
-                        <variable name="channel">
-                            <value>stable</value>
-                            <value>preview</value>
-                        </variable>
-                    </variables>
                 </configuration>
                 <executions>
                     <execution>

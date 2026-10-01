@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
+import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,9 +46,9 @@ class CopyTaskTest {
     @Test
     void testRequiresSourceAndTarget() {
         IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class,
-                () -> new CopyTask(null, List.of(), List.of(), Map.of("target", ".")));
+                () -> task(Map.of("target", "."), List.of(), List.of()));
         IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,
-                () -> new CopyTask(null, List.of(), List.of(), Map.of("source", "src")));
+                () -> task(Map.of("source", "src"), List.of(), List.of()));
 
         assertThat(ex1.getMessage(), containsString("source is required"));
         assertThat(ex2.getMessage(), containsString("target is required"));
@@ -136,8 +137,16 @@ class CopyTaskTest {
         write("project/src/one/readme.txt", "one");
         write("project/src/two/readme.txt", "two");
 
-        CopyTask task = new CopyTask(iterators(), List.of(), List.of(),
-                Map.of("source", "src/{name}", "target", "{name}"));
+        XMLElement element = XMLElement.read("""
+                <copy source="src/{name}" target="{name}">
+                    <iterators>
+                        <variables>
+                            <variable name="name"><value>one</value><value>two</value></variable>
+                        </variables>
+                    </iterators>
+                </copy>
+                """);
+        CopyTask task = new CopyTask(element);
         task.execute(context(), tempDir.resolve("stage"), Map.of()).toCompletableFuture().get();
 
         assertThat(Files.readString(tempDir.resolve("stage/one/readme.txt")), is("one"));
@@ -151,7 +160,7 @@ class CopyTaskTest {
         Path stage = tempDir.resolve("stage");
         StagingContext context = context();
 
-        new CopyTask(null, List.of(), List.of(), Map.of("source", "src/docs", "target", "copied"))
+        task(Map.of("source", "src/docs", "target", "copied"), List.of(), List.of())
                 .execute(context, stage, Map.of()).toCompletableFuture().get();
 
         assertThat(Files.exists(stage.resolve("copied")), is(true));
@@ -164,17 +173,10 @@ class CopyTaskTest {
                  List<String> excludes,
                  Map<String, String> vars) throws Exception {
 
-        CopyTask task = new CopyTask(null, includes(includes), excludes(excludes),
-                Map.of("source", source, "target", target));
+        CopyTask task = task(Map.of("source", source, "target", target), includes, excludes);
         Path dir = tempDir.resolve("stage");
         task.execute(context(), dir, vars).toCompletableFuture().get();
         return dir;
-    }
-
-    ActionIterators iterators() {
-        Variables variables = new Variables();
-        variables.add(new Variable("name", new VariableValue.ListValue("one", "two")));
-        return new ActionIterators(List.of(new ActionIterator(variables)), null);
     }
 
     void write(String path, String value) {
@@ -210,11 +212,26 @@ class CopyTaskTest {
         };
     }
 
-    static List<Include> includes(List<String> patterns) {
-        return patterns.stream().map(Include::new).toList();
+    private static CopyTask task(Map<String, String> attributes, List<String> includes, List<String> excludes) {
+        XMLElement.Builder element = XMLElement.builder().name("copy").attributes(attributes);
+        addFilters(element, "includes", "include", includes);
+        addFilters(element, "excludes", "exclude", excludes);
+        XMLElement copy = element.build();
+        return new CopyTask(copy);
     }
 
-    static List<Exclude> excludes(List<String> patterns) {
-        return patterns.stream().map(Exclude::new).toList();
+    private static void addFilters(XMLElement.Builder element,
+                                   String wrapper,
+                                   String name,
+                                   List<String> patterns) {
+        if (!patterns.isEmpty()) {
+            element.child(filters -> {
+                filters.name(wrapper);
+                for (String pattern : patterns) {
+                    filters.child(filter -> filter.name(name).value(pattern));
+                }
+            });
+        }
     }
+
 }

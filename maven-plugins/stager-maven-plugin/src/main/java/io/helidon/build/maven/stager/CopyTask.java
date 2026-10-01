@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.SourcePath;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
@@ -37,21 +39,22 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 final class CopyTask extends StagingTask {
 
     private final String source;
+    private final String target;
     private final List<String> includes;
     private final List<String> excludes;
 
-    CopyTask(ActionIterators iterators, List<Include> includes, List<Exclude> excludes, Map<String, String> attrs) {
-        super("copy", null, iterators, attrs);
-        this.source = Strings.requireValid(attrs.get("source"), "source is required");
-        Strings.requireValid(target(), "target is required");
-        this.includes = Lists.map(includes, Include::value);
-        this.excludes = Lists.map(excludes, Exclude::value);
+    CopyTask(XMLElement element) {
+        super(element);
+        this.source = Strings.requireValid(element.attribute("source", null), "source is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+        this.includes = Lists.map(elements(element, "include", "includes"), XMLElement::value);
+        this.excludes = Lists.map(elements(element, "exclude", "excludes"), XMLElement::value);
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
         String resolvedSource = resolveVar(source, vars);
-        String resolvedTarget = resolveVar(target(), vars);
+        String resolvedTarget = resolveVar(target, vars);
         Path sourceDir = ctx.resolve(resolvedSource).normalize();
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         List<String> resolvedIncludes = Lists.map(includes, pattern -> resolveVar(pattern, vars));
@@ -82,6 +85,10 @@ final class CopyTask extends StagingTask {
 
     String source() {
         return source;
+    }
+
+    String target() {
+        return target;
     }
 
     List<String> includes() {

@@ -134,12 +134,6 @@ public class StagerMojo extends AbstractMojo {
     private PlexusConfiguration properties;
 
     /**
-     * Stager variables for POM-root configuration.
-     */
-    @Parameter
-    private PlexusConfiguration variables;
-
-    /**
      * Stager include for POM-root configuration.
      */
     @Parameter
@@ -212,7 +206,7 @@ public class StagerMojo extends AbstractMojo {
         setProxyFromSettings();
 
         try {
-            StagingTasks tasks = StagingFactory.create(config);
+            StagingTasks tasks = StagingFactory.createTasks(config);
             tasks.execute(context, outputDir, Map.of())
                     .toCompletableFuture()
                     .get();

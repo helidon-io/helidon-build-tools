@@ -22,13 +22,18 @@
         <version>4.0.0</version>
         <stage.path>target/stage</stage.path>
     </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-    </variables>
     <directories>
         <directory target="${stage.path}">
             <files>
-                <file target="${version}/index.txt">content</file>
+                <file target="${version}/{channel}/index.txt">
+                    <iterators>
+                        <variables>
+                            <variable name="channel">
+                                <value>stable</value>
+                            </variable>
+                        </variables>
+                    </iterators>
+                </file>
             </files>
         </directory>
     </directories>

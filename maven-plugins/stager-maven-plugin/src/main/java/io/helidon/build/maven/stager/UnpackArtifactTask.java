@@ -20,29 +20,35 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.build.common.Lists;
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
+
 /**
  * Unpack an artifact to a given target location.
  */
 final class UnpackArtifactTask extends StagingTask {
 
     private final ArtifactGAV gav;
+    private final String target;
     private final String includes;
     private final String excludes;
     private final List<Mapper> mappers;
 
-    UnpackArtifactTask(ActionIterators iterators, List<Mapper> mappers, Map<String, String> attrs) {
-        super("unpack-artifact", null, iterators, attrs);
-        this.gav = new ArtifactGAV(attrs);
-        this.includes = attrs.get("includes");
-        this.excludes = attrs.get("excludes");
-        this.mappers = mappers;
+    UnpackArtifactTask(XMLElement element) {
+        super(element);
+        this.gav = new ArtifactGAV(element);
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+        this.includes = element.attribute("includes", null);
+        this.excludes = element.attribute("excludes", null);
+        this.mappers = Lists.map(elements(element, "mapper", "mappers"), Mapper::new);
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         ArtifactGAV resolvedGav = gav.resolve(vars);
         Map<String, String> resolvedVars = resolvedGav.variables();
-        String resolvedTarget = resolveVar(target(), resolvedVars);
+        String resolvedTarget = resolveVar(target, resolvedVars);
         Path artifact = ctx.resolve(resolvedGav);
         Path targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
@@ -52,6 +58,10 @@ final class UnpackArtifactTask extends StagingTask {
 
     ArtifactGAV gav() {
         return gav;
+    }
+
+    String target() {
+        return target;
     }
 
     String excludes() {

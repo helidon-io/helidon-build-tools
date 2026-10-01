@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.SourcePath;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.FileUtils.walk;
 import static io.helidon.build.common.Strings.normalizePath;
@@ -33,7 +34,7 @@ import static io.helidon.build.common.Strings.normalizePath;
 /**
  * List files in a directory.
  */
-final class ListFilesTask extends StagingTask implements TextAction {
+final class ListFilesTask extends StagingTask implements TextTask {
 
     private static final Set<FileVisitOption> FILE_VISIT_OPTIONS = Set.of(FileVisitOption.FOLLOW_LINKS);
 
@@ -44,18 +45,13 @@ final class ListFilesTask extends StagingTask implements TextAction {
     private final String dirName;
     private final Map<Map<String, String>, String> results = new ConcurrentHashMap<>();
 
-    ListFilesTask(ActionIterators iterators,
-                  List<Include> includes,
-                  List<Exclude> excludes,
-                  List<Substitution> substitutions,
-                  Map<String, String> attrs) {
-
-        super("list-files", null, iterators, attrs);
-        this.includes = Lists.map(includes, Include::value);
-        this.excludes = Lists.map(excludes, Exclude::value);
-        this.substitutions = substitutions;
+    ListFilesTask(XMLElement element) {
+        super(element);
+        this.includes = Lists.map(elements(element, "include", "includes"), XMLElement::value);
+        this.excludes = Lists.map(elements(element, "exclude", "excludes"), XMLElement::value);
+        this.substitutions = Lists.map(elements(element, "substitution", "substitution"), Substitution::new);
         this.chain = Lists.map(substitutions, Substitution::function);
-        this.dirName = attrs.getOrDefault("dir", ".");
+        this.dirName = element.attribute("dir", ".");
     }
 
     @Override

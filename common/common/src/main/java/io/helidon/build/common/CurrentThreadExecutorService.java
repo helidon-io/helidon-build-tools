@@ -49,7 +49,7 @@ public class CurrentThreadExecutorService extends AbstractExecutorService {
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, TimeUnit unit) {
         return true;
     }
 }

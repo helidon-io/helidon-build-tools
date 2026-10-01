@@ -59,9 +59,10 @@ public class XMLGenerator implements AutoCloseable {
     public void append(XMLElement elt) {
         elt.visit(new XMLElement.Visitor() {
             @Override
-            public void visitElement(XMLElement elt) {
+            public boolean visitElement(XMLElement elt) {
                 startElement(elt.name());
                 elt.attributes().forEach(XMLGenerator.this::attribute);
+                return true;
             }
 
             @Override

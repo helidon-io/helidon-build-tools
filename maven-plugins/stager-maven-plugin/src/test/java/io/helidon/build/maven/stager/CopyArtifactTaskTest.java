@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
+import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -52,19 +53,21 @@ class CopyArtifactTaskTest {
 
     @Test
     void testCopyArtifactDefaultTargetResolvesGavVariables() throws Exception {
-        Path outputDir = execute(
-                Map.of("groupId", "io.helidon",
-                        "artifactId", "helidon",
-                        "version", "{it}"),
-                Map.of("it", "4.2.0"));
+        Map<String, String> attributes = Map.of(
+                "groupId", "io.helidon",
+                "artifactId", "helidon",
+                "version", "{it}");
+        Path outputDir = execute(attributes, Map.of("it", "4.2.0"));
         assertThat(Files.exists(outputDir.resolve("helidon-4.2.0.jar")), is(true));
+        assertThat(attributes.containsKey("target"), is(false));
     }
 
     Path execute(Map<String, String> attrs, Map<String, String> vars) throws Exception {
         Path artifact = tempDir.resolve("artifact.jar");
         Files.writeString(artifact, "artifact");
         Path outputDir = tempDir.resolve("stage");
-        CopyArtifactTask task = new CopyArtifactTask(null, attrs);
+        XMLElement element = XMLElement.builder().name("copy-artifact").attributes(attrs).build();
+        CopyArtifactTask task = new CopyArtifactTask(element);
         task.execute(context(artifact), outputDir, vars).toCompletableFuture().get();
         return outputDir;
     }
