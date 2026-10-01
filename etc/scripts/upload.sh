@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ central_upload() {
   readonly UPLOAD_BUNDLE=io-helidon-build-tools-artifacts-${version}.zip
   rm -f "${UPLOAD_BUNDLE}"
   printf "Creating artifact bundle %s...\n" "${UPLOAD_BUNDLE}" >&2
-  (cd "${2}"; zip -ryq "../${UPLOAD_BUNDLE}" .)
+  (CDPATH='' cd -- "${2}"; zip -ryq "../${UPLOAD_BUNDLE}" .)
 
   local responseFile statusFile
   responseFile=$(mktemp)
