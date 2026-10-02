@@ -53,7 +53,7 @@ init() {
     local -r scriptName=$(basename "${0}")
     local -r binDir=$(dirname "${0}")
     # shellcheck disable=SC2164,SC2086
-    local -r homeDir=$(cd "${binDir}/.."; pwd)
+    local -r homeDir=$(CDPATH='' cd -- "${binDir}/.."; pwd)
     local -r jarName="<JAR_NAME>"
     local -r defaultDebug="<DEFAULT_APP_DEBUG>"
     local -r defaultJvm="<DEFAULT_APP_JVM>"

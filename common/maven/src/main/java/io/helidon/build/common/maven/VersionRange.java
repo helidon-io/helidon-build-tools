@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,9 @@ public class VersionRange {
      */
     public static VersionRange wildcard(String version) {
         if (version.endsWith("-latest") || version.endsWith("-LATEST")) {
-            return createFromVersionSpec("[" + version.substring(0, version.length() - 7) + ",)");
+            String major = version.substring(0, version.length() - 7);
+            String nextMajor = Integer.toString(Integer.parseInt(major) + 1);
+            return createFromVersionSpec("[" + major + "," + nextMajor + ")");
         } else {
             return createFromVersionSpec("[" + version + "]");
         }
