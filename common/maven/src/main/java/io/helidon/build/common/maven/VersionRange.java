@@ -141,7 +141,9 @@ public class VersionRange {
      */
     public static VersionRange wildcard(String version) {
         if (version.endsWith("-latest") || version.endsWith("-LATEST")) {
-            return createFromVersionSpec("[" + version.substring(0, version.length() - 7) + ",)");
+            String major = version.substring(0, version.length() - 7);
+            String nextMajor = Integer.toString(Integer.parseInt(major) + 1);
+            return createFromVersionSpec("[" + major + "," + nextMajor + ")");
         } else {
             return createFromVersionSpec("[" + version + "]");
         }
