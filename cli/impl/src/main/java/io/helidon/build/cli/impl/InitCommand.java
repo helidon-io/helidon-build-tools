@@ -92,7 +92,8 @@ public final class InitCommand extends BaseCommand {
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
-            resolveHelidonVersion(helidonVersion);
+            helidonVersion = resolveHelidonVersion(helidonVersion);
+            initOptions.helidonVersion(helidonVersion);
         }
 
         Prompter.displayLine("");
