@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class EmbeddedModeTest {
 
     @Test
     void testValidCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
             Helidon.execute("version");
 
             List<String> logEntries = recorder.entries();
@@ -65,7 +65,7 @@ class EmbeddedModeTest {
 
     @Test
     void testUnknownCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
             Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
 
             assertThat(e.getMessage(), isNotStyled());
@@ -80,7 +80,7 @@ class EmbeddedModeTest {
 
     @Test
     void testInvalidCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
             Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
 
             assertThat(e.getMessage(), isNotStyled());
@@ -93,7 +93,7 @@ class EmbeddedModeTest {
 
     @Test
     void testStyledExceptionThrown() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
+        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
             Error e = assertThrows(Error.class,
                     () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
 
