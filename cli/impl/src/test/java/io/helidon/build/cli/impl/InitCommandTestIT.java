@@ -113,12 +113,12 @@ class InitCommandTestIT extends MetadataAccess {
                         "--batch",
                         "--reset",
                         "--url", metadataUrl(),
-                        "--flavor", "MP")
+                        "--flavor", "SE")
                 .start()) {
 
             monitor.await();
 
-            Path projectDir = monitor.cwd().resolve("quickstart-mp");
+            Path projectDir = monitor.cwd().resolve("quickstart-se");
             validateProject(projectDir);
         }
     }
@@ -238,6 +238,7 @@ class InitCommandTestIT extends MetadataAccess {
                 .args("init",
                         "--plain",
                         "--reset",
+                        "--version", "4-LATEST",
                         "--url", metadataUrl(),
                         "--flavor", "MP")
                 .start()) {
