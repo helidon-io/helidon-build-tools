@@ -83,7 +83,7 @@ class MavenInvocation extends ProcessInvocation {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } catch (Exception ex) {
-            throw new MonitorException(recorder.sb.toString(), ex);
+            throw new MonitorException(recorder.output(), ex);
         }
     }
 

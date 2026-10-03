@@ -27,6 +27,7 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
 import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.ansi.AnsiTextStyle;
+import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 
 import static java.lang.System.currentTimeMillis;
@@ -59,11 +60,17 @@ abstract class ProcessInvocation {
     abstract Monitor start();
 
     static class Recorder {
-        final StringBuilder sb = new StringBuilder();
+        private final StringBuilder sb = new StringBuilder();
 
         void record(String s) {
             synchronized (sb) {
                 sb.append(s);
+            }
+        }
+
+        String output() {
+            synchronized (sb) {
+                return sb.toString();
             }
         }
     }
@@ -94,7 +101,7 @@ abstract class ProcessInvocation {
 
         @SuppressWarnings("unused")
         String output() {
-            return AnsiTextStyle.strip(recorder.sb.toString());
+            return AnsiTextStyle.strip(recorder.output());
         }
 
         Path cwd() {
@@ -112,7 +119,7 @@ abstract class ProcessInvocation {
             } catch (ProcessTimeoutException
                      | ProcessFailedException
                      | InterruptedException e) {
-                throw new MonitorException(recorder.sb.toString(), e);
+                throw new MonitorException(recorder.output(), e);
             }
         }
 
@@ -132,14 +139,20 @@ abstract class ProcessInvocation {
                         if (status == 200) {
                             return true;
                         }
-                    } catch (Exception ignored) {
+                        Log.debug("Unexpected HTTP status %d from %s", status, rawUrl);
+                    } catch (Exception e) {
+                        Log.debug("Error checking %s: %s", rawUrl, e);
                     } finally {
                         if (conn != null) {
                             conn.disconnect();
                         }
                     }
                 }
-                return false;
+                if (monitor.isAlive()) {
+                    throw new IllegalStateException("Timed-out waiting for URL: " + rawUrl);
+                } else {
+                    throw new IllegalStateException("Process is not alive");
+                }
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -151,15 +164,18 @@ abstract class ProcessInvocation {
             long startTime = currentTimeMillis();
             while (monitor.isAlive() && (currentTimeMillis() - startTime) <= timeout) {
                 Thread.sleep(1000);
-                String output = recorder.sb.substring(startIndex);
+                String output = recorder.output().substring(startIndex);
                 for (String s : expected) {
                     if (output.contains(s)) {
                         return s;
                     }
                 }
-
             }
-            return null;
+            if (monitor.isAlive()) {
+                throw new IllegalStateException("Timed-out waiting for output: " + Arrays.toString(expected));
+            } else {
+                throw new IllegalStateException("Process is not alive");
+            }
         }
     }
 }
