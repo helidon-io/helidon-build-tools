@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ abstract class ProcessInvocation {
 
         @SuppressWarnings("BusyWait")
         boolean waitForUrl(String rawUrl) {
-            long timeout = 60 * 1000;
+            long timeout = TimeUnit.MINUTES.toMillis(5);
             long startTime = currentTimeMillis();
             try {
                 URL url = new URL(rawUrl);
@@ -160,7 +160,7 @@ abstract class ProcessInvocation {
 
         @SuppressWarnings("BusyWait")
         String waitForOutput(int startIndex, String... expected) throws Exception {
-            long timeout = 60 * 1000;
+            long timeout = TimeUnit.MINUTES.toMillis(5);
             long startTime = currentTimeMillis();
             while (monitor.isAlive() && (currentTimeMillis() - startTime) <= timeout) {
                 Thread.sleep(1000);
