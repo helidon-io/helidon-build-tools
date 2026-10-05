@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
@@ -56,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SuppressWarnings("SpellCheckingInspection")
 class CliMavenTest {
 
-    private static final List<String> MAVEN_VERSIONS = List.of("3.2.3", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
+    private static final List<String> MAVEN_VERSIONS = List.of("3.2.3", "3.2.5", "3.8.1", "3.8.2", "3.9.16");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
     private static final LazyValue<Path> WORK_DIR = new LazyValue<>(CliMavenTest::workDir);
     private static final LazyValue<Path> PROJECT1_DIR = new LazyValue<>(CliMavenTest::project1Dir);
@@ -165,10 +166,11 @@ class CliMavenTest {
         }
     }
 
-    @Test
-    void testCliMavenPlugin() {
+    @ParameterizedTest
+    @ValueSource(strings = {"3.8.4", "3.9.16", "3.10.0"})
+    void testCliMavenPlugin(String mavenVersion) {
         int port = freePort();
-        try (Monitor monitor = new MavenInvocation("3.8.4")
+        try (Monitor monitor = new MavenInvocation(mavenVersion)
                 .cwd(PROJECT1_DIR.get())
                 .logDir(workDir("test-cli-maven-plugin"))
                 .args("-Ddev.appJvmArgs=-Dserver.port=" + port,
@@ -245,7 +247,7 @@ class CliMavenTest {
     }
 
     void missingArtifactGroupPackageValues(String mavenVersion) {
-        try (Monitor monitor = new MavenInvocation("3.2.3")
+        try (Monitor monitor = new MavenInvocation(mavenVersion)
                 .cwd(workDir("missing-props-mvn-" + mavenVersion))
                 .args("-B",
                         "org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate",
