@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ class CliMavenTest {
 
     @Test
     void testCatchingJansiIssue() {
-        // https://github.com/oracle/helidon-build-tools/issues/259
+        // https://github.com/helidon-io/helidon-build-tools/issues/458
         int port = freePort();
         try (Monitor monitor = new MavenInvocation("3.8.2")
                 .cwd(PROJECT1_DIR.get())
@@ -149,7 +149,7 @@ class CliMavenTest {
 
     @Test
     void testFixJansiIssue() {
-        // https://github.com/oracle/helidon-build-tools/issues/259
+        // https://github.com/helidon-io/helidon-build-tools/issues/458
         int port = freePort();
         try (Monitor monitor = new MavenInvocation("3.8.2")
                 .cwd(PROJECT1_DIR.get())
