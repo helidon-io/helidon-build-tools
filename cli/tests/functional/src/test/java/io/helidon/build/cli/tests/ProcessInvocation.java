@@ -60,18 +60,14 @@ abstract class ProcessInvocation {
     abstract Monitor start();
 
     static class Recorder {
-        private final StringBuilder sb = new StringBuilder();
+        private final StringBuffer sb = new StringBuffer();
 
         void record(String s) {
-            synchronized (sb) {
-                sb.append(s);
-            }
+            sb.append(s);
         }
 
         String output() {
-            synchronized (sb) {
-                return sb.toString();
-            }
+            return sb.toString();
         }
     }
 
