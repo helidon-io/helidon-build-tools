@@ -166,6 +166,10 @@ class CliMavenTest {
         }
     }
 
+    // We test with maven 3.9.x and 3.10.x to verify that upgrade to
+    // org.jline.jansi fixes the issue with 3.10.x:
+    // https://github.com/helidon-io/helidon-build-tools/issues/1170
+    // and does not break with maven 3.9.x
     @ParameterizedTest
     @ValueSource(strings = {"3.8.4", "3.9.16", "3.10.0"})
     void testCliMavenPlugin(String mavenVersion) {
