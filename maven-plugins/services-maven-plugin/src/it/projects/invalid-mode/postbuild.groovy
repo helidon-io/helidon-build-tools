@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-import java.util.zip.ZipFile
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.services.ProjectsTestIT
 
-File output = new File(basedir, 'target/classes/META-INF/services')
-Map expected = [:]
-Set actualNames = output.isDirectory() ? output.listFiles().collect { it.name } as Set : [] as Set
-assert actualNames == expected.keySet() : "Service file names: expected ${expected.keySet()}, got ${actualNames}"
-expected.each { name, content ->
-    File descriptor = new File(output, name)
-    String actual = descriptor.getText('UTF-8').replace('\r\n', '\n')
-    assert actual == content : "Unexpected contents of ${descriptor}: ${actual.inspect()}, expected ${content.inspect()}"
-}
-
-String log = new File(basedir, 'build.log').getText('UTF-8')
-assert log.contains('Invalid plugin mode \'unknown\'') : "Expected services diagnostic was missing from build.log:\\n${log}"
-
-File moduleInfo = new File(basedir, 'target/classes/module-info.class')
-assert moduleInfo.exists() == true : "Compiled module descriptor existence: ${moduleInfo}"
-
-assert !new File(basedir, 'target').listFiles().any { it.name.endsWith('.jar') } : 'A failed services execution must prevent packaging'
-
-return true
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "testInvalidMode", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("services-invalid-mode-it")
+        .suiteDisplayName("Services invalid mode Integration Test")
+        .build()
+        .launch()

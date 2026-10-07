@@ -14,38 +14,16 @@
  * limitations under the License.
  */
 
-import java.util.zip.ZipFile
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.services.ProjectsTestIT
 
-File output = new File(basedir, 'target/classes/META-INF/services')
-Map expected = [:]
-Set actualNames = output.isDirectory() ? output.listFiles().collect { it.name } as Set : [] as Set
-assert actualNames == expected.keySet() : "Service file names: expected ${expected.keySet()}, got ${actualNames}"
-expected.each { name, content ->
-    File descriptor = new File(output, name)
-    String actual = descriptor.getText('UTF-8').replace('\r\n', '\n')
-    assert actual == content : "Unexpected contents of ${descriptor}: ${actual.inspect()}, expected ${content.inspect()}"
-}
-
-String log = new File(basedir, 'build.log').getText('UTF-8')
-assert log.contains('Mode is') : "Expected services diagnostic was missing from build.log:\\n${log}"
-
-File moduleInfo = new File(basedir, 'target/classes/module-info.class')
-assert moduleInfo.exists() == true : "Compiled module descriptor existence: ${moduleInfo}"
-
-File jar = new File(basedir, 'target').listFiles().find {
-    it.name.startsWith('clean-no-source-') && it.name.endsWith('.jar')
-}
-assert jar != null && jar.isFile() : "Expected packaged artifact: ${jar}"
-new ZipFile(jar).withCloseable { zip ->
-    Set entries = zip.entries().findAll { !it.directory && it.name.startsWith('META-INF/services/') }
-            .collect { it.name.substring('META-INF/services/'.length()) } as Set
-    assert entries == expected.keySet() : "Packaged service entries: expected ${expected.keySet()}, got ${entries}"
-    expected.each { name, content ->
-        String actual = zip.getInputStream(zip.getEntry('META-INF/services/' + name)).withCloseable {
-            it.getText('UTF-8').replace('\r\n', '\n')
-        }
-        assert actual == content : "Unexpected packaged service record ${name}: ${actual.inspect()}"
-    }
-}
-
-return true
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "testCleanNoSource", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("services-clean-no-source-it")
+        .suiteDisplayName("Services clean no source Integration Test")
+        .build()
+        .launch()

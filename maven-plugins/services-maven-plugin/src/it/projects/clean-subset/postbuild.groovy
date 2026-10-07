@@ -14,38 +14,16 @@
  * limitations under the License.
  */
 
-import java.util.zip.ZipFile
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.services.ProjectsTestIT
 
-File output = new File(basedir, 'target/classes/META-INF/services')
-Map expected = ['java.lang.Runnable': '# A subset can safely be deleted.\nit.Services$First\n']
-Set actualNames = output.isDirectory() ? output.listFiles().collect { it.name } as Set : [] as Set
-assert actualNames == expected.keySet() : "Service file names: expected ${expected.keySet()}, got ${actualNames}"
-expected.each { name, content ->
-    File descriptor = new File(output, name)
-    String actual = descriptor.getText('UTF-8').replace('\r\n', '\n')
-    assert actual == content : "Unexpected contents of ${descriptor}: ${actual.inspect()}, expected ${content.inspect()}"
-}
-
-File moduleInfo = new File(basedir, 'target/classes/module-info.class')
-assert moduleInfo.exists() == true : "Compiled module descriptor existence: ${moduleInfo}"
-
-File sourceServices = new File(basedir, 'src/main/resources/META-INF/services')
-assert !sourceServices.exists() : "Clean must remove the source service directory: ${sourceServices}"
-
-File jar = new File(basedir, 'target').listFiles().find {
-    it.name.startsWith('clean-subset-') && it.name.endsWith('.jar')
-}
-assert jar != null && jar.isFile() : "Expected packaged artifact: ${jar}"
-new ZipFile(jar).withCloseable { zip ->
-    Set entries = zip.entries().findAll { !it.directory && it.name.startsWith('META-INF/services/') }
-            .collect { it.name.substring('META-INF/services/'.length()) } as Set
-    assert entries == expected.keySet() : "Packaged service entries: expected ${expected.keySet()}, got ${entries}"
-    expected.each { name, content ->
-        String actual = zip.getInputStream(zip.getEntry('META-INF/services/' + name)).withCloseable {
-            it.getText('UTF-8').replace('\r\n', '\n')
-        }
-        assert actual == content : "Unexpected packaged service record ${name}: ${actual.inspect()}"
-    }
-}
-
-return true
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "testCleanSubset", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("services-clean-subset-it")
+        .suiteDisplayName("Services clean subset Integration Test")
+        .build()
+        .launch()

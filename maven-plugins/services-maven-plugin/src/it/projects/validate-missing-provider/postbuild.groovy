@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-import java.util.zip.ZipFile
+import io.helidon.build.common.test.utils.JUnitLauncher
+import io.helidon.build.maven.services.ProjectsTestIT
 
-File output = new File(basedir, 'target/classes/META-INF/services')
-Map expected = ['java.lang.Runnable': 'it.Services$First\n', 'java.util.spi.ToolProvider': 'it.Services$Tool\n']
-Set actualNames = output.isDirectory() ? output.listFiles().collect { it.name } as Set : [] as Set
-assert actualNames == expected.keySet() : "Service file names: expected ${expected.keySet()}, got ${actualNames}"
-expected.each { name, content ->
-    File descriptor = new File(output, name)
-    String actual = descriptor.getText('UTF-8').replace('\r\n', '\n')
-    assert actual == content : "Unexpected contents of ${descriptor}: ${actual.inspect()}, expected ${content.inspect()}"
-}
-
-String log = new File(basedir, 'build.log').getText('UTF-8')
-assert log.contains('Service java.lang.Runnable is missing the following providers in META-INF/services: [it.Services$Second]') : "Expected services diagnostic was missing from build.log:\\n${log}"
-
-File moduleInfo = new File(basedir, 'target/classes/module-info.class')
-assert moduleInfo.exists() == true : "Compiled module descriptor existence: ${moduleInfo}"
-
-Map sourceRecords = ['java.lang.Runnable': 'it.Services$First\n', 'java.util.spi.ToolProvider': 'it.Services$Tool\n']
-sourceRecords.each { name, content ->
-    File descriptor = new File(basedir, 'src/main/resources/META-INF/services/' + name)
-    assert descriptor.isFile() : "Source descriptor must be retained: ${descriptor}"
-    assert descriptor.getText('UTF-8').replace('\r\n', '\n') == content : "Source descriptor was changed: ${descriptor}"
-}
-
-assert !new File(basedir, 'target').listFiles().any { it.name.endsWith('.jar') } : 'A failed services execution must prevent packaging'
-
-return true
+//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
+JUnitLauncher.builder()
+        .select(ProjectsTestIT.class, "testValidateMissingProvider", String.class)
+        .parameter("basedir", basedir.getAbsolutePath())
+        .reportsDir(basedir)
+        .outputFile(new File(basedir, "test.log"))
+        .suiteId("services-validate-missing-provider-it")
+        .suiteDisplayName("Services validate missing provider Integration Test")
+        .build()
+        .launch()
