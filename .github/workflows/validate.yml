@@ -101,7 +101,7 @@ jobs:
               install
   tests:
     needs: build
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ ubuntu-24.04, windows-2022 ]
