@@ -103,11 +103,11 @@ and **output files** means files under `targetDirectory/META-INF/services`.
 
 | Mode | Behavior |
 |------|----------|
-| `fail` (default) | Fail if any source service files exist. Otherwise remove existing output service files and generate replacements from the compiled descriptor. |
-| `overwrite` | Remove all existing output service files, including services absent from the module descriptor, and generate replacements. Source files are left unchanged. |
-| `ignore` | If any source service files exist, leave the output untouched by this goal and let Maven resource processing supply them. Otherwise behave like `overwrite`. |
-| `validate` | Compare output service files with the compiled descriptor. Fail for a missing or extra service or provider. Do not generate or modify files. |
-| `clean` | Check that every source service and provider is declared in the compiled descriptor, then delete the source service files and their `META-INF/services` directory. Fail if a source service or provider is absent from the descriptor. Do not generate output files. |
+| `fail` (default) | Fail if source service files exist; otherwise behave like `overwrite`. |
+| `overwrite` | Replace all output service files with records from the compiled descriptor. |
+| `ignore` | Skip generation if source service files exist; otherwise behave like `overwrite`. |
+| `validate` | Require output service records to match the compiled descriptor without modifying files. |
+| `clean` | Delete source service files only if all their services and providers are declared in the compiled descriptor. |
 
 Validation and cleaning ignore blank lines and lines starting with `#` and
 compare provider names without regard to order. Both succeed when there are no
