@@ -49,7 +49,7 @@ final class ListFilesTask extends StagingTask implements TextTask {
         super(element);
         this.includes = Lists.map(elements(element, "include", "includes"), XMLElement::value);
         this.excludes = Lists.map(elements(element, "exclude", "excludes"), XMLElement::value);
-        this.substitutions = Lists.map(elements(element, "substitution", "substitution"), Substitution::new);
+        this.substitutions = Lists.map(elements(element, "substitution", "substitutions"), Substitution::new);
         this.chain = Lists.map(substitutions, Substitution::function);
         this.dirName = element.attribute("dir", ".");
     }
@@ -57,6 +57,18 @@ final class ListFilesTask extends StagingTask implements TextTask {
     @Override
     public String text(Map<String, String> vars) {
         return results.getOrDefault(vars, "");
+    }
+
+    @Override
+    public String toString() {
+        return "ListFilesTask{"
+               + "includes=" + includes
+               + ", excludes=" + excludes
+               + ", substitutions=" + substitutions
+               + ", chain=" + chain
+               + ", dirName='" + dirName + '\''
+               + ", results=" + results
+               + '}';
     }
 
     @Override
@@ -72,22 +84,6 @@ final class ListFilesTask extends StagingTask implements TextTask {
             sb.append(entry).append("\n");
         }
         results.put(vars, sb.toString());
-    }
-
-    String dir() {
-        return dirName;
-    }
-
-    List<String> includes() {
-        return includes;
-    }
-
-    List<String> excludes() {
-        return excludes;
-    }
-
-    List<Substitution> substitutions() {
-        return substitutions;
     }
 
     private boolean filter(Path p, BasicFileAttributes attrs) {

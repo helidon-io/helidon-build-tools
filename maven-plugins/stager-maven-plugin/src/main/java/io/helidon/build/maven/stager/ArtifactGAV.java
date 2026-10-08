@@ -82,7 +82,7 @@ record ArtifactGAV(String groupId,
 
     @Override
     public String toString() {
-        String gav = groupId + ":" + artifactId + ":" + version;
+        var gav = groupId + ":" + artifactId + ":" + version;
         if (classifier != null && !classifier.isEmpty()) {
             gav += ":" + classifier;
         }

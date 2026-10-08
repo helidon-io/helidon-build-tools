@@ -42,14 +42,23 @@ class ArchiveTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "ArchiveTask{"
+               + "target='" + target + '\''
+               + ", includes='" + includes + '\''
+               + ", excludes='" + excludes + '\''
+               + '}';
+    }
+
+    @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     protected CompletableFuture<Void> execTask(StagingContext ctx, Path dir, Map<String, String> vars) {
-        String resolvedTarget = resolveVar(target, vars);
-        Path targetFile = dir.resolve(resolvedTarget).normalize();
+        var resolvedTarget = resolveVar(target, vars);
+        var targetFile = dir.resolve(resolvedTarget).normalize();
         Path stageDir;
         try {
             stageDir = ctx.createTempDirectory("archive-task");
@@ -58,24 +67,12 @@ class ArchiveTask extends StagingTask {
         }
         ctx.logInfo("Creating archive %s", resolvedTarget);
         return super.execTask(ctx, stageDir, vars)
-                    .thenRun(() -> archive(ctx, stageDir, targetFile, vars));
-    }
-
-    String target() {
-        return target;
-    }
-
-    String includes() {
-        return includes;
-    }
-
-    String excludes() {
-        return excludes;
+                .thenRun(() -> archive(ctx, stageDir, targetFile, vars));
     }
 
     private void archive(StagingContext ctx, Path source, Path targetFile, Map<String, String> variables) {
-        String resolvedIncludes = resolveVar(includes, variables);
-        String resolvedExcludes = resolveVar(excludes, variables);
+        var resolvedIncludes = resolveVar(includes, variables);
+        var resolvedExcludes = resolveVar(excludes, variables);
         ctx.archive(source, targetFile, resolvedIncludes, resolvedExcludes);
     }
 }

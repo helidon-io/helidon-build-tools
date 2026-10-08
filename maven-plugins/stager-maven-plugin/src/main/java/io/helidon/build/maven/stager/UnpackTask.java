@@ -54,40 +54,32 @@ final class UnpackTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "UnpackTask{"
+               + "ext='" + ext + '\''
+               + ", url='" + url + '\''
+               + ", target='" + target + '\''
+               + ", includes='" + includes + '\''
+               + ", excludes='" + excludes + '\''
+               + ", mappers=" + mappers
+               + '}';
+    }
+
+    @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return execBodyWithTimeout(ctx, dir, vars);
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        Path tempFile = ctx.createTempFile("." + ext);
-        URL url = new URL(resolveVar(this.url, vars));
+        var tempFile = ctx.createTempFile("." + ext);
+        var url = new URL(resolveVar(this.url, vars));
         download(ctx, url, tempFile);
 
-        String resolvedTarget = resolveVar(target, vars);
-        Path targetDir = dir.resolve(resolvedTarget).normalize();
+        var resolvedTarget = resolveVar(target, vars);
+        var targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", tempFile, targetDir);
         ctx.ensureDirectory(targetDir);
-        ctx.unpack(tempFile, targetDir, excludes, includes, mappers, vars);
-    }
-
-    String url() {
-        return url;
-    }
-
-    String target() {
-        return target;
-    }
-
-    String excludes() {
-        return excludes;
-    }
-
-    String includes() {
-        return includes;
-    }
-
-    List<Mapper> mappers() {
-        return mappers;
+        ctx.unpack(tempFile, targetDir, includes, excludes, mappers, vars);
     }
 }

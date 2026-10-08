@@ -16,7 +16,6 @@
 package io.helidon.build.maven.stager;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 import io.helidon.build.common.Patterns;
@@ -38,16 +37,13 @@ final class Substitution {
         regex = element.attributeBoolean("regex", true);
     }
 
-    String match() {
-        return match;
-    }
-
-    String replace() {
-        return replace;
-    }
-
-    boolean isRegex() {
-        return regex;
+    @Override
+    public String toString() {
+        return "Substitution{"
+               + "match='" + match + '\''
+               + ", replace='" + replace + '\''
+               + ", regex=" + regex
+               + '}';
     }
 
     BiFunction<String, Map<String, String>, String> function() {
@@ -55,14 +51,14 @@ final class Substitution {
     }
 
     String substitute(String str, Map<String, String> vars) {
-        String value = str;
-        String resolvedMatch = StagingTask.resolveVar(match, vars);
-        String resolvedReplace = StagingTask.resolveVar(replace, vars);
+        var value = str;
+        var resolvedMatch = StagingTask.resolveVar(match, vars);
+        var resolvedReplace = StagingTask.resolveVar(replace, vars);
         if (regex) {
             // replace {group} with ${group}
-            Set<String> groups = Patterns.groupNames(resolvedMatch);
-            for (String group : groups) {
-                String token = "{" + group + "}";
+            var groups = Patterns.groupNames(resolvedMatch);
+            for (var group : groups) {
+                var token = "{" + group + "}";
                 resolvedReplace = resolvedReplace.replace(token, "$" + token);
             }
             value = value.replaceAll(resolvedMatch, resolvedReplace);

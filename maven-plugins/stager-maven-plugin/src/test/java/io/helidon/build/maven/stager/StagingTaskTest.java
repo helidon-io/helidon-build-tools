@@ -35,10 +35,12 @@ import io.helidon.build.common.xml.XMLElement;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -65,33 +67,76 @@ class StagingTaskTest {
     }
 
     @Test
-    void testIterator() {
-        List<String> targets = new ArrayList<>();
-        execute(new TestTask(XMLElement.read("""
-                <task target="{it}">
+    void testIteratorGroups() {
+        List<String> versions = new ArrayList<>();
+        execute(new StagingTask(XMLElement.read("""
+                <task>
                     <iterators>
                         <variables>
-                            <variable name="it">
-                                <value>one</value>
-                                <value>two</value>
-                            </variable>
+                            <variable name="version"><value>1.0.0</value><value>2.0.0</value></variable>
+                        </variables>
+                        <variables join="true">
+                            <variable name="version"><value>3.0.0</value><value>4.0.0</value></variable>
                         </variables>
                     </iterators>
                 </task>
                 """)) {
             @Override
             protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                targets.add(resolveVar(target(), vars));
+                versions.add(vars.get("version"));
             }
         }, CURRENT_THREAD);
-        assertThat(targets, hasItems("one", "two"));
+        assertThat(versions, is(List.of("1.0.0", "2.0.0", "3.0.0", "4.0.0")));
+    }
+
+    @Test
+    void testIteratorCartesianProduct() {
+        List<String> combinations = new ArrayList<>();
+        execute(new StagingTask(XMLElement.read("""
+                <task>
+                    <iterators>
+                        <variables>
+                            <variable name="letter"><value>a</value><value>b</value></variable>
+                            <variable name="number"><value>1</value><value>2</value><value>3</value></variable>
+                        </variables>
+                    </iterators>
+                </task>
+                """)) {
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                combinations.add(vars.get("letter") + vars.get("number"));
+            }
+        }, CURRENT_THREAD);
+        assertThat(combinations, is(List.of("a1", "a2", "a3", "b1", "b2", "b3")));
+    }
+
+    @Test
+    void testAttributedIteratorValues() {
+        List<Map<String, String>> iterations = new ArrayList<>();
+        execute(new StagingTask(XMLElement.read("""
+                <task>
+                    <iterators>
+                        <variables>
+                            <variable name="version"><value>iterator</value></variable>
+                            <variable name="coordinates"><value version="later" classifier="tests"/></variable>
+                        </variables>
+                    </iterators>
+                </task>
+                """)) {
+            @Override
+            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
+                iterations.add(Map.copyOf(vars));
+            }
+        }, CURRENT_THREAD, Map.of("version", "inherited", "repository", "central"));
+        assertThat(iterations, is(List.of(
+                Map.of("version", "later", "repository", "central", "classifier", "tests"))));
     }
 
     @Test
     void testEmptyIteratorVariable() {
-        List<String> targets = new ArrayList<>();
-        execute(new TestTask(XMLElement.read("""
-                <task target="{version}">
+        AtomicInteger invocations = new AtomicInteger();
+        execute(new StagingTask(XMLElement.read("""
+                <task>
                     <iterators>
                         <variables>
                             <variable name="version"/>
@@ -99,96 +144,46 @@ class StagingTaskTest {
                     </iterators>
                 </task>
                 """)) {
-
             @Override
             protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                targets.add(resolveVar(target(), vars));
+                invocations.incrementAndGet();
             }
         }, CURRENT_THREAD);
-        assertThat(targets, is(empty()));
+        assertThat(invocations.get(), is(0));
     }
 
     @Test
-    void testIteratorPreserveOrder() {
-        List<String> targets = new ArrayList<>();
-        execute(new TestTask(XMLElement.read("""
-                <task target="{version}">
-                    <iterators>
-                        <variables>
-                            <variable name="version">
-                                <value>1.0.0</value>
-                            </variable>
-                        </variables>
-                        <variables>
-                            <variable name="version">
-                                <value>2.0.0</value>
-                                <value>3.0.0</value>
-                            </variable>
-                        </variables>
-                    </iterators>
-                </task>
-                """)) {
+    void testTraces() {
+        List<String> messages = new ArrayList<>();
+        StagingTask task = new StagingTask(ELEMENT) {
+            @Override
+            public String toString() {
+                return "DiagnosticTask{name='trace'}";
+            }
+        };
+        StagingContext context = new StagingContext() {
+            @Override
+            public boolean isDebugEnabled() {
+                return true;
+            }
 
             @Override
-            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                targets.add(resolveVar(target(), vars));
+            public void logDebug(String message, Object... args) {
+                messages.add(message.formatted(args));
             }
-        }, CURRENT_THREAD);
-        assertThat(targets, is(List.of("1.0.0", "2.0.0", "3.0.0")));
-    }
-
-    @Test
-    void testIteratorVariableInterpolation() {
-        List<String> targets = new ArrayList<>();
-        execute(new TestTask(XMLElement.read("""
-                <task target="{version}/{channel}">
-                    <iterators>
-                        <variables join="true">
-                            <variable name="release">
-                                <value version="${stable.version}" channel="stable"/>
-                                <value version="4.3.0" channel="preview"/>
-                            </variable>
-                        </variables>
-                    </iterators>
-                </task>
-                """)) {
 
             @Override
-            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                targets.add(resolveVar(target(), vars));
+            public Executor executor() {
+                return CURRENT_THREAD;
             }
-        }, CURRENT_THREAD);
-        assertThat(targets, is(List.of("${stable.version}/stable", "4.3.0/preview")));
-    }
+        };
 
-    @Test
-    void testIteratorsCartesianProduct() {
-        List<String> targets = new ArrayList<>();
-        execute(new TestTask(XMLElement.read("""
-                <task target="{foo}-{bar}-{bob}">
-                    <iterators>
-                        <variables>
-                            <variable name="foo"><value>foo1</value><value>foo2</value><value>foo3</value></variable>
-                            <variable name="bar"><value>bar1</value><value>bar2</value></variable>
-                            <variable name="bob">
-                                <value>bob1</value><value>bob2</value><value>bob3</value><value>bob4</value>
-                            </variable>
-                        </variables>
-                    </iterators>
-                </task>
-                """)) {
-            @Override
-            protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
-                targets.add(resolveVar(target(), vars));
-            }
-        }, CURRENT_THREAD);
-        assertThat(targets, hasItems(
-                "foo1-bar1-bob1", "foo1-bar1-bob2", "foo1-bar1-bob3", "foo1-bar1-bob4",
-                "foo1-bar2-bob1", "foo1-bar2-bob2", "foo1-bar2-bob3", "foo1-bar2-bob4",
-                "foo2-bar1-bob1", "foo2-bar1-bob2", "foo2-bar1-bob3", "foo2-bar1-bob4",
-                "foo2-bar2-bob1", "foo2-bar2-bob2", "foo2-bar2-bob3", "foo2-bar2-bob4",
-                "foo3-bar1-bob1", "foo3-bar1-bob2", "foo3-bar1-bob3", "foo3-bar1-bob4",
-                "foo3-bar2-bob1", "foo3-bar2-bob2", "foo3-bar2-bob3", "foo3-bar2-bob4"));
+        task.execute(context, Path.of("stage"), Map.of()).toCompletableFuture().join();
+
+        assertThat(messages, hasItem(containsString("[start]")));
+        assertThat(messages, hasItem(containsString("[end]")));
+        assertThat(messages, everyItem(containsString("DiagnosticTask{name='trace'}")));
+        assertThat(messages, everyItem(not(containsString("StagingTask$Span@"))));
     }
 
     @Test
@@ -328,8 +323,12 @@ class StagingTaskTest {
     }
 
     static void execute(StagingTask task, Executor executor) {
+        execute(task, executor, Map.of());
+    }
+
+    static void execute(StagingTask task, Executor executor, Map<String, String> vars) {
         try {
-            task.execute(() -> executor, null, Map.of()).toCompletableFuture().get();
+            task.execute(() -> executor, null, vars).toCompletableFuture().get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
@@ -348,17 +347,4 @@ class StagingTaskTest {
         }
     }
 
-    static class TestTask extends StagingTask {
-
-        private final String target;
-
-        TestTask(XMLElement element) {
-            super(element);
-            this.target = element.attribute("target", null);
-        }
-
-        String target() {
-            return target;
-        }
-    }
 }

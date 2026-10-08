@@ -111,7 +111,7 @@ final class TemplateHandler extends BaseObjectHandler {
 
     private static Object lookup(String name, List<Object> scopes) {
         for (int index = scopes.size() - 1; index >= 0; index--) {
-            Lookup lookup = lookupScope(scopes.get(index), name);
+            var lookup = lookupScope(scopes.get(index), name);
             if (lookup.state != State.MISSING) {
                 return lookup.value;
             }
@@ -136,11 +136,11 @@ final class TemplateHandler extends BaseObjectHandler {
     }
 
     private static Lookup lookupItem(Item item, String name) {
-        Lookup local = lookupElement(item.element, name, false);
+        var local = lookupElement(item.element, name, false);
         if (local.state != State.MISSING) {
             return local;
         }
-        Lookup metadata = lookupMetadata(item, name);
+        var metadata = lookupMetadata(item, name);
         if (metadata.state != State.MISSING) {
             return metadata;
         }
@@ -154,15 +154,15 @@ final class TemplateHandler extends BaseObjectHandler {
         while (offset < field.length() && field.charAt(offset) == '_') {
             offset++;
         }
-        String metadataName = field.substring(offset);
+        var metadataName = field.substring(offset);
         if (!METADATA.contains(metadataName)) {
             return MISSING;
         }
-        Object value = item.metadata(metadataName);
+        var value = item.metadata(metadataName);
         if (dot < 0) {
             return new Lookup(State.FOUND, value);
         }
-        Lookup nested = descend(value, path.substring(dot + 1));
+        var nested = descend(value, path.substring(dot + 1));
         return nested.state == State.MISSING ? BLOCKED : nested;
     }
 
@@ -170,14 +170,14 @@ final class TemplateHandler extends BaseObjectHandler {
         if (path.startsWith("@")) {
             return lookupAttribute(element, path);
         }
-        List<XMLElement> exact = element.children(path);
+        var exact = element.children(path);
         if (!exact.isEmpty()) {
             return new Lookup(State.FOUND, childValue(element, exact, selectMatch));
         }
         for (int dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
-            List<XMLElement> children = element.children(path.substring(0, dot));
+            var children = element.children(path.substring(0, dot));
             if (!children.isEmpty()) {
-                Lookup nested = descend(childValue(element, children, false), path.substring(dot + 1));
+                var nested = descend(childValue(element, children, false), path.substring(dot + 1));
                 return nested.state == State.MISSING ? BLOCKED : nested;
             }
         }
@@ -185,12 +185,12 @@ final class TemplateHandler extends BaseObjectHandler {
     }
 
     private static Lookup lookupAttribute(XMLElement element, String path) {
-        String name = path.substring(1);
+        var name = path.substring(1);
         if (element.attributes().containsKey(name)) {
             return new Lookup(State.FOUND, element.attributes().get(name));
         }
         for (int dot = name.lastIndexOf('.'); dot > 0; dot = name.lastIndexOf('.', dot - 1)) {
-            String prefix = name.substring(0, dot);
+            var prefix = name.substring(0, dot);
             if (element.attributes().containsKey(prefix)) {
                 return BLOCKED;
             }
@@ -203,9 +203,9 @@ final class TemplateHandler extends BaseObjectHandler {
             return new Lookup(State.FOUND, map.get(path));
         }
         for (int dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
-            String prefix = path.substring(0, dot);
+            var prefix = path.substring(0, dot);
             if (map.containsKey(prefix)) {
-                Lookup nested = descend(map.get(prefix), path.substring(dot + 1));
+                var nested = descend(map.get(prefix), path.substring(dot + 1));
                 return nested.state == State.MISSING ? BLOCKED : nested;
             }
         }

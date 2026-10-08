@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -47,7 +46,7 @@ import static java.util.concurrent.CompletableFuture.runAsync;
 class StagingTask implements Joinable {
 
     private final String name;
-    private final Map<String, String> attributes;
+    private final boolean join;
     private final List<StagingTask> tasks;
     private final ActionIterators iterators;
 
@@ -57,7 +56,7 @@ class StagingTask implements Joinable {
 
     StagingTask(XMLElement element, List<StagingTask> tasks) {
         this.name = element.name();
-        this.attributes = element.attributes();
+        this.join = Boolean.parseBoolean(element.attributes().get("join"));
         this.tasks = tasks == null ? List.of() : tasks;
         this.iterators = element.child("iterators")
                 .map(ActionIterators::new)
@@ -66,22 +65,7 @@ class StagingTask implements Joinable {
 
     @Override
     public boolean join() {
-        return Boolean.parseBoolean(attributes.get("join"));
-    }
-
-    /**
-     * Describe the task.
-     *
-     * @param dir  stage directory
-     * @param vars variables for the current iteration
-     * @return String that describes the task
-     */
-    public String toString(Path dir, Map<String, String> vars) {
-        return name + "{"
-                + "attrs=" + attributes
-                + ", dir=" + dir
-                + ", vars=" + vars
-                + "}";
+        return join;
     }
 
     /**
@@ -109,7 +93,7 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execIterators(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Span span = new Span(ctx, dir, vars);
+        var span = new Span(this, ctx, dir, vars);
         return allOf(iterators, it -> execIterations(ctx, dir, it, vars)).thenRun(span::end);
     }
 
@@ -126,9 +110,9 @@ class StagingTask implements Joinable {
                                                      ActionIterator it,
                                                      Map<String, String> vars) {
 
-        Span span = new Span(ctx, dir, vars);
-        List<Map<String, String>> itVars = it.forVariables(vars);
-        CompletableFuture<Void> future = allOf(itVars, m -> it.join(), m -> execTask(ctx, dir, m));
+        var span = new Span(this, ctx, dir, vars);
+        var itVars = it.forVariables(vars);
+        var future = allOf(itVars, m -> it.join(), m -> execTask(ctx, dir, m));
         return future.thenRun(span::end);
     }
 
@@ -141,7 +125,7 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execTask(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Span span = new Span(ctx, dir, vars);
+        var span = new Span(this, ctx, dir, vars);
         return execNestedTasks(ctx, dir, vars)
                 .thenCompose(v -> execBody(ctx, dir, vars))
                 .thenRun(span::end);
@@ -156,8 +140,8 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execNestedTasks(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Span span = new Span(ctx, dir, vars);
-        CompletableFuture<Void> future = allOf(tasks, task -> task.execute(ctx, dir, vars).toCompletableFuture());
+        var span = new Span(this, ctx, dir, vars);
+        var future = allOf(tasks, task -> task.execute(ctx, dir, vars).toCompletableFuture());
         return future.thenRun(span::end);
     }
 
@@ -170,7 +154,7 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execBodyWithTimeout(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Span span = new Span(ctx, dir, vars);
+        var span = new Span(this, ctx, dir, vars);
         int taskTimeout = ctx.taskTimeout();
         int maxRetries = ctx.maxRetries();
         CompletableFuture<Void> future;
@@ -192,7 +176,7 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Span span = new Span(ctx, dir, vars);
+        var span = new Span(this, ctx, dir, vars);
         return doExecBody(ctx, dir, vars).thenRun(span::end);
     }
 
@@ -205,7 +189,7 @@ class StagingTask implements Joinable {
      * @return completion stage that is completed the task and its sub-tasks have been executed
      */
     protected CompletableFuture<Void> doExecBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        CompletableFuture<Void> future = runAsync(unchecked(() -> doExecute(ctx, dir, vars)), ctx.executor());
+        var future = runAsync(unchecked(() -> doExecute(ctx, dir, vars)), ctx.executor());
         return exceptionallyCompose(future, ex -> {
             ctx.logError(ex);
             return failedFuture(ex);
@@ -234,12 +218,12 @@ class StagingTask implements Joinable {
     protected static String resolveVar(String source, Map<String, String> vars) {
         if (Strings.isValid(source)) {
             for (Map.Entry<String, String> variable : vars.entrySet()) {
-                String placeholder = "{" + variable.getKey() + "}";
+                var placeholder = "{" + variable.getKey() + "}";
                 int placeholderIndex = source.indexOf(placeholder);
                 if (placeholderIndex < 0) {
                     continue;
                 }
-                StringBuilder resolved = new StringBuilder(source.length());
+                var resolved = new StringBuilder(source.length());
                 int sourceIndex = 0;
                 while (placeholderIndex >= 0) {
                     resolved.append(source, sourceIndex, placeholderIndex);
@@ -272,7 +256,7 @@ class StagingTask implements Joinable {
                                                          int attempt,
                                                          int maxAttempts) {
 
-        CompletableFuture<Void> future = supplier.get();
+        var future = supplier.get();
         return exceptionallyCompose(future, ex -> {
             ctx.logError(ex);
             if (attempt <= maxAttempts) {
@@ -308,12 +292,12 @@ class StagingTask implements Joinable {
     }
 
     static List<XMLElement> elements(XMLElement element, String name, String wrapper) {
-        List<XMLElement> result = new ArrayList<>();
-        for (XMLElement child : element.children()) {
+        var result = new ArrayList<XMLElement>();
+        for (var child : element.children()) {
             if (name.equals(child.name())) {
                 result.add(child);
             } else if (wrapper.equals(child.name())) {
-                for (XMLElement wrapped : child.children()) {
+                for (var wrapped : child.children()) {
                     if (name.equals(wrapped.name())) {
                         result.add(wrapped);
                     }
@@ -327,11 +311,11 @@ class StagingTask implements Joinable {
                                                      Function<T, Boolean> isJoinable,
                                                      Function<T, CompletableFuture<Void>> function) {
 
-        Deque<CompletableFuture<Void>> futures = new ArrayDeque<>();
+        var futures = new ArrayDeque<CompletableFuture<Void>>();
         futures.push(completedFuture(null));
-        for (T item : items) {
+        for (var item : items) {
             if (isJoinable.apply(item)) {
-                CompletableFuture<Void> future = futures.pop();
+                var future = futures.pop();
                 futures.push(future.thenCompose(v -> function.apply(item)));
             } else {
                 futures.push(function.apply(item));
@@ -371,17 +355,19 @@ class StagingTask implements Joinable {
 
     private static final AtomicInteger NEXT_SPAN_ID = new AtomicInteger(0);
 
-    private class Span {
+    private static class Span {
 
         private final long id;
+        private final StagingTask task;
         private final String method;
         private final StagingContext ctx;
         private final Path dir;
         private final Map<String, String> vars;
         private long startTime = 0;
 
-        Span(StagingContext ctx, Path dir, Map<String, String> vars) {
+        Span(StagingTask task, StagingContext ctx, Path dir, Map<String, String> vars) {
             this.id = NEXT_SPAN_ID.incrementAndGet();
+            this.task = task;
             this.method = StackWalker.getInstance()
                                      .walk(frames -> frames.skip(1)
                                                            .findFirst()
@@ -396,16 +382,16 @@ class StagingTask implements Joinable {
         void start() {
             if (ctx.isDebugEnabled()) {
                 startTime = System.currentTimeMillis();
-                ctx.logDebug("[trace] [id=%d,t=%d] [start] %s.%s(attrs=%s,dir=%s,vars=%s)",
-                        id, startTime, name, method, attributes, dir, vars);
+                ctx.logDebug("[trace] [id=%d,t=%d] [start] %s [method=%s] [dir=%s] [vars=%s]",
+                        id, startTime, task.toString(), method, dir, vars);
             }
         }
 
         void end() {
             if (ctx.isDebugEnabled()) {
                 long endTime = System.currentTimeMillis();
-                ctx.logDebug("[trace] [id=%d,t=%d] [end] %s.%s(attrs=%s,dir=%s,vars=%s) [total-time=%d]",
-                        id, startTime, name, method, attributes, dir, vars, endTime - startTime);
+                ctx.logDebug("[trace] [id=%d,t=%d] [end] %s [method=%s] [dir=%s] [vars=%s] [total-time=%d]",
+                        id, startTime, task.toString(), method, dir, vars, endTime - startTime);
             }
         }
     }

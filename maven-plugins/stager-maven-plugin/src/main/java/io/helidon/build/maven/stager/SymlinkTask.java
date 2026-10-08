@@ -38,19 +38,19 @@ final class SymlinkTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "SymlinkTask{"
+               + "source='" + source + '\''
+               + ", target='" + target + '\''
+               + '}';
+    }
+
+    @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        Path link = dir.resolve(resolveVar(target, vars));
-        Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
+        var link = dir.resolve(resolveVar(target, vars));
+        var linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
         ctx.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
         ctx.ensureDirectory(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
-    }
-
-    String source() {
-        return source;
-    }
-
-    String target() {
-        return target;
     }
 }

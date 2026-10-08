@@ -53,10 +53,10 @@ interface StagingContext {
      *
      * @param archive  archive to unpack
      * @param target   where to unpack the archive
-     * @param excludes exclude filters
      * @param includes include filters
+     * @param excludes exclude filters
      */
-    default void unpack(Path archive, Path target, String excludes, String includes) {
+    default void unpack(Path archive, Path target, String includes, String excludes) {
         throw new UnsupportedOperationException();
     }
 
@@ -65,18 +65,18 @@ interface StagingContext {
      *
      * @param archive  archive to unpack
      * @param target   where to unpack the archive
-     * @param excludes exclude filters
      * @param includes include filters
+     * @param excludes exclude filters
      * @param mappers  path mappers
      * @param vars     variables used to resolve mapper values
      */
     default void unpack(Path archive,
                         Path target,
-                        String excludes,
                         String includes,
+                        String excludes,
                         List<Mapper> mappers,
                         Map<String, String> vars) {
-        unpack(archive, target, excludes, includes);
+        unpack(archive, target, includes, excludes);
     }
 
     /**
@@ -84,10 +84,10 @@ interface StagingContext {
      *
      * @param directory directory to archive
      * @param target    the archive to create
-     * @param excludes  exclude filters
      * @param includes  include filters
+     * @param excludes  exclude filters
      */
-    default void archive(Path directory, Path target, String excludes, String includes) {
+    default void archive(Path directory, Path target, String includes, String excludes) {
         throw new UnsupportedOperationException();
     }
 

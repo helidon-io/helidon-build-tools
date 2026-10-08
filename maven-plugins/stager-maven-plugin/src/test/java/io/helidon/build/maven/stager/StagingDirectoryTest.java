@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -33,46 +34,32 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link CopyArtifactTask}.
+ * Tests {@link StagingDirectory}.
  */
-class CopyArtifactTaskTest {
+class StagingDirectoryTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
-    void testExplicitTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
+    void testNestedTask() throws Exception {
+        execute(new StagingDirectory(XMLElement.read("""
+                <directory target="releases/current"/>
+                """), List.of(new FileTask(XMLElement.read("""
+                <file target="docs/readme.txt">staged content</file>
+                """), List.of()))), Map.of());
 
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="com.acme"
-                               artifactId="artifact"
-                               version="{version}"
-                               type="txt"
-                               target="downloads/test-{version}.{type}"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("downloads/test-4.2.0.txt")), is("artifact content"));
-        assertThat(Files.exists(tempDir.resolve("downloads/test-{version}.txt")), is(false));
+        var file = tempDir.resolve("releases/current/docs/readme.txt");
+        assertThat(Files.readString(file), is("staged content"));
+        assertThat(Files.exists(tempDir.resolve("docs/readme.txt")), is(false));
     }
 
-    @Test
-    void testDefaultTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
-
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="io.helidon" artifactId="helidon" version="{version}" type="txt"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("helidon-4.2.0.txt")), is("artifact content"));
-    }
-
-    void execute(CopyArtifactTask task, Map<String, String> vars) throws Exception {
+    void execute(StagingDirectory task, Map<String, String> vars) throws Exception {
         try {
             task.execute(new StagingContext() {
                 @Override
-                public Path resolve(ArtifactGAV gav) {
-                    return tempDir.resolve("artifact.txt");
+                public Path resolve(String path) {
+                    return tempDir.resolve(path);
                 }
 
                 @Override

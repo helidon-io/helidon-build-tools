@@ -30,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link TemplateTask}.
@@ -173,7 +174,7 @@ class TemplateTaskTest {
     }
 
     @Test
-    void testCurrentValueAndComplexMetadataValue() throws IOException {
+    void testCurrentValueAndComplexValue() throws IOException {
         Files.writeString(tempDir.resolve("template.hbs"), """
                 {{#container}}
                 {{name}}=[{{.}}]=[{{value}}]:{{value.title}}
@@ -378,6 +379,23 @@ class TemplateTaskTest {
                 local:4.2.0:1
                 version=4.2.0:1:local
                 """));
+    }
+
+    @Test
+    void testRejectsMixedTemplateContent() {
+        XMLElement element = XMLElement.builder(XMLElement.read("""
+                <template source="template.hbs" target="output.txt"/>
+                """));
+        XMLElement model = XMLElement.builder().name("model").parent(element);
+        XMLElement release = XMLElement.builder().name("release").value("text").parent(model);
+        release.children().add(XMLElement.builder().name("version").value("4.2.0").parent(release));
+        model.children().add(release);
+        element.children().add(model);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new TemplateTask(element));
+
+        assertThat(ex.getMessage(), is("Model element 'model.release' cannot mix text and child elements"));
     }
 
     void execute(TemplateTask task, Map<String, String> vars) {

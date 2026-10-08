@@ -46,6 +46,15 @@ final class FileTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "FileTask{"
+               + "content='" + content + '\''
+               + ", source='" + source + '\''
+               + ", target='" + target + '\''
+               + '}';
+    }
+
+    @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
         String resolvedTarget = resolveVar(target, vars);
         String resolvedSource = resolveVar(source, vars);
@@ -72,17 +81,5 @@ final class FileTask extends StagingTask {
                 }
             }
         }
-    }
-
-    String source() {
-        return source;
-    }
-
-    String target() {
-        return target;
-    }
-
-    String content() {
-        return content;
     }
 }

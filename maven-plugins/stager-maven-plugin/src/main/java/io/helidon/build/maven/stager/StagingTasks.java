@@ -32,6 +32,13 @@ final class StagingTasks extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "StagingTasks{"
+               + "name='" + name() + '\''
+               + "}";
+    }
+
+    @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return CompletableFuture.completedFuture(null);
     }

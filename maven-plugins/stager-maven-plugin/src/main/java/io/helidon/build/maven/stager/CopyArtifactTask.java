@@ -39,22 +39,22 @@ final class CopyArtifactTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "CopyArtifactTask{"
+               + "gav=" + gav
+               + ", target='" + target + '\''
+               + '}';
+    }
+
+    @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        ArtifactGAV resolvedGav = gav.resolve(vars);
-        Map<String, String> resolvedVars = resolvedGav.variables();
-        String resolveTarget = resolveVar(target, resolvedVars);
+        var resolvedGav = gav.resolve(vars);
+        var resolvedVars = resolvedGav.variables();
+        var resolveTarget = resolveVar(target, resolvedVars);
         ctx.logInfo("Copying %s to %s", resolvedGav, resolveTarget);
-        Path artifact = ctx.resolve(resolvedGav);
-        Path targetFile = dir.resolve(resolveTarget);
+        var artifact = ctx.resolve(resolvedGav);
+        var targetFile = dir.resolve(resolveTarget);
         ctx.ensureDirectory(targetFile.getParent());
         Files.copy(artifact, targetFile, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    ArtifactGAV gav() {
-        return gav;
-    }
-
-    String target() {
-        return target;
     }
 }

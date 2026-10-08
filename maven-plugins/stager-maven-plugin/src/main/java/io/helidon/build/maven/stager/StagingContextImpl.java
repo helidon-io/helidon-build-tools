@@ -112,18 +112,18 @@ final class StagingContextImpl implements StagingContext {
     }
 
     @Override
-    public void unpack(Path archive, Path target, String excludes, String includes) {
-        unpack(archive, target, excludes, includes, List.of(), Map.of());
+    public void unpack(Path archive, Path target, String includes, String excludes) {
+        unpack(archive, target, includes, excludes, List.of(), Map.of());
     }
 
     @Override
     public void unpack(Path archive,
                        Path target,
-                       String excludes,
                        String includes,
+                       String excludes,
                        List<Mapper> mappers,
                        Map<String, String> vars) {
-        File archiveFile = archive.toFile();
+        var archiveFile = archive.toFile();
         UnArchiver unArchiver;
         try {
             unArchiver = archiverManager.getUnArchiver(archiveFile);
@@ -132,12 +132,12 @@ final class StagingContextImpl implements StagingContext {
         }
         unArchiver.setSourceFile(archiveFile);
         unArchiver.setDestDirectory(target.toFile());
-        FileMapper[] fileMappers = new FileMapper[0];
+        var fileMappers = new FileMapper[0];
         if (!mappers.isEmpty()) {
             fileMappers = fileMappers(mappers, vars);
             unArchiver.setFileMappers(fileMappers);
         }
-        FileSelector[] selectors = fileSelectors(excludes, includes, fileMappers);
+        var selectors = fileSelectors(excludes, includes, fileMappers);
         if (selectors.length > 0) {
             unArchiver.setFileSelectors(selectors);
         }
@@ -145,7 +145,7 @@ final class StagingContextImpl implements StagingContext {
     }
 
     @Override
-    public void archive(Path directory, Path target, String excludes, String includes) {
+    public void archive(Path directory, Path target, String includes, String excludes) {
         File archiveFile = target.toFile();
         Archiver archiver;
         try {
@@ -153,7 +153,7 @@ final class StagingContextImpl implements StagingContext {
         } catch (NoSuchArchiverException ex) {
             throw new IllegalStateException(ex);
         }
-        DefaultFileSet fileSet = new DefaultFileSet(directory.toFile());
+        var fileSet = new DefaultFileSet(directory.toFile());
         if (StringUtils.isNotEmpty(excludes) || StringUtils.isNotEmpty(includes)) {
             if (StringUtils.isNotEmpty(excludes)) {
                 fileSet.setExcludes(excludes.split(","));
@@ -179,9 +179,8 @@ final class StagingContextImpl implements StagingContext {
     @Override
     public Path resolve(ArtifactGAV gav) {
         logInfo("Resolving %s", gav);
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact(new DefaultArtifact(gav.groupId(), gav.artifactId(), gav.classifier(),
-                gav.type(), gav.version()));
+        var request = new ArtifactRequest();
+        request.setArtifact(new DefaultArtifact(gav.groupId(), gav.artifactId(), gav.classifier(), gav.type(), gav.version()));
         request.setRepositories(remoteRepos);
         ArtifactResult result;
         try {
@@ -278,7 +277,7 @@ final class StagingContextImpl implements StagingContext {
     }
 
     static String applyFileMappers(String name, FileMapper[] fileMappers) {
-        String mappedName = normalizePath(name);
+        var mappedName = normalizePath(name);
         for (FileMapper fileMapper : fileMappers) {
             if (mappedName == null || mappedName.isEmpty()) {
                 return mappedName;
@@ -289,9 +288,9 @@ final class StagingContextImpl implements StagingContext {
     }
 
     static FileSelector[] fileSelectors(String excludes, String includes, FileMapper[] fileMappers) {
-        List<FileSelector> selectors = new ArrayList<>(2);
+        var selectors = new ArrayList<FileSelector>(2);
         if (isValid(excludes) || isValid(includes)) {
-            IncludeExcludeFileSelector selector = new IncludeExcludeFileSelector();
+            var selector = new IncludeExcludeFileSelector();
             if (isValid(excludes)) {
                 selector.setExcludes(excludes.split(","));
             }
@@ -307,7 +306,7 @@ final class StagingContextImpl implements StagingContext {
     }
 
     static FileMapper fileMapper(Mapper mapper, Map<String, String> vars) {
-        RegExpFileMapper regexMapper = new RegExpFileMapper();
+        var regexMapper = new RegExpFileMapper();
         regexMapper.setPattern(mapper.match(vars));
         regexMapper.setReplacement(mapper.replace(vars));
         return name -> normalizePath(regexMapper.getMappedFileName(normalizePath(name)));

@@ -18,7 +18,6 @@ package io.helidon.build.maven.stager;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,25 +46,25 @@ final class DownloadTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "DownloadTask{"
+               + "url='" + url + '\''
+               + ", target='" + target + '\''
+               + '}';
+    }
+
+    @Override
     protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
         return execBodyWithTimeout(ctx, dir, vars);
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String path = resolveVar(target, vars);
-        Path file = dir.resolve(path).normalize();
+        var path = resolveVar(target, vars);
+        var file = dir.resolve(path).normalize();
         ctx.ensureDirectory(file.getParent());
-        URL url = new URL(resolveVar(this.url, vars));
+        var url = new URL(resolveVar(this.url, vars));
         download(ctx, url, file);
-    }
-
-    String url() {
-        return url;
-    }
-
-    String target() {
-        return target;
     }
 
     /**
@@ -79,8 +78,8 @@ final class DownloadTask extends StagingTask {
     static void download(StagingContext ctx, URL url, Path file)
             throws IOException {
 
-        try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx));
-             OutputStream fos = Files.newOutputStream(file, StandardOpenOption.CREATE)) {
+        try (var bis = new BufferedInputStream(open(url, ctx));
+                var fos = Files.newOutputStream(file, StandardOpenOption.CREATE)) {
             int n;
             long startTime = System.currentTimeMillis();
             long progressTime = startTime;
@@ -110,7 +109,7 @@ final class DownloadTask extends StagingTask {
     }
 
     private static InputStream open(URL url, StagingContext context) throws IOException {
-        NetworkConnection.Builder builder = NetworkConnection.builder().url(url);
+        var builder = NetworkConnection.builder().url(url);
         int readTimeout = context.readTimeout();
         if (readTimeout > 0) {
             builder.readTimeout(readTimeout);

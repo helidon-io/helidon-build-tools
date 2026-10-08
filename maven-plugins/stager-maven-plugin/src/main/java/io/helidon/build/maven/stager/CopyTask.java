@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -52,6 +51,16 @@ final class CopyTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "CopyTask{"
+               + "source='" + source + '\''
+               + ", target='" + target + '\''
+               + ", includes=" + includes
+               + ", excludes=" + excludes
+               + '}';
+    }
+
+    @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) {
         String resolvedSource = resolveVar(source, vars);
         String resolvedTarget = resolveVar(target, vars);
@@ -81,21 +90,5 @@ final class CopyTask extends StagingTask {
                         }
                     });
         }
-    }
-
-    String source() {
-        return source;
-    }
-
-    String target() {
-        return target;
-    }
-
-    List<String> includes() {
-        return includes;
-    }
-
-    List<String> excludes() {
-        return excludes;
     }
 }

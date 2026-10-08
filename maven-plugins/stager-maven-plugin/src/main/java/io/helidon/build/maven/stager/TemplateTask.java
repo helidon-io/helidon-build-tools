@@ -16,8 +16,6 @@
 package io.helidon.build.maven.stager;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -48,21 +46,31 @@ final class TemplateTask extends StagingTask {
         this.model = element.child("model")
                 .map(XMLElement::builder)
                 .orElseGet(() -> XMLElement.builder().name("model"));
+        validate(model, "model");
+    }
+
+    @Override
+    public String toString() {
+        return "TemplateTask{"
+               + "source='" + source + '\''
+               + ", target='" + target + '\''
+               + ", model=" + model.toString(false)
+               + '}';
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String resolvedTarget = resolveVar(target, vars);
-        String resolvedSource = resolveVar(source, vars);
-        Path sourceFile = ctx.resolve(resolvedSource);
+        var resolvedTarget = resolveVar(target, vars);
+        var resolvedSource = resolveVar(source, vars);
+        var sourceFile = ctx.resolve(resolvedSource);
         if (!Files.exists(sourceFile)) {
             throw new IllegalStateException(sourceFile + " does not exist");
         }
-        Path targetFile = dir.resolve(resolvedTarget).normalize();
+        var targetFile = dir.resolve(resolvedTarget).normalize();
         ctx.ensureDirectory(targetFile.getParent());
-        try (Reader reader = Files.newBufferedReader(sourceFile);
-                Writer writer = Files.newBufferedWriter(targetFile, CREATE, TRUNCATE_EXISTING)) {
-            DefaultMustacheFactory factory = new DefaultMustacheFactory();
+        try (var reader = Files.newBufferedReader(sourceFile);
+                var writer = Files.newBufferedWriter(targetFile, CREATE, TRUNCATE_EXISTING)) {
+            var factory = new DefaultMustacheFactory();
             factory.setObjectHandler(MODEL_HANDLER);
             factory.compile(reader, resolvedSource)
                     .execute(writer, resolve(model, vars))
@@ -70,16 +78,8 @@ final class TemplateTask extends StagingTask {
         }
     }
 
-    String source() {
-        return source;
-    }
-
-    XMLElement model() {
-        return model;
-    }
-
     private static XMLElement resolve(XMLElement model, Map<String, String> vars) {
-        XMLElement resolved = XMLElement.builder(model);
+        var resolved = XMLElement.builder(model);
         resolved.visit(new XMLElement.Visitor() {
             @Override
             public boolean visitElement(XMLElement elt) {
@@ -91,9 +91,18 @@ final class TemplateTask extends StagingTask {
         return resolved;
     }
 
+    private static void validate(XMLElement element, String path) {
+        if (!element.children().isEmpty() && !element.value().isBlank()) {
+            throw new IllegalArgumentException("Model element '%s' cannot mix text and child elements".formatted(path));
+        }
+        for (var child : element.children()) {
+            validate(child, path + "." + child.name());
+        }
+    }
+
     private static String resolve(String value, Map<String, String> vars) {
-        String result = value;
-        for (Map.Entry<String, String> variable : vars.entrySet()) {
+        var result = value;
+        for (var variable : vars.entrySet()) {
             result = result.replace("{" + variable.getKey() + "}", variable.getValue());
         }
         return result;

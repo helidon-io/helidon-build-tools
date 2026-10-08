@@ -45,34 +45,25 @@ final class UnpackArtifactTask extends StagingTask {
     }
 
     @Override
+    public String toString() {
+        return "UnpackArtifactTask{"
+               + "gav=" + gav
+               + ", target='" + target + '\''
+               + ", excludes='" + excludes + '\''
+               + ", includes='" + includes + '\''
+               + ", mappers=" + mappers
+               + '}';
+    }
+
+    @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        ArtifactGAV resolvedGav = gav.resolve(vars);
-        Map<String, String> resolvedVars = resolvedGav.variables();
-        String resolvedTarget = resolveVar(target, resolvedVars);
-        Path artifact = ctx.resolve(resolvedGav);
-        Path targetDir = dir.resolve(resolvedTarget).normalize();
+        var resolvedGav = gav.resolve(vars);
+        var resolvedVars = resolvedGav.variables();
+        var resolvedTarget = resolveVar(target, resolvedVars);
+        var artifact = ctx.resolve(resolvedGav);
+        var targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", artifact, targetDir);
         ctx.ensureDirectory(targetDir);
-        ctx.unpack(artifact, targetDir, excludes, includes, mappers, resolvedVars);
-    }
-
-    ArtifactGAV gav() {
-        return gav;
-    }
-
-    String target() {
-        return target;
-    }
-
-    String excludes() {
-        return excludes;
-    }
-
-    String includes() {
-        return includes;
-    }
-
-    List<Mapper> mappers() {
-        return mappers;
+        ctx.unpack(artifact, targetDir, includes, excludes, mappers, resolvedVars);
     }
 }

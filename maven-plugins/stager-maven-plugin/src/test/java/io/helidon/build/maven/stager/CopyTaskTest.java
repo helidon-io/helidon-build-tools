@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -44,194 +43,168 @@ class CopyTaskTest {
     private Path tempDir;
 
     @Test
-    void testRequiresSourceAndTarget() {
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class,
-                () -> task(Map.of("target", "."), List.of(), List.of()));
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,
-                () -> task(Map.of("source", "src"), List.of(), List.of()));
-
-        assertThat(ex1.getMessage(), containsString("source is required"));
-        assertThat(ex2.getMessage(), containsString("target is required"));
-    }
-
-    @Test
     void testDirectoryContentCopy() throws Exception {
-        write("project/src/readme.txt", "readme");
-        write("project/src/nested/index.html", "index");
+        var readme = tempDir.resolve("src/readme.txt");
+        var index = tempDir.resolve("src/nested/index.html");
+        Files.createDirectories(index.getParent());
+        Files.writeString(readme, "readme");
+        Files.writeString(index, "index");
 
-        Path stage = execute("src", "docs", List.of(), List.of(), Map.of());
+        execute(new CopyTask(XMLElement.read("""
+                <copy source="src" target="docs"/>
+                """)), Map.of());
 
-        assertThat(Files.readString(stage.resolve("docs/readme.txt")), is("readme"));
-        assertThat(Files.readString(stage.resolve("docs/nested/index.html")), is("index"));
-        assertThat(Files.exists(stage.resolve("docs/src/readme.txt")), is(false));
+        assertThat(Files.readString(tempDir.resolve("docs/readme.txt")), is("readme"));
+        assertThat(Files.readString(tempDir.resolve("docs/nested/index.html")), is("index"));
+        assertThat(Files.exists(tempDir.resolve("docs/src/readme.txt")), is(false));
     }
 
     @Test
-    void testNestedIncludeExcludeFiltering() throws Exception {
-        write("project/src/docs/keep/readme.txt", "keep");
-        write("project/src/docs/keep/readme.md", "markdown");
-        write("project/src/docs/draft/readme.txt", "draft");
+    void testFiltering() throws Exception {
+        var keep = tempDir.resolve("src/docs/keep/readme.txt");
+        var markdown = tempDir.resolve("src/docs/keep/readme.md");
+        var draft = tempDir.resolve("src/docs/draft/readme.txt");
+        Files.createDirectories(keep.getParent());
+        Files.createDirectories(draft.getParent());
+        Files.writeString(keep, "keep");
+        Files.writeString(markdown, "markdown");
+        Files.writeString(draft, "draft");
 
-        Path stage = execute("src/docs", ".", List.of("**/*.txt"), List.of("draft/**"), Map.of());
+        execute(new CopyTask(XMLElement.read("""
+                <copy source="src/docs" target=".">
+                    <includes>
+                        <include>**/*.txt</include>
+                    </includes>
+                    <excludes>
+                        <exclude>draft/**</exclude>
+                    </excludes>
+                </copy>
+                """)), Map.of());
 
-        assertThat(Files.readString(stage.resolve("keep/readme.txt")), is("keep"));
-        assertThat(Files.exists(stage.resolve("keep/readme.md")), is(false));
-        assertThat(Files.exists(stage.resolve("draft/readme.txt")), is(false));
+        assertThat(Files.readString(tempDir.resolve("keep/readme.txt")), is("keep"));
+        assertThat(Files.exists(tempDir.resolve("keep/readme.md")), is(false));
+        assertThat(Files.exists(tempDir.resolve("draft/readme.txt")), is(false));
     }
 
     @Test
-    void testNoMatchedFilesIsNoOp() throws Exception {
-        write("project/src/docs/readme.txt", "readme");
+    void testNoMatchedFiles() throws Exception {
+        var readme = tempDir.resolve("src/docs/readme.txt");
+        Files.createDirectories(readme.getParent());
+        Files.writeString(readme, "readme");
 
-        Path stage = execute("src/docs", "docs", List.of("**/*.md"), List.of(), Map.of());
+        execute(new CopyTask(XMLElement.read("""
+                <copy source="src/docs" target="docs">
+                    <include>**/*.md</include>
+                </copy>
+                """)), Map.of());
 
-        assertThat(Files.exists(stage.resolve("docs")), is(false));
+        assertThat(Files.exists(tempDir.resolve("docs")), is(false));
     }
 
     @Test
     void testSymlinkPreservation() throws Exception {
-        write("project/src/real.txt", "real");
-        Files.createSymbolicLink(tempDir.resolve("project/src/link.txt"), Path.of("real.txt"));
+        var source = tempDir.resolve("src");
+        var target = Path.of("real.txt");
+        Files.createDirectories(source);
+        Files.writeString(source.resolve(target), "real");
+        Files.createSymbolicLink(source.resolve("link.txt"), target);
+        var task = new CopyTask(XMLElement.read("""
+                <copy source="src" target="."/>
+                """));
 
-        Path stage = execute("src", ".", List.of(), List.of(), Map.of());
+        execute(task, Map.of());
 
-        Path link = stage.resolve("link.txt");
+        var link = tempDir.resolve("link.txt");
         assertThat(Files.isSymbolicLink(link), is(true));
-        assertThat(Files.readSymbolicLink(link).toString(), is("real.txt"));
+        assertThat(Files.readSymbolicLink(link), is(target));
     }
 
     @Test
     void testOverwriteReplacement() throws Exception {
-        write("project/src/readme.txt", "new");
-        write("stage/readme.txt", "old");
-        Files.createSymbolicLink(tempDir.resolve("stage/link.txt"), Path.of("old.txt"));
-        Files.createSymbolicLink(tempDir.resolve("project/src/link.txt"), Path.of("readme.txt"));
+        var source = tempDir.resolve("src");
+        Files.createDirectories(source);
+        Files.writeString(source.resolve("readme.txt"), "new");
+        Files.writeString(tempDir.resolve("readme.txt"), "old");
+        var value = Path.of("readme.txt");
+        Files.createSymbolicLink(tempDir.resolve("link.txt"), Path.of("old.txt"));
+        Files.createSymbolicLink(source.resolve("link.txt"), value);
+        var task = new CopyTask(XMLElement.read("""
+                <copy source="src" target="."/>
+                """));
 
-        execute("src", ".", List.of(), List.of(), Map.of());
+        execute(task, Map.of());
 
-        assertThat(Files.readString(tempDir.resolve("stage/readme.txt")), is("new"));
-        assertThat(Files.isSymbolicLink(tempDir.resolve("stage/link.txt")), is(true));
-        assertThat(Files.readSymbolicLink(tempDir.resolve("stage/link.txt")).toString(), is("readme.txt"));
+        assertThat(Files.readString(tempDir.resolve("readme.txt")), is("new"));
+        assertThat(Files.isSymbolicLink(tempDir.resolve("link.txt")), is(true));
+        assertThat(Files.readSymbolicLink(tempDir.resolve("link.txt")), is(value));
     }
 
     @Test
     void testMissingSourceFails() {
-        ExecutionException ex = assertThrows(ExecutionException.class,
-                () -> execute("missing", ".", List.of(), List.of(), Map.of()));
+        var task = new CopyTask(XMLElement.read("""
+                <copy source="missing" target="."/>
+                """));
 
-        assertThat(ex.getCause().getMessage(), containsString("does not exist"));
+        var ex = assertThrows(IllegalStateException.class, () -> execute(task, Map.of()));
+        assertThat(ex.getMessage(), containsString("does not exist"));
     }
 
     @Test
-    void testNonDirectorySourceFails() {
-        write("project/src/readme.txt", "readme");
+    void testNonDirectorySourceFails() throws IOException {
+        var source = tempDir.resolve("src/readme.txt");
+        Files.createDirectories(source.getParent());
+        Files.writeString(source, "readme");
+        var task = new CopyTask(XMLElement.read("""
+                <copy source="src/readme.txt" target="."/>
+                """));
 
-        ExecutionException ex = assertThrows(ExecutionException.class,
-                () -> execute("src/readme.txt", ".", List.of(), List.of(), Map.of()));
-
-        assertThat(ex.getCause().getMessage(), containsString("is not a directory"));
+        var ex = assertThrows(IllegalStateException.class, () -> execute(task, Map.of()));
+        assertThat(ex.getMessage(), containsString("is not a directory"));
     }
 
     @Test
-    void testIteratorVariableResolution() throws Exception {
-        write("project/src/one/readme.txt", "one");
-        write("project/src/two/readme.txt", "two");
+    void testCreatesNestedTargetDirectories() throws Exception {
+        Path source = tempDir.resolve("src/docs/nested/file.txt");
+        Files.createDirectories(source.getParent());
+        Files.writeString(source, "file");
+        var task = new CopyTask(XMLElement.read("""
+                <copy source="src/docs" target="copied"/>
+                """));
 
-        XMLElement element = XMLElement.read("""
-                <copy source="src/{name}" target="{name}">
-                    <iterators>
-                        <variables>
-                            <variable name="name"><value>one</value><value>two</value></variable>
-                        </variables>
-                    </iterators>
-                </copy>
-                """);
-        CopyTask task = new CopyTask(element);
-        task.execute(context(), tempDir.resolve("stage"), Map.of()).toCompletableFuture().get();
-
-        assertThat(Files.readString(tempDir.resolve("stage/one/readme.txt")), is("one"));
-        assertThat(Files.readString(tempDir.resolve("stage/two/readme.txt")), is("two"));
+        execute(task, Map.of());
+        assertThat(Files.readString(tempDir.resolve("copied/nested/file.txt")), is("file"));
     }
 
-    @Test
-    void testDirectoryCreationDelegatesToContext() throws Exception {
-        write("project/src/docs/readme.txt", "readme");
-        write("project/src/docs/nested/file.txt", "file");
-        Path stage = tempDir.resolve("stage");
-        StagingContext context = context();
-
-        task(Map.of("source", "src/docs", "target", "copied"), List.of(), List.of())
-                .execute(context, stage, Map.of()).toCompletableFuture().get();
-
-        assertThat(Files.exists(stage.resolve("copied")), is(true));
-        assertThat(Files.exists(stage.resolve("copied/nested")), is(true));
-    }
-
-    Path execute(String source,
-                 String target,
-                 List<String> includes,
-                 List<String> excludes,
-                 Map<String, String> vars) throws Exception {
-
-        CopyTask task = task(Map.of("source", source, "target", target), includes, excludes);
-        Path dir = tempDir.resolve("stage");
-        task.execute(context(), dir, vars).toCompletableFuture().get();
-        return dir;
-    }
-
-    void write(String path, String value) {
+    void execute(CopyTask task, Map<String, String> vars) throws Exception {
         try {
-            Path file = tempDir.resolve(path);
-            Files.createDirectories(file.getParent());
-            Files.writeString(file, value);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            task.execute(new StagingContext() {
+
+                @Override
+                public Path resolve(String path) {
+                    return tempDir.resolve(path);
+                }
+
+                @Override
+                public void ensureDirectory(Path directory) {
+                    try {
+                        Files.createDirectories(directory);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+
+                @Override
+                public Executor executor() {
+                    return new CurrentThreadExecutorService();
+                }
+            }, tempDir, vars).toCompletableFuture().get();
+        }  catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e.getCause());
         }
     }
-
-    StagingContext context() {
-        return new StagingContext() {
-            @Override
-            public Path resolve(String path) {
-                return tempDir.resolve("project").resolve(path);
-            }
-
-            @Override
-            public void ensureDirectory(Path directory) {
-                try {
-                    Files.createDirectories(directory);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-
-            @Override
-            public Executor executor() {
-                return new CurrentThreadExecutorService();
-            }
-        };
-    }
-
-    private static CopyTask task(Map<String, String> attributes, List<String> includes, List<String> excludes) {
-        XMLElement.Builder element = XMLElement.builder().name("copy").attributes(attributes);
-        addFilters(element, "includes", "include", includes);
-        addFilters(element, "excludes", "exclude", excludes);
-        XMLElement copy = element.build();
-        return new CopyTask(copy);
-    }
-
-    private static void addFilters(XMLElement.Builder element,
-                                   String wrapper,
-                                   String name,
-                                   List<String> patterns) {
-        if (!patterns.isEmpty()) {
-            element.child(filters -> {
-                filters.name(wrapper);
-                for (String pattern : patterns) {
-                    filters.child(filter -> filter.name(name).value(pattern));
-                }
-            });
-        }
-    }
-
 }

@@ -40,14 +40,14 @@ final class StagingFactory implements XMLElement.Visitor {
      * @return tasks
      */
     static StagingTasks createTasks(XMLElement config) {
-        StagingFactory factory = new StagingFactory();
+        var factory = new StagingFactory();
         config.visit(factory);
         for (StagingTask task : factory.frames.getFirst()) {
             if (task instanceof StagingTasks tasks) {
                 return tasks;
             }
         }
-        XMLElement element = XMLElement.builder().name("tasks").build();
+        var element = XMLElement.builder().name("tasks").build();
         return new StagingTasks(element, factory.frames.getFirst());
     }
 

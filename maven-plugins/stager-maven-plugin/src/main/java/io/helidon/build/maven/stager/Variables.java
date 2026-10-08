@@ -34,18 +34,18 @@ final class Variables extends LinkedHashMap<String, List<Map<String, String>>> {
 
     Variables(XMLElement element) {
         join = element.attributeBoolean("join", false);
-        for (XMLElement variableElt : element.children()) {
+        for (var variableElt : element.children()) {
             if ("variable".equals(variableElt.name())) {
-                String name = requireValid(variableElt.attribute("name", null), "name is required");
-                List<Map<String, String>> values = new ArrayList<>();
-                for (XMLElement valueElt : variableElt.children()) {
+                var name = requireValid(variableElt.attribute("name", null), "name is required");
+                var values = new ArrayList<Map<String, String>>();
+                for (var valueElt : variableElt.children()) {
                     if ("value".equals(valueElt.name())) {
-                        Map<String, String> value = new HashMap<>();
-                        String text = valueElt.value();
+                        var value = new HashMap<String, String>();
+                        var text = valueElt.value();
                         if (!text.isBlank()) {
                             value.put(name, text);
                         } else {
-                            Map<String, String> attributes = valueElt.attributes();
+                            var attributes = valueElt.attributes();
                             if (!attributes.isEmpty()) {
                                 value.putAll(attributes);
                             }

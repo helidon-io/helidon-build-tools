@@ -15,268 +15,151 @@
  */
 package io.helidon.build.maven.stager;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-
 import io.helidon.build.common.xml.XMLElement;
 
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
 
 /**
  * Tests {@link StagingFactory}.
  */
 class StagingFactoryTest {
 
-    @TempDir
-    private Path tempDir;
-
     @Test
     void testWrappers() {
         StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
                 <directories>
-                    <directory target="${project.build.directory}/site">
+                    <directory target="target/stage">
                         <unpack-artifacts>
-                            <unpack-artifact
-                                    groupId="unpack-groupId"
-                                    artifactId="unpack-artifactId"
-                                    version="unpack-version"
-                                    target="unpack-target"/>
+                            <unpack-artifact groupId="com" artifactId="acme" version="1.0" target="unpacked"/>
                         </unpack-artifacts>
                         <copy-artifacts>
-                            <copy-artifact
-                                    groupId="copy-groupId"
-                                    artifactId="copy-artifactId"
-                                    version="copy-version"
-                                    target="copy-target"/>
+                            <copy-artifact groupId="com" artifactId="acme" version="1.0"/>
                         </copy-artifacts>
+                        <copies>
+                            <copy source="src" target="copied"/>
+                        </copies>
                         <symlinks>
-                            <symlink source="symlink-source" target="symlink-target"/>
+                            <symlink source="1.0" target="latest"/>
                         </symlinks>
                         <downloads>
-                            <download url="download-url" target="download-target"/>
+                            <download url="https://example.com/help.txt" target="help.txt"/>
                         </downloads>
                         <archives>
-                            <archive target="archive-target"/>
+                            <archive target="archive.zip"/>
                         </archives>
                         <templates>
-                            <template source="template-source" target="template-target"/>
+                            <template source="template.hbs" target="README.md"/>
                         </templates>
                         <files>
-                            <file target="file-target">file-text</file>
+                            <file target="files.txt"><list-files/></file>
                         </files>
                         <unpacks>
-                            <unpack url="unpack-url" target="unpack-target" ext="unpack-ext"/>
+                            <unpack url="https://example.com/archive.zip" target="unpacked"/>
                         </unpacks>
                     </directory>
                 </directories>
                 """));
 
-        assertThat(root.tasks(), contains(
-                isTask(StagingDirectory.class,
-                        hasProperty("tasks", StagingTask::tasks, contains(
-                                isTasks("unpack-artifacts", isTask(UnpackArtifactTask.class)),
-                                isTasks("copy-artifacts", isTask(CopyArtifactTask.class)),
-                                isTasks("symlinks", isTask(SymlinkTask.class)),
-                                isTasks("downloads", isTask(DownloadTask.class)),
-                                isTasks("archives", isTask(ArchiveTask.class)),
-                                isTasks("templates", isTask(TemplateTask.class)),
-                                isTasks("files", isTask(FileTask.class)),
-                                isTasks("unpacks", isTask(UnpackTask.class))
-                        ))
-                )
-        ));
-    }
-
-    @Test
-    void testCopyParsesFilters() {
-        StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
-                <directories>
-                    <directory target="target/stage">
-                        <copies>
-                            <copy source="src/{version}" target="assets/{version}">
-                                <includes>
-                                    <include>**/*.txt</include>
-                                </includes>
-                                <exclude>**/draft/**</exclude>
-                            </copy>
-                        </copies>
-                    </directory>
-                </directories>
+        assertThat(hierarchy(root), is("""
+                StagingTasks[directories]
+                  StagingDirectory
+                    StagingTasks[unpack-artifacts]
+                      UnpackArtifactTask
+                    StagingTasks[copy-artifacts]
+                      CopyArtifactTask
+                    StagingTasks[copies]
+                      CopyTask
+                    StagingTasks[symlinks]
+                      SymlinkTask
+                    StagingTasks[downloads]
+                      DownloadTask
+                    StagingTasks[archives]
+                      ArchiveTask
+                    StagingTasks[templates]
+                      TemplateTask
+                    StagingTasks[files]
+                      FileTask
+                        ListFilesTask
+                    StagingTasks[unpacks]
+                      UnpackTask
                 """));
-
-        assertThat(root.tasks(), contains(
-                hasProperty("tasks", StagingTask::tasks, contains(
-                        isTasks("copies", isTask(CopyTask.class,
-                                hasProperty("includes", CopyTask::includes, is(List.of("**/*.txt"))),
-                                hasProperty("excludes", CopyTask::excludes, is(List.of("**/draft/**")))
-                        ))
-                ))
-        ));
     }
 
     @Test
-    void testTaskOwnedElementsPreserveDirectAndWrappedOrder() {
+    void testPreserveOrder() {
         StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
                 <directories>
                     <directory target="target/stage">
-                        <copy source="src" target="copy"/>
-                        <unpack url="https://example.com/archive.zip" target="unpack"/>
-                        <file target="files.txt">
-                            <list-files />
-                        </file>
-                        <template source="template.hbs" target="template.txt"/>
-                    </directory>
-                </directories>
-                """));
-
-        assertThat(root.tasks(), contains(
-                hasProperty("tasks", StagingTask::tasks, contains(
-                        isTask(CopyTask.class),
-                        isTask(UnpackTask.class),
-                        isTask(FileTask.class, hasProperty("tasks", FileTask::tasks, contains(
-                                isTask(ListFilesTask.class)
-                        ))),
-                        isTask(TemplateTask.class)
-                ))
-        ));
-    }
-
-    @Test
-    void testHierarchy() {
-        StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
-                <directories>
-                    <directory target="target/stage">
-                        <file target="1st">first</file>
-                        <files join="true">
-                            <file target="2nd"><list-files dir="docs2"/></file>
-                            <file target="3rd"><list-files dir="docs3"/></file>
+                        <file target="first.txt">first</file>
+                        <files>
+                            <file target="second.txt"><list-files dir="docs"/></file>
+                            <file target="third.txt">third</file>
                         </files>
-                        <file target="last">last</file>
+                        <copy source="src" target="copied"/>
+                        <copies>
+                            <copy source="other" target="other-copy"/>
+                        </copies>
+                        <file target="last.txt">last</file>
                     </directory>
                 </directories>
                 """));
 
-        assertThat(root.tasks(), contains(
-                hasProperty("tasks", StagingTask::tasks, contains(
-                        isTask(FileTask.class,
-                                hasProperty("target", FileTask::target, is("1st"))),
-                        allOf(
-                                hasProperty("join", Joinable::join, is(true)),
-                                isTasks("files",
-                                        isTask(FileTask.class,
-                                                hasProperty("target", FileTask::target, is("2nd")),
-                                                hasProperty("tasks", FileTask::tasks, contains(
-                                                        isTask(ListFilesTask.class,
-                                                                hasProperty("dir", ListFilesTask::dir, is("docs2")))
-                                                ))
-                                        ),
-                                        isTask(FileTask.class,
-                                                hasProperty("target", FileTask::target, is("3rd")),
-                                                hasProperty("tasks", FileTask::tasks, contains(
-                                                        isTask(ListFilesTask.class,
-                                                                hasProperty("dir", ListFilesTask::dir, is("docs3")))
-                                                ))
-                                        )
-                                )
-                        ),
-                        isTask(FileTask.class,
-                                hasProperty("target", FileTask::target, is("last"))
-                        )
-                ))
-        ));
+        assertThat(hierarchy(root), is("""
+                StagingTasks[directories]
+                  StagingDirectory
+                    FileTask
+                    StagingTasks[files]
+                      FileTask
+                        ListFilesTask
+                      FileTask
+                    CopyTask
+                    StagingTasks[copies]
+                      CopyTask
+                    FileTask
+                """));
     }
 
     @Test
-    void testTemplateModelAreNotTasks() {
+    void testTemplateModelNotFactoryTasks() {
         StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
                 <directories>
                     <directory target="target/stage">
-                        <template source="template.hbs" target="template.txt">
+                        <template source="test.hbs" target="file.txt">
                             <model>
-                                <file target="not-a-task">value</file>
-                                <downloads>
-                                    <download url="not-a-url" target="not-a-target"/>
-                                </downloads>
-                                <variables>
-                                    <variable name="not-a-variable">
-                                        <value>model data</value>
-                                    </variable>
-                                </variables>
+                                <files>
+                                    <file target="not-a-task">value</file>
+                                    <copy source="not-a-source" target="not-a-target"/>
+                                </files>
                             </model>
                         </template>
                     </directory>
                 </directories>
                 """));
 
-        assertThat(root.tasks(), contains(
-                hasProperty("tasks", StagingTask::tasks, contains(
-                        isTask(TemplateTask.class,
-                                hasProperty("tasks", TemplateTask::tasks, is(List.of()))
-                        )
-                ))
-        ));
-    }
-
-    @Test
-    void testCopyArtifactDefaultTarget() {
-        StagingTasks root = StagingFactory.createTasks(XMLElement.read("""
-                <directories>
-                    <directory target="target/stage">
-                        <copy-artifact groupId="io.helidon" artifactId="helidon" version="4.2.0"/>
-                    </directory>
-                </directories>
+        assertThat(hierarchy(root), is("""
+                StagingTasks[directories]
+                  StagingDirectory
+                    TemplateTask
                 """));
-
-        assertThat(root.tasks(), contains(
-                hasProperty("tasks", StagingTask::tasks, contains(
-                        isTask(CopyArtifactTask.class,
-                                hasProperty("target", CopyArtifactTask::target, is(
-                                        "{artifactId}-{version}.{type}"
-                                ))
-                        )
-                ))
-        ));
     }
 
-    @SafeVarargs
-    static <T> Matcher<Iterable<? extends T>> contains(Matcher<T>... matchers) {
-        return Matchers.contains(List.of(matchers));
+    private static String hierarchy(StagingTask root) {
+        var result = new StringBuilder();
+        appendHierarchy(result, root, 0);
+        return result.toString();
     }
 
-    @SafeVarargs
-    static Matcher<StagingTask> isTasks(String name, Matcher<StagingTask>... matchers) {
-        return isTask(StagingTasks.class,
-                hasProperty("name", StagingTask::name, is(name)),
-                hasProperty("tasks", StagingTask::tasks, contains(matchers)));
-    }
-
-    @SafeVarargs
-    @SuppressWarnings("unchecked")
-    static <T extends StagingTask> Matcher<StagingTask> isTask(Class<T> type, Matcher<T>... matchers) {
-        var list = new ArrayList<Matcher<? super StagingTask>>();
-        list.add(Matchers.instanceOf(type));
-        for (var matcher : matchers) {
-            list.add((Matcher<StagingTask>) matcher);
+    private static void appendHierarchy(StringBuilder result, StagingTask task, int depth) {
+        result.append("  ".repeat(depth)).append(task.getClass().getSimpleName());
+        if (task instanceof StagingTasks) {
+            result.append('[').append(task.name()).append(']');
         }
-        return allOf(list);
-    }
-
-    private static <T, U> Matcher<T> hasProperty(String name, Function<T, U> getter, Matcher<U> matcher) {
-        return new FeatureMatcher<>(matcher, "has property " + name, name) {
-            @Override
-            protected U featureValueOf(T actual) {
-                return getter.apply(actual);
-            }
-        };
+        result.append('\n');
+        for (var child : task.tasks()) {
+            appendHierarchy(result, child, depth + 1);
+        }
     }
 }

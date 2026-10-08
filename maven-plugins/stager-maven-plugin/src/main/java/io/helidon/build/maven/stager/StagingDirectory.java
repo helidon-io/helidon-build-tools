@@ -49,11 +49,14 @@ class StagingDirectory extends StagingTask {
     }
 
     @Override
-    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
-        return CompletableFuture.completedFuture(null);
+    public String toString() {
+        return "StagingDirectory{"
+               + "target='" + target + '\''
+               + '}';
     }
 
-    String target() {
-        return target;
+    @Override
+    protected CompletableFuture<Void> execBody(StagingContext ctx, Path dir, Map<String, String> vars) {
+        return CompletableFuture.completedFuture(null);
     }
 }
