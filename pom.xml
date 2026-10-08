@@ -459,6 +459,17 @@
                             <goal>clean</goal>
                             <goal>install</goal>
                         </goals>
+                        <properties>
+                            <aether.enhancedLocalRepository.split>
+                                ${aether.enhancedLocalRepository.split}
+                            </aether.enhancedLocalRepository.split>
+                            <aether.enhancedLocalRepository.remotePrefix>
+                                ${aether.enhancedLocalRepository.remotePrefix}
+                            </aether.enhancedLocalRepository.remotePrefix>
+                            <aether.enhancedLocalRepository.localPrefix>
+                                ${aether.enhancedLocalRepository.localPrefix}
+                            </aether.enhancedLocalRepository.localPrefix>
+                        </properties>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1054,82 +1065,6 @@
                         </executions>
                     </plugin>
                 </plugins>
-            </build>
-        </profile>
-        <!-- Forward optional repository layout settings to forked Maven builds. -->
-        <profile>
-            <id>invoker-split-repository</id>
-            <activation>
-                <property>
-                    <name>aether.enhancedLocalRepository.split</name>
-                </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-invoker-plugin</artifactId>
-                            <configuration>
-                                <properties>
-                                    <aether.enhancedLocalRepository.split>
-                                        ${aether.enhancedLocalRepository.split}
-                                    </aether.enhancedLocalRepository.split>
-                                </properties>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>invoker-local-repository-prefix</id>
-            <activation>
-                <property>
-                    <name>aether.enhancedLocalRepository.localPrefix</name>
-                </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-invoker-plugin</artifactId>
-                            <configuration>
-                                <properties>
-                                    <aether.enhancedLocalRepository.localPrefix>
-                                        ${aether.enhancedLocalRepository.localPrefix}
-                                    </aether.enhancedLocalRepository.localPrefix>
-                                </properties>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>invoker-remote-repository-prefix</id>
-            <activation>
-                <property>
-                    <name>aether.enhancedLocalRepository.remotePrefix</name>
-                </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-invoker-plugin</artifactId>
-                            <configuration>
-                                <properties>
-                                    <aether.enhancedLocalRepository.remotePrefix>
-                                        ${aether.enhancedLocalRepository.remotePrefix}
-                                    </aether.enhancedLocalRepository.remotePrefix>
-                                </properties>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
             </build>
         </profile>
         <profile>
