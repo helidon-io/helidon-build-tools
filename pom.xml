@@ -137,7 +137,7 @@
         <version.lib.invoker>3.3.0</version.lib.invoker>
         <version.lib.jackson>2.11.0</version.lib.jackson>
         <version.lib.jandex>3.3.0</version.lib.jandex>
-        <version.lib.jansi>1.18</version.lib.jansi>
+        <version.lib.jansi>4.4.6</version.lib.jansi>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.3</version.lib.jaxb-impl>
@@ -796,7 +796,7 @@
                 <version>${version.lib.jandex}</version>
             </dependency>
             <dependency>
-                <groupId>org.fusesource.jansi</groupId>
+                <groupId>org.jline</groupId>
                 <artifactId>jansi</artifactId>
                 <version>${version.lib.jansi}</version>
             </dependency>
