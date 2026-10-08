@@ -313,8 +313,7 @@ class ServicesMojoTest {
                                                    "javaDirectory", build.getSourceDirectory(),
                                                    "targetDirectory", build.getOutputDirectory(),
                                                    "baseDir", directory.toString(),
-                                                   "resourceDirectory", directory.resolve("src/main/resources").toString(),
-                                                   "failOnMissingModuleInfo", "true");
+                                                   "resourceDirectory", directory.resolve("src/main/resources").toString());
             parameters.forEach((name, value) -> {
                 Xpp3Dom parameter = new Xpp3Dom(name);
                 parameter.setValue(value);
