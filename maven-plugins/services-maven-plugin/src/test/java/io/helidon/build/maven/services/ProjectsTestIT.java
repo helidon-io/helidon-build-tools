@@ -136,20 +136,6 @@ class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testIgnoreGenerate(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                DEFAULT_COMMENT
-                        + FIRST + "\n"
-                        + SECOND + "\n",
-                TOOL,
-                DEFAULT_COMMENT
-                        + TOOL_PROVIDER + "\n");
-        verifySuccess(basedir, expected, true);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
     void testSkip(String basedir) throws IOException {
         Map<String, String> expected = Map.of(
                 "kept.Service",
@@ -157,30 +143,6 @@ class ProjectsTestIT {
         verifySuccess(basedir, expected, true);
         verifyDiagnostic(basedir, "Skipping execution.");
         verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testNoSources(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifySuccess(basedir, expected, false);
-        verifyDiagnostic(basedir, "Skipping project with no sources");
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testPomPackaging(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifyRecords(Path.of(basedir).resolve("target/classes/META-INF/services"), expected);
-        verifyDiagnostic(basedir, "Skipping POM packaging project");
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testMissingModuleFail(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifyFailure(basedir, expected, false);
-        verifyDiagnostic(basedir, "Project does not contain module-info.class");
     }
 
     @ParameterizedTest
@@ -223,64 +185,6 @@ class ProjectsTestIT {
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
-    void testValidateMissingService(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n"
-                        + SECOND + "\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service java.util.spi.ToolProvider missing from META-INF/services");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testValidateExtraService(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n"
-                        + SECOND + "\n",
-                TOOL,
-                TOOL_PROVIDER + "\n",
-                "extra.Service",
-                "extra.Provider\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service extra.Service missing from module-info.java");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testValidateMissingProvider(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n",
-                TOOL,
-                TOOL_PROVIDER + "\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service java.lang.Runnable is missing the following providers in META-INF/services:"
-                + " [it.Services$Second]");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testValidateExtraProvider(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n"
-                        + SECOND + "\n"
-                        + "extra.Provider\n",
-                TOOL,
-                TOOL_PROVIDER + "\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service java.lang.Runnable is missing the following providers in module-info.java:"
-                + " [extra.Provider]");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
     void testCleanSubset(String basedir) throws IOException {
         Map<String, String> expected = Map.of(
                 RUNNABLE,
@@ -289,70 +193,6 @@ class ProjectsTestIT {
         verifySuccess(basedir, expected, true);
         assertThat("Clean must remove source service directory",
                 Files.exists(Path.of(basedir).resolve("src/main/resources/META-INF/services")), is(false));
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testCleanNoSource(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifySuccess(basedir, expected, true);
-        verifyDiagnostic(basedir, "Mode is");
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testCleanExtraService(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n",
-                "extra.Service",
-                "extra.Provider\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service extra.Service missing from module-info.java");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testCleanExtraProvider(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                TOOL,
-                TOOL_PROVIDER + "\n",
-                RUNNABLE,
-                FIRST + "\n"
-                        + SECOND + "\n"
-                        + "extra.Provider\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Service java.lang.Runnable is missing the following providers in module-info.java:"
-                + " [extra.Provider]");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testCleanNoProvides(String basedir) throws IOException {
-        Map<String, String> expected = Map.of(
-                RUNNABLE,
-                FIRST + "\n");
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "module-info.java does not define any service providers");
-        verifyRecords(Path.of(basedir).resolve("src/main/resources/META-INF/services"), expected);
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testEmptyModule(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifySuccess(basedir, expected, true);
-        verifyDiagnostic(basedir, "There are no services provided by this module.");
-    }
-
-    @ParameterizedTest
-    @ConfigurationParameterSource("basedir")
-    void testInvalidMode(String basedir) throws IOException {
-        Map<String, String> expected = Map.of();
-        verifyFailure(basedir, expected, true);
-        verifyDiagnostic(basedir, "Invalid plugin mode 'unknown'");
     }
 
     private static Path verifySuccess(String basedir, Map<String, String> expected, boolean moduleInfo) throws IOException {

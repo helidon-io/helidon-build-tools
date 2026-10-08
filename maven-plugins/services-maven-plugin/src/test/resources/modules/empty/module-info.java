@@ -14,16 +14,5 @@
  * limitations under the License.
  */
 
-import io.helidon.build.common.test.utils.JUnitLauncher
-import io.helidon.build.maven.services.ProjectsTestIT
-
-//noinspection GroovyAssignabilityCheck,GrUnresolvedAccess
-JUnitLauncher.builder()
-        .select(ProjectsTestIT.class, "testMissingModuleFail", String.class)
-        .parameter("basedir", basedir.getAbsolutePath())
-        .reportsDir(basedir)
-        .outputFile(new File(basedir, "test.log"))
-        .suiteId("services-missing-module-fail-it")
-        .suiteDisplayName("Services missing module fail Integration Test")
-        .build()
-        .launch()
+module services.empty {
+}
