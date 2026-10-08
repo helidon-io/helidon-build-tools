@@ -26,7 +26,7 @@ module helidon.linker {
     requires jdk.jlink;
     requires jdk.jdeps;
     requires jandex;
-    requires org.fusesource.jansi;
+    requires org.jline.jansi;
     requires org.objectweb.asm;
     requires io.helidon.build.common;
     requires io.helidon.build.common.ansi;

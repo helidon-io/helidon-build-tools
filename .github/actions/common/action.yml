@@ -166,6 +166,7 @@ runs:
           **/target/surefire-reports/*.txt
           **/target/failsafe-reports/*.txt
           **/target/it/**/*.log
+          **/target/*-test/**
     - name: Archive artifacts
       if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}
       uses: actions/upload-artifact@v4

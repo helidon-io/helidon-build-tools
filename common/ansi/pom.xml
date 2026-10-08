@@ -38,7 +38,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.fusesource.jansi</groupId>
+            <groupId>org.jline</groupId>
             <artifactId>jansi</artifactId>
         </dependency>
         <dependency>

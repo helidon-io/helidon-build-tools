@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -95,7 +96,7 @@ class FunctionalUtils {
     }
 
     static void waitForApplication(int port, Supplier<String> output) throws Exception {
-        long timeout = 60 * 1000;
+        long timeout = TimeUnit.MINUTES.toMillis(5);
         long now = System.currentTimeMillis();
         URL url = new URL("http://localhost:" + port + "/greet");
 

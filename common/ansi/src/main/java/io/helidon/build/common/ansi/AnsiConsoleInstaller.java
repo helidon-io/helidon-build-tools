@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 
 import io.helidon.build.common.logging.LogLevel;
 
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.AnsiConsole;
+import org.jline.jansi.Ansi;
+import org.jline.jansi.AnsiConsole;
 
 /**
  * Installer for {@link System#out} and {@link System#err} streams that support {@link Ansi} escapes, if possible.
@@ -58,8 +58,8 @@ public class AnsiConsoleInstaller {
 
     // Note: Class instances are not used here since this class is used within a maven plugin
     //       that might have a different version of Jansi
-    private static final String JANSI_PACKAGE_PREFIX = "org.fusesource.jansi";
-    private static final String JANSI_STRIP_STREAM_CLASS_NAME = "org.fusesource.jansi.AnsiPrintStream";
+    private static final String JANSI_PACKAGE_PREFIX = "org.jline.jansi";
+    private static final String JANSI_STRIP_STREAM_CLASS_NAME = "org.jline.jansi.AnsiPrintStream";
     private static volatile boolean disabled;
 
     private AnsiConsoleInstaller() {
@@ -165,6 +165,13 @@ public class AnsiConsoleInstaller {
                 if (arch != null && arch.endsWith("64") && "Substrate VM".equals(vm)) {
                     System.setProperty("sun.arch.data.model", "64");
                 }
+                if (Boolean.getBoolean(JANSI_FORCE_PROPERTY)) {
+                    System.setProperty(AnsiConsole.JANSI_MODE, AnsiConsole.JANSI_MODE_FORCE);
+                } else if (Boolean.getBoolean(JANSI_STRIP_PROPERTY)) {
+                    System.setProperty(AnsiConsole.JANSI_MODE, AnsiConsole.JANSI_MODE_STRIP);
+                } else if (Boolean.getBoolean(JANSI_PASS_THROUGH_PROPERTY)) {
+                    System.setProperty(AnsiConsole.JANSI_MODE, AnsiConsole.JANSI_MODE_FORCE);
+                }
                 AnsiConsole.systemInstall();
                 consoleType = installedConsoleType(desiredType);
                 enabled = consoleType == ConsoleType.ANSI || consoleType == ConsoleType.DEFAULT;
@@ -180,7 +187,7 @@ public class AnsiConsoleInstaller {
                 return ConsoleType.STRIP_ANSI;
             } else if (Boolean.getBoolean(JANSI_PASS_THROUGH_PROPERTY)) {
                 log("Jansi pass through streams requested: %s=true", JANSI_PASS_THROUGH_PROPERTY);
-                return ConsoleType.STRIP_ANSI;
+                return ConsoleType.ANSI;
             } else if (System.console() != null) {
                 log("No Jansi request, but Console is available");
                 return ConsoleType.ANSI;
