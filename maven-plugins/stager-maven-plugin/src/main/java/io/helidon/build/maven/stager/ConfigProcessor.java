@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.SubstitutionVariables;
@@ -34,11 +33,6 @@ import io.helidon.build.common.xml.XMLElement;
  * Stager configuration preprocessor.
  */
 final class ConfigProcessor {
-
-    private static final Pattern TEMPLATE_PATH = Pattern.compile(
-            "^/directories/directory/"
-            + "(?:(?:directories/)?directory/|(?:archives/)?archive/)*"
-            + "(?:templates/)?template$");
 
     private final XMLElement root;
     private final Path baseDir;
@@ -85,7 +79,7 @@ final class ConfigProcessor {
 
         // inject properties in template models
         if (!properties.isEmpty()) {
-            for (var template : directories.traverse(TEMPLATE_PATH)) {
+            for (var template : directories.traverse(ConfigProcessor::isTaskTemplate)) {
                 var model = template.child("model").orElse(null);
                 if (model == null) {
                     model = XMLElement.builder().name("model").parent(template);
@@ -124,6 +118,43 @@ final class ConfigProcessor {
             }
         }
         return properties;
+    }
+
+    private static boolean isTaskTemplate(XMLElement element) {
+        if (!"template".equals(element.name())) {
+            return false;
+        }
+        var parent = element.parent();
+        if (parent != null && "templates".equals(parent.name())) {
+            parent = parent.parent();
+        }
+        while (parent != null) {
+            var taskName = parent.name();
+            if (!"directory".equals(taskName) && !"archive".equals(taskName)) {
+                return false;
+            }
+            var container = parent.parent();
+            if (container == null) {
+                return false;
+            }
+            if ("directories".equals(container.name())) {
+                if (!"directory".equals(taskName)) {
+                    return false;
+                }
+                parent = container.parent();
+                if (parent == null) {
+                    return true;
+                }
+            } else if ("archives".equals(container.name())) {
+                if (!"archive".equals(taskName)) {
+                    return false;
+                }
+                parent = container.parent();
+            } else {
+                parent = container;
+            }
+        }
+        return false;
     }
 
     private static void validate(XMLElement root) {
