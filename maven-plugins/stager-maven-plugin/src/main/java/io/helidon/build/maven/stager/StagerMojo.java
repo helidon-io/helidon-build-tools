@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -31,7 +30,6 @@ import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.maven.stager.ExecutorConfig.ExecutorKind;
 
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.PluginExecution;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -134,12 +132,6 @@ public class StagerMojo extends AbstractMojo {
     private PlexusConfiguration properties;
 
     /**
-     * Stager variables for POM-root configuration.
-     */
-    @Parameter
-    private PlexusConfiguration variables;
-
-    /**
      * Stager include for POM-root configuration.
      */
     @Parameter
@@ -190,14 +182,14 @@ public class StagerMojo extends AbstractMojo {
             return;
         }
 
-        XMLElement config = effectiveConfig();
+        var config = effectiveConfig();
         if (config.children("directory").isEmpty()) {
             return;
         }
 
-        ExecutorService executorService = executor();
-        Path outputDir = outputDir();
-        StagingContext context = new StagingContextImpl(
+        var executorService = executor();
+        var outputDir = outputDir();
+        var context = new StagingContextImpl(
                 baseDir().toFile(),
                 outputDir.toFile(),
                 getLog(),
@@ -212,7 +204,7 @@ public class StagerMojo extends AbstractMojo {
         setProxyFromSettings();
 
         try {
-            StagingTasks tasks = StagingFactory.create(config);
+            StagingTasks tasks = StagingFactory.createTasks(config);
             tasks.execute(context, outputDir, Map.of())
                     .toCompletableFuture()
                     .get();
@@ -225,15 +217,15 @@ public class StagerMojo extends AbstractMojo {
 
     ExecutorService executor() {
         if (executor == null) {
-            Properties userProperties = session.getUserProperties();
-            Map<String, String> parameters = new HashMap<>();
-            for (String s : userProperties.stringPropertyNames()) {
-                if (s.startsWith("stager.executor.")) {
-                    parameters.put(s.substring("stager.executor.".length()), userProperties.getProperty(s));
+            var userProperties = session.getUserProperties();
+            var parameters = new HashMap<String, String>();
+            for (var str : userProperties.stringPropertyNames()) {
+                if (str.startsWith("stager.executor.")) {
+                    parameters.put(str.substring("stager.executor.".length()), userProperties.getProperty(str));
                 }
             }
-            ExecutorKind kind = ExecutorKind.valueOf(parameters.getOrDefault("kind", "DEFAULT"));
-            ExecutorConfig config = new ExecutorConfig(kind, parameters);
+            var kind = ExecutorKind.valueOf(parameters.getOrDefault("kind", "DEFAULT"));
+            var config = new ExecutorConfig(kind, parameters);
             return config.select();
         }
         return executor.select();
@@ -241,16 +233,16 @@ public class StagerMojo extends AbstractMojo {
 
     private XMLElement effectiveConfig() throws MojoExecutionException {
         if (configFile != null) {
-            Path configPath = configFile.toPath().toAbsolutePath().normalize();
-            XMLElement root = XMLElement.read(configPath, configFile.toString(), true);
+            var configPath = configFile.toPath().toAbsolutePath().normalize();
+            var root = XMLElement.read(configPath, configFile.toString(), true);
             return ConfigProcessor.process(root, configPath.getParent(), this::resolveProperty);
         }
-        XMLElement root = Xpp3DomAdapter.create(mojoConfiguration());
+        var root = Xpp3DomAdapter.create(mojoConfiguration());
         return ConfigProcessor.process(root, baseDir(), this::resolveProperty);
     }
 
     private Xpp3Dom mojoConfiguration() throws MojoExecutionException {
-        for (PluginExecution execution : mojoExecution.getPlugin().getExecutions()) {
+        for (var execution : mojoExecution.getPlugin().getExecutions()) {
             if (execution.getId().equals(mojoExecution.getExecutionId())) {
                 if (execution.getConfiguration() instanceof Xpp3Dom mojoConfig) {
                     return mojoConfig;
@@ -272,7 +264,7 @@ public class StagerMojo extends AbstractMojo {
 
     private Path outputDir() {
         if (outputDirectory != null) {
-            Path path = outputDirectory.toPath();
+            var path = outputDirectory.toPath();
             if (!path.toString().contains("${")) {
                 return path;
             }
@@ -285,8 +277,8 @@ public class StagerMojo extends AbstractMojo {
             return null;
         }
 
-        String expression = "${" + name + "}";
-        Object value = evaluateExpression(expression);
+        var expression = "${" + name + "}";
+        var value = evaluateExpression(expression);
         if (value instanceof String result && !expression.equals(result)) {
             return result;
         }
@@ -330,7 +322,7 @@ public class StagerMojo extends AbstractMojo {
     }
 
     private void setProxyFromSettings() {
-        Properties sysProps = System.getProperties();
+        var sysProps = System.getProperties();
         boolean httpProxy = false;
         boolean httpsProxy = false;
         for (Proxy proxy : settings.getProxies()) {
@@ -348,7 +340,7 @@ public class StagerMojo extends AbstractMojo {
                     continue;
                 }
             }
-            String hostProp = protocol + PROXY_HOST_PROP_SUFFIX;
+            var hostProp = protocol + PROXY_HOST_PROP_SUFFIX;
             if (!sysProps.containsKey(hostProp)) {
                 sysProps.setProperty(hostProp, proxy.getHost());
                 sysProps.setProperty(protocol + PROXY_PORT_PROP_SUFFIX, String.valueOf(proxy.getPort()));

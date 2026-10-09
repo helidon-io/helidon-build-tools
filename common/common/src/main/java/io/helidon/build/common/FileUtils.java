@@ -41,6 +41,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +94,8 @@ public final class FileUtils {
     private static final String JAVA_HOME_VAR = "JAVA_HOME";
     private static final String PATH_VAR = "PATH";
     private static final String BIN_DIR_NAME = "bin";
+    private static final List<String> INCLUDES_ALL = List.of("**/*");
+    private static final List<String> EXCLUDES_NONE = List.of();
 
     /**
      * Returns a directory path from the given system property name, creating it if required.
@@ -847,8 +851,7 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
-        return zip(zip, directory, path -> {
-        });
+        return zip(zip, directory, path -> {});
     }
 
     /**
@@ -860,11 +863,38 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory, Consumer<Path> fileConsumer) {
+        return zip(zip, directory, fileConsumer, INCLUDES_ALL, EXCLUDES_NONE);
+    }
+
+    /**
+     * Zip a directory.
+     *
+     * @param zip          target file
+     * @param directory    source directory
+     * @param fileConsumer zipped file consumer
+     * @param includes     include patterns
+     * @param excludes     exclude patterns
+     * @return zip file
+     */
+    public static Path zip(Path zip,
+                           Path directory,
+                           Consumer<Path> fileConsumer,
+                           Collection<String> includes,
+                           Collection<String> excludes) {
+
         ensureDirectory(zip.getParent());
         try (FileSystem fs = newZipFileSystem(zip)) {
             try (Stream<Path> entries = Files.walk(directory)) {
                 entries.sorted(Comparator.reverseOrder())
-                        .filter(p -> Files.isRegularFile(p) && !p.equals(zip))
+                        .filter(p -> {
+                            if (Files.isRegularFile(p) && !p.equals(zip)) {
+                                if (includes == INCLUDES_ALL && excludes == EXCLUDES_NONE) {
+                                    return true;
+                                }
+                                return new SourcePath(directory, p).matches(includes, excludes);
+                            }
+                            return false;
+                        })
                         .map(p -> {
                             try {
                                 Path target = fs.getPath(directory.relativize(p).toString());
@@ -904,19 +934,48 @@ public final class FileUtils {
      * @return extracted entries
      */
     public static List<Path> unzip(Path zip, Path directory) {
+        return unzip(zip, directory, Function.identity(), INCLUDES_ALL, EXCLUDES_NONE);
+    }
+
+    /**
+     * Unzip a zip file using {@link FileSystem}.
+     *
+     * @param zip       source file
+     * @param directory target directory
+     * @param mapper mapper function
+     * @param includes include patterns
+     * @param excludes exclude patterns
+     * @return extracted entries
+     */
+    public static List<Path> unzip(Path zip,
+                                   Path directory,
+                                   Function<String, String> mapper,
+                                   Collection<String> includes,
+                                   Collection<String> excludes) {
+
         try (FileSystem fs = newZipFileSystem(zip)) {
-            ensureDirectory(directory);
-            boolean posix = isPosix(directory);
+            Path target = ensureDirectory(directory.toAbsolutePath().normalize());
+            boolean posix = isPosix(target);
             Path root = fs.getRootDirectories().iterator().next();
             List<Path> entries = new ArrayList<>();
             try (Stream<Path> dirStream = Files.walk(root)) {
                 dirStream.filter(p -> !p.equals(root))
                         .forEach(file -> {
-                            Path filePath = directory.resolve(Path.of(file.toString().substring(1)));
                             try {
+                                String rawPath = file.toString().substring(1);
+                                if (includes != INCLUDES_ALL || excludes != EXCLUDES_NONE) {
+                                    if (!new SourcePath(rawPath).matches(includes, excludes)) {
+                                        return;
+                                    }
+                                }
+                                Path filePath = target.resolve(mapper.apply(rawPath)).toAbsolutePath().normalize();
+                                if (!filePath.startsWith(target)) {
+                                    return;
+                                }
                                 if (Files.isDirectory(file)) {
                                     Files.createDirectories(filePath);
                                 } else {
+                                    Files.createDirectories(filePath.getParent());
                                     Files.copy(file, filePath);
                                 }
                                 if (posix) {

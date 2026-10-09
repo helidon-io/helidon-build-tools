@@ -15,121 +15,47 @@
  */
 package io.helidon.build.maven.stager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-
-import io.helidon.build.common.Maps;
 
 /**
  * Action iterator.
  */
-final class ActionIterator implements Iterator<Map<String, String>>, Joinable {
+final class ActionIterator implements Joinable {
 
-    private final List<Map<String, String>>[] entries;
-    private final int[] indexes;
-    private final int maxIterations;
-    private int iteration;
-    private final Map<String, String> variables;
-    private final boolean join;
+    private final Variables variables;
 
-    @SuppressWarnings("unchecked")
     ActionIterator(Variables variables) {
-        this.variables = new HashMap<>();
-        this.join = variables.join();
-        Map<String, List<Map<String, String>>> iteratorVariables = new HashMap<>();
-        for (Variable variable : variables) {
-            List<Map<String, String>> values = new LinkedList<>();
-            iteratorVariables.put(variable.name(), values);
-            if (variable.value() instanceof VariableValue.EmptyValue) {
-                continue;
-            }
-            Object unwrappedValue = variable.value().unwrap();
-            if (unwrappedValue instanceof String value) {
-                values.add(Map.of(variable.name(), value));
-            } else if (unwrappedValue instanceof List<?> list) {
-                for (Object value : list) {
-                    if (value instanceof String string) {
-                        values.add(Map.of(variable.name(), string));
-                    } else if (value instanceof Map<?, ?> map) {
-                        values.add(stringMap(variable.name(), map));
-                    }
-                }
-            }
-        }
-        int n = 1;
-        for (List<Map<String, String>> values : iteratorVariables.values()) {
-            n *= values.size();
-        }
-        maxIterations = n;
-        iteration = 1;
-        indexes = new int[iteratorVariables.size()];
-        entries = iteratorVariables.values().toArray(List[]::new);
-    }
-
-    ActionIterator(ActionIterator it, Map<String, String> variables) {
-        entries = it.entries;
-        indexes = it.indexes;
-        maxIterations = it.maxIterations;
-        iteration = it.iteration;
-        join = it.join;
-        this.variables = Maps.putAll(it.variables, variables);
+        this.variables = variables;
     }
 
     @Override
     public boolean join() {
-        return join;
-    }
-
-    @Override
-    public boolean hasNext() {
-        return iteration <= maxIterations;
-    }
-
-    @Override
-    public Map<String, String> next() {
-        if (iteration++ > maxIterations) {
-            throw new NoSuchElementException();
-        }
-        Map<String, String> next = new HashMap<>(variables);
-        int p = 1;
-        for (int idx = 0; idx < entries.length; idx++) {
-            int size = entries[idx].size();
-            if (indexes[idx] == size) {
-                indexes[idx] = 0;
-            }
-            p *= size;
-            Map<String, String> values = entries[idx].get(indexes[idx]);
-            if (iteration % (maxIterations / p) == 0) {
-                indexes[idx]++;
-            }
-            next.putAll(values);
-        }
-        return next;
+        return variables.join();
     }
 
     /**
-     * Make a copy of this iterator that includes the given variables.
+     * Combine this iterator's variables with the given variables.
      *
      * @param variables variables
+     * @return variable combinations
      */
-    ActionIterator forVariables(Map<String, String> variables) {
-        return new ActionIterator(this, variables);
-    }
-
-    private static Map<String, String> stringMap(String name, Map<?, ?> map) {
-        Map<String, String> values = new HashMap<>();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof String value)) {
-                throw new IllegalArgumentException(
-                        "Iterator variable '%s' requires string map entries"
-                                .formatted(name));
+    List<Map<String, String>> forVariables(Map<String, String> variables) {
+        List<Map<String, String>> combinations = new ArrayList<>();
+        combinations.add(new HashMap<>(variables));
+        for (List<Map<String, String>> values : this.variables.values()) {
+            List<Map<String, String>> expanded = new ArrayList<>();
+            for (Map<String, String> combination : combinations) {
+                for (Map<String, String> value : values) {
+                    Map<String, String> next = new HashMap<>(combination);
+                    next.putAll(value);
+                    expanded.add(next);
+                }
             }
-            values.put(key, value);
+            combinations = expanded;
         }
-        return values;
+        return combinations;
     }
 }

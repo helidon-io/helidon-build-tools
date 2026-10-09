@@ -18,10 +18,8 @@ package io.helidon.build.maven.stager;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -48,67 +46,125 @@ final class ConfigProcessor {
 
     /**
      * Read and preprocess the stager configuration.
-     * @param root XML root
-     * @param baseDir base directory
+     *
+     * @param root             XML root
+     * @param baseDir          base directory
      * @param propertyResolver property resolver
      * @return effective XMLElement
      */
     static XMLElement process(XMLElement root, Path baseDir, Function<String, String> propertyResolver) {
         validate(root);
-        ConfigProcessor processor = new ConfigProcessor(root, baseDir, propertyResolver);
+        var processor = new ConfigProcessor(root, baseDir, propertyResolver);
         return processor.process();
     }
 
     private XMLElement process() throws IllegalStateException {
         // use a copy
-        XMLElement config = XMLElement.builder(root);
+        var config = XMLElement.builder(root);
 
         // pre-process includes
         config.visit(new IncludeVisitor());
 
-        // interpolate properties
-        interpolate(config);
+        // collect properties
+        var properties = properties(config);
 
         // build the final config
-        XMLElement.Builder directories = XMLElement.builder().name("directories");
-
-        // merge variables
-        List<XMLElement> variables = new ArrayList<>();
-        variables.addAll(config.childrenAt("variables", "variable"));
-        variables.addAll(config.childrenAt("directories", "variables", "variable"));
-        Map<String, XMLElement> mergedVariables = new LinkedHashMap<>();
-        for (XMLElement e : variables) {
-            mergedVariables.put(e.attribute("name"), e);
-        }
-
-        // add variables
-        if (!variables.isEmpty()) {
-            XMLElement.Builder merged = XMLElement.builder().name("variables");
-            for (XMLElement variable : mergedVariables.values()) {
-                variable.parent(merged);
-                merged.children().add(variable);
-            }
-            merged.parent(directories);
-            directories.children().add(merged);
-        }
+        var directories = XMLElement.builder().name("directories");
 
         // inline directories
-        for (XMLElement directory : config.childrenAt("directories", "directory")) {
+        for (var directory : config.childrenAt("directories", "directory")) {
             directory.parent(directories);
             directories.children().add(directory);
         }
+
+        // inject properties in template models
+        if (!properties.isEmpty()) {
+            for (var template : directories.traverse(ConfigProcessor::isTaskTemplate)) {
+                var model = template.child("model").orElse(null);
+                if (model == null) {
+                    model = XMLElement.builder().name("model").parent(template);
+                    template.children().add(0, model);
+                } else if (!model.children("properties").isEmpty()) {
+                    // explicit model properties
+                    continue;
+                }
+
+                var propsModel = XMLElement.builder().name("properties").parent(model);
+                model.children().add(0, propsModel);
+                for (var name : properties.keySet()) {
+                    propsModel.children().add(
+                            XMLElement.builder()
+                                    .name(name)
+                                    .value("${" + name + "}")
+                                    .parent(propsModel));
+                }
+            }
+        }
+
+        // interpolate
+        interpolate(directories, properties);
         return directories;
+    }
+
+    private static Map<String, String> properties(XMLElement config) {
+        var properties = new LinkedHashMap<String, String>();
+        for (var propertiesElt : config.children("properties")) {
+            for (var property : propertiesElt.children()) {
+                if ("property".equals(property.name())) {
+                    properties.put(property.attribute("name"), property.attribute("value"));
+                } else {
+                    properties.put(property.name(), property.value());
+                }
+            }
+        }
+        return properties;
+    }
+
+    private static boolean isTaskTemplate(XMLElement element) {
+        if (!"template".equals(element.name())) {
+            return false;
+        }
+        var parent = element.parent();
+        if (parent != null && "templates".equals(parent.name())) {
+            parent = parent.parent();
+        }
+        while (parent != null) {
+            var taskName = parent.name();
+            if (!"directory".equals(taskName) && !"archive".equals(taskName)) {
+                return false;
+            }
+            var container = parent.parent();
+            if (container == null) {
+                return false;
+            }
+            if ("directories".equals(container.name())) {
+                if (!"directory".equals(taskName)) {
+                    return false;
+                }
+                parent = container.parent();
+                if (parent == null) {
+                    return true;
+                }
+            } else if ("archives".equals(container.name())) {
+                if (!"archive".equals(taskName)) {
+                    return false;
+                }
+                parent = container.parent();
+            } else {
+                parent = container;
+            }
+        }
+        return false;
     }
 
     private static void validate(XMLElement root) {
         int previous = -1;
         String previousName = null;
-        for (XMLElement child : root.children()) {
+        for (var child : root.children()) {
             int order = switch (child.name()) {
                 case "include" -> 0;
                 case "properties" -> 1;
-                case "variables" -> 2;
-                case "directories" -> 3;
+                case "directories" -> 2;
                 default -> -1;
             };
             if (order >= 0) {
@@ -123,21 +179,9 @@ final class ConfigProcessor {
         }
     }
 
-    private void interpolate(XMLElement config) {
-        // collect properties
-        Map<String, String> properties = new LinkedHashMap<>();
-        for (XMLElement propertiesElt : config.children("properties")) {
-            for (XMLElement property : propertiesElt.children()) {
-                if ("property".equals(property.name())) {
-                    properties.put(property.attribute("name"), property.attribute("value"));
-                } else {
-                    properties.put(property.name(), property.value());
-                }
-            }
-        }
-
-        SubstitutionVariables substitution = SubstitutionVariables.of(NotFoundAction.AsIs, k -> {
-            String value = properties.get(k);
+    private void interpolate(XMLElement config, Map<String, String> properties) {
+        var substitution = SubstitutionVariables.of(NotFoundAction.AsIs, k -> {
+            var value = properties.get(k);
             if (value == null) {
                 value = propertyResolver.apply(k);
             }
@@ -145,9 +189,10 @@ final class ConfigProcessor {
         });
         config.visit(new XMLElement.Visitor() {
             @Override
-            public void visitElement(XMLElement elt) {
+            public boolean visitElement(XMLElement elt) {
                 elt.value(substitution.resolve(elt.value()));
                 elt.attributes().replaceAll((key, value) -> substitution.resolve(value));
+                return true;
             }
         });
     }
@@ -157,21 +202,22 @@ final class ConfigProcessor {
         private final Deque<IncludeFrame> includeFrames = new ArrayDeque<>();
 
         @Override
-        public void visitElement(XMLElement elt) {
+        public boolean visitElement(XMLElement elt) {
             // pre-process includes
             if (isInclude(elt)) {
-                String source = resolveSource(elt);
-                Path file = resolveFile(source, elt);
-                XMLElement resolved = XMLElement.read(file, source, false);
+                var source = resolveSource(elt);
+                var file = resolveFile(source, elt);
+                var resolved = XMLElement.read(file, source, false);
                 validate(resolved);
 
                 // add resolved elements as children of the "include" node
                 // include node is "inlined" during post visit
-                for (XMLElement e : resolved.children()) {
+                for (var e : resolved.children()) {
                     e.parent(elt);
                     elt.children().add(e);
                 }
             }
+            return true;
         }
 
         @Override
@@ -180,12 +226,12 @@ final class ConfigProcessor {
                 includeFrames.removeLast();
 
                 // inline children and remove the "include" node
-                List<XMLElement> siblings = elt.parent().children();
+                var siblings = elt.parent().children();
                 int index = siblings.indexOf(elt);
                 siblings.remove(index);
-                List<XMLElement> children = elt.children();
+                var children = elt.children();
                 for (int i = 0; i < children.size(); i++) {
-                    XMLElement e = children.get(i);
+                    var e = children.get(i);
                     e.parent(elt.parent());
                     siblings.add(index + i, e);
                 }
@@ -193,12 +239,12 @@ final class ConfigProcessor {
         }
 
         String resolveSource(XMLElement elt) {
-            String src = elt.attribute("src", null);
+            var src = elt.attribute("src", null);
             if (src == null || src.isBlank()) {
                 throw new IllegalStateException(
                         "Missing required 'src' attribute for include in " + elt.location());
             }
-            Path path = includePath(src);
+            var path = includePath(src);
             if (includeFrames.stream().anyMatch(it -> it.path.equals(path))) {
                 throw new IllegalStateException(
                         "Include cycle detected: %s -> %s"
@@ -209,7 +255,7 @@ final class ConfigProcessor {
         }
 
         Path includePath(String src) {
-            IncludeFrame frame = includeFrames.peekLast();
+            var frame = includeFrames.peekLast();
             Path path = null;
             if (frame != null) {
                 path = frame.path.getParent();
@@ -222,7 +268,7 @@ final class ConfigProcessor {
 
         Path resolveFile(String source, XMLElement elt) {
             Path includeFile;
-            Path path = Path.of(source);
+            var path = Path.of(source);
             if (path.isAbsolute()) {
                 includeFile = path.normalize();
             } else {
@@ -246,7 +292,7 @@ final class ConfigProcessor {
             if (!"include".equals(elt.name())) {
                 return false;
             }
-            XMLElement parent = elt.parent();
+            var parent = elt.parent();
             if (parent == null) {
                 return false;
             }

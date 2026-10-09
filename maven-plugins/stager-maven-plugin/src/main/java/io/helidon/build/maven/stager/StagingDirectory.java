@@ -21,18 +21,24 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
+
 /**
  * Generate a directory using a set of actions.
  */
 class StagingDirectory extends StagingTask {
 
-    StagingDirectory(List<StagingAction> nested, Map<String, String> attrs) {
-        super("directory", nested, null, attrs);
+    private final String target;
+
+    StagingDirectory(XMLElement element, List<StagingTask> tasks) {
+        super(element, tasks);
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
     }
 
     @Override
     public CompletionStage<Void> execute(StagingContext ctx, Path dir, Map<String, String> vars) {
-        Path targetDir = dir.resolve(target());
+        Path targetDir = dir.resolve(target);
         ctx.logInfo("Staging %s", targetDir);
         try {
             ctx.ensureDirectory(targetDir);
@@ -40,6 +46,13 @@ class StagingDirectory extends StagingTask {
             return CompletableFuture.failedFuture(ex);
         }
         return super.execute(ctx, targetDir, vars);
+    }
+
+    @Override
+    public String toString() {
+        return "StagingDirectory{"
+               + "target='" + target + '\''
+               + '}';
     }
 
     @Override

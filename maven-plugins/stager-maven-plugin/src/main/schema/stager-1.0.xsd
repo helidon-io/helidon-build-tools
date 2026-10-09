@@ -33,14 +33,7 @@
                 <xs:element name="properties" type="p:properties-type" minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>
                         <xs:documentation source="description">
-                            Container for properties available to ${...} interpolation before staging tasks are created.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="variables" type="p:variables-type" minOccurs="0" maxOccurs="unbounded">
-                    <xs:annotation>
-                        <xs:documentation source="description">
-                            Variables shared by all effective directory task definitions.
+                            Container for properties used during preprocessing for ${...} interpolation and template models.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
@@ -58,7 +51,8 @@
     <xs:complexType name="properties-type">
         <xs:annotation>
             <xs:documentation source="description">
-                Properties available to ${...} interpolation before staging tasks are created.
+                Properties used during preprocessing for ${...} interpolation and materialized as the properties field
+                of template models that do not explicitly declare that field.
             </xs:documentation>
         </xs:annotation>
         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -96,13 +90,6 @@
 
     <xs:complexType name="directories-type">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="variables" type="p:variables-type">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        Variables shared by nested directory task definitions.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="directory" type="p:directory-type">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -129,13 +116,6 @@
 
     <xs:group name="nested-actions">
         <xs:choice>
-            <xs:element name="variables" type="p:variables-type">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        Variables shared by nested task definitions.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="directory" type="p:directory-type">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -413,31 +393,12 @@
 
     <xs:complexType name="text-type" mixed="true"/>
 
-    <xs:complexType name="variables-type">
-        <xs:sequence>
-            <xs:element name="variable" type="p:variable-type" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        Variable definition with a name and a value or list of values.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="join" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Executes variable-driven work sequentially when true.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="iterator-variables-type">
         <xs:sequence>
             <xs:element name="variable" type="p:iterator-variable-type" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Iterator variable whose values are substituted using {name} syntax in task definitions.
+                        Iterator variable containing an ordered homogeneous list of text or attributed map values.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -451,89 +412,40 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="variable-type">
-        <xs:choice minOccurs="0">
-            <xs:element name="value" type="p:value-type" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        One value for the variable; value children cannot be mixed with variable references.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="variable" type="p:variable-type" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        Reference to a previously declared list variable whose values are appended to this aggregate.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:choice>
-        <xs:attribute name="name" type="xs:string">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Variable name used by templates or task definitions, or an alias for a referenced variable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="ref" type="xs:string">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Reference to an enclosing or earlier sibling variable; ref takes precedence over other content.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="xs:string">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Inline variable value used when ref and nested children are absent.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="iterator-variable-type">
         <xs:sequence>
             <xs:element name="value" type="p:value-type" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        One value for the iterator variable.
+                        One text or attributed map value for the iterator variable. All values in the variable use the
+                        same representation.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string">
+        <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation source="description">
-                    Iterator variable name referenced with {name} syntax, or an alias for a referenced variable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="ref" type="xs:string">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Reference to an enclosing or earlier sibling variable; ref takes precedence over other content.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="value" type="xs:string">
-            <xs:annotation>
-                <xs:documentation source="description">
-                    Inline iterator variable value used instead of nested value elements.
+                    Iterator variable name substituted with {name} syntax.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="value-type" mixed="true">
-        <xs:sequence>
-            <xs:element name="variable" type="p:variable-type" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation source="description">
-                        Nested variable used to create a map value.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
+        <xs:annotation>
+            <xs:documentation source="description">
+                A nonblank text value or a nonempty flat string map represented by local attributes. Text and
+                attributes cannot be combined, and child elements are not supported.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:anyAttribute namespace="##local" processContents="skip">
+            <xs:annotation>
+                <xs:documentation source="description">
+                    Map entry whose local attribute name is the key and whose attribute value is the string value.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:anyAttribute>
     </xs:complexType>
 
     <xs:complexType name="iterators-type">
@@ -778,7 +690,10 @@
             <xs:element name="model" type="p:model-type" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Free-form data model available to the Mustache template.
+                        Free-form data available to the Mustache template. During preprocessing, effective stager
+                        properties are injected before interpolation unless the model explicitly declares a properties
+                        field, which is a complete local override. The model container cannot have attributes. Address
+                        attributes on descendant data elements with an @ prefix.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -808,6 +723,16 @@
     </xs:complexType>
 
     <xs:complexType name="model-type" mixed="true">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Ordered free-form XML template data. Exact child names resolve before dotted traversal. Descendant
+                attributes use @ names and are not child iteration entries. Container sections iterate direct children
+                in XML order; named child sections retain their relative order. Iteration exposes name, value, index,
+                first, and last metadata after local XML, with leading underscores resolving metadata collisions. Model
+                lookup does not expose Java fields or methods. The model container cannot have attributes. When absent,
+                the properties field is materialized during preprocessing from effective stager properties.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
         </xs:sequence>

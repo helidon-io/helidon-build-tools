@@ -39,6 +39,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -181,20 +182,47 @@ public interface XMLElement {
      * @return Iterable
      */
     default Iterable<XMLElement> traverse(Predicate<XMLElement> predicate) {
+        return traverse(predicate, ignored -> {});
+    }
+
+    /**
+     * Traverse this element.
+     *
+     * @param predicate predicate
+     * @param postVisit post-visit consumer
+     * @return Iterable
+     */
+    default Iterable<XMLElement> traverse(Predicate<XMLElement> predicate, Consumer<XMLElement> postVisit) {
         XMLElement self = this;
         return () -> {
-            Deque<XMLElement> stack = new ArrayDeque<>();
-            stack.push(self);
+            final class TraversalFrame {
+                private final XMLElement element;
+                private final boolean exiting;
+
+                private TraversalFrame(XMLElement element, boolean exiting) {
+                    this.element = element;
+                    this.exiting = exiting;
+                }
+            }
+
+            Deque<TraversalFrame> stack = new ArrayDeque<>();
+            stack.push(new TraversalFrame(self, false));
             return new Iterator<>() {
                 private XMLElement next;
 
                 @Override
                 public boolean hasNext() {
                     while (next == null && !stack.isEmpty()) {
-                        XMLElement node = stack.pop();
+                        TraversalFrame frame = stack.pop();
+                        XMLElement node = frame.element;
+                        if (frame.exiting) {
+                            postVisit.accept(node);
+                            continue;
+                        }
+                        stack.push(new TraversalFrame(node, true));
                         List<XMLElement> children = node.children();
                         for (int i = children.size() - 1; i >= 0; i--) {
-                            stack.push(children.get(i));
+                            stack.push(new TraversalFrame(children.get(i), false));
                         }
                         if (predicate.test(node)) {
                             next = node;
@@ -213,6 +241,25 @@ public interface XMLElement {
                     return node;
                 }
             };
+        };
+    }
+
+    /**
+     * Traverse this element, selecting elements whose paths match the pattern.
+     * The pattern matches the complete path relative to this element, including
+     * this element's name and a leading slash.
+     *
+     * @param pattern path pattern
+     * @return Iterable
+     */
+    default Iterable<XMLElement> traverse(Pattern pattern) {
+        XMLElement self = this;
+        return () -> {
+            StringBuilder path = new StringBuilder();
+            return self.traverse(element -> {
+                path.append('/').append(element.name());
+                return pattern.matcher(path).matches();
+            }, element -> path.setLength(path.length() - element.name().length() - 1)).iterator();
         };
     }
 
@@ -285,6 +332,9 @@ public interface XMLElement {
 
     /**
      * Traverse this element.
+     * A visitor may skip an element's descendants by returning {@code false}
+     * from {@link Visitor#visitElement(XMLElement)}. The element's
+     * {@link Visitor#postVisitElement(XMLElement)} callback is still invoked.
      *
      * @param visitor visitor
      * @param <T>     visitor type
@@ -301,10 +351,11 @@ public interface XMLElement {
                 parent = elt.parent();
                 stack.pop();
             } else {
-                visitor.visitElement(elt);
-                List<XMLElement> children = elt.children();
-                for (int i = children.size() - 1; i >= 0; i--) {
-                    stack.push(children.get(i));
+                if (visitor.visitElement(elt)) {
+                    List<XMLElement> children = elt.children();
+                    for (int i = children.size() - 1; i >= 0; i--) {
+                        stack.push(children.get(i));
+                    }
                 }
                 if (parent != elt.parent()) {
                     throw new IllegalStateException("Parent mismatch");
@@ -333,6 +384,9 @@ public interface XMLElement {
         try (XMLGenerator writer = new XMLGenerator(buf, pretty)) {
             writer.append(this);
         }
+        if (pretty) {
+            buf.append("\n");
+        }
         return buf.toString();
     }
 
@@ -344,8 +398,11 @@ public interface XMLElement {
          * Visit (entering) an element.
          *
          * @param elt element
+         * @return {@code true} to visit the element's children, {@code false}
+         *         to skip them
          */
-        default void visitElement(XMLElement elt) {
+        default boolean visitElement(XMLElement elt) {
+            return true;
         }
 
         /**
@@ -763,7 +820,7 @@ public interface XMLElement {
         }
 
         @Override
-        public void visitElement(XMLElement elt) {
+        public boolean visitElement(XMLElement elt) {
             builder = XMLElement.builder()
                     .parent(builder)
                     .name(elt.name())
@@ -775,6 +832,7 @@ public interface XMLElement {
             if (builder.parent() != null) {
                 builder.parent().children().add(node);
             }
+            return true;
         }
 
         @Override

@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Create a symlink.
@@ -28,22 +29,28 @@ import io.helidon.build.common.Strings;
 final class SymlinkTask extends StagingTask {
 
     private final String source;
+    private final String target;
 
-    SymlinkTask(ActionIterators iterators, Map<String, String> attrs) {
-        super("symlink", null, iterators, attrs);
-        this.source = Strings.requireValid(attrs.get("source"), "source is required");
+    SymlinkTask(XMLElement element) {
+        super(element);
+        this.source = Strings.requireValid(element.attribute("source", null), "source is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+    }
+
+    @Override
+    public String toString() {
+        return "SymlinkTask{"
+               + "source='" + source + '\''
+               + ", target='" + target + '\''
+               + '}';
     }
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        Path link = dir.resolve(resolveVar(target(), vars));
-        Path linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
+        var link = dir.resolve(resolveVar(target, vars));
+        var linkTarget = link.getParent().relativize(dir.resolve(resolveVar(source, vars)));
         ctx.logInfo("Creating symlink source: %s, target: %s", link, linkTarget);
         ctx.ensureDirectory(link.getParent());
         Files.createSymbolicLink(link, linkTarget);
-    }
-
-    String source() {
-        return source;
     }
 }

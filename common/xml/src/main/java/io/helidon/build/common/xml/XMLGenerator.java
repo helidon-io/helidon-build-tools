@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,10 @@ public class XMLGenerator implements AutoCloseable {
     public void append(XMLElement elt) {
         elt.visit(new XMLElement.Visitor() {
             @Override
-            public void visitElement(XMLElement elt) {
+            public boolean visitElement(XMLElement elt) {
                 startElement(elt.name());
                 elt.attributes().forEach(XMLGenerator.this::attribute);
+                return true;
             }
 
             @Override

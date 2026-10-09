@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -27,16 +26,12 @@ import io.helidon.build.common.Strings;
 import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.common.xml.XMLException;
 
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -70,55 +65,48 @@ class ConfigProcessorTest {
                 </configuration>
                 """, properties);
 
-        assertThat(config.childrenAt("directory"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/4.0.0/${missing}")))
-        ))));
-
-        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(
-                allOf(
-                        hasProperty("name", XMLElement::name, is("file")),
-                        hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "4.0.0/index.txt"))),
-                        hasProperty("value", XMLElement::value, is("Helidon 4.0.0"))
-                ),
-                allOf(
-                        hasProperty("name", XMLElement::name, is("file")),
-                        hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "{iteratorVar}")))
-                )
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage/4.0.0/${missing}">
+                        <files>
+                            <file target="4.0.0/index.txt">Helidon 4.0.0</file>
+                            <file target="{iteratorVar}"/>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
-    void testMavenStylePropertiesInterpolateAttributesAndText() {
+    void testSelfInterpolation() {
         XMLElement config = process("""
                 <configuration>
                     <properties>
-                        <stage.path>target/stage</stage.path>
-                        <major>4</major>
-                        <version>${major}.0.0</version>
-                        <message>Helidon ${version}</message>
+                        <version>4.0.0</version>
                     </properties>
                     <directories>
-                        <directory target="${stage.path}/${version}">
+                        <directory target="target/stage/${version}">
                             <files>
-                                <file target="${version}/index.txt">${message}</file>
+                                <file target="${version}.txt">Helidon ${version}</file>
                             </files>
                         </directory>
                     </directories>
                 </configuration>
                 """, Map.of());
 
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/4.0.0")))
-        )));
-        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(allOf(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "4.0.0/index.txt"))),
-                hasProperty("value", XMLElement::value, is("Helidon 4.0.0"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage/4.0.0">
+                        <files>
+                            <file target="4.0.0.txt">Helidon 4.0.0</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
-    void testMixedPropertyFormsUseEffectiveOrder() {
+    void testPropertiesOrder() {
         XMLElement config = process("""
                 <configuration>
                     <properties>
@@ -137,17 +125,19 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/new")))
-        )));
-        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(allOf(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "4.0.0/info.txt"))),
-                hasProperty("value", XMLElement::value, is("Version 4.0.0"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/new">
+                        <files>
+                            <file target="4.0.0/info.txt">Version 4.0.0</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
-    void testDuplicateMavenStylePropertiesUseLaterDefinition() {
+    void testDuplicateProperties() {
         XMLElement config = process("""
                 <configuration>
                     <properties>
@@ -155,14 +145,317 @@ class ConfigProcessorTest {
                         <stage.path>target/two</stage.path>
                     </properties>
                     <directories>
-                        <directory target="${stage.path}"/>
+                        <directory target="${stage.path}">
+                            <template />
+                        </directory>
+                    </directories>
+                </configuration>
+                """, Map.of("stage.path", "target/external"));
+
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/two">
+                        <template>
+                            <model>
+                                <properties>
+                                    <stage.path>target/two</stage.path>
+                                </properties>
+                            </model>
+                        </template>
+                    </directory>
+                </directories>
+                """));
+    }
+
+    @Test
+    void testInjectedModelProperties() throws Exception {
+        Path main = write("stager.xml", """
+                <stager>
+                    <include src="fragments/defaults.xml"/>
+                    <properties>
+                        <prop1>${prop2}</prop1>
+                        <unresolved>${missing}</unresolved>
+                    </properties>
+                    <directories>
+                        <directory>
+                            <template>
+                                <iterators/>
+                            </template>
+                        </directory>
+                    </directories>
+                </stager>
+                """);
+        write("fragments/defaults.xml", """
+                <stager>
+                    <properties>
+                        <prop2>${prop3}</prop2>
+                    </properties>
+                </stager>
+                """);
+
+        XMLElement config = process(main, Map.of("prop3", "value1"));
+
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory>
+                        <template>
+                            <model>
+                                <properties>
+                                    <prop2>value1</prop2>
+                                    <prop1>value1</prop1>
+                                    <unresolved>${missing}</unresolved>
+                                </properties>
+                            </model>
+                            <iterators/>
+                        </template>
+                    </directory>
+                </directories>
+                """));
+    }
+
+    @Test
+    void testExplicitModelProperties() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <prop1>value1</prop1>
+                    </properties>
+                    <directories>
+                        <directory>
+                            <template>
+                                <model>
+                                    <properties>
+                                        <prop1>not-value1</prop1>
+                                    </properties>
+                                </model>
+                            </template>
+                        </directory>
                     </directories>
                 </configuration>
                 """, Map.of());
 
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/two")))
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory>
+                        <template>
+                            <model>
+                                <properties>
+                                    <prop1>not-value1</prop1>
+                                </properties>
+                            </model>
+                        </template>
+                    </directory>
+                </directories>
+                """));
+    }
+
+    @Test
+    void testInjectedModelPropertiesInAllPaths() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <prop1>value1</prop1>
+                    </properties>
+                    <directories>
+                        <directory>
+                            <template/>
+                            <templates>
+                                <template/>
+                            </templates>
+                            <directory>
+                                <template/>
+                            </directory>
+                            <directories>
+                                <directory>
+                                    <templates>
+                                        <template/>
+                                    </templates>
+                                </directory>
+                            </directories>
+                            <archive>
+                                <template/>
+                            </archive>
+                            <archives>
+                                <archive>
+                                    <templates>
+                                        <template/>
+                                    </templates>
+                                </archive>
+                            </archives>
+                            <directories>
+                                <directory>
+                                    <archives>
+                                        <archive>
+                                            <directory>
+                                                <archives>
+                                                    <archive>
+                                                        <directories>
+                                                            <directory>
+                                                                <templates>
+                                                                    <template/>
+                                                                </templates>
+                                                            </directory>
+                                                        </directories>
+                                                    </archive>
+                                                </archives>
+                                            </directory>
+                                        </archive>
+                                    </archives>
+                                </directory>
+                            </directories>
+                        </directory>
+                        <directory>
+                            <templates>
+                                <template/>
+                            </templates>
+                        </directory>
+                    </directories>
+                </configuration>
+                """, Map.of());
+
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory>
+                        <template>
+                            <model>
+                                <properties>
+                                    <prop1>value1</prop1>
+                                </properties>
+                            </model>
+                        </template>
+                        <templates>
+                            <template>
+                                <model>
+                                    <properties>
+                                        <prop1>value1</prop1>
+                                    </properties>
+                                </model>
+                            </template>
+                        </templates>
+                        <directory>
+                            <template>
+                                <model>
+                                    <properties>
+                                        <prop1>value1</prop1>
+                                    </properties>
+                                </model>
+                            </template>
+                        </directory>
+                        <directories>
+                            <directory>
+                                <templates>
+                                    <template>
+                                        <model>
+                                            <properties>
+                                                <prop1>value1</prop1>
+                                            </properties>
+                                        </model>
+                                    </template>
+                                </templates>
+                            </directory>
+                        </directories>
+                        <archive>
+                            <template>
+                                <model>
+                                    <properties>
+                                        <prop1>value1</prop1>
+                                    </properties>
+                                </model>
+                            </template>
+                        </archive>
+                        <archives>
+                            <archive>
+                                <templates>
+                                    <template>
+                                        <model>
+                                            <properties>
+                                                <prop1>value1</prop1>
+                                            </properties>
+                                        </model>
+                                    </template>
+                                </templates>
+                            </archive>
+                        </archives>
+                        <directories>
+                            <directory>
+                                <archives>
+                                    <archive>
+                                        <directory>
+                                            <archives>
+                                                <archive>
+                                                    <directories>
+                                                        <directory>
+                                                            <templates>
+                                                                <template>
+                                                                    <model>
+                                                                        <properties>
+                                                                            <prop1>value1</prop1>
+                                                                        </properties>
+                                                                    </model>
+                                                                </template>
+                                                            </templates>
+                                                        </directory>
+                                                    </directories>
+                                                </archive>
+                                            </archives>
+                                        </directory>
+                                    </archive>
+                                </archives>
+                            </directory>
+                        </directories>
+                    </directory>
+                    <directory>
+                        <templates>
+                            <template>
+                                <model>
+                                    <properties>
+                                        <prop1>value1</prop1>
+                                    </properties>
+                                </model>
+                            </template>
+                        </templates>
+                    </directory>
+                </directories>
+                """));
+    }
+
+    @Test
+    void testModelTemplateNotProcessed() {
+        XMLElement config = process("""
+                <configuration>
+                    <properties>
+                        <version>4.2.0</version>
+                    </properties>
+                    <directories>
+                        <directory>
+                            <template>
+                                <model>
+                                    <template>
+                                        <value>model data</value>
+                                    </template>
+                                </model>
+                            </template>
+                        </directory>
+                    </directories>
+                </configuration>
+                """, Map.of());
+
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory>
+                        <template>
+                            <model>
+                                <properties>
+                                    <version>4.2.0</version>
+                                </properties>
+                                <template>
+                                    <value>model data</value>
+                                </template>
+                            </model>
+                        </template>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -178,9 +471,11 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of("version", "4.0.0"));
 
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/4.0.0")))
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage/4.0.0"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -213,16 +508,15 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        assertThat(config.childrenAt("directory"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage")))
-        ))));
-
-        assertThat(config.childrenAt("directory", "files", "file"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("file")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "index.txt"))),
-                hasProperty("value", XMLElement::value, is("content"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="index.txt">content</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -244,16 +538,15 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> directories = config.childrenAt("directory");
-        assertThat(directories, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage"/>
+                </directories>
+                """));
     }
 
     @Test
-    void testCallerPropertyAfterIncludeOverridesIncludedProperty() throws Exception {
+    void testCallerPropertyOverride() throws Exception {
         Path main = write("stager.xml", """
                 <stager>
                     <include src="fragments/stager.xml"/>
@@ -277,21 +570,22 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/caller/included"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/caller/main")))
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/caller/included"/>
+                    <directory target="target/caller/main"/>
+                </directories>
+                """));
     }
 
     @Test
-    void testLaterIncludeOverridesEarlierIncludeDefaults() throws Exception {
+    void testLaterIncludePropertyOverride() throws Exception {
         Path main = write("stager.xml", """
                 <stager>
                     <include src="fragments/one.xml"/>
                     <include src="fragments/two.xml"/>
                     <directories>
-                        <directory target="${stage.path}/{channel}/main"/>
+                        <directory target="${stage.path}/main"/>
                     </directories>
                 </stager>
                 """);
@@ -300,38 +594,30 @@ class ConfigProcessorTest {
                     <properties>
                         <property name="stage.path" value="target/one"/>
                     </properties>
-                    <variables>
-                        <variable name="channel" value="one"/>
-                    </variables>
                     <directories>
-                        <directory target="${stage.path}/{channel}/one"/>
+                        <directory target="${stage.path}/one"/>
                     </directories>
                 </stager>
                 """);
         write("fragments/two.xml", """
                 <stager>
                     <properties>
-                        <property name="stage.path" value="target/two"/>
+                        <property name="stage.path" value="target/stage"/>
                     </properties>
-                    <variables>
-                        <variable name="channel" value="two"/>
-                    </variables>
                     <directories>
-                        <directory target="${stage.path}/{channel}/two"/>
+                        <directory target="${stage.path}/two"/>
                     </directories>
                 </stager>
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "channel", "value", "two")))
-        )));
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/two/{channel}/one"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/two/{channel}/two"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/two/{channel}/main")))
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage/one"/>
+                    <directory target="target/stage/two"/>
+                    <directory target="target/stage/main"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -350,12 +636,11 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> directories = config.childrenAt("directory");
-        assertThat(directories, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -366,246 +651,26 @@ class ConfigProcessorTest {
                     <properties>
                         <property name="stage.path" value="target/stage"/>
                     </properties>
-                    <variables>
-                        <variable name="channel" value="stable"/>
-                    </variables>
                     <directories>
-                        <directory target="${stage.path}/{channel}/main"/>
+                        <directory target="${stage.path}/main"/>
                     </directories>
                 </stager>
                 """);
         write("fragments/stager.xml", """
                 <stager>
                     <directories>
-                        <directory target="${stage.path}/{channel}/included"/>
+                        <directory target="${stage.path}/included"/>
                     </directories>
                 </stager>
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> directories = config.childrenAt("directory");
-        assertThat(directories, contains(List.of(
-                allOf(
-                        hasProperty("name", XMLElement::name, is("directory")),
-                        hasProperty("attributes", XMLElement::attributes,
-                                is(Map.of("target", "target/stage/{channel}/included")))
-                ),
-                allOf(
-                        hasProperty("name", XMLElement::name, is("directory")),
-                        hasProperty("attributes", XMLElement::attributes,
-                                is(Map.of("target", "target/stage/{channel}/main")))
-                )
-        )));
-    }
-
-    @Test
-    void testMergeVariables() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/stager.xml"/>
-                    <variables>
-                        <variable name="root" value="caller"/>
-                    </variables>
-                    <directories>
-                        <variables>
-                            <variable name="directories" value="caller"/>
-                        </variables>
-                        <directory target="target/main"/>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/stager.xml", """
-                <stager>
-                    <variables>
-                        <variable name="included-root" value="fallback"/>
-                    </variables>
-                    <directories>
-                        <variables>
-                            <variable name="included-directories" value="fallback"/>
-                        </variables>
-                        <directory target="target/included"/>
-                    </directories>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-
-        assertThat(config.children("variables"), hasSize(1));
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "included-root", "value", "fallback"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "root", "value", "caller"))),
-                hasProperty("attributes", XMLElement::attributes,
-                        is(Map.of("name", "included-directories", "value", "fallback"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "directories", "value", "caller")))
-        )));
-        assertThat(config.childrenAt("directory"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/included"))),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/main")))
-        )));
-    }
-
-    @Test
-    void testOmitEmptyVariableBlocks() {
-        XMLElement config = process("""
-                <configuration>
-                    <variables/>
-                    <directories>
-                        <variables/>
-                        <directory target="target/stage"/>
-                    </directories>
-                </configuration>
-                """, Map.of());
-
-        assertThat(config.children("variables"), hasSize(0));
-        assertThat(config.childrenAt("directory"), hasSize(1));
-    }
-
-    @Test
-    void testCallerVariableWins() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/fallback.xml"/>
-                    <variables>
-                        <variable name="version" value="caller"/>
-                    </variables>
-                    <directories>
-                        <directory target="target/stage">
-                            <template source="template.mustache" target="index.txt">
-                                <variables>
-                                    <variable ref="version"/>
-                                </variables>
-                            </template>
-                        </directory>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/fallback.xml", """
-                <stager>
-                    <variables>
-                        <variable name="version" value="fallback"/>
-                    </variables>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of(
-                        "name", "version",
-                        "value", "caller")))
-        )));
-    }
-
-    @Test
-    void testIncludedFallback() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/fallback.xml"/>
-                    <directories>
-                        <directory target="target/stage">
-                            <template source="template.mustache" target="index.txt">
-                                <variables>
-                                    <variable ref="version"/>
-                                </variables>
-                            </template>
-                        </directory>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/fallback.xml", """
-                <stager>
-                    <variables>
-                        <variable name="version" value="fallback"/>
-                    </variables>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of(
-                        "name", "version",
-                        "value", "fallback")))
-        )));
-    }
-
-    @Test
-    void testIncludedEmptyFallback() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/fallback.xml"/>
-                    <directories>
-                        <directory target="target/stage"/>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/fallback.xml", """
-                <stager>
-                    <variables>
-                        <variable name="version"/>
-                    </variables>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "version")))
-        )));
-    }
-
-    @Test
-    void testValueOverridesEmptyFallback() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/fallback.xml"/>
-                    <variables>
-                        <variable name="version" value="caller"/>
-                    </variables>
-                    <directories>
-                        <directory target="target/stage"/>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/fallback.xml", """
-                <stager>
-                    <variables>
-                        <variable name="version"/>
-                    </variables>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of(
-                        "name", "version",
-                        "value", "caller")))
-        )));
-    }
-
-    @Test
-    void testEmptyOverridesValueFallback() throws Exception {
-        Path main = write("stager.xml", """
-                <stager>
-                    <include src="fragments/fallback.xml"/>
-                    <variables>
-                        <variable name="version"/>
-                    </variables>
-                    <directories>
-                        <directory target="target/stage"/>
-                    </directories>
-                </stager>
-                """);
-        write("fragments/fallback.xml", """
-                <stager>
-                    <variables>
-                        <variable name="version" value="fallback"/>
-                    </variables>
-                </stager>
-                """);
-
-        XMLElement config = process(main, Map.of());
-        assertThat(config.childrenAt("variables", "variable"), contains(List.of(
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("name", "version")))
-        )));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage/included"/>
+                    <directory target="target/stage/main"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -621,19 +686,17 @@ class ConfigProcessorTest {
                     <properties>
                         <property name="stage.path" value="target/stage"/>
                     </properties>
-                    <variables>
-                        <variable name="channel" value="stable"/>
-                    </variables>
                     <directories>
-                        <directory target="${stage.path}/{channel}"/>
+                        <directory target="${stage.path}"/>
                     </directories>
                 </configuration>
                 """, Map.of());
 
-        assertThat(config.childrenAt("directory"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage/{channel}")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -661,12 +724,15 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        List<XMLElement> files = config.childrenAt("directory", "files", "file");
-        assertThat(files, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("file")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "index.txt"))),
-                hasProperty("value", XMLElement::value, is("content"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="index.txt">content</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -705,10 +771,11 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of("fragments.dir", "fragments"));
 
-        assertThat(config.childrenAt("directory"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/literal")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/literal"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -730,12 +797,11 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> directories = config.childrenAt("directory");
-        assertThat(directories, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/stage")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -765,11 +831,13 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        List<XMLElement> includes = config.childrenAt("directory", "include");
-        assertThat(includes, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("src", "task-fragment.xml")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <include src="task-fragment.xml"/>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -797,16 +865,20 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        assertThat(config.childrenAt("directory", "include"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("src", "task-fragment.xml")))
-        ))));
-        assertThat(config.childrenAt("directory", "files", "file", "list-files", "include"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("src", "filter.txt"))),
-                hasProperty("value", XMLElement::value, is("**/*.html"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <include src="task-fragment.xml"/>
+                        <files>
+                            <file target="sitemap.txt">
+                                <list-files dir="docs">
+                                    <include src="filter.txt">**/*.html</include>
+                                </list-files>
+                            </file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -827,11 +899,19 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        List<XMLElement> includes = config.childrenAt("directory", "files", "file", "list-files", "include");
-        assertThat(includes, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("value", XMLElement::value, is("**/*.html"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="sitemap.txt">
+                                <list-files dir="docs">
+                                    <include>**/*.html</include>
+                                </list-files>
+                            </file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -856,12 +936,19 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        List<XMLElement> includes = config.childrenAt("directory", "files", "file", "list-files", "include");
-        assertThat(includes, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("src", "filter.txt"))),
-                hasProperty("value", XMLElement::value, is("**/*.html"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="sitemap.txt">
+                                <list-files dir="docs">
+                                    <include src="filter.txt">**/*.html</include>
+                                </list-files>
+                            </file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -884,11 +971,21 @@ class ConfigProcessorTest {
                 </configuration>
                 """, Map.of());
 
-        List<XMLElement> includes = config.childrenAt("directory", "files", "file", "list-files", "includes", "include");
-        assertThat(includes, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("include")),
-                hasProperty("value", XMLElement::value, is("**/*.html"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="sitemap.txt">
+                                <list-files dir="docs">
+                                    <includes>
+                                        <include>**/*.html</include>
+                                    </includes>
+                                </list-files>
+                            </file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -919,13 +1016,15 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> files = config.childrenAt("directory", "files", "file");
-        assertThat(files, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("file")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "index.txt"))),
-                hasProperty("value", XMLElement::value, is("content"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="index.txt">content</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -956,13 +1055,15 @@ class ConfigProcessorTest {
                 """);
 
         XMLElement config = process(main, Map.of());
-
-        List<XMLElement> files = config.childrenAt("directory", "files", "file");
-        assertThat(files, contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("file")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "index.txt"))),
-                hasProperty("value", XMLElement::value, is("content"))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/stage">
+                        <files>
+                            <file target="index.txt">content</file>
+                        </files>
+                    </directory>
+                </directories>
+                """));
     }
 
     @Test
@@ -981,11 +1082,11 @@ class ConfigProcessorTest {
                 """.formatted(fragment));
 
         XMLElement config = process(main, Map.of());
-
-        assertThat(config.childrenAt("directory"), contains(List.of(allOf(
-                hasProperty("name", XMLElement::name, is("directory")),
-                hasProperty("attributes", XMLElement::attributes, is(Map.of("target", "target/absolute")))
-        ))));
+        assertThat(config, hasToString("""
+                <directories>
+                    <directory target="target/absolute"/>
+                </directories>
+                """));
     }
 
     @Test
@@ -1111,19 +1212,6 @@ class ConfigProcessorTest {
     }
 
     @Test
-    void testVariablesBeforeIncludeFails() {
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> process("""
-                        <configuration>
-                            <variables/>
-                            <include src="fragments/stager.xml"/>
-                        </configuration>
-                        """, Map.of()));
-
-        assertThat(ex.getMessage(), containsString("<include> must appear before <variables>"));
-    }
-
-    @Test
     void testPropertiesAfterDirectoriesFails() {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> process("""
@@ -1146,14 +1234,14 @@ class ConfigProcessorTest {
         write("fragments/wrapper.xml", """
                 <fragment>
                     <directories/>
-                    <variables/>
+                    <properties/>
                 </fragment>
                 """);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> process(main, Map.of()));
 
-        assertThat(ex.getMessage(), containsString("<variables> must appear before <directories>"));
+        assertThat(ex.getMessage(), containsString("<properties> must appear before <directories>"));
     }
 
     @Test
@@ -1166,14 +1254,14 @@ class ConfigProcessorTest {
         write("fragments/stager.xml", """
                 <stager>
                     <directories/>
-                    <variables/>
+                    <properties/>
                 </stager>
                 """);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> process(main, Map.of()));
 
-        assertThat(ex.getMessage(), containsString("<variables> must appear before <directories>"));
+        assertThat(ex.getMessage(), containsString("<properties> must appear before <directories>"));
     }
 
     Path write(String path, String xml) throws IOException {
@@ -1191,14 +1279,5 @@ class ConfigProcessorTest {
     XMLElement process(String str, Map<String, String> properties) {
         XMLElement rawConfig = XMLElement.read(str, "unknown", false);
         return ConfigProcessor.process(rawConfig, tempDir, properties::get);
-    }
-
-    static <T, U> Matcher<T> hasProperty(String name, Function<T, U> extractor, Matcher<U> subMatcher) {
-        return new FeatureMatcher<>(subMatcher, "has property " + name, name) {
-            @Override
-            protected U featureValueOf(T target) {
-                return extractor.apply(target);
-            }
-        };
     }
 }

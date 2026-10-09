@@ -33,46 +33,35 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link CopyArtifactTask}.
+ * Tests {@link SymlinkTask}.
  */
-class CopyArtifactTaskTest {
+class SymlinkTaskTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
-    void testExplicitTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
+    void testCreateRelativeSymlink() throws Exception {
+        var source = tempDir.resolve("releases/1.0/app.txt");
+        Files.createDirectories(source.getParent());
+        Files.writeString(source, "release content");
 
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="com.acme"
-                               artifactId="artifact"
-                               version="{version}"
-                               type="txt"
-                               target="downloads/test-{version}.{type}"/>
-                """)), Map.of("version", "4.2.0"));
+        execute(new SymlinkTask(XMLElement.read("""
+                <symlink source="releases/{version}/app.txt" target="current/app.txt"/>
+                """)), Map.of("version", "1.0"));
 
-        assertThat(Files.readString(tempDir.resolve("downloads/test-4.2.0.txt")), is("artifact content"));
-        assertThat(Files.exists(tempDir.resolve("downloads/test-{version}.txt")), is(false));
+        var link = tempDir.resolve("current/app.txt");
+        assertThat(Files.isSymbolicLink(link), is(true));
+        assertThat(Files.readSymbolicLink(link), is(Path.of("../releases/1.0/app.txt")));
+        assertThat(Files.readString(link), is("release content"));
     }
 
-    @Test
-    void testDefaultTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
-
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="io.helidon" artifactId="helidon" version="{version}" type="txt"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("helidon-4.2.0.txt")), is("artifact content"));
-    }
-
-    void execute(CopyArtifactTask task, Map<String, String> vars) throws Exception {
+    void execute(SymlinkTask task, Map<String, String> vars) throws Exception {
         try {
             task.execute(new StagingContext() {
                 @Override
-                public Path resolve(ArtifactGAV gav) {
-                    return tempDir.resolve("artifact.txt");
+                public Path resolve(String path) {
+                    return tempDir.resolve(path);
                 }
 
                 @Override

@@ -15,13 +15,17 @@
  */
 package io.helidon.build.maven.stager;
 
-/**
- * Include.
- */
-record Include(String value) implements StagingElement {
+import java.util.Map;
 
-    @Override
-    public String elementName() {
-        return "include";
-    }
+/**
+ * A task that produces text.
+ */
+interface TextTask {
+
+    /**
+     * Get the computed text.
+     *
+     * @return text
+     */
+    String text(Map<String, String> vars);
 }

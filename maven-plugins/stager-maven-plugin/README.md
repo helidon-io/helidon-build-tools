@@ -18,7 +18,6 @@ This goal binds to the `package` phase by default.
 |----------------|-------------------------------|---------------|-----------------------------------------------------------|
 | skip           | boolean                       | `false`       | Skip execution of this goal                               |
 | properties     | PlexusConfiguration (raw XML) |               | see [POM configuration](#pom-configuration)               |
-| variables      | PlexusConfiguration (raw XML) |               | see [POM configuration](#pom-configuration)               |
 | include        | PlexusConfiguration (raw XML) |               | see [POM configuration](#pom-configuration)               |
 | directories    | PlexusConfiguration (raw XML) |               | see [POM configuration](#pom-configuration)               |
 | configFile     | File                          |               | stager XML configuration file                             |
@@ -33,20 +32,21 @@ When the POM does not provide an `<executor>` configuration, executor settings
 can be supplied as Maven user properties. A configured POM `<executor>` is
 used as a complete object and is not overridden by user properties.
 
-| Property | Applies to | Executor parameter |
-|---|---|---|
-| `stager.executor.kind` | all executors | `kind` |
-| `stager.executor.nThreads` | `FIXED` | `nThreads` |
-| `stager.executor.corePoolSize` | `SCHEDULED` | `corePoolSize` |
-| `stager.executor.parallelism` | `WORKSTEALINGPOOL` | `parallelism` |
+| Property                       | Applies to         | Executor parameter |
+|--------------------------------|--------------------|--------------------|
+| `stager.executor.kind`         | all executors      | `kind`             |
+| `stager.executor.nThreads`     | `FIXED`            | `nThreads`         |
+| `stager.executor.corePoolSize` | `SCHEDULED`        | `corePoolSize`     |
+| `stager.executor.parallelism`  | `WORKSTEALINGPOOL` | `parallelism`      |
 
 For example, run a standalone stager configuration with a fixed pool of four
 threads using `-Dstager.executor.kind=FIXED -Dstager.executor.nThreads=4`.
 
 #### Stager Configuration
 
-A stager XML configuration file is rooted at `<stager>` and supports top-level children in this
-order: `<include src="..."/>`, `<properties>`, `<variables>`, then `<directories>`.
+A stager XML configuration file is rooted at `<stager>` and supports top-level
+children in this order: `<include src="..."/>`, `<properties>`, then
+`<directories>`.
 
 ```xml
 <stager xmlns="https://helidon.io/stager/1.0"
@@ -56,9 +56,6 @@ order: `<include src="..."/>`, `<properties>`, `<variables>`, then `<directories
     <properties>
         <property name="docs.1.version" value="1.2.3"/>
     </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-    </variables>
     <directories>
         <!-- directory is a container of tasks -->
         <directory target="${project.build.directory}/stage">
@@ -76,7 +73,7 @@ order: `<include src="..."/>`, `<properties>`, `<variables>`, then `<directories
                     <!-- iterators can be nested under any task to create a loop -->
                     <iterators>
                         <variables>
-                            <!-- the version variable is referenced using {version} in the task definition -->
+                            <!-- the version variable is substituted as {version} in the task definition -->
                             <variable name="version">
                                 <value>${docs.1.version}</value>
                             </variable>
@@ -95,7 +92,7 @@ order: `<include src="..."/>`, `<properties>`, `<variables>`, then `<directories
                     <!-- iterators can be nested under any task to create a loop -->
                     <iterators>
                         <variables>
-                            <!-- the version variable is referenced using {version} in the task definition -->
+                            <!-- the version variable is substituted as {version} in the task definition -->
                             <variable name="version">
                                 <value>1.2.3</value>
                             </variable>
@@ -138,7 +135,6 @@ order: `<include src="..."/>`, `<properties>`, `<variables>`, then `<directories
                     archive is a task to create a zip archive, and a container of tasks (similar to directory)
                  -->
                 <archive target="data/{version}/data.zip">
-
                     <!-- put any task here to add content to the archive -->
                 </archive>
                 <!-- ... -->
@@ -220,9 +216,10 @@ copy source directory.
 
 ##### Includes
 
-Use `<include src="..."/>` as a top-level stager configuration directive before `<properties>`,
-`<variables>`, and `<directories>`. The referenced file is another stager XML configuration file. Its
-`<stager>` children are inserted where the directive appears.
+Use `<include src="..."/>` as a top-level stager configuration directive before
+`<properties>` and `<directories>`. The included file is another stager XML
+configuration file. Its `<stager>` children are inserted where the directive
+appears.
 
 Include paths are resolved relative to the declaring file unless the path is absolute.
 An include declared directly in the POM is resolved relative to the project base
@@ -230,92 +227,149 @@ directory; nested includes from XML files are resolved relative to the XML file 
 
 The `src` value is treated as a literal path during include expansion.
 
-Root-level `<variables>` and direct `<directories><variables>` are merged into the effective global
-configuration. Root-level variables are collected before direct `<directories><variables>`;
-within that collection order, duplicate global `<variable name="...">` entries use the last
-definition. Because `<include>` appears before caller `<variables>` and `<directories>`, caller
-variables override included fallback variables with the same name.
-Iterator-local variables are not part of this global precedence rule.
+##### Iterator variables
 
-Variable references retain the referenced name by default. Add `name` to
-expose the same value under an alias, which is useful for iterator
-placeholders:
+Variables are supported only inside a task's `<iterators>` element. Each
+`<variable>` requires a `name` and is an ordered list. An unattributed `<value>`
+is a nonblank string row, and an attributed `<value>` is a nonempty flat string
+map. A singleton still uses one `<value>`, while a variable without values is
+an empty list:
 
 ```xml
-<variable name="version" ref="release.versions"/>
+<iterators>
+    <variables>
+        <variable name="channels">
+            <value>stable</value>
+            <value>preview</value>
+        </variable>
+    </variables>
+    <variables>
+        <variable name="releases">
+            <value version="4.2.0" channel="stable"/>
+            <value version="4.3.0" channel="preview"/>
+        </variable>
+    </variables>
+    <variables>
+        <variable name="empty"/>
+    </variables>
+</iterators>
 ```
 
-An ordinary variable can aggregate previously declared lists by containing
-direct variable references. The referenced lists are appended in declaration
-order. Values are not deduplicated, and map values are appended as complete
-list elements rather than merged:
+Rows in one variable must all have the same shape. Text rows bind the variable
+name to each value during iteration. Map rows expose their attributes directly
+as iterator substitutions. Values cannot be empty, combine text and
+attributes, or contain child elements.
 
-```xml
-<variable name="archetype.versions">
-    <variable ref="archetype.v2.versions"/>
-    <variable ref="archetype.v3.versions"/>
-    <variable ref="archetype.v4.versions"/>
-</variable>
-```
+Multiple variables in one `<variables>` block form a matrix of value
+combinations. Multiple `<variables>` blocks create separate iterators in XML
+order. An empty variable causes its iterator to run zero times. The `join`
+attribute on `<iterators>` or `<variables>` retains the usual sequential
+execution behavior.
 
-Each aggregate source must be a list. References may resolve variables in an
-enclosing scope or earlier siblings in the same collection; forward references
-are invalid. Nested `<value>` and aggregate `<variable>` children cannot be
-mixed. When `ref` is present, it takes precedence over inline and nested
-content.
+Variables cannot use references, aliases, nested variable declarations, or
+shared declarations at the root, directory, or action level. Declare every
+iterator's values inline.
 
 ### Template models
 
-Each `<template>` can contain one optional free-form `<model>`. Leaf elements
-are strings (including empty leaves); elements with children are ordered model
-collections. Template-local `<variables>` are no longer supported. Global and
-iterator variables remain available for task iteration and `{name}` task
+Each `<template>` can contain one optional free-form `<model>`. The model is
+interpreted as ordered XML rather than as Java maps and lists. Leaf values
+render their element text, and elements with children retain their XML child
+order.
+
+Descendant attributes are addressed with an `@` prefix. Attributes do not
+participate in child iteration and cannot shadow same-named child elements:
+
+```xml
+<model>
+    <release version="4.2.0">
+        <version>child-version</version>
+    </release>
+</model>
+```
+
+```mustache
+{{release.version}}   <!-- child-version -->
+{{release.@version}}  <!-- 4.2.0 -->
+```
+
+At every XML scope, an exact child name is resolved before dotted traversal.
+For example, `{{properties.cli.version}}` selects a literal
+`<cli.version>` child of `<properties>` when present. Once a dotted path
+selects an XML value, a missing remainder does not fall back to another scope.
+Java fields and methods are never exposed, so an expression such as
+`{{title.length}}` cannot invoke `String.length()`.
+
+When a template model does not declare a root-level `properties` field,
+preprocessing adds one populated from the effective top-level stager
+`<properties>`. This includes templates without an explicit `<model>`. Each
+effective property name is materialized as a free-form model element whose
+value is `${property.name}`. The ordinary configuration interpolation pass
+then resolves those references.
+
+Iterator variables remain available for task iteration and `{name}` task
 placeholders, but are not added to the Mustache model automatically.
+
+With `cli.version` and `schemas.version` declared in the top-level stager
+`<properties>`, the template only needs to declare its other local fields:
 
 ```xml
 <template source="properties.mustache" target="properties.txt">
     <model>
-        <properties>
-            <cli.version>4.2.0</cli.version>
-            <schemas.version>2026.07</schemas.version>
-        </properties>
         <docs><current>4.2.0</current></docs>
     </model>
 </template>
 ```
 
-`{{#properties}}` iterates its children in XML order. Each item provides
-`name`, `value`, `index`, `first`, and `last`; nested fields are available
-directly. For example, use `{{name}}={{value}}`, or for a nested child use
-`{{title}}` and `{{git.url}}`. Parent fields remain visible in the section,
-so `{{cli.version}}` is available while iterating `properties`. Dotted XML
-names are literal map keys when resolved within their containing section.
+`{{#container}}` iterates every direct child in true XML order.
+`{{#container.item}}` iterates only the matching children in their relative
+order. Each active sequence calculates its own `index`, `first`, and `last`
+metadata. Iteration items also provide `name` and `value`; `{{.}}` and
+`{{value}}` render the current element text, while a complex `value` remains
+usable for dotted child lookup such as `{{value.title}}`.
 
-Model leaf text can use iterator placeholders. The value is resolved for each
-template execution: `<version>{version}</version>`. Model siblings must have
-unique names and model elements cannot have attributes or mixed text and child
-content; errors report the qualified model path.
+Exact local XML children take precedence over iteration metadata. When a local
+child uses a metadata name, add leading underscores until a name is not occupied
+by local XML. Any number of leading underscores can be removed to reach
+metadata. For example, with `<name>real</name>`, `{{name}}` renders `real` and
+`{{_name}}` renders the iteration item's XML name. If `<_name>` also exists,
+use `{{__name}}` for the metadata.
 
-The previous `.entries` decoration has been removed. Iterate the model
-collection directly.
+Lookup within an iteration item proceeds through local XML, local metadata,
+the containing XML element, and then ordinary outer Mustache scopes. Parent
+fields therefore remain visible: `{{cli.version}}` can resolve another child
+of `properties` while that container is being iterated. Local fields still win
+when heterogeneous repeated elements expose different child shapes at the same
+template expression.
 
-Repeated values conflict when scalar strings differ or their types differ.
-Conflicts fail the task rather than choosing the first or last value, and
-nested conflicts report the qualified variable path, such as
-`release.version`. An empty value remains invalid when used as a normal
-template value.
+An empty leaf renders as an empty string and is false in a section, even when
+it has attributes. Inverted sections therefore work for both plain and
+attributed empty leaves. Its attributes remain available through expressions
+such as `{{empty.@state}}`.
 
-Included files may declare optional fallback variables without a value, for example
-`<variable name="preview-versions"/>`. These empty variables are intended for iterator inputs:
-when an iterator references an empty variable, it contributes no values and the task runs zero
-times. Empty variables are not substituted as empty strings; using one as a normal template or
-task value fails unless the including configuration already supplied a valued definition.
+An explicit model `<properties>` field is a complete local override, whether it
+is a container, empty, scalar, or repeated. In that case, preprocessing does not
+inject any top-level stager properties into the model.
 
-After includes are expanded, `${...}` interpolation runs once across the expanded configuration.
+Model leaf text and attribute values can use iterator placeholders. Values are
+resolved for each template execution, for example
+`<version order="{order}">{version}</version>`. The `<model>` container itself
+cannot have attributes, and no model element can mix text and child content.
+Errors report the qualified model path.
 
-Stager `<properties>` are resolved before Maven expressions. For duplicate stager property names,
-the last definition in the expanded configuration wins. This means caller properties declared after
-includes override included fallback properties.
+After includes are expanded, the preprocessor collects the effective
+properties and builds the effective `<directories>` tree. It injects property
+references into template models that do not declare `properties`, then runs
+`${...}` interpolation once across that tree.
+
+Stager `<properties>` are resolved before Maven expressions. For duplicate
+stager property names, the last definition in the expanded configuration wins.
+This means caller properties declared after includes override included fallback
+properties.
+
+The resulting ordered property elements are exposed as `properties` in each
+template model that does not provide its own field; no separate property data
+is passed to the model parser.
 
 Missing files and circular chains fail the goal and report the path that could not be loaded.
 
@@ -341,10 +395,10 @@ The `list-files` `<include>` element is still a pattern element, not a file incl
 
 ##### POM configuration
 
-The same logical stager children are declared directly under the plugin `<configuration>` element
-when configuration is kept in `pom.xml`. Do not wrap POM configuration in a `<stager>` element.
-The supported order is `<include src="..."/>`, `<properties>`, `<variables>`, then
-`<directories>`.
+The same logical stager children are declared directly under the plugin
+`<configuration>` element when configuration is kept in `pom.xml`. Do not wrap
+POM configuration in a `<stager>` element. The supported order is
+`<include src="..."/>`, `<properties>`, then `<directories>`.
 
 ```xml
 <configuration>
@@ -352,24 +406,30 @@ The supported order is `<include src="..."/>`, `<properties>`, `<variables>`, th
     <properties>
         <property name="stage.path" value="${project.build.directory}/stage"/>
     </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-    </variables>
     <directories>
         <directory target="${stage.path}">
             <files>
-                <file target="{channel}/info.txt">Channel: {channel}</file>
+                <file target="{channel}/info.txt">
+                    <iterators>
+                        <variables>
+                            <variable name="channel">
+                                <value>stable</value>
+                            </variable>
+                        </variables>
+                    </iterators>
+                </file>
             </files>
         </directory>
     </directories>
 </configuration>
 ```
 
-XML attributes and text in stager configuration are interpolated before task execution. `${...}`
-expressions are resolved from stager `<properties>` first, then Maven expressions. Expressions that
-cannot be resolved are left unchanged. Recursive property values are supported. Task variables such
-as `{version}` are resolved during task execution. See [Includes](#includes) for include-specific
-property and global variable precedence.
+XML attributes and text in stager configuration are interpolated before task
+execution. `${...}` expressions are resolved from stager `<properties>` first,
+then Maven expressions. Expressions that cannot be resolved are left unchanged.
+Recursive property values are supported. Iterator variables such as `{version}`
+are resolved during task execution. See [Includes](#includes) for
+include-specific property precedence.
 
 ##### ExecutorConfig
 
@@ -407,13 +467,18 @@ property and global variable precedence.
             <properties>
                 <property name="stage.path" value="${project.build.directory}/stage"/>
             </properties>
-            <variables>
-                <variable name="channel" value="stable"/>
-            </variables>
             <directories>
                 <directory target="${stage.path}">
                     <files>
-                        <file target="{channel}/info.txt">Channel: {channel}</file>
+                        <file target="{channel}/info.txt">
+                            <iterators>
+                                <variables>
+                                    <variable name="channel">
+                                        <value>stable</value>
+                                    </variable>
+                                </variables>
+                            </iterators>
+                        </file>
                     </files>
                 </directory>
             </directories>
@@ -434,13 +499,18 @@ The `stage` goal can also read stager configuration from `stager.xml`:
     <properties>
         <property name="stage.path" value="${project.build.directory}/stage"/>
     </properties>
-    <variables>
-        <variable name="channel" value="stable"/>
-    </variables>
     <directories>
         <directory target="${stage.path}">
             <files>
-                <file target="{channel}/info.txt">Channel: {channel}</file>
+                <file target="{channel}/info.txt">
+                    <iterators>
+                        <variables>
+                            <variable name="channel">
+                                <value>stable</value>
+                            </variable>
+                        </variables>
+                    </iterators>
+                </file>
             </files>
         </directory>
     </directories>

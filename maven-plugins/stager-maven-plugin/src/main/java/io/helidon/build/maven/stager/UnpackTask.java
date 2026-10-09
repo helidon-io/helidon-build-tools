@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.build.common.Lists;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.FileUtils.fileExt;
 import static io.helidon.build.maven.stager.DownloadTask.download;
@@ -35,18 +37,32 @@ final class UnpackTask extends StagingTask {
 
     private final String ext;
     private final String url;
+    private final String target;
     private final String includes;
     private final String excludes;
     private final List<Mapper> mappers;
 
-    UnpackTask(ActionIterators iterators, List<Mapper> mappers, Map<String, String> attrs) {
-        super("unpack", null, iterators, attrs);
-        this.url = Strings.requireValid(attrs.get("url"), "url is required");
-        this.ext = Strings.requireValid(Optional.ofNullable(attrs.get("ext"))
+    UnpackTask(XMLElement element) {
+        super(element);
+        this.url = Strings.requireValid(element.attribute("url", null), "url is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+        this.ext = Strings.requireValid(Optional.ofNullable(element.attribute("ext", null))
                 .orElseGet(() -> fileExt(url)), "ext is required");
-        this.includes = attrs.get("includes");
-        this.excludes = attrs.get("excludes");
-        this.mappers = mappers;
+        this.includes = element.attribute("includes", null);
+        this.excludes = element.attribute("excludes", null);
+        this.mappers = Lists.map(elements(element, "mapper", "mappers"), Mapper::new);
+    }
+
+    @Override
+    public String toString() {
+        return "UnpackTask{"
+               + "ext='" + ext + '\''
+               + ", url='" + url + '\''
+               + ", target='" + target + '\''
+               + ", includes='" + includes + '\''
+               + ", excludes='" + excludes + '\''
+               + ", mappers=" + mappers
+               + '}';
     }
 
     @Override
@@ -56,30 +72,14 @@ final class UnpackTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        Path tempFile = ctx.createTempFile("." + ext);
-        URL url = new URL(resolveVar(this.url, vars));
+        var tempFile = ctx.createTempFile("." + ext);
+        var url = new URL(resolveVar(this.url, vars));
         download(ctx, url, tempFile);
 
-        String resolvedTarget = resolveVar(target(), vars);
-        Path targetDir = dir.resolve(resolvedTarget).normalize();
+        var resolvedTarget = resolveVar(target, vars);
+        var targetDir = dir.resolve(resolvedTarget).normalize();
         ctx.logInfo("Unpacking %s to %s", tempFile, targetDir);
         ctx.ensureDirectory(targetDir);
-        ctx.unpack(tempFile, targetDir, excludes, includes, mappers, vars);
-    }
-
-    String url() {
-        return url;
-    }
-
-    String excludes() {
-        return excludes;
-    }
-
-    String includes() {
-        return includes;
-    }
-
-    List<Mapper> mappers() {
-        return mappers;
+        ctx.unpack(tempFile, targetDir, includes, excludes, mappers, vars);
     }
 }

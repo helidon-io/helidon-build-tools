@@ -101,12 +101,13 @@ public class ConfigResolver {
         XMLElement config = Xpp3DomAdapter.create(execution.getConfiguration());
         config.visit(new XMLElement.Visitor() {
             @Override
-            public void visitElement(XMLElement elt) {
+            public boolean visitElement(XMLElement elt) {
                 elt.attributes().entrySet().forEach(e -> e.setValue(evaluateExpression(evaluator, e.getValue())));
                 String value = elt.value();
                 if (value != null) {
                     elt.value(evaluateExpression(evaluator, value));
                 }
+                return true;
             }
         });
         return config;

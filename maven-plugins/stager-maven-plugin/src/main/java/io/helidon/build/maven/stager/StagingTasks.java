@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.build.common.xml.XMLElement;
+
 /**
  * Container of {@link StagingTask}.
  */
 final class StagingTasks extends StagingTask {
 
-    StagingTasks(String elementName, List<StagingAction> nested, Map<String, String> attrs) {
-        super(elementName, nested, null, attrs);
+    StagingTasks(XMLElement element, List<StagingTask> tasks) {
+        super(element, tasks);
+    }
+
+    @Override
+    public String toString() {
+        return "StagingTasks{"
+               + "name='" + name() + '\''
+               + "}";
     }
 
     @Override

@@ -18,7 +18,6 @@ package io.helidon.build.maven.stager;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.FileUtils.measuredSize;
 
@@ -37,10 +37,20 @@ import static io.helidon.build.common.FileUtils.measuredSize;
 final class DownloadTask extends StagingTask {
 
     private final String url;
+    private final String target;
 
-    DownloadTask(ActionIterators iterators, Map<String, String> attrs) {
-        super("download", null, iterators, attrs);
-        this.url = Strings.requireValid(attrs.get("url"), "url is required");
+    DownloadTask(XMLElement element) {
+        super(element);
+        this.url = Strings.requireValid(element.attribute("url", null), "url is required");
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+    }
+
+    @Override
+    public String toString() {
+        return "DownloadTask{"
+               + "url='" + url + '\''
+               + ", target='" + target + '\''
+               + '}';
     }
 
     @Override
@@ -50,15 +60,11 @@ final class DownloadTask extends StagingTask {
 
     @Override
     protected void doExecute(StagingContext ctx, Path dir, Map<String, String> vars) throws IOException {
-        String path = resolveVar(target(), vars);
-        Path file = dir.resolve(path).normalize();
+        var path = resolveVar(target, vars);
+        var file = dir.resolve(path).normalize();
         ctx.ensureDirectory(file.getParent());
-        URL url = new URL(resolveVar(this.url, vars));
+        var url = new URL(resolveVar(this.url, vars));
         download(ctx, url, file);
-    }
-
-    String url() {
-        return url;
     }
 
     /**
@@ -72,8 +78,8 @@ final class DownloadTask extends StagingTask {
     static void download(StagingContext ctx, URL url, Path file)
             throws IOException {
 
-        try (BufferedInputStream bis = new BufferedInputStream(open(url, ctx));
-             OutputStream fos = Files.newOutputStream(file, StandardOpenOption.CREATE)) {
+        try (var bis = new BufferedInputStream(open(url, ctx));
+                var fos = Files.newOutputStream(file, StandardOpenOption.CREATE)) {
             int n;
             long startTime = System.currentTimeMillis();
             long progressTime = startTime;
@@ -103,7 +109,7 @@ final class DownloadTask extends StagingTask {
     }
 
     private static InputStream open(URL url, StagingContext context) throws IOException {
-        NetworkConnection.Builder builder = NetworkConnection.builder().url(url);
+        var builder = NetworkConnection.builder().url(url);
         int readTimeout = context.readTimeout();
         if (readTimeout > 0) {
             builder.readTimeout(readTimeout);

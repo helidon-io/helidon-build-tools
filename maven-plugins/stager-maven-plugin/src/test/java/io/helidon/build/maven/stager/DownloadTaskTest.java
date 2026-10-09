@@ -33,47 +33,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link CopyArtifactTask}.
+ * Tests {@link DownloadTask}.
  */
-class CopyArtifactTaskTest {
+class DownloadTaskTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
-    void testExplicitTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
+    void testDownloadLocalFile() throws Exception {
+        Path source = tempDir.resolve("source.txt");
+        Files.writeString(source, "downloaded content");
 
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="com.acme"
-                               artifactId="artifact"
-                               version="{version}"
-                               type="txt"
-                               target="downloads/test-{version}.{type}"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("downloads/test-4.2.0.txt")), is("artifact content"));
-        assertThat(Files.exists(tempDir.resolve("downloads/test-{version}.txt")), is(false));
+        execute(new DownloadTask(XMLElement.read("""
+                <download url="%s" target="downloads/{name}.txt"/>
+                """.formatted(source.toUri()))), Map.of("name", "guide"));
+        assertThat(Files.readString(tempDir.resolve("downloads/guide.txt")), is("downloaded content"));
     }
 
-    @Test
-    void testDefaultTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
-
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="io.helidon" artifactId="helidon" version="{version}" type="txt"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("helidon-4.2.0.txt")), is("artifact content"));
-    }
-
-    void execute(CopyArtifactTask task, Map<String, String> vars) throws Exception {
+    void execute(DownloadTask task, Map<String, String> vars) throws Exception {
         try {
             task.execute(new StagingContext() {
-                @Override
-                public Path resolve(ArtifactGAV gav) {
-                    return tempDir.resolve("artifact.txt");
-                }
 
                 @Override
                 public void ensureDirectory(Path directory) {

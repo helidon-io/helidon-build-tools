@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 
 import io.helidon.build.common.Lists;
 import io.helidon.build.common.SourcePath;
+import io.helidon.build.common.xml.XMLElement;
 
 import static io.helidon.build.common.FileUtils.walk;
 import static io.helidon.build.common.Strings.normalizePath;
@@ -33,7 +34,7 @@ import static io.helidon.build.common.Strings.normalizePath;
 /**
  * List files in a directory.
  */
-final class ListFilesTask extends StagingTask implements TextAction {
+final class ListFilesTask extends StagingTask implements TextTask {
 
     private static final Set<FileVisitOption> FILE_VISIT_OPTIONS = Set.of(FileVisitOption.FOLLOW_LINKS);
 
@@ -44,23 +45,30 @@ final class ListFilesTask extends StagingTask implements TextAction {
     private final String dirName;
     private final Map<Map<String, String>, String> results = new ConcurrentHashMap<>();
 
-    ListFilesTask(ActionIterators iterators,
-                  List<Include> includes,
-                  List<Exclude> excludes,
-                  List<Substitution> substitutions,
-                  Map<String, String> attrs) {
-
-        super("list-files", null, iterators, attrs);
-        this.includes = Lists.map(includes, Include::value);
-        this.excludes = Lists.map(excludes, Exclude::value);
-        this.substitutions = substitutions;
+    ListFilesTask(XMLElement element) {
+        super(element);
+        this.includes = Lists.map(elements(element, "include", "includes"), XMLElement::value);
+        this.excludes = Lists.map(elements(element, "exclude", "excludes"), XMLElement::value);
+        this.substitutions = Lists.map(elements(element, "substitution", "substitutions"), Substitution::new);
         this.chain = Lists.map(substitutions, Substitution::function);
-        this.dirName = attrs.getOrDefault("dir", ".");
+        this.dirName = element.attribute("dir", ".");
     }
 
     @Override
     public String text(Map<String, String> vars) {
         return results.getOrDefault(vars, "");
+    }
+
+    @Override
+    public String toString() {
+        return "ListFilesTask{"
+               + "includes=" + includes
+               + ", excludes=" + excludes
+               + ", substitutions=" + substitutions
+               + ", chain=" + chain
+               + ", dirName='" + dirName + '\''
+               + ", results=" + results
+               + '}';
     }
 
     @Override
@@ -76,22 +84,6 @@ final class ListFilesTask extends StagingTask implements TextAction {
             sb.append(entry).append("\n");
         }
         results.put(vars, sb.toString());
-    }
-
-    String dir() {
-        return dirName;
-    }
-
-    List<String> includes() {
-        return includes;
-    }
-
-    List<String> excludes() {
-        return excludes;
-    }
-
-    List<Substitution> substitutions() {
-        return substitutions;
     }
 
     private boolean filter(Path p, BasicFileAttributes attrs) {

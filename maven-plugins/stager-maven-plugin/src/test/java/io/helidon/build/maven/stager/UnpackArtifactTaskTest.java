@@ -24,55 +24,53 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link CopyArtifactTask}.
+ * Tests {@link UnpackArtifactTask}.
  */
-class CopyArtifactTaskTest {
+class UnpackArtifactTaskTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
-    void testExplicitTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
+    void testUnpackWithVariables() throws Exception {
+        var stage = tempDir.resolve("stage");
+        Files.createDirectories(stage);
+        Files.writeString(stage.resolve("readme.txt"), "content");
+        FileUtils.zip(tempDir.resolve("artifact.zip"), stage);
 
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="com.acme"
-                               artifactId="artifact"
-                               version="{version}"
-                               type="txt"
-                               target="downloads/test-{version}.{type}"/>
-                """)), Map.of("version", "4.2.0"));
+        execute(new UnpackArtifactTask(XMLElement.read("""
+                <unpack-artifact groupId="io.helidon"
+                                 artifactId="{artifact}"
+                                 version="{version}"
+                                 type="zip"
+                                 classifier="tests"
+                                 target="expanded/{groupId}/{artifactId}-{version}-{classifier}-{type}"/>
+                """)), Map.of("artifact", "stager", "version", "4.0.0", "repository", "central"));
 
-        assertThat(Files.readString(tempDir.resolve("downloads/test-4.2.0.txt")), is("artifact content"));
-        assertThat(Files.exists(tempDir.resolve("downloads/test-{version}.txt")), is(false));
+        var target = tempDir.resolve("expanded/io.helidon/stager-4.0.0-tests-zip");
+        assertThat(target, fileExists());
+        var readme = target.resolve("readme.txt");
+        assertThat(readme, fileExists());
+        assertThat(Files.readString(readme), is("content"));
     }
 
-    @Test
-    void testDefaultTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
-
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="io.helidon" artifactId="helidon" version="{version}" type="txt"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("helidon-4.2.0.txt")), is("artifact content"));
-    }
-
-    void execute(CopyArtifactTask task, Map<String, String> vars) throws Exception {
+    void execute(UnpackArtifactTask task, Map<String, String> vars) throws Exception {
         try {
             task.execute(new StagingContext() {
                 @Override
                 public Path resolve(ArtifactGAV gav) {
-                    return tempDir.resolve("artifact.txt");
+                    return tempDir.resolve("artifact.zip");
                 }
 
                 @Override
@@ -82,6 +80,11 @@ class CopyArtifactTaskTest {
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
+                }
+
+                @Override
+                public void unpack(Path archive, Path target, String includes, String excludes) {
+                    FileUtils.unzip(archive, target);
                 }
 
                 @Override

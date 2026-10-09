@@ -16,42 +16,34 @@
 package io.helidon.build.maven.stager;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 import io.helidon.build.common.Patterns;
 import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
 
 /**
  * Substitution.
  */
-final class Substitution implements StagingElement {
+final class Substitution {
 
     private final String match;
     private final String replace;
     private final boolean regex;
 
-    Substitution(Map<String, String> attrs) {
-        match = Strings.requireValid(attrs.get("match"), "match is required");
-        replace = Strings.requireValid(attrs.get("replace"), "replace is required");
-        regex = Boolean.parseBoolean(attrs.getOrDefault("regex", "true"));
+    Substitution(XMLElement element) {
+        match = Strings.requireValid(element.attribute("match", null), "match is required");
+        replace = Strings.requireValid(element.attribute("replace", null), "replace is required");
+        regex = element.attributeBoolean("regex", true);
     }
 
     @Override
-    public String elementName() {
-        return "substitution";
-    }
-
-    String match() {
-        return match;
-    }
-
-    String replace() {
-        return replace;
-    }
-
-    boolean isRegex() {
-        return regex;
+    public String toString() {
+        return "Substitution{"
+               + "match='" + match + '\''
+               + ", replace='" + replace + '\''
+               + ", regex=" + regex
+               + '}';
     }
 
     BiFunction<String, Map<String, String>, String> function() {
@@ -59,14 +51,14 @@ final class Substitution implements StagingElement {
     }
 
     String substitute(String str, Map<String, String> vars) {
-        String value = str;
-        String resolvedMatch = StagingTask.resolveVar(match, vars);
-        String resolvedReplace = StagingTask.resolveVar(replace, vars);
+        var value = str;
+        var resolvedMatch = StagingTask.resolveVar(match, vars);
+        var resolvedReplace = StagingTask.resolveVar(replace, vars);
         if (regex) {
             // replace {group} with ${group}
-            Set<String> groups = Patterns.groupNames(resolvedMatch);
-            for (String group : groups) {
-                String token = "{" + group + "}";
+            var groups = Patterns.groupNames(resolvedMatch);
+            for (var group : groups) {
+                var token = "{" + group + "}";
                 resolvedReplace = resolvedReplace.replace(token, "$" + token);
             }
             value = value.replaceAll(resolvedMatch, resolvedReplace);

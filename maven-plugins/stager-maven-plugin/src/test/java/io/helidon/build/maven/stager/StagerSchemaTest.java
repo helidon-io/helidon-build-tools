@@ -91,13 +91,41 @@ class StagerSchemaTest {
     }
 
     @Test
-    void testValidateIncludeAfterVariablesFails() {
-        assertThrows(SAXException.class, () -> validate("stager-include-after-variables.xml"));
+    void testValidateVariablesOutsideIteratorsFail() {
+        assertThrows(SAXException.class, () -> validate("stager-root-variables-invalid.xml"));
+        assertThrows(SAXException.class, () -> validate("stager-directory-variables-invalid.xml"));
+        assertThrows(SAXException.class, () -> validate("stager-template-variables-invalid.xml"));
     }
 
     @Test
-    void testValidateTemplateVariablesFail() {
-        assertThrows(SAXException.class, () -> validate("stager-template-variables-invalid.xml"));
+    void testValidateLegacyValueAttributeFails() {
+        assertThrows(SAXException.class, () -> validate("stager-iterator-variable-value-attribute-invalid.xml"));
+    }
+
+    @Test
+    void testValidateMalformedVariableChildrenFail() {
+        assertThrows(SAXException.class, () -> validate("stager-variable-nested-map-invalid.xml"));
+        assertThrows(SAXException.class, () -> validate("stager-variable-aggregate-invalid.xml"));
+    }
+
+    @Test
+    void testValidateVariableReferenceFails() {
+        assertThrows(SAXException.class, () -> validate("stager-variable-ref-invalid.xml"));
+    }
+
+    @Test
+    void testValidateMissingVariableNameFails() {
+        assertThrows(SAXException.class, () -> validate("stager-variable-name-missing-invalid.xml"));
+    }
+
+    @Test
+    void testValidateModelDescendantAttributes() {
+        assertDoesNotThrow(() -> validate("stager-model-attributes.xml"));
+    }
+
+    @Test
+    void testValidateModelRootAttributesFail() {
+        assertThrows(SAXException.class, () -> validate("stager-model-root-attribute-invalid.xml"));
     }
 
     @Test

@@ -21,19 +21,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.build.common.Strings;
+import io.helidon.build.common.xml.XMLElement;
+
 /**
  * Generate an archive with a set of tasks.
  */
 @SuppressWarnings("unused")
 class ArchiveTask extends StagingTask {
 
+    private final String target;
     private final String includes;
     private final String excludes;
 
-    ArchiveTask(ActionIterators iterators, List<StagingAction> nested, Map<String, String> attrs) {
-        super("archive", nested, iterators, attrs);
-        this.includes = attrs.get("includes");
-        this.excludes = attrs.get("excludes");
+    ArchiveTask(XMLElement element, List<StagingTask> tasks) {
+        super(element, tasks);
+        this.target = Strings.requireValid(element.attribute("target", null), "target is required");
+        this.includes = element.attribute("includes", null);
+        this.excludes = element.attribute("excludes", null);
+    }
+
+    @Override
+    public String toString() {
+        return "ArchiveTask{"
+               + "target='" + target + '\''
+               + ", includes='" + includes + '\''
+               + ", excludes='" + excludes + '\''
+               + '}';
     }
 
     @Override
@@ -43,8 +57,8 @@ class ArchiveTask extends StagingTask {
 
     @Override
     protected CompletableFuture<Void> execTask(StagingContext ctx, Path dir, Map<String, String> vars) {
-        String resolvedTarget = resolveVar(target(), vars);
-        Path targetFile = dir.resolve(resolvedTarget).normalize();
+        var resolvedTarget = resolveVar(target, vars);
+        var targetFile = dir.resolve(resolvedTarget).normalize();
         Path stageDir;
         try {
             stageDir = ctx.createTempDirectory("archive-task");
@@ -53,20 +67,12 @@ class ArchiveTask extends StagingTask {
         }
         ctx.logInfo("Creating archive %s", resolvedTarget);
         return super.execTask(ctx, stageDir, vars)
-                    .thenRun(() -> archive(ctx, stageDir, targetFile, vars));
-    }
-
-    String includes() {
-        return includes;
-    }
-
-    String excludes() {
-        return excludes;
+                .thenRun(() -> archive(ctx, stageDir, targetFile, vars));
     }
 
     private void archive(StagingContext ctx, Path source, Path targetFile, Map<String, String> variables) {
-        String resolvedIncludes = resolveVar(includes, variables);
-        String resolvedExcludes = resolveVar(excludes, variables);
+        var resolvedIncludes = resolveVar(includes, variables);
+        var resolvedExcludes = resolveVar(excludes, variables);
         ctx.archive(source, targetFile, resolvedIncludes, resolvedExcludes);
     }
 }

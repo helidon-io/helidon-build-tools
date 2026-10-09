@@ -19,60 +19,62 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import io.helidon.build.common.CurrentThreadExecutorService;
+import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static io.helidon.build.common.FileUtils.newZipFileSystem;
+import static io.helidon.build.common.FileUtils.zip;
+import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
- * Tests {@link CopyArtifactTask}.
+ * Tests {@link ArchiveTask}.
  */
-class CopyArtifactTaskTest {
+class ArchiveTaskTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
-    void testExplicitTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
+    void testArchiveWithNestedTask() throws Exception {
+        execute(new ArchiveTask(XMLElement.read("""
+                <archive target="dist/{name}.zip" includes="**/*.txt" excludes="**/draft/**"/>
+                """), List.of(new FileTask(XMLElement.read("""
+                <file target="docs/readme.txt">{name} readme</file>
+                """), List.of()),
+                new FileTask(XMLElement.read("""
+                <file target="draft/one.txt">draft one</file>
+                """), List.of()))),
+                Map.of("name", "release"));
 
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="com.acme"
-                               artifactId="artifact"
-                               version="{version}"
-                               type="txt"
-                               target="downloads/test-{version}.{type}"/>
-                """)), Map.of("version", "4.2.0"));
+        try (var fs = newZipFileSystem(tempDir.resolve("dist/release.zip"))) {
+            var readme = fs.getPath("docs/readme.txt");
+            assertThat(readme, fileExists());
+            assertThat(Files.readString(readme), is("release readme"));
 
-        assertThat(Files.readString(tempDir.resolve("downloads/test-4.2.0.txt")), is("artifact content"));
-        assertThat(Files.exists(tempDir.resolve("downloads/test-{version}.txt")), is(false));
+            var draft = fs.getPath("draft/one.txt");
+            assertThat(draft, not(fileExists()));
+        }
     }
 
-    @Test
-    void testDefaultTarget() throws Exception {
-        Files.writeString(tempDir.resolve("artifact.txt"), "artifact content");
-
-        execute(new CopyArtifactTask(XMLElement.read("""
-                <copy-artifact groupId="io.helidon" artifactId="helidon" version="{version}" type="txt"/>
-                """)), Map.of("version", "4.2.0"));
-
-        assertThat(Files.readString(tempDir.resolve("helidon-4.2.0.txt")), is("artifact content"));
-    }
-
-    void execute(CopyArtifactTask task, Map<String, String> vars) throws Exception {
+    void execute(ArchiveTask task, Map<String, String> vars) {
         try {
             task.execute(new StagingContext() {
                 @Override
-                public Path resolve(ArtifactGAV gav) {
-                    return tempDir.resolve("artifact.txt");
+                public Path createTempDirectory(String prefix) throws IOException {
+                    return Files.createTempDirectory(tempDir, prefix);
                 }
 
                 @Override
@@ -85,11 +87,18 @@ class CopyArtifactTaskTest {
                 }
 
                 @Override
+                public void archive(Path directory, Path zip, String includes, String excludes) {
+                    var includesList = Arrays.asList(includes.split(","));
+                    var excludesList = Arrays.asList(excludes.split(","));
+                    zip(zip, directory, p -> {}, includesList, excludesList);
+                }
+
+                @Override
                 public Executor executor() {
                     return new CurrentThreadExecutorService();
                 }
             }, tempDir, vars).toCompletableFuture().get();
-        }  catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof RuntimeException re) {
