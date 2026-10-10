@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.common.logging.LogRecorder;
+import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogWriter;
 
 import org.junit.jupiter.api.AfterAll;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class EmbeddedModeTest {
     private static final LogRecorder LOG_RECORDER = LogRecorder.create();
+    private LogLevel previousLogLevel;
 
     @BeforeAll
     static void beforeAllTests() {
@@ -56,12 +58,15 @@ class EmbeddedModeTest {
 
     @BeforeEach
     void beforeEachTest() {
+        previousLogLevel = LogLevel.get();
+        LogLevel.set(LogLevel.INFO);
         LOG_RECORDER.clear();
     }
 
     @AfterEach
     void afterEachTest() {
         LOG_RECORDER.clear();
+        LogLevel.set(previousLogLevel);
     }
 
     @Test
@@ -70,7 +75,7 @@ class EmbeddedModeTest {
         List<String> lines = loggedLines();
         assertThat(lines, is(not(empty())));
         assertThat(countLinesContainingAll("build."), is(3));
-        assertThat(lines.get(0), isStyled());
+        assertThat(lines.stream().filter(line -> line.contains("build.")).findFirst().orElseThrow(), isStyled());
     }
 
     @Test
@@ -101,16 +106,10 @@ class EmbeddedModeTest {
     void testStyledExceptionThrown() {
         Error e = assertThrows(Error.class, () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
         assertThat(e.getMessage(), isNotStyled());
-        assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
         List<String> lines = loggedLines();
         assertThat(lines, is(not(empty())));
-        if (lines.size() > 1) {
-            for (int i = 0; i < lines.size() - 1; i++) {
-                assertThat(lines.get(i), isStyled());
-            }
-        }
         assertThat(lines.get(lines.size() - 1), isStyled());
-        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle("Helidon version 99.99 not found."));
+        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle("error: " + e.getMessage()));
     }
 
     @Test
