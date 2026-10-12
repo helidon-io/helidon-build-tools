@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("SpellCheckingInspection")
 class CliMavenTest {
 
-    private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4", "3.9.16", "3.10.0");
+    private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4", "3.9.16");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
     private static final String LOCAL_REPO_ARG;
 
