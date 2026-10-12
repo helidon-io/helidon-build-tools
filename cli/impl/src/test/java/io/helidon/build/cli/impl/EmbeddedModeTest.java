@@ -109,7 +109,7 @@ class EmbeddedModeTest {
         List<String> lines = loggedLines();
         assertThat(lines, is(not(empty())));
         assertThat(lines.get(lines.size() - 1), isStyled());
-        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle("error: " + e.getMessage()));
+        assertThat(lines.get(lines.size() - 1), equalToIgnoringStyle(e.getMessage()));
     }
 
     @Test
