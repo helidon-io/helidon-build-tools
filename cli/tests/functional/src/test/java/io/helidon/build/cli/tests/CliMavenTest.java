@@ -77,6 +77,7 @@ class CliMavenTest {
         for (String version : MAVEN_VERSIONS) {
             downloadMavenDist(mavenDirectory, version);
         }
+        downloadMavenDist(mavenDirectory, "3.10.0");
     }
 
     @BeforeEach
