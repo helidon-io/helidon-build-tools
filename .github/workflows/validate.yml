@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,8 @@ on:
 env:
   JAVA_VERSION: 17
   JAVA_DISTRO: oracle
-  GRAALVM_VERSION: 21.3.3.1
+  GRAALVM_VERSION: 21.0.7
+  MVN_VERSION: 3.9.9
   MVN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
