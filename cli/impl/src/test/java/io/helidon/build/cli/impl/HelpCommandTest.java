@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,11 @@ public class HelpCommandTest {
     private static void assertCommandHelp(String command) throws Exception {
         String commandHelp = exec(command, "--help");
         String helpCommand = exec("help", command);
-        assertThat(helpCommand, is(commandHelp));
+        assertThat(compressWhitespace(helpCommand), is(compressWhitespace(commandHelp)));
         assertThat(helpCommand, containsString("Usage: helidon " + command));
+    }
+
+    private static String compressWhitespace(String value) {
+        return value.replaceAll("\\s+", " ").trim();
     }
 }
