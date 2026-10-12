@@ -107,6 +107,9 @@ jobs:
         include:
           - { os: ubuntu-24.04, platform: linux }
           - { os: windows-2022, platform: windows }
+          - os: ubuntu-24.04
+            moduleSet: cli
+            javaToolOptions: -XX:-UseContainerSupport
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.moduleSet }}-${{ matrix.platform }}
     steps:
@@ -114,6 +117,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
+        env:
+          JAVA_TOOL_OPTIONS: ${{ matrix.javaToolOptions }}
         with:
           build-cache: read-only
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.os }}
