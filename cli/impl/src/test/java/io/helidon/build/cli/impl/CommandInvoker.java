@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import static org.hamcrest.Matchers.greaterThan;
 public interface CommandInvoker {
 
     enum InvokerMode {
-        CLASSPATH, EMBEDDED, EXECUTABLE
+        CLASSPATH, EMBEDDED, EXECUTABLE, PACKAGED
     }
 
     /**
@@ -312,7 +312,7 @@ public interface CommandInvoker {
             artifactId = config.artifactId(builder.artifactId, builder.projectName, substitutions);
             packageName = builder.packageName == null ? config.defaultPackageName(substitutions) : builder.packageName;
             executable = builder.executable;
-            invokerMode = setInvokerMode(builder.executable, builder.embedded);
+            invokerMode = setInvokerMode(builder.executable, builder.embedded, builder.packaged);
             appJvmArgs = builder.appJvmArgs;
             verbose = builder.verbose;
             debug = builder.debug;
@@ -324,12 +324,15 @@ public interface CommandInvoker {
             }
         }
 
-        private InvokerMode setInvokerMode(Path executable, boolean embedded) {
+        private InvokerMode setInvokerMode(Path executable, boolean embedded, boolean packaged) {
             if (executable != null) {
                 return InvokerMode.EXECUTABLE;
             }
             if (embedded) {
                 return InvokerMode.EMBEDDED;
+            }
+            if (packaged) {
+                return InvokerMode.PACKAGED;
             }
             return InvokerMode.CLASSPATH;
         }
@@ -398,6 +401,9 @@ public interface CommandInvoker {
         public InvocationResult invokeInit() throws Exception {
             List<String> args = new ArrayList<>();
             args.add("init");
+            if (invokerMode == InvokerMode.PACKAGED) {
+                args.add("--reset");
+            }
             args.add("--url");
             args.add(Objects.requireNonNull(metadataUrl, "metadataUrl is null!"));
             if (input == null) {
@@ -447,6 +453,18 @@ public interface CommandInvoker {
             if (invokerMode == InvokerMode.EMBEDDED) {
                 Helidon.execute(args);
                 return "Helidon class executed";
+            }
+
+            if (invokerMode == InvokerMode.PACKAGED) {
+                try (ProcessInvocation.Monitor monitor = new ProcessInvocation()
+                        .cwd(workDir)
+                        .stdIn(input == null ? null : input.toPath())
+                        .args(args)
+                        .start()) {
+
+                    monitor.await();
+                    return monitor.output();
+                }
             }
 
             return TestUtils.execWithDirAndInput(workDir.toFile(), input, args);
@@ -739,6 +757,7 @@ public interface CommandInvoker {
         private boolean buildProject;
         private boolean useProjectOption;
         private boolean embedded;
+        private boolean packaged;
         private boolean verbose;
         private boolean debug;
         private String appJvmArgs;
@@ -904,6 +923,16 @@ public interface CommandInvoker {
          */
         public Builder embedded() {
             this.embedded = true;
+            return this;
+        }
+
+        /**
+         * Run the packaged CLI jar.
+         *
+         * @return this builder
+         */
+        public Builder packaged() {
+            this.packaged = true;
             return this;
         }
 
