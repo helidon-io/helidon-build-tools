@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package io.helidon.build.cli.impl;
 
 import java.io.File;
 
-import io.helidon.build.common.ProcessMonitor;
+import io.helidon.build.cli.impl.ProcessInvocation.Monitor;
+import io.helidon.build.cli.impl.ProcessInvocation.MonitorException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,16 +29,19 @@ import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class InitDefaultTest.
  */
-public class InitCommandTest extends InitCommandTestBase {
+public class InitCommandTestIT extends InitCommandTestBase {
+
+    private static final String PROJECT_VERSION = "2.5.6";
 
     @Override
     protected CommandInvoker.Builder commandInvoker() {
         return super.commandInvoker()
+                    .helidonVersion(PROJECT_VERSION)
+                    .packaged()
                     .buildProject(true);
     }
 
@@ -47,39 +51,52 @@ public class InitCommandTest extends InitCommandTestBase {
     }
 
     @Test
-    void testProjectOptionAndArgumentMatch() throws Exception {
+    void testProjectOptionAndArgumentMatch() {
         String projectDir = uniqueProjectDir("bare-se-match").toString();
-        String output = TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
-                                                      "init",
-                                                      "--url", metadataUrl(),
-                                                      "--batch",
-                                                      "--version", HELIDON_TEST_VERSION,
-                                                      "--package", "me.bob.helidon",
-                                                      "--groupId", "me.bob-helidon",
-                                                      "--artifactId", "bare-se",
-                                                      "--project", projectDir,
-                                                      projectDir);
-        assertThat(output, containsString("Switch directory to " + projectDir + " to use CLI"));
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(TARGET_DIR)
+                .args("init",
+                      "--reset",
+                      "--url", metadataUrl(),
+                      "--batch",
+                      "--version", PROJECT_VERSION,
+                      "--package", "me.bob.helidon",
+                      "--groupId", "me.bob-helidon",
+                      "--artifactId", "bare-se",
+                      "--project", projectDir,
+                      projectDir)
+                .start()) {
+
+            monitor.await();
+            assertThat(monitor.output(), containsString("Switch directory to " + projectDir + " to use CLI"));
+        }
     }
 
     @Test
     void testProjectOptionAndArgumentMismatch() {
         String projectDir1 = uniqueProjectDir("bare-se-mismatch").toString();
         String projectDir2 = uniqueProjectDir("bare-se-mismatch2").toString();
-        Exception e = assertThrows(ProcessMonitor.ProcessFailedException.class, () ->
-                TestUtils.execWithDirAndInput(TARGET_DIR.toFile(), null,
-                                              "init",
-                                              "--url", metadataUrl(),
-                                              "--batch",
-                                              "--version", HELIDON_TEST_VERSION,
-                                              "--package", "me.bob.helidon",
-                                              "--groupId", "me.bob-helidon",
-                                              "--artifactId", "bare-se",
-                                              "--project", projectDir1,
-                                              projectDir2));
-        assertThat(e.getMessage(), containsString("Different project directories provided"));
-        assertThat(e.getMessage(), containsString("'--project " + projectDir1 + "'"));
-        assertThat(e.getMessage(), containsString("'" + projectDir2 + "'"));
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(TARGET_DIR)
+                .args("init",
+                      "--reset",
+                      "--url", metadataUrl(),
+                      "--batch",
+                      "--version", PROJECT_VERSION,
+                      "--package", "me.bob.helidon",
+                      "--groupId", "me.bob-helidon",
+                      "--artifactId", "bare-se",
+                      "--project", projectDir1,
+                      projectDir2)
+                .start()) {
+
+            monitor.await();
+            throw new AssertionError("Expected exception");
+        } catch (MonitorException e) {
+            assertThat(e.output(), containsString("Different project directories provided"));
+            assertThat(e.output(), containsString("'--project " + projectDir1 + "'"));
+            assertThat(e.output(), containsString("'" + projectDir2 + "'"));
+        }
     }
 
     @Test
@@ -156,19 +173,22 @@ public class InitCommandTest extends InitCommandTestBase {
                 .resolve("cli-data").toUri().toURL().toString();
         String projectDir = uniqueProjectDir("quickstart-se").toString();
 
-        String output = TestUtils.execWithDirAndInput(
-                TARGET_DIR.toFile(),
-                new File(getClass().getResource("input-full-version-list.txt").getFile()),
-                "init",
-                "--reset",
-                "--url", cliDataUrl,
-                "--project", projectDir,
-                projectDir);
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(TARGET_DIR)
+                .stdIn(new File(getClass().getResource("input-full-version-list.txt").getFile()).toPath())
+                .args("init",
+                      "--reset",
+                      "--url", cliDataUrl,
+                      "--project", projectDir,
+                      projectDir)
+                .start()) {
 
-        assertThat(output, containsString("Helidon versions"));
-        assertThat(output, containsString("(28) 2.0.0"));
-        assertThat(output, containsString("(29) 4.0.0-SNAPSHOT"));
-        assertThat(output, containsString("Enter selection (default: 29):"));
+            monitor.await();
+            assertThat(monitor.output(), containsString("Helidon versions"));
+            assertThat(monitor.output(), containsString("(28) 2.0.0"));
+            assertThat(monitor.output(), containsString("(29) 4.0.0-SNAPSHOT"));
+            assertThat(monitor.output(), containsString("Enter selection (default: 29):"));
+        }
 
         if ( helidonProperty != null) {
             System.setProperty(HELIDON_VERSION_PROPERTY, helidonProperty);
@@ -183,21 +203,24 @@ public class InitCommandTest extends InitCommandTestBase {
                 .resolve("cli-data").toUri().toURL().toString();
         String projectDir = uniqueProjectDir("quickstart-se").toString();
 
-        String output = TestUtils.execWithDirAndInput(
-                TARGET_DIR.toFile(),
-                new File(getClass().getResource("input-latest-version-list.txt").getFile()),
-                "init",
-                "--reset",
-                "--url", cliDataUrl,
-                "--project", projectDir,
-                projectDir);
+        try (Monitor monitor = new ProcessInvocation()
+                .cwd(TARGET_DIR)
+                .stdIn(new File(getClass().getResource("input-latest-version-list.txt").getFile()).toPath())
+                .args("init",
+                      "--reset",
+                      "--url", cliDataUrl,
+                      "--project", projectDir,
+                      projectDir)
+                .start()) {
 
-        assertThat(output, containsString("Helidon versions"));
-        assertThat(output, containsString("(1) 3.1.2"));
-        assertThat(output, containsString("(2) 2.6.0"));
-        assertThat(output, containsString("(3) 4.0.0-SNAPSHOT"));
-        assertThat(output, containsString("(4) Show all versions"));
-        assertThat(output, containsString("Enter selection (default: 3):"));
+            monitor.await();
+            assertThat(monitor.output(), containsString("Helidon versions"));
+            assertThat(monitor.output(), containsString("(1) 3.1.2"));
+            assertThat(monitor.output(), containsString("(2) 2.6.0"));
+            assertThat(monitor.output(), containsString("(3) 4.0.0-SNAPSHOT"));
+            assertThat(monitor.output(), containsString("(4) Show all versions"));
+            assertThat(monitor.output(), containsString("Enter selection (default: 3):"));
+        }
 
         if ( helidonVersionProperty != null) {
             System.setProperty(HELIDON_VERSION_PROPERTY, helidonVersionProperty);

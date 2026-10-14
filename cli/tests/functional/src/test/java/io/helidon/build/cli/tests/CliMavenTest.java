@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.ARCHETYPE_URL;
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
@@ -54,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("SpellCheckingInspection")
 class CliMavenTest {
 
-    private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4");
+    private static final List<String> MAVEN_VERSIONS = List.of("3.1.1", "3.2.5", "3.8.1", "3.8.2", "3.8.4", "3.9.16");
     private static final MavenVersion MAVEN_3_2_5 = MavenVersion.toMavenVersion("3.2.5");
     private static final String LOCAL_REPO_ARG;
 
@@ -66,7 +67,7 @@ class CliMavenTest {
     private static Path workDir;
     private static Path mavenDirectory;
 
-    private final StringBuilder capturedOutput = new StringBuilder();
+    private final StringBuffer capturedOutput = new StringBuffer();
 
     @BeforeAll
     static void setUp() throws IOException {
@@ -76,6 +77,7 @@ class CliMavenTest {
         for (String version : MAVEN_VERSIONS) {
             downloadMavenDist(mavenDirectory, version);
         }
+        downloadMavenDist(mavenDirectory, "3.10.0");
     }
 
     @BeforeEach
@@ -138,24 +140,25 @@ class CliMavenTest {
         runIssue499(CLI_VERSION);
     }
 
-    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
+    @Test
     void catchingJansiIssue() {
         String output = runCliMavenPluginJansiIssue("2.1.0");
         assertThat(output, containsString("org/fusesource/jansi/AnsiOutputStream"));
         assertThat(output, containsString("BUILD FAILURE"));
     }
 
-    @Test //Issue#259 https://github.com/oracle/helidon-build-tools/issues/259
+    @Test
     void testFixJansiIssue() {
         String output = runCliMavenPluginJansiIssue(CLI_VERSION);
         assertThat(output, containsString("BUILD SUCCESS"));
         validateSeProject(workDir);
     }
 
-    @Test
-    void testCliMavenPlugin() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"3.8.4", "3.9.16", "3.10.0"})
+    void testCliMavenPlugin(String mavenVersion) throws Exception {
         int port = FunctionalUtils.getAvailablePort();
-        Path mavenBinDir = mavenDirectory.resolve("apache-maven-3.8.4/bin");
+        Path mavenBinDir = mavenDirectory.resolve("apache-maven-" + mavenVersion + "/bin");
         generateBareSe(workDir, "testCliMavenPlugin");
 
         ProcessMonitor monitor = MavenCommand.builder()
@@ -333,8 +336,6 @@ class CliMavenTest {
     private void record(PrintStream stream, String str) {
         String line = str + System.lineSeparator();
         stream.print(str);
-        synchronized (capturedOutput) {
-            capturedOutput.append(line);
-        }
+        capturedOutput.append(line);
     }
 }

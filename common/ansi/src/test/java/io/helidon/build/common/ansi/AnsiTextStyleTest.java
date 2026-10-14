@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,21 @@ import java.util.Map;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.RichTextStyle;
 
-import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Attribute;
-import org.fusesource.jansi.Ansi.Color;
+import org.jline.jansi.Ansi;
+import org.jline.jansi.Ansi.Attribute;
+import org.jline.jansi.Ansi.Color;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
-import static org.fusesource.jansi.Ansi.Color.BLACK;
-import static org.fusesource.jansi.Ansi.Color.BLUE;
-import static org.fusesource.jansi.Ansi.Color.CYAN;
-import static org.fusesource.jansi.Ansi.Color.DEFAULT;
-import static org.fusesource.jansi.Ansi.Color.GREEN;
-import static org.fusesource.jansi.Ansi.Color.MAGENTA;
-import static org.fusesource.jansi.Ansi.Color.RED;
-import static org.fusesource.jansi.Ansi.Color.WHITE;
-import static org.fusesource.jansi.Ansi.Color.YELLOW;
+import static org.jline.jansi.Ansi.Color.BLACK;
+import static org.jline.jansi.Ansi.Color.BLUE;
+import static org.jline.jansi.Ansi.Color.CYAN;
+import static org.jline.jansi.Ansi.Color.DEFAULT;
+import static org.jline.jansi.Ansi.Color.GREEN;
+import static org.jline.jansi.Ansi.Color.MAGENTA;
+import static org.jline.jansi.Ansi.Color.RED;
+import static org.jline.jansi.Ansi.Color.WHITE;
+import static org.jline.jansi.Ansi.Color.YELLOW;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
