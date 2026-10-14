@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext;
+import org.junit.jupiter.engine.execution.LauncherStoreFacade;
 import org.junit.platform.commons.util.Preconditions;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.EngineDiscoveryRequest;
@@ -373,7 +374,10 @@ public class JUnitLauncher {
         protected JupiterEngineExecutionContext createExecutionContext(ExecutionRequest request) {
             SimpleSuiteEngineDescriptor descriptor = (SimpleSuiteEngineDescriptor) request.getRootTestDescriptor();
             JupiterConfiguration configuration = descriptor.delegate.getConfiguration();
-            return new JupiterEngineExecutionContext(request.getEngineExecutionListener(), configuration);
+            return new JupiterEngineExecutionContext(
+                    request.getEngineExecutionListener(),
+                    configuration,
+                    new LauncherStoreFacade(request.getStore()));
         }
     }
 
