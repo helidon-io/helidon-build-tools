@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.PropertyEvaluator;
 import io.helidon.build.common.Strings;
 
-import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.archetype.engine.v1.ArchetypeEngine.evaluateConditional;
 import static io.helidon.build.archetype.engine.v1.ArchetypeEngine.transform;
+import static io.helidon.build.common.Strings.normalizePath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -130,7 +130,7 @@ class ArchetypeEngineTest extends ArchetypeBaseTest {
 
         try (Stream<Path> dirStream = Files.walk(outputDirPath)) {
             List<String> files = dirStream.filter(p -> !Files.isDirectory(p))
-                    .map((p) -> TestFiles.pathOf(outputDirPath.relativize(p)))
+                    .map((p) -> normalizePath(outputDirPath.relativize(p)))
                     .sorted()
                     .collect(Collectors.toList());
             assertThat(files, is(List.of("pom.xml", "src/main/java/com/example/myproject/Main.java")));

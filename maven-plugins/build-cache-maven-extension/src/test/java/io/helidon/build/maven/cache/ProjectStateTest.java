@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import java.util.regex.Pattern;
 
 import io.helidon.build.common.Maps;
 import io.helidon.build.common.Strings;
-import io.helidon.build.common.test.utils.TestFiles;
 import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -65,7 +65,7 @@ class ProjectStateTest {
         Path stateFile = Files.createTempFile("state", null);
         projectState.save(stateFile);
 
-        Path expectedFile = TestFiles.testResourcePath(ProjectStateTest.class, "state.xml");
+        Path expectedFile = resourceAsPath("/state.xml", ProjectStateTest.class);
         String actual = Files.readString(stateFile);
         String expected = Files.readString(expectedFile);
         assertThat(actual, is(Strings.normalizeNewLines(stripXmlComments(expected))));
@@ -73,7 +73,7 @@ class ProjectStateTest {
 
     @Test
     void testLoad() throws IOException {
-        Path stateFile = TestFiles.testResourcePath(ProjectStateTest.class, "state.xml");
+        Path stateFile = resourceAsPath("/state.xml", ProjectStateTest.class);
         ProjectState projectState = ProjectState.load(stateFile);
 
         assertThat(projectState, is(not(nullValue())));

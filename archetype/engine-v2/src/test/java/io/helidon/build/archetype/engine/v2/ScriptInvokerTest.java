@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.archetype.engine.v2.Nodes.file;
 import static io.helidon.build.archetype.engine.v2.Nodes.method;
 import static io.helidon.build.archetype.engine.v2.Nodes.output;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -217,8 +217,7 @@ class ScriptInvokerTest {
     }
 
     static Node load(String path) {
-        Path testClasses = targetDir(ScriptInvokerTest.class).resolve("test-classes");
-        try (FileSystem fs = VirtualFileSystem.create(testClasses)) {
+        try (FileSystem fs = VirtualFileSystem.create(location(ScriptInvokerTest.class))) {
             return Script.load(fs.getPath(path));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex.getMessage(), ex);

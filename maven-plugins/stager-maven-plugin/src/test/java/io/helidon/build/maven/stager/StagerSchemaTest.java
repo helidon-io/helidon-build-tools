@@ -32,8 +32,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.location;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -57,7 +57,7 @@ class StagerSchemaTest {
 
     @Test
     void testValidateFactoryFixture() {
-        assertDoesNotThrow(() -> validateResource("test-config.xml"));
+        assertDoesNotThrow(() -> validateResource("/test-config.xml"));
     }
 
     @Test
@@ -130,8 +130,9 @@ class StagerSchemaTest {
 
     @Test
     void testElementsAndAttributesHaveDocumentation() throws Exception {
-        try (InputStream is = Files.newInputStream(targetDir(StagerSchemaTest.class)
-                     .resolve("classes/schema/stager-1.0.xsd"))) {
+        try (InputStream is = Files.newInputStream(location(StagerSchemaTest.class)
+                                                           .resolve("../classes/schema/stager-1.0.xsd")
+                                                           .normalize())) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             Document document = factory.newDocumentBuilder().parse(is);
@@ -142,13 +143,14 @@ class StagerSchemaTest {
     }
 
     static void validate(String path) throws IOException, SAXException {
-        validateResource("schema/" + path);
+        validateResource("/schema/" + path);
     }
 
     static void validateResource(String path) throws IOException, SAXException {
-        try (InputStream is = Files.newInputStream(targetDir(StagerSchemaTest.class)
-                     .resolve("classes/schema/stager-1.0.xsd"));
-             InputStream xml = Files.newInputStream(testResourcePath(StagerSchemaTest.class, path))) {
+        try (InputStream is = Files.newInputStream(location(StagerSchemaTest.class)
+                                                           .resolve("../classes/schema/stager-1.0.xsd")
+                                                           .normalize());
+             InputStream xml = Files.newInputStream(resourceAsPath(path, StagerSchemaTest.class))) {
             SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
             factory.newSchema(new StreamSource(is))
                     .newValidator()

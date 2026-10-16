@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.logging.LogRecorder;
 import io.helidon.build.common.maven.MavenVersion;
-import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +56,7 @@ import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC1;
 import static io.helidon.build.cli.impl.TestMetadata.VERSION_RC2;
 import static io.helidon.build.cli.impl.TestMetadata.readCliDataFile;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.PrintStreams.STDOUT;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
@@ -76,7 +76,7 @@ import static org.hamcrest.Matchers.nullValue;
 @SuppressWarnings("unchecked")
 class MetadataTest {
 
-    static final Path CWD = TestFiles.targetDir(MetadataTest.class).resolve("metadata-ut");
+    static final Path CWD = location(MetadataTest.class).resolve("../metadata-ut").normalize();
     static final String RC1_LAST_UPDATE = VERSION_RC1 + File.separator + LAST_UPDATE_FILE_NAME;
     static final String RC1_ZIP = VERSION_RC1 + File.separator + CLI_DATA_FILE_NAME;
     static final String RC1_ZIP_URI = VERSION_RC1 + "/" + CLI_DATA_FILE_NAME;

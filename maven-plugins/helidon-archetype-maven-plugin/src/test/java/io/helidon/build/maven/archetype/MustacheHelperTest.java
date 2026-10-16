@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package io.helidon.build.maven.archetype;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static io.helidon.build.common.FileUtils.unique;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import io.helidon.build.common.test.utils.WorkDirExtension;
+
 import static io.helidon.build.maven.archetype.MustacheHelper.renderMustacheTemplate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -39,18 +39,12 @@ import static org.hamcrest.Matchers.is;
 /**
  * Tests {@link MustacheHelper}.
  */
+@ExtendWith(WorkDirExtension.class)
 class MustacheHelperTest {
 
-    private static final Path OUTPUT_DIR = targetDir(MustacheHelperTest.class).resolve("mustache-helper-ut");
-
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        Files.createDirectories(OUTPUT_DIR);
-    }
-
     @Test
-    void testRender() throws IOException {
-        Path target = unique(OUTPUT_DIR, "test", ".txt");
+    void testRender(Path workDir) throws IOException {
+        Path target = workDir.resolve("test.txt");
         InputStream tpl = new ByteArrayInputStream((""
                 + "{{#set}}color:{{.}},{{/set}}"
                 + "{{#map}}{{key}}:{{value}}{{/map}},"

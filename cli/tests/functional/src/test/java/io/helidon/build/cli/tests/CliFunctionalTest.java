@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import io.helidon.build.cli.tests.ProcessInvocation.Monitor;
 import io.helidon.build.cli.tests.ProcessInvocation.MonitorException;
 import io.helidon.build.common.LazyValue;
 import io.helidon.build.common.SourcePath;
+import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.LogLevel;
-import io.helidon.build.common.test.utils.TestFiles;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,6 +45,7 @@ import static io.helidon.build.cli.tests.FunctionalUtils.CLI_NATIVE;
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_EXE;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
 import static io.helidon.build.common.FileUtils.list;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -55,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class CliFunctionalTest {
 
-    private static final Path CWD = TestFiles.targetDir(CliFunctionalTest.class).resolve("cli-functional-test");
+    private static final Path CWD = location(CliFunctionalTest.class).resolve("../cli-functional-test").normalize();
     private static final LazyValue<Path> INPUT_FILE = new LazyValue<>(CliFunctionalTest::inputFile);
 
     static {
@@ -73,7 +74,7 @@ class CliFunctionalTest {
                 .peek(p -> assertThat(Files.exists(p), is(true)))
                 .map(CLI_DIR.get()::relativize)
                 .map(Path::toString)
-                .map(s -> s.replace("\\", "/"))
+                .map(Strings::normalizePath)
                 .collect(Collectors.toList());
 
         // ensure the main directories are present

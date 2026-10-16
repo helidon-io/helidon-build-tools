@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import io.helidon.build.common.logging.Log;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -42,7 +42,7 @@ class LatestVersionTest {
     private static final String RULE_HELIDON_3 = "cli.[3-alpha,).latest=[3-alpha,)";
 
     private static Path latestFile(String fileName) {
-        Path file = testResourcePath(LatestVersionTest.class, "latest-files/" + fileName);
+        Path file = resourceAsPath("/latest-files/" + fileName, LatestVersionTest.class);
         Log.info("%n----- Testing latest file '" + fileName + "' -----%n");
         try {
             Files.readAllLines(file, StandardCharsets.UTF_8)

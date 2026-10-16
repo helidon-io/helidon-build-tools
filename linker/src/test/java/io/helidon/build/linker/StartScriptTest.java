@@ -33,10 +33,10 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.OSType.Linux;
 import static io.helidon.build.common.OSType.Windows;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.not;
 @Order(4)
 class StartScriptTest {
 
-    private static final Path INSTALL_DIR = ensureDirectory(targetDir(StartScriptTest.class).resolve("script-home"));
+    private static final Path INSTALL_DIR = ensureDirectory(location(StartScriptTest.class).resolve("../script-home").normalize());
     private static final Path BIN_DIR = ensureDirectory(INSTALL_DIR.resolve("bin"));
     private static final Path LIB_DIR = ensureDirectory(INSTALL_DIR.resolve("lib"));
     private static final Path APP_DIR = ensureDirectory(INSTALL_DIR.resolve("app"));

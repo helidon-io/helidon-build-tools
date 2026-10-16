@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.zip;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static java.nio.file.FileSystems.getFileSystem;
 import static java.nio.file.FileSystems.newFileSystem;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,12 +46,12 @@ class MavenFileSystemProviderTest {
 
     @BeforeAll
     static void beforeAllTests() throws IOException {
-        Path targetDir = targetDir(MavenFileSystemProviderTest.class);
-        Path localRepo = unique(targetDir.resolve("fs-provider-ut"), "repo");
+        Path testClasses = location(MavenFileSystemProviderTest.class);
+        Path localRepo = unique(testClasses.resolve("../fs-provider-ut").normalize(), "repo");
         System.setProperty(MavenFileResolver.LOCAL_REPO_PROPERTY, localRepo.toString());
         Path artifact = localRepo.resolve(ARTIFACT_DIR).resolve(ZIP_ARTIFACT_FILE);
         Files.createDirectories(artifact.getParent());
-        zip(artifact, targetDir.resolve("test-classes/test-artifact"));
+        zip(artifact, testClasses.resolve("test-artifact"));
         Files.copy(artifact, localRepo.resolve(ARTIFACT_DIR).resolve(JAR_ARTIFACT_FILE));
     }
 

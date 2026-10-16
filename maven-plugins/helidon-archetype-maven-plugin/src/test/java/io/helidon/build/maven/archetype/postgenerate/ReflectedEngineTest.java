@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.Strings.normalizeNewLines;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static java.nio.file.Files.readString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -39,8 +39,8 @@ class ReflectedEngineTest {
 
     @Test
     void testGenerate() throws IOException {
-        Path targetDir = targetDir(this.getClass());
-        Path projectDir = generate(targetDir.resolve("test-classes/simple"), targetDir.resolve("reflected-engine-ut"));
+        Path testClasses = location(ReflectedEngineTest.class);
+        Path projectDir = generate(testClasses.resolve("simple"), testClasses.resolve("../reflected-engine-ut").normalize());
         assertThat(Files.exists(projectDir.resolve("color.txt")), is(true));
         assertThat(normalizeNewLines(readString(projectDir.resolve("color.txt"))), is("red\n"));
     }

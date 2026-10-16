@@ -1099,6 +1099,21 @@ public final class FileUtils {
     }
 
     /**
+     * Get the directory location.
+     *
+     * @param clazz class to resolve
+     * @return Path
+     * @throws IllegalStateException if the location URI is invalid
+     */
+    public static Path location(Class<?> clazz) {
+        try {
+            return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
      * Get the root of the given path.
      *
      * @param path path
@@ -1204,6 +1219,20 @@ public final class FileUtils {
             return Files.readAllLines(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Read a file as a string.
+     *
+     * @param path path
+     * @return String
+     */
+    public static String readString(Path path) {
+        try {
+            return Files.readString(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

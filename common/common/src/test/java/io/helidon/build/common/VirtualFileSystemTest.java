@@ -26,13 +26,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.build.common.test.utils.TestFiles;
-
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.Strings.normalizeNewLines;
-import static io.helidon.build.common.test.utils.TestFiles.pathOf;
+import static io.helidon.build.common.Strings.normalizePath;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.isSymbolicLink;
 import static java.nio.file.Files.newInputStream;
@@ -52,9 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class VirtualFileSystemTest {
 
     private static final boolean IS_WINDOWS = OSType.CURRENT_OS == OSType.Windows;
-    private static final Path ROOT = TestFiles.targetDir(VirtualFileSystemTest.class)
-                                              .resolve("test-classes/vfs")
-                                              .normalize();
+    private static final Path TEST_CLASSES = location(VirtualFileSystemTest.class);
+    private static final Path ROOT = TEST_CLASSES.resolve("vfs").normalize();
 
 
     private static FileSystem vfs() {
@@ -74,10 +72,10 @@ class VirtualFileSystemTest {
         FileSystem fs = vfs();
         Iterator<Path> it = fs.getRootDirectories().iterator();
         assertThat(it.hasNext(), is(true));
-        assertThat(pathOf(it.next()), is("/"));
+        assertThat(normalizePath(it.next()), is("/"));
         assertThat(it.hasNext(), is(false));
-        assertThat(pathOf(fs.getPath("/").toAbsolutePath()), is("/"));
-        assertThat(pathOf(fs.getPath("").toAbsolutePath()), is("/"));
+        assertThat(normalizePath(fs.getPath("/").toAbsolutePath()), is("/"));
+        assertThat(normalizePath(fs.getPath("").toAbsolutePath()), is("/"));
         //noinspection ResultOfMethodCallIgnored
         InvalidPathException ex = assertThrows(InvalidPathException.class, () -> fs.getPath("../../").toAbsolutePath());
         assertThat(ex.getMessage(), startsWith("Not within virtual root"));
@@ -87,10 +85,10 @@ class VirtualFileSystemTest {
     void testNormalize() {
         FileSystem fs = vfs();
         Path red = fs.getPath("red");
-        assertThat(pathOf(red.resolve("./blue")), is("red/./blue"));
-        assertThat(pathOf(red.resolve("./blue").normalize()), is("red/blue"));
-        assertThat(pathOf(red.resolve("blue/../green")), is("red/blue/../green"));
-        assertThat(pathOf(red.resolve("blue/../green").normalize()), is("red/green"));
+        assertThat(normalizePath(red.resolve("./blue")), is("red/./blue"));
+        assertThat(normalizePath(red.resolve("./blue").normalize()), is("red/blue"));
+        assertThat(normalizePath(red.resolve("blue/../green")), is("red/blue/../green"));
+        assertThat(normalizePath(red.resolve("blue/../green").normalize()), is("red/green"));
     }
 
     @Test
@@ -98,21 +96,21 @@ class VirtualFileSystemTest {
         FileSystem fs = vfs();
         Path red = fs.getPath("red");
         Path green = red.resolve("blue/green");
-        assertThat(pathOf(red.relativize(green)), is("blue/green"));
-        assertThat(pathOf(green.relativize(red)), is("../.."));
+        assertThat(normalizePath(red.relativize(green)), is("blue/green"));
+        assertThat(normalizePath(green.relativize(red)), is("../.."));
     }
 
     @Test
     void testGetRoot() {
         Path path = vfs().getPath("red/blue/green");
-        assertThat(pathOf(path.toAbsolutePath().getRoot()), is("/"));
+        assertThat(normalizePath(path.toAbsolutePath().getRoot()), is("/"));
     }
 
     @Test
     void testGetParent() {
         Path green = vfs().getPath("red/blue/green");
-        assertThat(pathOf(green.getParent()), is("red/blue"));
-        assertThat(pathOf(green.getParent().getParent()), is("red"));
+        assertThat(normalizePath(green.getParent()), is("red/blue"));
+        assertThat(normalizePath(green.getParent().getParent()), is("red"));
         assertThat(green.getParent().getParent().getParent(), is(nullValue()));
     }
 
@@ -120,10 +118,10 @@ class VirtualFileSystemTest {
     void testGetFileName() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(pathOf(green.getFileName()), is("green"));
+        assertThat(normalizePath(green.getFileName()), is("green"));
         Path blue = fs.getPath("red/blue/green/..");
-        assertThat(pathOf(blue.getFileName()), is(".."));
-        assertThat(pathOf(blue.normalize().getFileName()), is("blue"));
+        assertThat(normalizePath(blue.getFileName()), is(".."));
+        assertThat(normalizePath(blue.normalize().getFileName()), is("blue"));
     }
 
     @Test
@@ -137,35 +135,33 @@ class VirtualFileSystemTest {
     void testGetName() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(pathOf(green.getName(0)), is("red"));
-        assertThat(pathOf(green.getName(1)), is("blue"));
-        assertThat(pathOf(green.getName(2)), is("green"));
+        assertThat(normalizePath(green.getName(0)), is("red"));
+        assertThat(normalizePath(green.getName(1)), is("blue"));
+        assertThat(normalizePath(green.getName(2)), is("green"));
     }
 
     @Test
     void testSubPath() {
         FileSystem fs = vfs();
         Path green = fs.getPath("red/blue/green");
-        assertThat(pathOf(green.subpath(0, 1)), is("red"));
-        assertThat(pathOf(green.subpath(0, 2)), is("red/blue"));
-        assertThat(pathOf(green.subpath(1, 2)), is("blue"));
-        assertThat(pathOf(green.subpath(1, 3)), is("blue/green"));
-        assertThat(pathOf(green.subpath(0, 3)), is("red/blue/green"));
+        assertThat(normalizePath(green.subpath(0, 1)), is("red"));
+        assertThat(normalizePath(green.subpath(0, 2)), is("red/blue"));
+        assertThat(normalizePath(green.subpath(1, 2)), is("blue"));
+        assertThat(normalizePath(green.subpath(1, 3)), is("blue/green"));
+        assertThat(normalizePath(green.subpath(0, 3)), is("red/blue/green"));
     }
 
     @Test
     void testToRealPath() throws IOException {
         Assumptions.assumeFalse(IS_WINDOWS);
-        FileSystem fs = VirtualFileSystem.create(TestFiles.targetDir(VirtualFileSystemTest.class)
-                                                          .resolve("../src/test/resources/vfs")
-                                                          .normalize());
-        assertThat(pathOf(fs.getPath("green").toRealPath()), is("blue"));
+        FileSystem fs = VirtualFileSystem.create(TEST_CLASSES.resolve("../../src/test/resources/vfs").normalize());
+        assertThat(normalizePath(fs.getPath("green").toRealPath()), is("blue"));
     }
 
     @Test
     void testToUri() {
         assertThat(vfs().getPath("green").toUri().toString(),
-                is(String.format("virtual:file://%s%s/!green", IS_WINDOWS ? "/" : "", pathOf(ROOT))));
+                is(String.format("virtual:file://%s%s/!green", IS_WINDOWS ? "/" : "", normalizePath(ROOT))));
     }
 
     @Test
@@ -213,7 +209,7 @@ class VirtualFileSystemTest {
     void testResolveSibling() {
         FileSystem fs = vfs();
         Path green = fs.getPath("green/blue");
-        assertThat(pathOf(green.resolveSibling("red")), is("green/red"));
+        assertThat(normalizePath(green.resolveSibling("red")), is("green/red"));
     }
 
     @Test
@@ -225,7 +221,7 @@ class VirtualFileSystemTest {
     @Test
     void testWalk() throws IOException {
         FileSystem fs = vfs();
-        List<String> paths = Files.walk(fs.getPath("/")).map(TestFiles::pathOf).collect(Collectors.toList());
+        List<String> paths = Files.walk(fs.getPath("/")).map(Strings::normalizePath).collect(Collectors.toList());
         assertThat(paths, hasItems("/", "dir1", "dir1/file.txt", "blue", "green"));
     }
 
@@ -246,9 +242,7 @@ class VirtualFileSystemTest {
     @Test
     void testSymbolicLink() {
         Assumptions.assumeFalse(IS_WINDOWS);
-        FileSystem fs = VirtualFileSystem.create(TestFiles.targetDir(VirtualFileSystemTest.class)
-                                                          .resolve("../src/test/resources/vfs")
-                                                          .normalize());
+        FileSystem fs = VirtualFileSystem.create(TEST_CLASSES.resolve("../../src/test/resources/vfs").normalize());
         assertThat(isSymbolicLink(fs.getPath("green")), is(true));
     }
 
@@ -318,6 +312,6 @@ class VirtualFileSystemTest {
     @Test
     void testResolveSlash() {
         Path root =  vfs().getPath("/");
-        assertThat(pathOf(root.resolve("/")), is("/"));
+        assertThat(normalizePath(root.resolve("/")), is("/"));
     }
 }

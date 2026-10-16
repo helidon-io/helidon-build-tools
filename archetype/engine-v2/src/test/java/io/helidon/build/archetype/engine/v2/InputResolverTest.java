@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.build.archetype.engine.v2;
 
 import java.io.ByteArrayInputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +50,9 @@ import static io.helidon.build.archetype.engine.v2.Nodes.step;
 import static io.helidon.build.archetype.engine.v2.Nodes.validation;
 import static io.helidon.build.archetype.engine.v2.Nodes.variableText;
 import static io.helidon.build.archetype.engine.v2.Nodes.variables;
+import static io.helidon.build.common.FileUtils.location;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.Strings.normalizeNewLines;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -554,8 +553,8 @@ class InputResolverTest {
         assertThat(steps, is(empty()));
     }
 
-    private final String VALIDATION_ALL_IN_ONE = "resolver/validations-all-in-one.xml";
-    private final String VALIDATION_EXEC = "resolver/archetype-base.xml";
+    private final String VALIDATION_ALL_IN_ONE = "/resolver/validations-all-in-one.xml";
+    private final String VALIDATION_EXEC = "/resolver/archetype-base.xml";
 
     @ParameterizedTest
     @ValueSource(strings = {VALIDATION_ALL_IN_ONE, VALIDATION_EXEC})
@@ -587,13 +586,12 @@ class InputResolverTest {
     }
 
     static Node load(String path) {
-        return Script.load(testResourcePath(InputResolverTest.class, path));
+        return Script.load(resourceAsPath(path, InputResolverTest.class));
     }
 
     Context createContext() {
-        Path target = targetDir(InputResolverTest.class);
         Context context = new Context();
-        context.pushCwd(target.resolve("test-classes/resolver"));
+        context.pushCwd(location(InputResolverTest.class).resolve("resolver"));
         return context;
     }
 

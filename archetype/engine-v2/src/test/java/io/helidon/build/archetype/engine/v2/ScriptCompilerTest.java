@@ -48,9 +48,9 @@ import static io.helidon.build.archetype.engine.v2.ScriptCompiler.STEP_NO_INPUT;
 import static io.helidon.build.archetype.engine.v2.ScriptCompiler.Options.NO_TRANSIENT;
 import static io.helidon.build.archetype.engine.v2.ScriptCompiler.Options.NO_OUTPUT;
 import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.location;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.FileUtils.unique;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -65,7 +65,7 @@ class ScriptCompilerTest {
     @Test
     void testEmptyScript() {
         Path outputDir = compile("compiler/empty-script", "main.xml", IGNORE_ERRORS, NO_OUTPUT);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/empty-script.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/empty-script.xml")));
     }
 
     @Test
@@ -79,151 +79,151 @@ class ScriptCompilerTest {
     @Test
     void testExecUrl() {
         Path outputDir = compile("compiler/exec-url", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/exec-url.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/exec-url.xml")));
     }
 
     @Test
     void testFiltering1() {
         Path outputDir = compile("compiler/filtering1", "main.xml", IGNORE_ERRORS, NO_OUTPUT, NO_TRANSIENT);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/filtering1.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/filtering1.xml")));
     }
 
     @Test
     void testFiltering2() {
         Path outputDir = compile("compiler/filtering2", "main.xml", NO_OUTPUT, NO_TRANSIENT);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/filtering2.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/filtering2.xml")));
     }
 
     @Test
     void testFiltering3() {
         Path outputDir = compile("compiler/filtering3", "main.xml", NO_OUTPUT);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/filtering3.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/filtering3.xml")));
     }
 
     @Test
     void testInlined1() {
         Path outputDir = compile("compiler/inlined1", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/inlined1.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/inlined1.xml")));
     }
 
     @Test
     void testInlined2() {
         Path outputDir = compile("compiler/inlined2", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/inlined2.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/inlined2.xml")));
     }
 
     @Test
     void testInlined3() {
         Path outputDir = compile("compiler/inlined3", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/inlined3.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/inlined3.xml")));
     }
 
     @Test
     void testInlined4() {
         Path outputDir = compile("compiler/inlined4", "main.xml", IGNORE_ERRORS);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/inlined4.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/inlined4.xml")));
     }
 
     @Test
     void testInlined5() {
         Path outputDir = compile("compiler/inlined5", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/inlined5.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/inlined5.xml")));
     }
 
     @Test
     void testOutput1() {
         Path outputDir = compile("compiler/output1", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/output1.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/output1.xml")));
     }
 
     @Test
     void testOutput2() {
         Path outputDir = compile("compiler/output2", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/output2.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/output2.xml")));
     }
 
     @Test
     void testOutput3() {
         Path outputDir = compile("compiler/output3", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/output3.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/output3.xml")));
     }
 
     @Test
     void testOutput4() {
         Path outputDir = compile("compiler/output4", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/output4.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/output4.xml")));
     }
 
     @Test
     void testInput1() {
         Path outputDir = compile("compiler/input1", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input1.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input1.xml")));
     }
 
     @Test
     void testInput2() {
         Path outputDir = compile("compiler/input2", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input2.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input2.xml")));
     }
 
     @Test
     void testInput3() {
         Path outputDir = compile("compiler/input3", "main.xml", IGNORE_ERRORS);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input3.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input3.xml")));
     }
 
     @Test
     void testInput4() {
         Path outputDir = compile("compiler/input4", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input4.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input4.xml")));
     }
 
     @Test
     void testInput5() {
         Path outputDir = compile("compiler/input5", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input5.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input5.xml")));
     }
 
     @Test
     void testInput6() {
         Path outputDir = compile("compiler/input6", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input6.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input6.xml")));
     }
 
     @Test
     void testInput7() {
         Path outputDir = compile("compiler/input7", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input7.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input7.xml")));
     }
 
     @Test
     void testInput8() {
         Path outputDir = compile("compiler/input8", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/input8.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/input8.xml")));
     }
 
     @Test
     void testVariables1() {
         Path outputDir = compile("compiler/variables1", "main.xml", IGNORE_ERRORS);
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/variables1.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/variables1.xml")));
     }
 
     @Test
     void testVariables2() {
         Path outputDir = compile("compiler/variables2", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/variables2.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/variables2.xml")));
     }
 
     @Test
     void testVariables3() {
         Path outputDir = compile("compiler/variables3", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/variables3.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/variables3.xml")));
     }
 
     @Test
     void testNormalizedExpressions() {
         Path outputDir = compile("compiler/normalized-expr", "main.xml");
-        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("compiler/expected/normalized-expr.xml")));
+        assertThat(normalizeXml(outputDir.resolve("main.xml")), is(normalizeXml("/compiler/expected/normalized-expr.xml")));
     }
 
     @Test
@@ -439,12 +439,12 @@ class ScriptCompilerTest {
     }
 
     static Path compile(String path, String entrypoint, ScriptCompiler.Options... features) {
-        Path targetDir = targetDir(ScriptCompilerTest.class);
-        try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
+        Path testClasses = location(ScriptCompilerTest.class);
+        try (FileSystem fs = VirtualFileSystem.create(testClasses)) {
             Path cwd = fs.getPath(path);
             Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
             ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
-            Path outputDir = unique(targetDir.resolve("compiler-ut"), fileName(cwd));
+            Path outputDir = unique(testClasses.resolve("../compiler-ut").normalize(), fileName(cwd));
             compiler.compile(List.of(features)).write(outputDir);
             return outputDir;
         } catch (IOException ex) {
@@ -456,7 +456,7 @@ class ScriptCompilerTest {
     static final Pattern XML_NAMESPACE = Pattern.compile("\\s+((xmlns|xsi)(:\\w+)?=\"[^\"]+)");
 
     static String normalizeXml(String path) {
-        return normalizeXml(testResourcePath(XMLScriptWriterTest.class, path));
+        return normalizeXml(resourceAsPath(path, XMLScriptWriterTest.class));
     }
 
     static String normalizeXml(Path file) {

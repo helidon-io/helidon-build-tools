@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.common.test.utils.TestFiles;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -39,6 +37,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 
 import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static java.util.Objects.requireNonNull;
 
@@ -49,7 +48,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings({"UnconstructableJUnitTestCase", "JUnitMalformedDeclaration"})
 public final class DevMojoLoader extends AbstractMojoTestCase {
     private static final AtomicReference<DevMojoLoader> INSTANCE = new AtomicReference<>();
-    private static final Path TARGET_DIR = TestFiles.targetDir(DevMojoLoader.class);
+    private static final Path TARGET_DIR = location(DevMojoLoader.class).resolve("..").normalize();
     private static final Path TEST_TARGET_DIR = TARGET_DIR.resolve("test");
     private static final Path RESOURCES_DIR = TARGET_DIR.resolve("../src/test/resources").normalize();
     private static final String LOCAL_REPO_PROPERTY = "maven.repo.local";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@ import io.helidon.build.common.Strings;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.readString;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
-import static io.helidon.build.common.test.utils.TestFiles.testResourceString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,9 +39,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ExecTest {
 
     static final CommandRegistry REGISTRY = new TestCommandRegistry();
-    static final String CLI_USAGE = testResourceString(ExecTest.class, "cli-usage.txt");
-    static final String HELP_CMD_HELP = testResourceString(ExecTest.class, "help-cmd-help.txt");
-    static final String SIMPLE_CMD_HELP = testResourceString(ExecTest.class, "simple-cmd-help.txt");
+    static final String CLI_USAGE = readString(resourceAsPath("/cli-usage.txt", ExecTest.class));
+    static final String HELP_CMD_HELP = readString(resourceAsPath("/help-cmd-help.txt", ExecTest.class));
+    static final String SIMPLE_CMD_HELP = readString(resourceAsPath("/simple-cmd-help.txt", ExecTest.class));
 
     @Test
     void testUsage() {

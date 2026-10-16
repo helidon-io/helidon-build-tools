@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.requireJavaExecutable;
 import static io.helidon.build.common.FileUtils.unique;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 
 class ProcessInvocation {
 
@@ -95,7 +95,7 @@ class ProcessInvocation {
     }
 
     static String cliJar() {
-        return targetDir(ProcessInvocation.class).resolve("helidon-cli.jar").toString();
+        return location(ProcessInvocation.class).resolve("../helidon-cli.jar").normalize().toString();
     }
 
     static class Recorder {

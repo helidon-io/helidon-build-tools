@@ -25,8 +25,9 @@ import javax.xml.validation.SchemaFactory;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.location;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
+import static java.nio.file.Files.newInputStream;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,8 +45,10 @@ class PlansSchemaTest {
     }
 
     private static void validate(String path) throws IOException, SAXException {
-        try (InputStream schema = Files.newInputStream(targetDir(PlansSchemaTest.class).resolve("classes/schema/plans-1.0.xsd"));
-             InputStream xml = Files.newInputStream(testResourcePath(PlansSchemaTest.class, "schema/" + path))) {
+        try (InputStream schema = newInputStream(location(PlansSchemaTest.class)
+                                                         .resolve("../classes/schema/plans-1.0.xsd")
+                                                         .normalize());
+             InputStream xml = newInputStream(resourceAsPath("/schema/" + path, PlansSchemaTest.class))) {
             SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
             factory.newSchema(new StreamSource(schema))
                     .newValidator()

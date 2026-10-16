@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import org.junit.jupiter.api.BeforeAll;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_PLUGIN_VERSION_PROPERTY;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.TestUtils.helidonTestVersion;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 
 /**
  * Base class for tests that require the {@link Metadata}.
@@ -50,7 +50,7 @@ class MetadataAccess {
         System.setProperty(HELIDON_VERSION_PROPERTY, helidonTestVersion());
         System.setProperty(HELIDON_PLUGIN_VERSION_PROPERTY, helidonTestVersion());
 
-        Path cwd = targetDir(MetadataAccess.class).resolve("metadata-access");
+        Path cwd = location(MetadataAccess.class).resolve("../metadata-access").normalize();
         Path userHome = unique(cwd, "server");
         Config.setUserHome(userHome);
         Config.setUserConfig(UserConfig.create(userHome));
