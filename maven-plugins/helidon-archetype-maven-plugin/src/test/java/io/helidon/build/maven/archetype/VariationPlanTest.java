@@ -26,7 +26,7 @@ import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.xml.XMLElement.read;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -171,6 +171,6 @@ class VariationPlanTest {
     }
 
     private static Path resource(String path) {
-        return testResourcePath(VariationPlanTest.class, "variation-plans/" + path);
+        return resourceAsPath("/variation-plans/" + path, VariationPlanTest.class);
     }
 }

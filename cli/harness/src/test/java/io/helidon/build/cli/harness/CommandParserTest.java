@@ -29,7 +29,7 @@ import io.helidon.build.cli.harness.CommandParser.CommandParserException;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -293,7 +293,7 @@ class CommandParserTest {
         KeyValueInfo<String> param = new KeyValueInfo<>(String.class, "flavor", "flavor", null, false);
         CommandParameters cmd = new CommandParameters(param);
 
-        URI argsFilePath = testResourcePath(CommandParserTest.class, "args.txt").toUri();
+        URI argsFilePath = resourceAsPath("/args.txt", CommandParserTest.class).toUri();
         CommandParser parser = CommandParser.create("command", "--args-file", Paths.get(argsFilePath).toString());
         CommandParser.Resolver resolver = parser.parseCommand(cmd);
 
@@ -316,7 +316,7 @@ class CommandParserTest {
 
     @Test
     void testPropsFileOptionWithExistingFile() {
-        String argsFilePath = testResourcePath(getClass(), "/test-props-file.properties").toString();
+        String argsFilePath = resourceAsPath("/test-props-file.properties", CommandParserTest.class).toString();
         KeyValueInfo<String> propsFileOption = new KeyValueInfo<>(String.class, "props-file", "properties file", null, false);
         CommandParameters cmd = new CommandParameters(propsFileOption);
 

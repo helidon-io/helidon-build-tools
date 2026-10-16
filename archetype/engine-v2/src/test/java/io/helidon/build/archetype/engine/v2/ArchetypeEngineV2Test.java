@@ -28,9 +28,9 @@ import io.helidon.build.common.VirtualFileSystem;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.zip;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -437,14 +437,14 @@ class ArchetypeEngineV2Test {
                 Map<String, String> externalValues,
                 Map<String, String> externalDefaults) throws IOException {
 
-        Path targetDir = targetDir(this.getClass());
-        Path sourceDir = targetDir.resolve("test-classes/e2e");
-        Path testOutputDir = targetDir.resolve("engine-ut");
-        Path zipFile = unique(testOutputDir, "archetype", ".zip");
+        Path testClasses = location(ArchetypeEngineV2Test.class);
+        Path sourceDir = testClasses.resolve("e2e");
+        Path workDir = testClasses.resolve("../engine-ut").normalize();
+        Path zipFile = unique(workDir, "archetype", ".zip");
         zip(zipFile, sourceDir);
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader())) {
             Path root = fs.getRootDirectories().iterator().next();
-            Path outputDir = unique(testOutputDir, name);
+            Path outputDir = unique(workDir, name);
             return e2e(root, outputDir, outputPropsFile, externalValues, externalDefaults);
         }
     }
@@ -454,12 +454,12 @@ class ArchetypeEngineV2Test {
     }
 
     Path e2eDir(String name, Map<String, String> externalValues, Map<String, String> externalDefaults) {
-        Path targetDir = targetDir(this.getClass());
-        Path sourceDir = targetDir.resolve("test-classes/e2e");
-        Path testOutputDir = targetDir.resolve("engine-ut");
+        Path testClasses = location(ArchetypeEngineV2Test.class);
+        Path sourceDir = testClasses.resolve("e2e");
+        Path workDir = testClasses.resolve("../engine-ut").normalize();
         try (FileSystem fs = VirtualFileSystem.create(sourceDir)) {
             Path root = fs.getRootDirectories().iterator().next();
-            Path outputDir = unique(testOutputDir, name);
+            Path outputDir = unique(workDir, name);
             return e2e(root, outputDir, null, externalValues, externalDefaults);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

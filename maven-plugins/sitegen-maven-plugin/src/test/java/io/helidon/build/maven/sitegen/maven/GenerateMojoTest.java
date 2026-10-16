@@ -18,12 +18,13 @@ package io.helidon.build.maven.sitegen.maven;
 
 import java.nio.file.Path;
 
+import io.helidon.build.common.test.utils.WorkDirExtension;
 import io.helidon.build.maven.sitegen.Site;
 import io.helidon.build.maven.sitegen.VuetifyBackend;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static io.helidon.build.maven.sitegen.maven.MavenPluginHelper.mojo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -35,13 +36,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests {@link GenerateMojo}.
  */
+@ExtendWith(WorkDirExtension.class)
 class GenerateMojoTest {
 
-    private static final Path OUTPUT_DIR = targetDir(GenerateMojoTest.class).resolve("generate-mojo");
-
     @Test
-    void testBasicBackendConfiguration() throws Exception {
-        GenerateMojo mojo = mojo("generate-mojo/pom-basic-backend.xml", OUTPUT_DIR, "generate", GenerateMojo.class);
+    void testBasicBackendConfiguration(Path workDir) throws Exception {
+        GenerateMojo mojo = mojo("generate-mojo/pom-basic-backend.xml", workDir, "generate", GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();
         assertThat(site, is(not(nullValue())));
@@ -49,8 +49,8 @@ class GenerateMojoTest {
     }
 
     @Test
-    void testVuetifyBackendConfiguration() throws Exception {
-        GenerateMojo mojo = mojo("generate-mojo/pom-vuetify-backend.xml", OUTPUT_DIR, "generate", GenerateMojo.class);
+    void testVuetifyBackendConfiguration(Path workDir) throws Exception {
+        GenerateMojo mojo = mojo("generate-mojo/pom-vuetify-backend.xml", workDir, "generate", GenerateMojo.class);
         mojo.execute();
         Site site = mojo.getSite();
         assertThat(site, is(not(nullValue())));

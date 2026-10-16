@@ -24,6 +24,8 @@ import java.util.Map;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
 import com.github.difflib.patch.Patch;
+
+import io.helidon.build.common.test.utils.WorkDirExtension;
 import io.helidon.build.maven.sitegen.models.Header;
 import io.helidon.build.maven.sitegen.models.Nav;
 import io.helidon.build.maven.sitegen.models.PageFilter;
@@ -32,8 +34,9 @@ import io.helidon.build.maven.sitegen.models.StaticAsset;
 import io.helidon.build.maven.sitegen.models.WebResource;
 import io.helidon.build.maven.sitegen.models.WebResource.Location;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.maven.sitegen.Site.Options.STRICT_IMAGES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests {@link VuetifyBackend}.
  */
+@ExtendWith(WorkDirExtension.class)
 class VuetifyBackendTest {
 
     @Test
@@ -97,10 +101,8 @@ class VuetifyBackendTest {
     }
 
     @Test
-    void testVuetify1() throws Exception {
-        Path targetDir = targetDir(VuetifyBackendTest.class);
-        Path sourceDir = targetDir.resolve("test-classes/vuetify1");
-        Path outputDir = targetDir.resolve("vuetify/testvuetify1");
+    void testVuetify1(Path workDir) throws Exception {
+        Path sourceDir = location(VuetifyBackendTest.class).resolve("vuetify1");
 
         Site.builder()
             .page(PageFilter.builder().includes("**/*.adoc"))
@@ -142,16 +144,16 @@ class VuetifyBackendTest {
                                                     .glyph("icon", "info")
                                                     .href("https://docs.oracle.com/javase/8/docs/api/"))))
             .build()
-            .generate(sourceDir, outputDir);
+            .generate(sourceDir, workDir);
 
-        Path index = outputDir.resolve("index.html");
+        Path index = workDir.resolve("index.html");
         assertThat(Files.exists(index), is(true));
 
-        Path actualConfig = outputDir.resolve("main/config.js");
+        Path actualConfig = workDir.resolve("main/config.js");
         assertThat(Files.exists(actualConfig), is(true));
         assertRendering(actualConfig, sourceDir.resolve("expected-config"));
 
-        Path home = outputDir.resolve("pages/home.js");
+        Path home = workDir.resolve("pages/home.js");
         assertThat(Files.exists(home), is(true));
 
         assertThat(Files.readAllLines(home)
@@ -160,28 +162,26 @@ class VuetifyBackendTest {
     }
 
     @Test
-    void testVuetify2() {
-        Path targetDir = targetDir(VuetifyBackendTest.class);
-        Path sourceDir = targetDir.resolve("test-classes/vuetify2");
-        Path outputDir = targetDir.resolve("vuetify/testvuetify2");
+    void testVuetify2(Path workDir) {
+        Path sourceDir = location(VuetifyBackendTest.class).resolve("vuetify2");
         Site site = Site.builder()
                         .options(Map.of(STRICT_IMAGES, "false"))
                         .page(PageFilter.builder().includes("**/*.adoc"))
                         .backend(VuetifyBackend.builder().home("home.adoc"))
                         .build();
 
-        site.generate(sourceDir, outputDir);
+        site.generate(sourceDir, workDir);
 
-        Path index = outputDir.resolve("index.html");
+        Path index = workDir.resolve("index.html");
         assertThat(Files.exists(index), is(true));
 
-        Path config = outputDir.resolve("main/config.js");
+        Path config = workDir.resolve("main/config.js");
         assertThat(Files.exists(config), is(true));
 
-        Path home = outputDir.resolve("pages/home.js");
+        Path home = workDir.resolve("pages/home.js");
         assertThat(Files.exists(home), is(true));
 
-        Path homeCustom = outputDir.resolve("pages/home_custom.js");
+        Path homeCustom = workDir.resolve("pages/home_custom.js");
         assertThat(Files.exists(homeCustom), is(true));
     }
 

@@ -60,7 +60,7 @@ import static io.helidon.build.archetype.engine.v2.Nodes.variableText;
 import static io.helidon.build.archetype.engine.v2.Nodes.variables;
 import static io.helidon.build.archetype.v2.json.JsonFactory.PRETTY_OPTIONS;
 import static io.helidon.build.archetype.v2.json.JsonFactory.PROVIDER;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -98,13 +98,13 @@ class JsonScriptWriterTest {
                 condition("['', 'adc', 'def'] contains ['', 'adc', 'def']", step("Step" + i++)),
                 condition("true == ${def}", step("Step" + i)));
 
-        assertThat(toJson(node), is(normalizeJson("writer/expressions.json")));
+        assertThat(toJson(node), is(normalizeJson("/writer/expressions.json")));
     }
 
     @Test
     void testValidations() {
         Node script = script(validations(validation("validation1", regex("^foo"))));
-        assertThat(toJson(script), is(normalizeJson("writer/validations.json")));
+        assertThat(toJson(script), is(normalizeJson("/writer/validations.json")));
     }
 
     @Test
@@ -115,7 +115,7 @@ class JsonScriptWriterTest {
                         variableEnum("variable-enum1", "value1"),
                         variableText("variable-text1", "value1"),
                         variableList("variable-list1", List.of("value1"))));
-        assertThat(toJson(script), is(normalizeJson("writer/variables.json")));
+        assertThat(toJson(script), is(normalizeJson("/writer/variables.json")));
     }
 
     @Test
@@ -126,7 +126,7 @@ class JsonScriptWriterTest {
                         presetEnum("preset-enum1", "value1"),
                         presetText("preset-text1", "value1"),
                         presetList("preset-list1", List.of("value1"))));
-        assertThat(toJson(script), is(normalizeJson("writer/presets.json")));
+        assertThat(toJson(script), is(normalizeJson("/writer/presets.json")));
     }
 
     @Test
@@ -134,7 +134,7 @@ class JsonScriptWriterTest {
         Node block = script();
         block.script().methods().put("method1", method("method1",
                 output(model(modelList("model-list1", modelValue("value1"))))));
-        assertThat(toJson(block), is(normalizeJson("writer/methods.json")));
+        assertThat(toJson(block), is(normalizeJson("/writer/methods.json")));
     }
 
     @Test
@@ -147,7 +147,7 @@ class JsonScriptWriterTest {
                                         inputOption("Option2", "option2"))),
                                 inputText("text1")
                                         .attribute("default", "Default1"))));
-        assertThat(toJson(script), is(normalizeJson("writer/inputs.json")));
+        assertThat(toJson(script), is(normalizeJson("/writer/inputs.json")));
     }
 
     static String toJson(Node node) {
@@ -163,7 +163,7 @@ class JsonScriptWriterTest {
 
     static String normalizeJson(String path) {
         try {
-            return normalizeJson(Files.newBufferedReader(testResourcePath(JsonScriptWriterTest.class, path)));
+            return normalizeJson(Files.newBufferedReader(resourceAsPath(path, JsonScriptWriterTest.class)));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

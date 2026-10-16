@@ -65,7 +65,7 @@ import static io.helidon.build.archetype.engine.v2.Nodes.variableEnum;
 import static io.helidon.build.archetype.engine.v2.Nodes.variableList;
 import static io.helidon.build.archetype.engine.v2.Nodes.variableText;
 import static io.helidon.build.archetype.engine.v2.Nodes.variables;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -76,7 +76,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testValidations() {
-        Node node = read("reader/validations.xml");
+        Node node = read("/reader/validations.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -94,7 +94,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testInputs() {
-        Node node = read("reader/inputs.xml");
+        Node node = read("/reader/inputs.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -140,7 +140,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testNestedInputs() {
-        Node node = read("reader/nested-inputs.xml");
+        Node node = read("/reader/nested-inputs.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -170,7 +170,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testInvocations() {
-        Node node = read("reader/invocations.xml");
+        Node node = read("/reader/invocations.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -184,7 +184,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testMethods() {
-        Node node = read("reader/methods.xml");
+        Node node = read("/reader/methods.xml");
 
         List<Node> methods = node.script().methods().values().stream()
                 .flatMap(method -> method.collect().stream())
@@ -218,7 +218,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testPresets() {
-        Node node = read("reader/presets.xml");
+        Node node = read("/reader/presets.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -234,7 +234,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testVariables() {
-        Node node = read("reader/variables.xml");
+        Node node = read("/reader/variables.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -251,7 +251,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testOutput() {
-        Node node = read("reader/output.xml");
+        Node node = read("/reader/output.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -276,7 +276,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testModel() {
-        Node node = read("reader/model.xml");
+        Node node = read("/reader/model.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -309,7 +309,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testScopedModel() {
-        Node node = read("reader/scoped-model.xml");
+        Node node = read("/reader/scoped-model.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -325,7 +325,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testConditional() {
-        Node node = read("reader/conditional.xml");
+        Node node = read("/reader/conditional.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -419,7 +419,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testExec() {
-        Node node = read("reader/exec.xml");
+        Node node = read("/reader/exec.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -430,7 +430,7 @@ class XMLScriptReaderTest {
 
     @Test
     void testNestedOutput() {
-        Node node = read("reader/nested-output.xml");
+        Node node = read("/reader/nested-output.xml");
         List<Node> nodes = node.collect();
         Iterator<Node> it = nodes.iterator();
 
@@ -464,7 +464,7 @@ class XMLScriptReaderTest {
     }
 
     static Node read(String path) {
-        Path file = testResourcePath(XMLScriptReaderTest.class, path);
+        Path file = resourceAsPath(path, XMLScriptReaderTest.class);
         try (XMLScriptReader reader = new XMLScriptReader(() -> file, true, Script.Loader.EMPTY)) {
             return reader.readScript();
         } catch (IOException ex) {

@@ -16,9 +16,9 @@
 package io.helidon.build.maven.enforcer;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +28,7 @@ import io.helidon.build.common.logging.Log;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.maven.enforcer.GitCommands.gitLog;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,11 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GitCommandTest {
 
     @Test
-    void testGitLog() throws FileNotFoundException {
+    void testGitLog() throws IOException {
         int warnings = Log.warnings();
         Iterator<String> expected = List.of(
                 "foo/bar", "bar/foo", "foo/foo4", "foo/foo3", "foo/foo2", "foo/foo1").iterator();
-        InputStream is = new FileInputStream(testResourcePath(GitCommandTest.class, "git.txt").toFile());
+        InputStream is = Files.newInputStream(resourceAsPath("/git.txt", GitCommandTest.class));
         Map<String, Integer> files = gitLog(Path.of("/root"), is);
 
         for (Map.Entry<String, Integer> entry : files.entrySet()) {

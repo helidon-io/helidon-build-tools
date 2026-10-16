@@ -23,11 +23,14 @@ import java.nio.file.Path;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.algorithm.DiffException;
 import com.github.difflib.patch.Patch;
+
+import io.helidon.build.common.test.utils.WorkDirExtension;
 import io.helidon.build.maven.sitegen.models.PageFilter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -35,21 +38,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests links.
  */
+@ExtendWith(WorkDirExtension.class)
 class LinksTest {
 
     @Test
-    void testLinks() throws DiffException, IOException {
-        Path targetDir = targetDir(VuetifyBackendTest.class);
-        Path sourceDir = targetDir.resolve("test-classes/links");
-        Path outputDir = targetDir.resolve("links");
+    void testLinks(Path workDir) throws DiffException, IOException {
+        Path sourceDir = location(VuetifyBackendTest.class).resolve("links");
 
         Site.builder()
             .page(PageFilter.builder().includes("**/*.adoc"))
             .backend(VuetifyBackend.builder().home("index.adoc"))
             .build()
-            .generate(sourceDir, outputDir);
+            .generate(sourceDir, workDir);
 
-        Path actual = outputDir.resolve("pages/index.js");
+        Path actual = workDir.resolve("pages/index.js");
         assertThat(Files.exists(actual), is(true));
         assertRendering(actual, sourceDir.resolve("expected"));
     }

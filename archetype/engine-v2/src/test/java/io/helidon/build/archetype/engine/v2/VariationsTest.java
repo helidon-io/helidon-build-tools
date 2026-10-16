@@ -29,7 +29,7 @@ import io.helidon.build.common.xml.XMLElement;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -294,8 +294,7 @@ class VariationsTest {
                                  Map<String, String> externalDefaults,
                                  long max) {
 
-        Path targetDir = targetDir(VariationsTest.class);
-        try (FileSystem fs = VirtualFileSystem.create(targetDir.resolve("test-classes"))) {
+        try (FileSystem fs = VirtualFileSystem.create(location(VariationsTest.class))) {
             Path cwd = fs.getPath(path);
             Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
             ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
@@ -332,8 +331,6 @@ class VariationsTest {
     }
 
     static XMLElement loadXml(String path) {
-        Path targetDir = targetDir(VariationsTest.class);
-        Path testClasses = targetDir.resolve("test-classes");
-        return XMLElement.read(testClasses.resolve(path));
+        return XMLElement.read(location(VariationsTest.class).resolve(path));
     }
 }

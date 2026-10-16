@@ -44,8 +44,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -342,7 +342,7 @@ class CliMavenTest {
     }
 
     static Path workDir() {
-        return targetDir(CliMavenTest.class).resolve("cli-maven-test");
+        return location(CliMavenTest.class).resolve("../cli-maven-test").normalize();
     }
 
     static Path workDir(String name) {
@@ -350,7 +350,7 @@ class CliMavenTest {
     }
 
     static Path project1Dir() {
-        return targetDir(CliMavenTest.class).resolve("it/projects/project1");
+        return location(CliMavenTest.class).resolve("../it/projects/project1").normalize();
     }
 
     static Path project1Main() {

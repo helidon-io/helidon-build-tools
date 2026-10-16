@@ -18,9 +18,10 @@ package io.helidon.build.cli.impl;
 import java.nio.file.Path;
 
 import io.helidon.build.cli.impl.ProcessInvocation.Monitor;
-import io.helidon.build.common.test.utils.TestFiles;
+import io.helidon.build.common.test.utils.WorkDirExtension;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -29,57 +30,56 @@ import static org.hamcrest.Matchers.is;
 /**
  * Tests {@code helidon --help}.
  */
+@ExtendWith(WorkDirExtension.class)
 class HelpCommandTestIT {
 
-    static final Path CWD = TestFiles.targetDir(InitCommandTestIT.class).resolve("help-ut");
+    private final Path workDir;
+
+    HelpCommandTestIT(Path workDir) {
+        this.workDir = workDir;
+    }
 
     @Test
     void testCliHelp() {
-        try (Monitor monitor = new ProcessInvocation()
-                .cwd(CWD)
-                .args("help")
-                .start()) {
-
-            monitor.await();
-            assertThat(monitor.output(), containsString("Helidon command line tool"));
-        }
+        String output = exec("help");
+        assertThat(output, containsString("Helidon command line tool"));
     }
 
     @Test
     void testBuildCommandHelp() {
-        assertHelp("build");
+        testHelp("build");
     }
 
     @Test
     void testDevCommandHelp() {
-        assertHelp("dev");
+        testHelp("dev");
     }
 
     @Test
     void testInfoCommandHelp() {
-        assertHelp("info");
+        testHelp("info");
     }
 
     @Test
     void testInitCommandHelp() {
-        assertHelp("init");
+        testHelp("init");
     }
 
     @Test
     void testVersionCommandHelp() {
-        assertHelp("version");
+        testHelp("version");
     }
 
-    static void assertHelp(String command) {
+    private void testHelp(String command) {
         String cmdHelp = exec(command, "--help");
         String helpCmd = exec("help", command);
         assertThat(helpCmd, is(cmdHelp));
         assertThat(helpCmd, containsString("Usage: helidon " + command));
     }
 
-    static String exec(String... args) {
+    private String exec(String... args) {
         try (Monitor monitor = new ProcessInvocation()
-                .cwd(CWD)
+                .cwd(workDir)
                 .args(args)
                 .start()) {
 

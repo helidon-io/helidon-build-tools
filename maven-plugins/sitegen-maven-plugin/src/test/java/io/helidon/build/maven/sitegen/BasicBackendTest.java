@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.build.common.test.utils.TestFiles;
+import io.helidon.build.common.test.utils.WorkDirExtension;
 import io.helidon.build.maven.sitegen.models.PageFilter;
 
 import com.github.difflib.DiffUtils;
@@ -31,8 +31,10 @@ import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
+import static io.helidon.build.common.Strings.normalizePath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -40,47 +42,52 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests {@link BasicBackend}.
  */
+@ExtendWith(WorkDirExtension.class)
 class BasicBackendTest {
 
-    private static final Path OUTPUT_DIR = targetDir(BasicBackendTest.class).resolve("basic");
+    private final Path workDir;
+
+    BasicBackendTest(Path workDir) {
+        this.workDir = workDir;
+    }
 
     @Test
     void testBasic1() throws Exception {
-        Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic1");
+        Path sourceDir = location(BasicBackendTest.class).resolve("basic1");
 
         Site.builder()
             .page(PageFilter.builder().includes("**/*.adoc").excludes("**/_*"))
             .build()
-            .generate(sourceDir, OUTPUT_DIR);
+            .generate(sourceDir, workDir);
 
-        assertRendering(sourceDir.resolve("_expected.ftl"), OUTPUT_DIR.resolve("basic.html"));
+        assertRendering(sourceDir.resolve("_expected.ftl"), workDir.resolve("basic.html"));
     }
 
     @Test
     void testBasic2() throws Exception {
-        Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic2");
+        Path sourceDir = location(BasicBackendTest.class).resolve("basic2");
 
         Site.builder()
             .page(PageFilter.builder().includes("**/*.adoc").excludes("**/_*"))
             .build()
-            .generate(sourceDir, OUTPUT_DIR);
+            .generate(sourceDir, workDir);
 
-        assertRendering(sourceDir.resolve("_expected.ftl"), OUTPUT_DIR.resolve("example-manual.html"));
+        assertRendering(sourceDir.resolve("_expected.ftl"), workDir.resolve("example-manual.html"));
     }
 
     @Test
     void testBasic3() throws Exception {
-        Path sourceDir = targetDir(BasicBackendTest.class).resolve("test-classes/basic3");
+        Path sourceDir = location(BasicBackendTest.class).resolve("basic3");
 
         Site.builder()
             .page(PageFilter.builder().includes("**/*.adoc").excludes("**/_*"))
             .build()
-            .generate(sourceDir, OUTPUT_DIR);
+            .generate(sourceDir, workDir);
 
-        assertRendering(sourceDir.resolve("_expected.ftl"), OUTPUT_DIR.resolve("passthrough.html"));
+        assertRendering(sourceDir.resolve("_expected.ftl"), workDir.resolve("passthrough.html"));
     }
 
-    private static void assertRendering(Path expectedTpl, Path actual) throws Exception {
+    private void assertRendering(Path expectedTpl, Path actual) throws Exception {
 
         assertThat(Files.exists(actual), is(true));
 
@@ -89,9 +96,9 @@ class BasicBackendTest {
         Configuration config = new Configuration(Configuration.VERSION_2_3_23);
         config.setTemplateLoader(ftl);
         Template template = config.getTemplate(expectedTpl.getFileName().toString());
-        Path expected = OUTPUT_DIR.resolve("expected_" + actual.getFileName());
+        Path expected = workDir.resolve("expected_" + actual.getFileName());
         Map<String, Object> model = new HashMap<>();
-        model.put("basedir", TestFiles.pathOf(Path.of("").toAbsolutePath()));
+        model.put("basedir", normalizePath(Path.of("").toAbsolutePath()));
         template.process(model, Files.newBufferedWriter(expected));
 
         // diff expected and rendered

@@ -32,8 +32,8 @@ import io.helidon.build.common.Strings;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.build.common.FileUtils.fileName;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -143,10 +143,10 @@ class GeneratorTest {
     }
 
     static Path generate(String path, Consumer<Context> consumer) {
-        Path targetDir = targetDir(GeneratorTest.class);
-        Path cwd = targetDir.resolve("test-classes/" + path);
+        Path testClasses = location(GeneratorTest.class);
+        Path cwd = testClasses.resolve(path);
         Node node = Script.load(cwd.resolve("main.xml"));
-        Path outputDir = unique(targetDir.resolve("generator-ut"), fileName(cwd));
+        Path outputDir = unique(testClasses.resolve("../generator-ut").normalize(), fileName(cwd));
         Context context = new Context().pushCwd(node.script().path().getParent());
         consumer.accept(context);
         TemplateModel model = resolveModel(node, context);

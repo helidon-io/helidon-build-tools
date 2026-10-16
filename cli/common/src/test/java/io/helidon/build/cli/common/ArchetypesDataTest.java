@@ -24,8 +24,8 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
-import static io.helidon.build.common.test.utils.TestFiles.testResourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +37,7 @@ class ArchetypesDataTest {
 
     @Test
     void testLoad() {
-        Path versionsFile = testResourcePath(ArchetypesData.class, "versions/cli-data/versions.xml");
+        Path versionsFile = resourceAsPath("/versions/cli-data/versions.xml", ArchetypesData.class);
         ArchetypesData archetypesData = ArchetypesData.load(versionsFile);
         ArchetypesData.Version defaultVersion = archetypesData.rawVersions().stream()
                 .filter(ArchetypesData.Version::isDefault)

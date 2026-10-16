@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.build.common.test.utils.TestFiles;
 import io.helidon.build.common.xml.XMLElement;
 import io.helidon.build.maven.cache.CacheConfig.LifecycleConfig;
 import io.helidon.build.maven.cache.CacheConfig.ModuleSet;
@@ -28,6 +27,7 @@ import io.helidon.build.maven.cache.CacheConfig.ReactorRule;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.Maps.toProperties;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -39,7 +39,7 @@ class CacheConfigTest {
 
     @Test
     void testConfig() {
-        Path configFile = TestFiles.testResourcePath(CacheConfigTest.class, "cache-config.xml");
+        Path configFile = resourceAsPath("/cache-config.xml", CacheConfigTest.class);
         XMLElement elt = XMLElement.read(configFile);
         CacheConfig config = new CacheConfig(elt, toProperties(Map.of()), toProperties(Map.of()));
 
@@ -80,7 +80,7 @@ class CacheConfigTest {
 
     @Test
     void testConfigOverride() {
-        Path configFile = TestFiles.testResourcePath(CacheConfigTest.class, "cache-config.xml");
+        Path configFile = resourceAsPath("/cache-config.xml", CacheConfigTest.class);
         XMLElement elt = XMLElement.read(configFile);
         CacheConfig config = new CacheConfig(elt, toProperties(Map.of(
                 "cache.enabled", "false",

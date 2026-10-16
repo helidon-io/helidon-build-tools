@@ -26,9 +26,9 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.zip;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -48,12 +48,12 @@ class HandlerTest {
 
     @BeforeAll
     static void beforeAllTests() throws IOException {
-        Path targetDir = targetDir(HandlerTest.class);
-        localRepo = unique(targetDir.resolve("handler-ut"), "repo");
+        Path testClasses = location(HandlerTest.class);
+        localRepo = unique(testClasses.resolve("../handler-ut").normalize(), "repo");
         System.setProperty(MavenFileResolver.LOCAL_REPO_PROPERTY, localRepo.toString());
         Path artifact = localRepo.resolve(ARTIFACT_DIR).resolve(ZIP_ARTIFACT_FILE);
         Files.createDirectories(artifact.getParent());
-        zip(artifact, targetDir.resolve("test-classes/test-artifact"));
+        zip(artifact, testClasses.resolve("test-artifact"));
         Files.copy(artifact, localRepo.resolve(ARTIFACT_DIR).resolve(JAR_ARTIFACT_FILE));
         System.setProperty(PKG_HANDLER, "io.helidon.build.common.maven.url");
     }

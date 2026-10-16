@@ -24,9 +24,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.unzip;
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
 
 class FunctionalUtils {
 
@@ -54,7 +54,7 @@ class FunctionalUtils {
     }
 
     static Path cliInstallDir() {
-        Path installDir = unique(targetDir(FunctionalUtils.class).resolve("install"), "helidon-cli");
+        Path installDir = unique(location(FunctionalUtils.class).resolve("../install").normalize(), "helidon-cli");
         Log.debug("Unzipping " + CLI_ZIP.get());
         unzip(CLI_ZIP.get(), installDir);
         return installDir;
@@ -85,8 +85,8 @@ class FunctionalUtils {
     }
 
     static String cliDataUrl() {
-        return FileUtils.urlOf(targetDir(FunctionalUtils.class)
-                        .resolve("it/projects/archetype/target/cli-data")
+        return FileUtils.urlOf(location(FunctionalUtils.class)
+                        .resolve("../it/projects/archetype/target/cli-data")
                         .toAbsolutePath()
                         .normalize())
                 .toString();

@@ -22,7 +22,7 @@ import io.helidon.build.maven.sitegen.models.Page.Metadata;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.build.common.test.utils.TestFiles.targetDir;
+import static io.helidon.build.common.FileUtils.location;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class PageMetadataTest {
 
-    private static final Path SOURCE_DIR = targetDir(PageMetadataTest.class).resolve("test-classes/metadata");
+    private static final Path SOURCE_DIR = location(PageMetadataTest.class).resolve("metadata");
     private static final Site SITE = Site.create(new Backend("dummy") {});
 
     @Test

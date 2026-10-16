@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.helidon.build.common.test.utils.TestFiles;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -35,6 +34,7 @@ import org.junit.jupiter.api.condition.OS;
 import static io.helidon.build.common.FileUtils.containsLine;
 import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.list;
+import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.newZipFileSystem;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.unzip;
@@ -57,8 +57,7 @@ class FileUtilsTest {
 
     @BeforeAll
     static void setup() throws IOException {
-        outputDir = Files.createDirectories(
-                TestFiles.targetDir(FileUtilsTest.class).resolve("test-classes/file-utils"));
+        outputDir = Files.createDirectories(location(FileUtilsTest.class).resolve("file-utils"));
     }
 
     @Test
