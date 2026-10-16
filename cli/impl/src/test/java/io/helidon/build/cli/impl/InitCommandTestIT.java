@@ -34,7 +34,6 @@ import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY
 import static io.helidon.build.common.FileUtils.fileExt;
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.location;
-import static io.helidon.build.common.FileUtils.resourceAsPath;
 import static io.helidon.build.common.FileUtils.unique;
 import static io.helidon.build.common.FileUtils.urlOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +46,8 @@ import static org.hamcrest.Matchers.containsString;
  */
 class InitCommandTestIT extends MetadataAccess {
 
-    static final Path TARGET_DIR = location(InitCommandTestIT.class).resolve("..").normalize();
+    static final Path TEST_CLASSES = location(InitCommandTestIT.class);
+    static final Path TARGET_DIR = TEST_CLASSES.resolve("..").normalize();
     static final Path CWD = TARGET_DIR.resolve("init-ut");
 
     @Test
@@ -213,7 +213,7 @@ class InitCommandTestIT extends MetadataAccess {
 
     @Test
     void testInteractiveSe() {
-        Path stdIn = resourceAsPath("/init/input.txt", InitCommandTestIT.class);
+        Path stdIn = TEST_CLASSES.resolve("init/input.txt");
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-se"))
                 .stdIn(stdIn)
@@ -231,7 +231,7 @@ class InitCommandTestIT extends MetadataAccess {
 
     @Test
     void testInteractiveMp() {
-        Path stdIn = resourceAsPath("/init/input.txt", InitCommandTestIT.class);
+        Path stdIn = TEST_CLASSES.resolve("init/input.txt");
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-mp"))
                 .stdIn(stdIn)
@@ -255,8 +255,8 @@ class InitCommandTestIT extends MetadataAccess {
         String helidonVersion = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
 
-        Path stdIn = resourceAsPath("/init/input-full-version-list.txt", InitCommandTestIT.class);
-        URL cliDataUrl = urlOf(resourceAsPath("/versions/cli-data", InitCommandTestIT.class));
+        Path stdIn = TEST_CLASSES.resolve("init/input-full-version-list.txt");
+        URL cliDataUrl = urlOf(TEST_CLASSES.resolve("versions/cli-data"));
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-all-versions"))
                 .stdIn(stdIn)
@@ -287,8 +287,8 @@ class InitCommandTestIT extends MetadataAccess {
         String helidonVersion = System.getProperty(HELIDON_VERSION_PROPERTY);
         System.clearProperty(HELIDON_VERSION_PROPERTY);
 
-        Path stdIn = resourceAsPath("/init/input-latest-version-list.txt", InitCommandTestIT.class);
-        URL cliDataUrl = urlOf(resourceAsPath("/versions/cli-data", InitCommandTestIT.class));
+        Path stdIn = TEST_CLASSES.resolve("init/input-latest-version-list.txt");
+        URL cliDataUrl = urlOf(TEST_CLASSES.resolve("versions/cli-data"));
         try (Monitor monitor = new ProcessInvocation()
                 .cwd(unique(CWD, "interactive-latest-versions"))
                 .stdIn(stdIn)
