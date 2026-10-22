@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -93,6 +93,12 @@
         <Class name="io.helidon.build.cli.impl.VersionCommand" />
         <Method name="invoke" />
         <Bug pattern="DE_MIGHT_IGNORE" />
+    </Match>
+
+    <Match>
+        <!-- Found reliance on default encoding -->
+        <Class name="io.helidon.build.cli.impl.InitCommand"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
     </Match>
 
 </FindBugsFilter>
