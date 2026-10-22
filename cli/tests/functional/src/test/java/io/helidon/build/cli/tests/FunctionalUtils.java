@@ -54,7 +54,7 @@ class FunctionalUtils {
     }
 
     static Path cliInstallDir() {
-        Path installDir = unique(location(FunctionalUtils.class).resolve("../install").normalize(), "helidon-cli");
+        Path installDir = unique(location(FunctionalUtils.class).resolve("../install"), "helidon-cli");
         Log.debug("Unzipping " + CLI_ZIP.get());
         unzip(CLI_ZIP.get(), installDir);
         return installDir;

@@ -342,7 +342,7 @@ class CliMavenTest {
     }
 
     static Path workDir() {
-        return location(CliMavenTest.class).resolve("../cli-maven-test").normalize();
+        return location(CliMavenTest.class).resolve("../cli-maven-test");
     }
 
     static Path workDir(String name) {
@@ -350,7 +350,7 @@ class CliMavenTest {
     }
 
     static Path project1Dir() {
-        return location(CliMavenTest.class).resolve("../it/projects/project1").normalize();
+        return location(CliMavenTest.class).resolve("../it/projects/project1");
     }
 
     static Path project1Main() {

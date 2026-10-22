@@ -439,7 +439,7 @@ class ArchetypeEngineV2Test {
 
         Path testClasses = location(ArchetypeEngineV2Test.class);
         Path sourceDir = testClasses.resolve("e2e");
-        Path workDir = testClasses.resolve("../engine-ut").normalize();
+        Path workDir = testClasses.resolve("../engine-ut");
         Path zipFile = unique(workDir, "archetype", ".zip");
         zip(zipFile, sourceDir);
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, this.getClass().getClassLoader())) {
@@ -456,7 +456,7 @@ class ArchetypeEngineV2Test {
     Path e2eDir(String name, Map<String, String> externalValues, Map<String, String> externalDefaults) {
         Path testClasses = location(ArchetypeEngineV2Test.class);
         Path sourceDir = testClasses.resolve("e2e");
-        Path workDir = testClasses.resolve("../engine-ut").normalize();
+        Path workDir = testClasses.resolve("../engine-ut");
         try (FileSystem fs = VirtualFileSystem.create(sourceDir)) {
             Path root = fs.getRootDirectories().iterator().next();
             Path outputDir = unique(workDir, name);

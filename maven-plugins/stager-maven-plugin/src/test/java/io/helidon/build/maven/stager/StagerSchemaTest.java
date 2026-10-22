@@ -131,8 +131,7 @@ class StagerSchemaTest {
     @Test
     void testElementsAndAttributesHaveDocumentation() throws Exception {
         try (InputStream is = Files.newInputStream(location(StagerSchemaTest.class)
-                                                           .resolve("../classes/schema/stager-1.0.xsd")
-                                                           .normalize())) {
+                                                           .resolve("../classes/schema/stager-1.0.xsd"))) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             Document document = factory.newDocumentBuilder().parse(is);
@@ -148,8 +147,7 @@ class StagerSchemaTest {
 
     static void validateResource(String path) throws IOException, SAXException {
         try (InputStream is = Files.newInputStream(location(StagerSchemaTest.class)
-                                                           .resolve("../classes/schema/stager-1.0.xsd")
-                                                           .normalize());
+                                                           .resolve("../classes/schema/stager-1.0.xsd"));
              InputStream xml = Files.newInputStream(resourceAsPath(path, StagerSchemaTest.class))) {
             SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
             factory.newSchema(new StreamSource(is))

@@ -17,8 +17,6 @@ package io.helidon.build.maven.archetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 
@@ -46,8 +44,7 @@ class PlansSchemaTest {
 
     private static void validate(String path) throws IOException, SAXException {
         try (InputStream schema = newInputStream(location(PlansSchemaTest.class)
-                                                         .resolve("../classes/schema/plans-1.0.xsd")
-                                                         .normalize());
+                                                         .resolve("../classes/schema/plans-1.0.xsd"));
              InputStream xml = newInputStream(resourceAsPath("/schema/" + path, PlansSchemaTest.class))) {
             SchemaFactory factory = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
             factory.newSchema(new StreamSource(schema))

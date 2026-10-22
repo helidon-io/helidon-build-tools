@@ -146,7 +146,7 @@ class GeneratorTest {
         Path testClasses = location(GeneratorTest.class);
         Path cwd = testClasses.resolve(path);
         Node node = Script.load(cwd.resolve("main.xml"));
-        Path outputDir = unique(testClasses.resolve("../generator-ut").normalize(), fileName(cwd));
+        Path outputDir = unique(testClasses.resolve("../generator-ut"), fileName(cwd));
         Context context = new Context().pushCwd(node.script().path().getParent());
         consumer.accept(context);
         TemplateModel model = resolveModel(node, context);

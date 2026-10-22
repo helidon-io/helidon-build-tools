@@ -48,7 +48,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings({"UnconstructableJUnitTestCase", "JUnitMalformedDeclaration"})
 public final class DevMojoLoader extends AbstractMojoTestCase {
     private static final AtomicReference<DevMojoLoader> INSTANCE = new AtomicReference<>();
-    private static final Path TARGET_DIR = location(DevMojoLoader.class).resolve("..").normalize();
+    private static final Path TARGET_DIR = location(DevMojoLoader.class).resolve("..");
     private static final Path TEST_TARGET_DIR = TARGET_DIR.resolve("test");
     private static final Path RESOURCES_DIR = TARGET_DIR.resolve("../src/test/resources").normalize();
     private static final String LOCAL_REPO_PROPERTY = "maven.repo.local";
