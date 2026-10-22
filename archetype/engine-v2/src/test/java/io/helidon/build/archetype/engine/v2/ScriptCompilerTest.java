@@ -444,7 +444,7 @@ class ScriptCompilerTest {
             Path cwd = fs.getPath(path);
             Path source = cwd.resolve(entrypoint).toAbsolutePath().normalize();
             ScriptCompiler compiler = new ScriptCompiler(() -> source, cwd);
-            Path outputDir = unique(testClasses.resolve("../compiler-ut").normalize(), fileName(cwd));
+            Path outputDir = unique(testClasses.resolve("../compiler-ut"), fileName(cwd));
             compiler.compile(List.of(features)).write(outputDir);
             return outputDir;
         } catch (IOException ex) {

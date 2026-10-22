@@ -47,7 +47,7 @@ class MavenFileSystemProviderTest {
     @BeforeAll
     static void beforeAllTests() throws IOException {
         Path testClasses = location(MavenFileSystemProviderTest.class);
-        Path localRepo = unique(testClasses.resolve("../fs-provider-ut").normalize(), "repo");
+        Path localRepo = unique(testClasses.resolve("../fs-provider-ut"), "repo");
         System.setProperty(MavenFileResolver.LOCAL_REPO_PROPERTY, localRepo.toString());
         Path artifact = localRepo.resolve(ARTIFACT_DIR).resolve(ZIP_ARTIFACT_FILE);
         Files.createDirectories(artifact.getParent());

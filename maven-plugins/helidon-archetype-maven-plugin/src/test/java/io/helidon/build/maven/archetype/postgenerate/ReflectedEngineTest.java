@@ -40,7 +40,7 @@ class ReflectedEngineTest {
     @Test
     void testGenerate() throws IOException {
         Path testClasses = location(ReflectedEngineTest.class);
-        Path projectDir = generate(testClasses.resolve("simple"), testClasses.resolve("../reflected-engine-ut").normalize());
+        Path projectDir = generate(testClasses.resolve("simple"), testClasses.resolve("../reflected-engine-ut"));
         assertThat(Files.exists(projectDir.resolve("color.txt")), is(true));
         assertThat(normalizeNewLines(readString(projectDir.resolve("color.txt"))), is("red\n"));
     }

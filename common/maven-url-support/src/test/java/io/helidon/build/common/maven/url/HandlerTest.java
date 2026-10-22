@@ -49,7 +49,7 @@ class HandlerTest {
     @BeforeAll
     static void beforeAllTests() throws IOException {
         Path testClasses = location(HandlerTest.class);
-        localRepo = unique(testClasses.resolve("../handler-ut").normalize(), "repo");
+        localRepo = unique(testClasses.resolve("../handler-ut"), "repo");
         System.setProperty(MavenFileResolver.LOCAL_REPO_PROPERTY, localRepo.toString());
         Path artifact = localRepo.resolve(ARTIFACT_DIR).resolve(ZIP_ARTIFACT_FILE);
         Files.createDirectories(artifact.getParent());
