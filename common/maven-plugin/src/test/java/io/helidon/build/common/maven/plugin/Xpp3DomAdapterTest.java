@@ -18,16 +18,14 @@ package io.helidon.build.common.maven.plugin;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import io.helidon.build.common.xml.XMLElement;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
-import org.hamcrest.FeatureMatcher;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.build.common.test.utils.FunctionalMatchers.hasProperty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -152,14 +150,5 @@ class Xpp3DomAdapterTest {
 
     static Xpp3Dom xpp3(String xml) throws Exception {
         return Xpp3DomBuilder.build(new StringReader(xml));
-    }
-
-    static <T, U> Matcher<T> hasProperty(String name, Function<T, U> extractor, Matcher<U> subMatcher) {
-        return new FeatureMatcher<>(subMatcher, "has property " + name, name) {
-            @Override
-            protected U featureValueOf(T target) {
-                return extractor.apply(target);
-            }
-        };
     }
 }
