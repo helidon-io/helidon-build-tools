@@ -519,6 +519,18 @@ class InputResolverTest {
     }
 
     @Test
+    void testInputTextPromptsShareReader() {
+        Node step = step("step",
+                inputText("text-input1"),
+                inputText("text-input2"));
+
+        Context context = prompt(step, "first\nsecond\n");
+
+        assertThat(context.scope().get("text-input1").value().asString().orElse(null), is("first"));
+        assertThat(context.scope().get("text-input2").value().asString().orElse(null), is("second"));
+    }
+
+    @Test
     void testExternalDefault() {
         Node step = step("step", inputText("text-input3")
                 .attribute("default", "value1"));

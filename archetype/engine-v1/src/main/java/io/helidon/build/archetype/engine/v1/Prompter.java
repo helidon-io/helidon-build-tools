@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import static io.helidon.build.common.ansi.AnsiTextStyles.Bold;
@@ -33,6 +32,23 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBlue;
  */
 public class Prompter {
     private static final Predicate<String> NO_VALIDATION = input -> true;
+    private final BufferedReader reader;
+
+    /**
+     * Create a prompter that reads from stdin.
+     */
+    public Prompter() {
+        this(new BufferedReader(new InputStreamReader(System.in)));
+    }
+
+    /**
+     * Create a prompter.
+     *
+     * @param reader reader used for user input
+     */
+    public Prompter(BufferedReader reader) {
+        this.reader = Objects.requireNonNull(reader, "reader is null");
+    }
 
     /**
      * Prompt a text value.
@@ -42,7 +58,7 @@ public class Prompter {
      * @param validator test for response validity
      * @return user input or defaultAnswer if none
      */
-    public static String prompt(String question, String defaultAnswer, Predicate<String> validator) {
+    public String prompt(String question, String defaultAnswer, Predicate<String> validator) {
         while (true) {
             try {
                 String fullPrompt;
@@ -54,7 +70,6 @@ public class Prompter {
                     fullPrompt = String.format("%s (default: %s): ", styledPrompt, styledDefaultAnswer);
                 }
                 System.out.print(fullPrompt);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                 String response = reader.readLine();
                 if (response == null || response.trim().isEmpty()) {
                     if (defaultAnswer != null) {
@@ -73,21 +88,10 @@ public class Prompter {
      * Prompt a text value.
      *
      * @param question question printed on the prompt
-     * @param defaultResponse optional of default response
-     * @return user input
-     */
-    public static String prompt(String question, Optional<String> defaultResponse) {
-        return prompt(question, defaultResponse.orElse(null));
-    }
-
-    /**
-     * Prompt a text value.
-     *
-     * @param question question printed on the prompt
      * @param defaultResponse default response, may be {@code null}
      * @return user input
      */
-    public static String prompt(String question, String defaultResponse) {
+    public String prompt(String question, String defaultResponse) {
         return prompt(question, defaultResponse, NO_VALIDATION);
     }
 
@@ -99,7 +103,7 @@ public class Prompter {
      * @param defaultOption the index of the default option
      * @return user input
      */
-    public static int prompt(String question, List<String> options, int defaultOption) {
+    public int prompt(String question, List<String> options, int defaultOption) {
         return prompt(question, options.toArray(new String[]{}), defaultOption);
     }
 
@@ -111,7 +115,7 @@ public class Prompter {
      * @param defaultOption the index of the default option
      * @return user input
      */
-    public static int prompt(String question, String[] options, int defaultOption) {
+    public int prompt(String question, String[] options, int defaultOption) {
         Objects.checkIndex(defaultOption, options.length);
         System.out.println(Bold.apply(question));
         for (int i = 0; i < options.length; i++) {
@@ -137,7 +141,7 @@ public class Prompter {
      * @param defaultOption the default value, {@code true} for "yes"
      * @return user input
      */
-    public static boolean promptYesNo(String question, boolean defaultOption) {
+    public boolean promptYesNo(String question, boolean defaultOption) {
         String defaultResponse = defaultOption ? "y" : "n";
         String response = prompt(question, defaultResponse,
                                  input -> input.equalsIgnoreCase("y") || input.equalsIgnoreCase("n"));
@@ -149,10 +153,7 @@ public class Prompter {
      *
      * @param message message to display
      */
-    public static void displayLine(String message) {
+    public void displayLine(String message) {
         System.out.println(message);
-    }
-
-    private Prompter() {
     }
 }

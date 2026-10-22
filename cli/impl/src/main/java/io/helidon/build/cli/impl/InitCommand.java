@@ -16,6 +16,8 @@
 
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -32,8 +34,6 @@ import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 import io.helidon.build.common.maven.VersionRange;
 
-import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
-import static io.helidon.build.archetype.engine.v1.Prompter.promptYesNo;
 import static io.helidon.build.cli.common.CliProperties.HELIDON_VERSION_PROPERTY;
 import static io.helidon.build.cli.impl.CommandRequirements.requireMinimumMavenVersion;
 import static io.helidon.build.common.Requirements.failed;
@@ -76,6 +76,8 @@ public final class InitCommand extends BaseCommand {
 
     @Override
     protected void invoke(CommandContext context) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Prompter prompter = new Prompter(reader);
 
         // Make sure we have a valid Helidon version
         String helidonVersion = initOptions.helidonVersion();
@@ -88,7 +90,7 @@ public final class InitCommand extends BaseCommand {
                 helidonVersion = archetypesData.defaultVersion().toString();
                 Log.info("Using Helidon version " + helidonVersion);
             } else {
-                helidonVersion = promptHelidonVersion(archetypesData, true);
+                helidonVersion = promptHelidonVersion(archetypesData, true, prompter);
             }
             initOptions.helidonVersion(helidonVersion);
         } else {
@@ -96,8 +98,8 @@ public final class InitCommand extends BaseCommand {
             initOptions.helidonVersion(helidonVersion);
         }
 
-        Prompter.displayLine("");
-        Prompter.displayLine(Bold.apply("Helidon version: ") + BoldBlue.apply(helidonVersion));
+        prompter.displayLine("");
+        prompter.displayLine(Bold.apply("Helidon version: ") + BoldBlue.apply(helidonVersion));
 
         ArchetypeInvoker archetypeInvoker = ArchetypeInvoker
                 .builder()
@@ -106,17 +108,19 @@ public final class InitCommand extends BaseCommand {
                 .userConfig(config)
                 .onResolved(Log::info)
                 .initProperties(context.properties())
+                .reader(reader)
+                .prompter(prompter)
                 .projectDir(this::initProjectDir)
                 .build();
 
         Path projectDir = archetypeInvoker.invoke();
 
         String dir = BoldBrightCyan.apply(projectDir);
-        Prompter.displayLine("Switch directory to " + dir + " to use CLI");
+        prompter.displayLine("Switch directory to " + dir + " to use CLI");
 
         if (!batch) {
-            Prompter.displayLine("");
-            boolean startDev = promptYesNo("Start development loop?", false);
+            prompter.displayLine("");
+            boolean startDev = prompter.promptYesNo("Start development loop?", false);
             if (startDev) {
                 CommonOptions commonOptions = new CommonOptions(projectDir, this.commonOptions);
                 DevCommand devCommand = new DevCommand(commonOptions);
@@ -125,7 +129,7 @@ public final class InitCommand extends BaseCommand {
         }
     }
 
-    private String promptHelidonVersion(ArchetypesData archetypesData, boolean showLatest) {
+    private String promptHelidonVersion(ArchetypesData archetypesData, boolean showLatest, Prompter prompter) {
         List<String> versions = archetypesData.versions();
         if (showLatest) {
             versions = archetypesData.latestMajorVersions();
@@ -134,9 +138,9 @@ public final class InitCommand extends BaseCommand {
         if (showLatest) {
             versions.add(SHOW_ALL_VERSIONS_MESSAGE);
         }
-        var result = versions.get(prompt("Helidon versions", versions, defaultOption));
+        var result = versions.get(prompter.prompt("Helidon versions", versions, defaultOption));
         if (showLatest && SHOW_ALL_VERSIONS_MESSAGE.equals(result)) {
-            return promptHelidonVersion(archetypesData, false);
+            return promptHelidonVersion(archetypesData, false, prompter);
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.build.common.PropertyEvaluator;
 
-import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
-
 /**
  * Class FlowNodeControllers.
  */
@@ -36,14 +34,16 @@ public class FlowNodeControllers {
      *
      * @param flowNode   The flow node.
      * @param properties Properties used to resolve and expressions.
+     * @param prompter   The prompter.
      * @return A flow controller.
      */
-    public static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties) {
+    public static FlowNodeController create(ArchetypeDescriptor.FlowNode flowNode, Map<String, String> properties,
+                                            Prompter prompter) {
         if (flowNode instanceof ArchetypeDescriptor.Input) {
-            return new InputController((ArchetypeDescriptor.Input) flowNode, properties);
+            return new InputController((ArchetypeDescriptor.Input) flowNode, properties, prompter);
         }
         if (flowNode instanceof ArchetypeDescriptor.Select) {
-            return new SelectController((ArchetypeDescriptor.Select) flowNode, properties);
+            return new SelectController((ArchetypeDescriptor.Select) flowNode, properties, prompter);
         }
         throw new UnsupportedOperationException("No support for " + flowNode);
     }
@@ -53,13 +53,19 @@ public class FlowNodeControllers {
      */
     public abstract static class FlowNodeController {
         private final Map<String, String> properties;
+        private final Prompter prompter;
 
-        FlowNodeController(Map<String, String> properties) {
+        FlowNodeController(Map<String, String> properties, Prompter prompter) {
             this.properties = properties;
+            this.prompter = prompter;
         }
 
         Map<String, String> properties() {
             return properties;
+        }
+
+        Prompter prompter() {
+            return prompter;
         }
 
         /**
@@ -74,8 +80,8 @@ public class FlowNodeControllers {
     static class InputController extends FlowNodeController {
         private final ArchetypeDescriptor.Input input;
 
-        InputController(ArchetypeDescriptor.Input input, Map<String, String> properties) {
-            super(properties);
+        InputController(ArchetypeDescriptor.Input input, Map<String, String> properties, Prompter prompter) {
+            super(properties, prompter);
             this.input = input;
         }
 
@@ -88,7 +94,7 @@ public class FlowNodeControllers {
             String defaultValue = input.defaultValue()
                     .map(v -> hasExpression(v) ? PropertyEvaluator.evaluate(v, properties()) : v)
                     .orElse(null);
-            String v = prompt(input.text(), defaultValue);
+            String v = prompter().prompt(input.text(), defaultValue);
             properties().put(property, v);
         }
     }
@@ -99,8 +105,8 @@ public class FlowNodeControllers {
     static class SelectController extends FlowNodeController {
         private final ArchetypeDescriptor.Select select;
 
-        SelectController(ArchetypeDescriptor.Select select, Map<String, String> properties) {
-            super(properties);
+        SelectController(ArchetypeDescriptor.Select select, Map<String, String> properties, Prompter prompter) {
+            super(properties, prompter);
             this.select = select;
         }
 
@@ -114,7 +120,7 @@ public class FlowNodeControllers {
             List<String> options = choices.stream()
                     .map(ArchetypeDescriptor.Choice::text)
                     .collect(Collectors.toList());
-            int index = prompt(select.text(), options, 0);
+            int index = prompter().prompt(select.text(), options, 0);
             String v = options.get(index);
             choices.stream()
                     .filter(c -> c.text().equals(v))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.build.cli.impl;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,6 +37,7 @@ import io.helidon.build.archetype.engine.v1.ArchetypeEngine;
 import io.helidon.build.archetype.engine.v1.ArchetypeLoader;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers;
 import io.helidon.build.archetype.engine.v1.FlowNodeControllers.FlowNodeController;
+import io.helidon.build.archetype.engine.v1.Prompter;
 import io.helidon.build.archetype.engine.v2.ArchetypeEngineV2;
 import io.helidon.build.archetype.engine.v2.Context;
 import io.helidon.build.archetype.engine.v2.InputResolver.InputUnresolvedException;
@@ -48,7 +50,6 @@ import io.helidon.build.common.RequirementFailure;
 import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.archetype.engine.v1.Prompter.prompt;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_ARCHETYPE;
 import static io.helidon.build.cli.common.ProjectConfig.PROJECT_FLAVOR;
 import static io.helidon.build.cli.common.ProjectConfig.createProjectConfig;
@@ -82,6 +83,8 @@ abstract class ArchetypeInvoker {
     private final Function<String, Path> projectDirSupplier;
     private final UserConfig userConfig;
     private final Runnable onResolved;
+    private final BufferedReader reader;
+    private final Prompter prompter;
 
     private ArchetypeInvoker(Builder builder) {
         metadata = builder.metadata;
@@ -90,6 +93,8 @@ abstract class ArchetypeInvoker {
         projectDirSupplier = builder.projectDirSupplier;
         userConfig = builder.userConfig;
         onResolved = builder.onResolved;
+        reader = builder.reader;
+        prompter = builder.prompter;
     }
 
     /**
@@ -135,6 +140,24 @@ abstract class ArchetypeInvoker {
      */
     protected Runnable onResolved() {
         return onResolved;
+    }
+
+    /**
+     * Get the input reader.
+     *
+     * @return input reader
+     */
+    protected BufferedReader reader() {
+        return reader;
+    }
+
+    /**
+     * Get the prompter.
+     *
+     * @return prompter
+     */
+    protected Prompter prompter() {
+        return prompter;
     }
 
     /**
@@ -191,6 +214,8 @@ abstract class ArchetypeInvoker {
         private Function<String, Path> projectDirSupplier;
         private UserConfig userConfig;
         private Runnable onResolved;
+        private BufferedReader reader;
+        private Prompter prompter;
 
         private Builder() {
             initProperties = new HashMap<>();
@@ -252,6 +277,28 @@ abstract class ArchetypeInvoker {
         }
 
         /**
+         * Set the input reader.
+         *
+         * @param reader input reader
+         * @return this builder
+         */
+        Builder reader(BufferedReader reader) {
+            this.reader = reader;
+            return this;
+        }
+
+        /**
+         * Set the prompter.
+         *
+         * @param prompter prompter
+         * @return this builder
+         */
+        Builder prompter(Prompter prompter) {
+            this.prompter = prompter;
+            return this;
+        }
+
+        /**
          * Set the project directory supplier.
          * <p>
          * The project directory supplier takes a project name and returns
@@ -302,12 +349,13 @@ abstract class ArchetypeInvoker {
         Path invoke() throws IOException {
             InitOptions initOptions = initOptions();
             String helidonVersion = initOptions.helidonVersion();
+            Prompter prompter = prompter();
 
             if (isInteractive()) {
                 // Select flavor interactively
                 String[] flavorOptions = new String[] {"SE", "MP"};
                 int flavorIndex = initOptions.flavor() == Flavor.SE ? 0 : 1;
-                flavorIndex = prompt("Helidon flavor", flavorOptions, flavorIndex);
+                flavorIndex = prompter.prompt("Helidon flavor", flavorOptions, flavorIndex);
                 initOptions.flavor(Flavor.valueOf(flavorOptions[flavorIndex]));
             }
 
@@ -324,7 +372,7 @@ abstract class ArchetypeInvoker {
                 List<String> descriptions = archetypes.stream()
                         .map(a -> a.name() + " | " + a.description().orElse(a.summary()))
                         .collect(Collectors.toList());
-                int archetypeIndex = prompt("Select archetype", descriptions, 0);
+                int archetypeIndex = prompter.prompt("Select archetype", descriptions, 0);
                 archetype = archetypes.get(archetypeIndex);
                 initOptions.archetypeName(archetype.name());
             } else {
@@ -355,7 +403,7 @@ abstract class ArchetypeInvoker {
 
                 // Process input flow from template and updates properties
                 inputFlow.nodes().stream()
-                        .map(n -> FlowNodeControllers.create(n, initProperties))
+                        .map(n -> FlowNodeControllers.create(n, initProperties, prompter))
                         .forEach(FlowNodeController::execute);
             }
 
@@ -456,6 +504,7 @@ abstract class ArchetypeInvoker {
                         .batch(initOptions.batch())
                         .externalValues(externalValues)
                         .externalDefaults(externalDefaults)
+                        .input(reader())
                         .onResolved(onResolved())
                         .output(this::resolveProjectDir)
                         .outputPropsFile(initOptions.outputPropsFileOption())
