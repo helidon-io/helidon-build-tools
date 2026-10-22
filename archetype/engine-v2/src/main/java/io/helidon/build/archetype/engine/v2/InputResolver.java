@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -501,7 +501,7 @@ public abstract class InputResolver implements Node.Visitor {
         private static final String ENTER_SELECTION = Bold.apply("Enter selection");
         private static final String ENTER_LIST_SELECTION = ENTER_SELECTION + " (numbers separated by spaces or 'none')";
 
-        private final InputStream in;
+        private final BufferedReader reader;
         private String lastName;
 
         /**
@@ -510,7 +510,7 @@ public abstract class InputResolver implements Node.Visitor {
          * @param context context
          */
         public InteractiveResolver(Context context) {
-            this(context, System.in);
+            this(context, new BufferedReader(new InputStreamReader(System.in)));
         }
 
         /**
@@ -520,8 +520,18 @@ public abstract class InputResolver implements Node.Visitor {
          * @param in      input stream to use for reading user input
          */
         public InteractiveResolver(Context context, InputStream in) {
+            this(context, new BufferedReader(new InputStreamReader(Objects.requireNonNull(in, "input stream is null"))));
+        }
+
+        /**
+         * Create a new interactive input resolver.
+         *
+         * @param context context
+         * @param reader  reader to use for reading user input
+         */
+        public InteractiveResolver(Context context, BufferedReader reader) {
             super(context);
-            this.in = Objects.requireNonNull(in, "input stream is null");
+            this.reader = Objects.requireNonNull(reader, "reader is null");
         }
 
         @Override
@@ -708,7 +718,7 @@ public abstract class InputResolver implements Node.Visitor {
                     : String.format("%s: ", prompt);
             System.out.print(promptText);
             System.out.flush();
-            return new BufferedReader(new InputStreamReader(in)).readLine();
+            return reader.readLine();
         }
     }
 

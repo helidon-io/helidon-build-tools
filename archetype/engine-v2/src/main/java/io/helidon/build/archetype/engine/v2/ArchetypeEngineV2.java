@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.build.archetype.engine.v2;
 
+import java.io.BufferedReader;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
@@ -39,6 +40,7 @@ public class ArchetypeEngineV2 {
     private final Runnable onResolved;
     private final Function<Context, Path> outputResolver;
     private final String outputPropsFile;
+    private final BufferedReader inputReader;
 
     private ArchetypeEngineV2(Builder builder) {
         this.cwd = builder.cwd;
@@ -48,6 +50,7 @@ public class ArchetypeEngineV2 {
         this.onResolved = builder.onResolved;
         this.outputResolver = builder.outputResolver;
         this.outputPropsFile = builder.outputPropsFile;
+        this.inputReader = builder.inputReader;
     }
 
     /**
@@ -66,7 +69,12 @@ public class ArchetypeEngineV2 {
         Node node = Script.load(cwd.resolve("main.xml"));
 
         // resolve inputs (full traversal)
-        ScriptInvoker.invoke(node, context, batch ? new BatchResolver(context) : new InteractiveResolver(context));
+        InputResolver inputResolver = batch
+                ? new BatchResolver(context)
+                : inputReader == null
+                        ? new InteractiveResolver(context)
+                        : new InteractiveResolver(context, inputReader);
+        ScriptInvoker.invoke(node, context, inputResolver);
 
         // resolve model (full traversal)
         TemplateModel model = new TemplateModel(context);
@@ -111,8 +119,20 @@ public class ArchetypeEngineV2 {
         private Function<Context, Path> outputResolver;
         private Runnable onResolved;
         private String outputPropsFile;
+        private BufferedReader inputReader;
 
         private Builder() {
+        }
+
+        /**
+         * Set the reader used for interactive input.
+         *
+         * @param inputReader input reader
+         * @return this builder
+         */
+        public Builder input(BufferedReader inputReader) {
+            this.inputReader = requireNonNull(inputReader, "inputReader is null");
+            return this;
         }
 
         /**
