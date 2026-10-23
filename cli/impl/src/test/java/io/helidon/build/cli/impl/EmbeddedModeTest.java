@@ -15,115 +15,186 @@
  */
 package io.helidon.build.cli.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
-import io.helidon.build.common.logging.LogLevel;
+import io.helidon.build.common.SubstitutionVariables;
 import io.helidon.build.common.logging.LogRecorder;
+import io.helidon.build.common.test.utils.LogRecordExtension;
+import io.helidon.build.common.test.utils.WorkDirExtension;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junitpioneer.jupiter.RestoreSystemProperties;
 
-import static io.helidon.build.cli.impl.TestUtils.equalToIgnoringStyle;
-import static io.helidon.build.cli.impl.TestUtils.isNotStyled;
-import static io.helidon.build.cli.impl.TestUtils.isStyled;
+import static io.helidon.build.common.ansi.AnsiTextStyle.strip;
+import static io.helidon.build.common.FileUtils.cwd;
+import static io.helidon.build.common.FileUtils.directory;
+import static io.helidon.build.common.FileUtils.ensureDirectory;
+import static io.helidon.build.common.FileUtils.userHome;
+import static io.helidon.build.common.FileUtils.zip;
+import static io.helidon.build.common.test.utils.LogMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for embedded mode.
  */
-@SuppressWarnings("unchecked")
+@ExtendWith(LogRecordExtension.class)
+@ExtendWith(WorkDirExtension.class)
+@RestoreSystemProperties
 class EmbeddedModeTest {
 
-    @BeforeAll
-    static void beforeAllTests() {
-        System.setProperty("jansi.passthrough", "true");
+    private final LogRecorder recorder;
+    private final Path workDir;
+    private String metadataUrl;
+    private Path projectDir;
+
+    EmbeddedModeTest(LogRecorder recorder, Path workDir) {
+        this.recorder = recorder;
+        this.workDir = workDir;
+    }
+
+    @BeforeEach
+    void setUp() {
+        System.setProperty("user.home", workDir.toString());
+        projectDir = ensureDirectory(workDir.resolve("project"));
+        System.setProperty("user.dir", projectDir.toString());
+        metadataUrl = directory(workDir.resolve("cli-data"), Map.of(
+                "versions.xml", """
+                        <data>
+                            <archetypes>
+                                <version default="true">4.0.0</version>
+                            </archetypes>
+                        </data>
+                        """,
+                "4.0.0/cli-data.zip", zip(Map.of(
+                        "metadata.properties", "cli.version=0.0.1\n"))))
+                .toUri()
+                .toString();
+    }
+
+    @Test
+    void testRedirectedPaths() {
+        Path configDir = workDir.resolve(".helidon");
+
+        assertThat(userHome(), is(workDir));
+        assertThat(cwd(), is(projectDir));
+        assertThat(UserConfig.current().path(), is(configDir.resolve("config")));
+        assertThat(UserConfig.current().cacheDir(), is(configDir.resolve("cache")));
+        assertThat(Metadata.builder().build().rootDir(), is(configDir.resolve("cache")));
+        assertThat(new CommonOptions(null, null, null, false, null).project(), is(projectDir));
     }
 
     @Test
     void testValidCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
-            Helidon.execute("version");
+        Helidon.execute("version", "--url", metadataUrl);
 
-            List<String> logEntries = recorder.entries();
-            assertThat(logEntries, is(not(empty())));
-            assertThat(logEntries.get(0), isStyled());
-            assertThat(logEntries, hasItems(
-                    containsString("build."),
-                    containsString("build."),
-                    containsString("build.")));
-        }
+        var variables = SubstitutionVariables.of(Map.of(
+                "buildVersion", BuildProperties.buildVersion(),
+                "buildRevision", BuildProperties.buildRevision()));
+
+        var output = strip(recorder.output());
+        assertThat(output, matches(variables.resolve("""
+                ~...
+                build.version            ${buildVersion}
+                build.revision           ${buildRevision}
+                ~...
+                """)));
     }
 
     @Test
     void testUnknownCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
-            Error e = assertThrows(Error.class, () -> Helidon.execute("foo"));
+        var e = assertThrows(Error.class, () -> Helidon.execute("foo"));
 
-            assertThat(e.getMessage(), isNotStyled());
-            assertThat(e.getMessage(), startsWith("'foo' is not a valid command."));
+        assertThat(e.getMessage(), matches("""
+                'foo' is not a valid command.
+                See 'helidon --help' for more information
+                """.stripTrailing()));
 
-            List<String> logLines = recorder.lines();
-            assertThat(logLines, contains(
-                    allOf(isStyled(), equalToIgnoringStyle("error: 'foo' is not a valid command.")),
-                    allOf(isStyled(), equalToIgnoringStyle("See 'helidon --help' for more information"))));
-        }
+        var output = strip(recorder.output());
+        assertThat(output, matches("""
+
+                error: 'foo' is not a valid command.
+                See 'helidon --help' for more information
+
+                """));
     }
 
     @Test
     void testInvalidCommand() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
-            Error e = assertThrows(Error.class, () -> Helidon.execute("*"));
+        var e = assertThrows(Error.class, () -> Helidon.execute("*"));
 
-            assertThat(e.getMessage(), isNotStyled());
-            assertThat(e.getMessage(), is("Invalid command name: *"));
+        assertThat(e.getMessage(), is("Invalid command name: *"));
 
-            List<String> logLines = recorder.lines();
-            assertThat(logLines, contains(allOf(isStyled(), equalToIgnoringStyle("error: Invalid command name: *"))));
-        }
-    }
+        var output = strip(recorder.output());
+        assertThat(output, matches("""
 
-    @Test
-    void testStyledExceptionThrown() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.INFO).start()) {
-            Error e = assertThrows(Error.class,
-                    () -> Helidon.execute("init", "--version", "99.99", "--url", "file:///jabberwocky"));
+                error: Invalid command name: *
 
-            assertThat(e.getMessage(), isNotStyled());
-            assertThat(e.getMessage(), is("Helidon version 99.99 not found."));
-
-            List<String> logEntries = recorder.entries();
-
-            assertThat(logEntries, is(not(empty())));
-            for (int i = 0; i < logEntries.size() - 1; i++) {
-                assertThat(logEntries.get(i), isStyled());
-            }
-            assertThat(logEntries.get(logEntries.size() - 1),
-                    allOf(isStyled(), equalToIgnoringStyle("Helidon version 99.99 not found.")));
-        }
+                """));
     }
 
     @Test
     void testFormatStringInProperties() {
-        try (LogRecorder recorder = new LogRecorder(LogLevel.DEBUG).start()) {
-            System.setProperty("format", "%s");
+        System.setProperty("format", "%s");
+        Helidon.execute("info", "--verbose", "--url", metadataUrl);
 
-            Helidon.execute("info", "--verbose");
+        var output = strip(recorder.output());
+        Path configFile = workDir.resolve(".helidon/config");
+        Path cacheDir = workDir.resolve(".helidon/cache");
+        var variables = SubstitutionVariables.of(Map.of(
+                "configFile", configFile.toString(),
+                "cacheDir", cacheDir.toString(),
+                "projectDir", projectDir.toString(),
+                "workDir", workDir.toString()));
+        assertThat(output, matches(variables.resolve("""
+                ~...
+                config.file ~.* ${configFile}
+                ~...
+                cache.dir ~.* ${cacheDir}
+                ~...
+                format ~.* %s
+                ~...
+                user.dir ~.* ${projectDir}
+                user.home ~.* ${workDir}
+                ~...
+                formatEnv ~.* %s
+                ~...
+                """)));
+        assertThat(values(output, "config.file"), everyItem(is(configFile.toString())));
+        assertThat(values(output, "cache.dir"), everyItem(is(cacheDir.toString())));
+        assertThat(values(output, "user.dir"), everyItem(is(projectDir.toString())));
+        assertThat(values(output, "user.home"), everyItem(is(workDir.toString())));
+    }
 
-            List<String> logEntries = recorder.entries();
-            assertThat(logEntries, hasItems(
-                    allOf(containsString("%s"), containsString("format"), containsString("formatEnv")),
-                    allOf(containsString("%s"), containsString("format"), containsString("formatEnv"))));
-        } finally {
-            System.clearProperty("format");
-        }
+    @Test
+    void testSystemPropertiesAreScopedToExecution() throws IOException {
+        Path configFile = ensureDirectory(workDir.resolve(".helidon")).resolve("config");
+        Files.writeString(configFile, "system_embedded.scope=configured\n");
+        System.setProperty("embedded.scope", "original");
+
+        Helidon.execute("info", "--verbose", "--url", metadataUrl);
+
+        var output = strip(recorder.output());
+        assertThat(values(output, "embedded.scope"), contains("configured"));
+        assertThat(System.getProperty("embedded.scope"), is("original"));
+
+        assertThrows(Error.class, () -> Helidon.execute("*"));
+        assertThat(System.getProperty("embedded.scope"), is("original"));
+    }
+
+    private static List<String> values(String output, String key) {
+        return output.lines()
+                .filter(line -> line.startsWith(key + " "))
+                .map(line -> line.substring(key.length()).trim())
+                .toList();
     }
 }

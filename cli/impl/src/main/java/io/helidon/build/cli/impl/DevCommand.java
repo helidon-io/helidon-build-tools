@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,7 @@ import static io.helidon.build.common.ansi.ConsoleUtils.clearScreen;
 import static io.helidon.build.common.ansi.ConsoleUtils.hideCursor;
 import static io.helidon.build.common.ansi.ConsoleUtils.rewriteLine;
 import static io.helidon.build.common.ansi.ConsoleUtils.showCursor;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_FAILED;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_APPLICATION_STARTING;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_BUILD_COMPLETED;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_BUILD_FAILED;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_BUILD_STARTING;
 import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_HEADER;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_MESSAGE_PREFIX;
-import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_START;
 import static io.helidon.build.devloop.common.DevLoopMessages.DEV_LOOP_STYLED_MESSAGE_PREFIX;
 import static java.lang.System.currentTimeMillis;
 
@@ -64,23 +57,9 @@ import static java.lang.System.currentTimeMillis;
 @Command(name = "dev", description = "Continuous application development")
 public final class DevCommand extends BaseCommand {
 
-    private static final String CLEAN_PROP_PREFIX = "-Ddev.clean=";
-    private static final String FORK_PROP_PREFIX = "-Ddev.fork=";
-    private static final String TERMINAL_MODE_PROP_PREFIX = "-Ddev.terminalMode=";
-    private static final String APP_JVM_ARGS_PROP_PREFIX = "-Ddev.appJvmArgs=";
-    private static final String APP_ARGS_PROP_PREFIX = "-Ddev.appArgs=";
-    private static final String CLI_MAVEN_PLUGIN = "io.helidon.build-tools:helidon-cli-maven-plugin";
-    private static final String DEV_GOAL_SUFFIX = ":dev";
-    private static final String MAVEN_LOG_LEVEL_START = "[";
-    private static final String MAVEN_LOG_LEVEL_END = "]";
-    private static final String MAVEN_ERROR_LEVEL = "ERROR";
-    private static final String MAVEN_FATAL_LEVEL = "FATAL";
-    private static final String SLF4J_PREFIX = "SLF4J:";
     private static final String HEADER = "%n" + Bold.apply(DEV_LOOP_HEADER + " %s ");
     private static final String STARTING = BoldBrightGreen.apply("starting");
     private static final String EXITING = BoldBrightGreen.apply("exiting");
-    private static final String DEFAULT_DEBUG_PORT = "5005";
-    private static final String DEBUG_ARGS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=*:%s";
     private static final PrintStream RED_STDERR = PrintStreams.apply(STDERR, Red::apply);
 
     private final CommonOptions commonOptions;
@@ -140,9 +119,9 @@ public final class DevCommand extends BaseCommand {
     private static String debugArgs(boolean appDebug, String appDebugPort, boolean appDebugNoWait) {
         boolean havePort = Strings.isValid(appDebugPort);
         if (appDebug || havePort || appDebugNoWait) {
-            String port = havePort ? appDebugPort : DEFAULT_DEBUG_PORT;
+            String port = havePort ? appDebugPort : "5005";
             String suspend = appDebugNoWait ? "n" : "y";
-            return String.format(DEBUG_ARGS, suspend, port);
+            return String.format("-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=*:%s", suspend, port);
         } else {
             return null;
         }
@@ -159,7 +138,7 @@ public final class DevCommand extends BaseCommand {
 
         // Dev goal
 
-        String devGoal = CLI_MAVEN_PLUGIN;
+        String devGoal = "io.helidon.build-tools:helidon-cli-maven-plugin";
         String cliPluginVersionProperty = null;
         String defaultPluginVersion = defaultHelidonPluginVersion(pluginVersion, useCurrentPluginVersion);
         String cliPluginVersion = cliPluginVersion(defaultPluginVersion);
@@ -169,12 +148,12 @@ public final class DevCommand extends BaseCommand {
             // Pass along the version so that the loop can specify it when doing full builds
             cliPluginVersionProperty = String.format("-D%s=%s", HELIDON_CLI_PLUGIN_VERSION_PROPERTY, cliPluginVersion);
         }
-        devGoal += DEV_GOAL_SUFFIX;
+        devGoal += ":dev";
 
         // Application args
 
-        String jvmArgs = appJvmArgs == null ? null : APP_JVM_ARGS_PROP_PREFIX + appJvmArgs;
-        String args = appArgs == null ? null : APP_ARGS_PROP_PREFIX + appArgs;
+        String jvmArgs = appJvmArgs == null ? null : "-Ddev.appJvmArgs=" + appJvmArgs;
+        String args = appArgs == null ? null : "-Ddev.appArgs=" + appArgs;
 
         // Clear terminal and print header if in terminal mode
 
@@ -203,9 +182,9 @@ public final class DevCommand extends BaseCommand {
                     .stdErr(RED_STDERR)
                     .filter(filter)
                     .addArgument(devGoal)
-                    .addArgument(CLEAN_PROP_PREFIX + clean)
-                    .addArgument(FORK_PROP_PREFIX + fork)
-                    .addArgument(TERMINAL_MODE_PROP_PREFIX + terminalMode)
+                    .addArgument("-Ddev.clean=" + clean)
+                    .addArgument("-Ddev.fork=" + fork)
+                    .addArgument("-Ddev.terminalMode=" + terminalMode)
                     .addArguments(context.propertyArgs(true))
                     .addOptionalArgument(cliPluginVersionProperty)
                     .addOptionalArgument(jvmArgs)
@@ -221,8 +200,7 @@ public final class DevCommand extends BaseCommand {
     }
 
     private static void printState(String state, boolean newline) {
-        final String header = newline ? HEADER + "%n" : HEADER;
-        STDOUT.printf(header, state);
+        STDOUT.printf(newline ? HEADER + "%n" : HEADER, state);
         STDOUT.flush();
     }
 
@@ -235,16 +213,6 @@ public final class DevCommand extends BaseCommand {
      */
     private static class TerminalModeOutput extends PrintStreamAdapter implements Predicate<String> {
 
-        private static final String DEBUGGER_LISTEN_MESSAGE_PREFIX = "Listening for transport";
-        private static final String DOWNLOADING_MESSAGE_PREFIX = "Downloading from";
-        private static final String DOWNLOAD_MESSAGE_PREFIX = "Download";
-        private static final String PROGRESS_MESSAGE_PREFIX = "Progress ";
-        private static final String BUILD_SUCCEEDED = "BUILD SUCCESS";
-        private static final String BUILD_FAILED = "BUILD FAILURE";
-        private static final String HELP_TAG = "[Help";
-        private static final String AT_TAG = " @ ";
-        private static final String DOWNLOADING_ARTIFACTS = " downloading artifacts ";
-        private static final long PROGRESS_UPDATE_MILLIS = 100;
         private static final String[] SPINNER = {
                 ".   ",
                 "..  ",
@@ -276,7 +244,7 @@ public final class DevCommand extends BaseCommand {
         @Override
         public boolean test(String line) {
             if (devLoopStarted) {
-                if (line.contains(DEV_LOOP_HEADER)) {
+                if (line.contains("helidon dev")) {
                     clearProgressIndicator();
                     if (skipHeader) {
                         skipHeader = false;
@@ -287,50 +255,50 @@ public final class DevCommand extends BaseCommand {
                     STDOUT.flush();
                     return false;
                 } else if (line.startsWith(DEV_LOOP_STYLED_MESSAGE_PREFIX)
-                           || line.startsWith(DEV_LOOP_MESSAGE_PREFIX)) {
-                    if (line.contains(DEV_LOOP_BUILD_STARTING)) {
+                           || line.startsWith("|")) {
+                    if (line.contains("building")) {
                         insertLineIfError = true;
                         building = true;
                         buildFailed = false;
-                    } else if (line.contains(DEV_LOOP_BUILD_COMPLETED)) {
+                    } else if (line.contains("completed")) {
                         building = false;
                         buildFailed = false;
-                    } else if (line.contains(DEV_LOOP_APPLICATION_STARTING)) {
+                    } else if (line.contains("starting")) {
                         appendLine = true;
                         building = false;
-                    } else if (line.contains(DEV_LOOP_BUILD_FAILED)
-                               || line.contains(DEV_LOOP_APPLICATION_FAILED)) {
+                    } else if (line.contains("build failed")
+                               || line.contains("failed")) {
                         insertLine = true;
                         building = false;
                     }
                     restoreOutput();
                     return true;
-                } else if (building && (line.startsWith(DOWNLOAD_MESSAGE_PREFIX) || line.startsWith(PROGRESS_MESSAGE_PREFIX))) {
+                } else if (building && (line.startsWith("Download") || line.startsWith("Progress "))) {
                     return false;
-                } else if (line.startsWith(SLF4J_PREFIX)) {
+                } else if (line.startsWith("SLF4J:")) {
                     return false;
                 } else if (buildFailed) {
                     return isErrorMessage(line);
                 } else if (suspendOutput) {
                     return false;
-                } else if (line.contains(BUILD_FAILED)) {
+                } else if (line.contains("BUILD FAILURE")) {
                     buildFailed = true;
                     building = false;
                     return false;
-                } else if (line.contains(BUILD_SUCCEEDED)
-                           || line.contains(HELP_TAG)) {
+                } else if (line.contains("BUILD SUCCESS")
+                           || line.contains("[Help")) {
                     suspendOutput();
                     building = false;
                     buildFailed = false;
                     return false;
                 } else {
-                    return !line.equals(AT_TAG);
+                    return !line.equals(" @ ");
                 }
-            } else if (line.endsWith(DEV_LOOP_START)) {
+            } else if (line.endsWith("loop started")) {
                 devLoopStarted = true;
                 insertLine = !ansiEnabled;
                 return false;
-            } else if (line.startsWith(DEBUGGER_LISTEN_MESSAGE_PREFIX)) {
+            } else if (line.startsWith("Listening for transport")) {
                 debugger = true;
                 return true;
             } else if (isErrorMessage(line)) {
@@ -373,9 +341,9 @@ public final class DevCommand extends BaseCommand {
                     STDOUT.println();
                     progressCompleted = true;
                 } else if (!skipHeader) {
-                    if (line.contains(DOWNLOADING_MESSAGE_PREFIX)) {
+                    if (line.contains("Downloading from")) {
                         header(Bold.apply(DEV_LOOP_HEADER));
-                        STDOUT.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(DOWNLOADING_ARTIFACTS));
+                        STDOUT.print(DEV_LOOP_STYLED_MESSAGE_PREFIX + BoldBlue.apply(" downloading artifacts "));
                         STDOUT.flush();
                         skipHeader = true;
                         progressStarted = false;
@@ -391,7 +359,7 @@ public final class DevCommand extends BaseCommand {
             final long currentMillis = currentTimeMillis();
             if (progressStarted) {
                 final long elapsedMillis = currentMillis - lastProgressMillis;
-                if (elapsedMillis >= PROGRESS_UPDATE_MILLIS) {
+                if (elapsedMillis >= 100L) {
                     rewriteLine(SPINNER[progressIndex++]);
                 }
             } else {
@@ -425,12 +393,11 @@ public final class DevCommand extends BaseCommand {
         }
 
         private static String errorMessage(String line) {
-            if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
-                int levelEnd = line.indexOf(MAVEN_LOG_LEVEL_END);
+            if (line.startsWith("[")) {
+                int levelEnd = line.indexOf("]");
                 if (levelEnd > 0) {
                     String level = line.substring(0, levelEnd);
-                    if (level.contains(MAVEN_ERROR_LEVEL)
-                        || level.contains(MAVEN_FATAL_LEVEL)) {
+                    if (level.contains("ERROR") || level.contains("FATAL")) {
                         return line.substring(levelEnd + 2);
                     }
                 }
@@ -448,7 +415,7 @@ public final class DevCommand extends BaseCommand {
                     STDOUT.println();
                     insertLine = false;
                 }
-                if (line.startsWith(MAVEN_LOG_LEVEL_START)) {
+                if (line.startsWith("[")) {
                     String errorMessage = errorMessage(line);
                     if (Strings.isValid(errorMessage)) {
                         if (insertLineIfError) {

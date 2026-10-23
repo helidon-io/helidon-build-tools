@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,7 @@ import static io.helidon.build.common.SubstitutionVariables.systemPropertyOrEnvV
 @CommandFragment
 public final class InitOptions {
 
-    private static final String PROJECT_NAME_PROPERTY = "name";
-    private static final String GROUP_ID_PROPERTY = "groupId";
-    private static final String ARTIFACT_ID_PROPERTY = "artifactId";
-    private static final String PACKAGE_NAME_PROPERTY = "package";
-    private static final String HELIDON_VERSION_PROPERTY = "helidonVersion";
-    private static final String MAVEN_PROPERTY = "maven";
-    private static final List<String> OVERRIDES = List.of(GROUP_ID_PROPERTY, ARTIFACT_ID_PROPERTY,
-            PACKAGE_NAME_PROPERTY);
+    private static final List<String> OVERRIDES = List.of("groupId", "artifactId", "package");
 
     /**
      * The default flavor.
@@ -139,7 +132,7 @@ public final class InitOptions {
      *
      * @return output-props-file
      */
-    public String outputPropsFileOption() {
+    String outputPropsFileOption() {
         return outputPropsFileOption;
     }
 
@@ -323,13 +316,13 @@ public final class InitOptions {
         properties.keySet().stream().filter(OVERRIDES::contains).forEach(key -> {
             String value = properties.get(key);
             switch (key) {
-                case GROUP_ID_PROPERTY:
+                case "groupId":
                     groupId = value;
                     break;
-                case ARTIFACT_ID_PROPERTY:
+                case "artifactId":
                     artifactId = value;
                     break;
-                case PACKAGE_NAME_PROPERTY:
+                case "package":
                     packageName = value;
                     break;
                 default:
@@ -390,12 +383,12 @@ public final class InitOptions {
      */
     Map<String, String> initProperties() {
         Map<String, String> result = new HashMap<>();
-        result.put(PROJECT_NAME_PROPERTY, projectName);
-        result.put(GROUP_ID_PROPERTY, groupId);
-        result.put(ARTIFACT_ID_PROPERTY, artifactId);
-        result.put(PACKAGE_NAME_PROPERTY, packageName);
-        result.put(HELIDON_VERSION_PROPERTY, helidonVersion);
-        result.putIfAbsent(MAVEN_PROPERTY, "true");        // No gradle support yet
+        result.put("name", projectName);
+        result.put("groupId", groupId);
+        result.put("artifactId", artifactId);
+        result.put("package", packageName);
+        result.put("helidonVersion", helidonVersion);
+        result.putIfAbsent("maven", "true");        // No Gradle support yet
         return result;
     }
 }

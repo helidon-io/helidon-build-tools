@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,6 @@ public class CommandRequirements {
     private static final MavenVersion MINIMUM_HELIDON_VERSION = toMavenVersion("2.0.0-M4");
     private static final MavenVersion ALLOWED_HELIDON_SNAPSHOT_VERSION = toMavenVersion("2.0.0-SNAPSHOT");
     private static final MavenVersion MINIMUM_REQUIRED_MAVEN_VERSION = toMavenVersion("3.6.0");
-    private static final String UNSUPPORTED_HELIDON_VERSION = "$(red Helidon version) $(RED %s) $(red is not supported.)";
-    private static final String UNSUPPORTED_JAVA_VERSION = "$(red Java version at %s is not supported: 11 or later is required.)";
-    private static final String NOT_A_PROJECT_DIR = "$(italic Please cd to a project directory.)";
-    private static final String UNKNOWN_VERSION = "$(italic Version %s not found.)";
 
     /**
      * Assert that the given Helidon version is supported.
@@ -68,7 +64,7 @@ public class CommandRequirements {
     static MavenVersion requireSupportedHelidonVersion(MavenVersion helidonVersion) {
         Requirements.require(helidonVersion.equals(ALLOWED_HELIDON_SNAPSHOT_VERSION)
                         || helidonVersion.isGreaterThanOrEqualTo(MINIMUM_HELIDON_VERSION),
-                UNSUPPORTED_HELIDON_VERSION, helidonVersion);
+                "$(red Helidon version) $(RED %s) $(red is not supported.)", helidonVersion);
         return helidonVersion;
     }
 
@@ -76,7 +72,9 @@ public class CommandRequirements {
      * An unsupported Java version was found.
      */
     static void unsupportedJavaVersion() {
-        throw new RequirementFailure(UNSUPPORTED_JAVA_VERSION, requireJavaExecutable());
+        throw new RequirementFailure(
+                "$(red Java version at %s is not supported: 11 or later is required.)",
+                requireJavaExecutable());
     }
 
     /**
@@ -111,7 +109,7 @@ public class CommandRequirements {
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
             if (message.contains("does not exist")) {
-                message = NOT_A_PROJECT_DIR;
+                message = "$(italic Please cd to a project directory.)";
             }
             throw new RequirementFailure(message);
         }
@@ -126,7 +124,7 @@ public class CommandRequirements {
         try {
             return requireDirectory(versionDir);
         } catch (Exception e) {
-            throw new RequirementFailure(UNKNOWN_VERSION, versionDir.getFileName());
+            throw new RequirementFailure("$(italic Version %s not found.)", versionDir.getFileName());
         }
     }
 

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.build.cli.common.ArchetypesData;
-import io.helidon.build.cli.impl.Config;
+import io.helidon.build.cli.impl.UserConfig;
 import io.helidon.build.cli.impl.Helidon;
 import io.helidon.build.cli.tests.ProcessInvocation.Monitor;
 import io.helidon.build.cli.tests.ProcessInvocation.MonitorException;
@@ -297,7 +297,7 @@ class CliFunctionalTest {
                 .start()) {
 
             monitor.await();
-            Path cacheDir = Config.userConfig().cacheDir();
+            Path cacheDir = UserConfig.current().cacheDir();
             List<String> content = SourcePath.scan(cacheDir).stream()
                     .map(SourcePath::asString)
                     .collect(Collectors.toList());

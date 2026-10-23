@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,18 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.build.cli.harness.CommandContext;
+import io.helidon.build.common.FileUtils;
+import io.helidon.build.common.Maps;
 import io.helidon.build.common.SubstitutionVariables;
 
 import static io.helidon.build.cli.common.ProjectConfig.DOT_HELIDON;
-import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
+import static io.helidon.build.cli.harness.CommandContext.InternalOptions.RICH_TEXT_DEFAULT_VALUE;
+import static io.helidon.build.cli.harness.CommandContext.InternalOptions.RICH_TEXT_KEY;
 import static io.helidon.build.common.FileUtils.deleteDirectoryContent;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.Strings.replaceWhitespaces;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Utility to manage user config.
@@ -44,6 +46,7 @@ public class UserConfig {
      * The default project name key.
      */
     public static final String DEFAULT_PROJECT_NAME_KEY = "default.project.name";
+
     private static final String CACHE_DIR_NAME = "cache";
     private static final String PLUGINS_DIR_NAME = "plugins";
     private static final String CONFIG_FILE_NAME = "config";
@@ -56,8 +59,6 @@ public class UserConfig {
     private static final String DEFAULT_PACKAGE_NAME_KEY = "default.package.name";
     private static final String DEFAULT_PACKAGE_NAME_DEFAULT_VALUE = "me.${user.name}.${init_flavor}.${init_archetype}";
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_KEY = "fail.on.project.name.collision";
-    private static final String RICH_TEXT_KEY = CommandContext.InternalOptions.RICH_TEXT_KEY;
-    private static final String RICH_TEXT_DEFAULT_VALUE = CommandContext.InternalOptions.RICH_TEXT_DEFAULT_VALUE;
     private static final String FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE = "false";
     private static final String UPDATE_INTERVAL_HOURS_KEY = "update.check.retry.hours";
     private static final String UPDATE_INTERVAL_HOURS_DEFAULT_VALUE = "12";
@@ -66,6 +67,7 @@ public class UserConfig {
     private static final String UPDATE_URL_KEY = "update.url";
     private static final String UPDATE_URL_DEFAULT_VALUE = "https://helidon.io/cli-data";
     private static final String SYSTEM_PROPERTY_PREFIX = "system_";
+    private static final AtomicReference<UserConfig> CURRENT = new AtomicReference<>();
     private static final String DEFAULT_CONFIG =
             "\n"
             + "# When using the init command to create a new project, default values for the\n"
@@ -113,10 +115,10 @@ public class UserConfig {
             + "\n"
             + "# System properties can be set by using the \"system_\" key prefix, e.g.:\n"
             + "\n"
-            + "# " + "system_http.proxyHost=http://proxy.acme.com" + "\n"
+            + "# " + "system_http.proxyHost=proxy.acme.com" + "\n"
             + "# " + "system_http.proxyPort=80" + "\n"
             + "# " + "system_http.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
-            + "# " + "system_https.proxyHost=http://proxy.acme.com" + "\n"
+            + "# " + "system_https.proxyHost=proxy.acme.com" + "\n"
             + "# " + "system_https.proxyPort=80" + "\n"
             + "# " + "system_https.nonProxyHosts=*.local|localhost|127.0.0.1|*.acme.com" + "\n"
             + "\n"
@@ -127,20 +129,37 @@ public class UserConfig {
             + "\n";
 
     private final Path homeDir;
-    private final Path configDir;
     private final Path cacheDir;
     private final Path pluginsDir;
     private final Path configFile;
     private final Map<String, String> allProperties;
-    private final Map<String, String> systemProperties;
 
     /**
-     * Returns a new instance using {@link #homeDir()} as the root.
+     * Returns a new instance using {@code user.home} as the root.
      *
      * @return The instance.
      */
     public static UserConfig create() {
-        return create(USER_HOME_DIR);
+        return create(FileUtils.userHome());
+    }
+
+    /**
+     * Returns the current user config instance.
+     *
+     * @return The instance.
+     */
+    public static UserConfig current() {
+        Path homeDir = FileUtils.userHome();
+        while (true) {
+            UserConfig current = CURRENT.get();
+            if (current != null && current.homeDir.equals(homeDir)) {
+                return current;
+            }
+            UserConfig replacement = create(homeDir);
+            if (CURRENT.compareAndSet(current, replacement)) {
+                return replacement;
+            }
+        }
     }
 
     /**
@@ -154,13 +173,43 @@ public class UserConfig {
     }
 
     private UserConfig(Path homeDir) {
-        this.homeDir = homeDir.toAbsolutePath();
-        this.configDir = ensureDirectory(homeDir.resolve(DOT_HELIDON));
-        this.cacheDir = ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
-        this.pluginsDir = ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
-        this.configFile = configDir.resolve(CONFIG_FILE_NAME);
-        this.allProperties = loadConfig();
-        this.systemProperties = setSystemProperties();
+        this.homeDir = homeDir;
+        Path configDir = ensureDirectory(homeDir.resolve(DOT_HELIDON));
+        cacheDir = ensureDirectory(configDir.resolve(CACHE_DIR_NAME));
+        pluginsDir = ensureDirectory(configDir.resolve(PLUGINS_DIR_NAME));
+        configFile = configDir.resolve(CONFIG_FILE_NAME);
+        try {
+            Reader in = null;
+            if (!Files.exists(configFile)) {
+                Files.writeString(configFile, DEFAULT_CONFIG);
+                in = new StringReader(DEFAULT_CONFIG);
+            }
+            Properties properties = new Properties();
+            try (Reader reader = in == null ? new InputStreamReader(Files.newInputStream(configFile)) : in) {
+                properties.load(reader);
+            }
+            allProperties = Maps.fromProperties(properties);
+            allProperties.put(CONFIG_FILE_KEY, configFile.toRealPath().toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Apply configured system properties until the returned scope is closed.
+     *
+     * @return The system properties scope.
+     */
+    SystemPropertiesScope applySystemProperties() {
+        Map<String, String> previous = new HashMap<>();
+        allProperties.forEach((key, value) -> {
+            if (key.startsWith(SYSTEM_PROPERTY_PREFIX)) {
+                String property = key.substring(SYSTEM_PROPERTY_PREFIX.length());
+                previous.put(property, System.getProperty(property));
+                System.setProperty(property, value);
+            }
+        });
+        return new SystemPropertiesScope(previous);
     }
 
     /**
@@ -172,15 +221,6 @@ public class UserConfig {
      */
     public String property(String key, String defaultValue) {
         return allProperties.getOrDefault(key, defaultValue);
-    }
-
-    /**
-     * Returns whether or not rich text should be disabled.
-     *
-     * @return {@code true} if rich text should not be used (equivalent to {@code --plain} option).
-     */
-    public boolean richTextDisabled() {
-        return !Boolean.parseBoolean(property(RICH_TEXT_KEY, RICH_TEXT_DEFAULT_VALUE));
     }
 
     /**
@@ -317,11 +357,11 @@ public class UserConfig {
     public String defaultPackageName(SubstitutionVariables substitutions) {
         String packageName = substitutions.resolve(property(DEFAULT_PACKAGE_NAME_KEY, DEFAULT_PACKAGE_NAME_DEFAULT_VALUE));
         String result = replaceWhitespaces(packageName, ".");
-        if (result.contains("${")) {
+        if (result != null && result.contains("${")) {
             // result is not fully resolved, skip validation
             return result;
         }
-        if (result.length() > 0 && Character.isJavaIdentifierStart(result.charAt(0))) {
+        if (result != null && !result.isEmpty() && Character.isJavaIdentifierStart(result.charAt(0))) {
             for (String name : result.split("\\.")) {
                 for (int i = 1; i < name.length(); i++) {
                     if (!Character.isJavaIdentifierPart(name.charAt(i))) {
@@ -347,16 +387,7 @@ public class UserConfig {
      * @return {@code true} if the init command should fail.
      */
     public boolean failOnProjectNameCollision() {
-        return Boolean.parseBoolean(property(FAIL_ON_PROJECT_NAME_COLLISION_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
-    }
-
-    /**
-     * Returns whether or not updates should be downloaded.
-     *
-     * @return {@code true} if updates should be downloaded.
-     */
-    public boolean downloadUpdates() {
-        return Boolean.parseBoolean(property(DOWNLOAD_UPDATES_KEY, DOWNLOAD_UPDATES_DEFAULT_VALUE));
+        return Boolean.parseBoolean(property(FAIL_ON_PROJECT_NAME_COLLISION_KEY, FAIL_ON_PROJECT_NAME_COLLISION_DEFAULT_VALUE));
     }
 
     /**
@@ -369,39 +400,12 @@ public class UserConfig {
     }
 
     /**
-     * Returns all system properties set via user config.
-     *
-     * @return The system properties.
-     */
-    public Map<String, String> systemProperties() {
-        return systemProperties;
-    }
-
-    /**
      * Returns the config file.
      *
      * @return The file.
      */
     public Path path() {
         return configFile;
-    }
-
-    /**
-     * Returns the user config directory, normally {@code ${HOME}}.
-     *
-     * @return The directory.
-     */
-    public Path homeDir() {
-        return homeDir;
-    }
-
-    /**
-     * Returns the user config directory, normally {@code ${HOME}/.helidon}.
-     *
-     * @return The directory.
-     */
-    public Path configDir() {
-        return configDir;
     }
 
     /**
@@ -440,32 +444,25 @@ public class UserConfig {
         deleteDirectoryContent(pluginsDir());
     }
 
-    private Map<String, String> loadConfig() {
-        Map<String, String> result = new HashMap<>();
-        Properties properties = new Properties();
-        try {
-            Reader in = null;
-            if (!Files.exists(configFile)) {
-                Files.writeString(configFile, DEFAULT_CONFIG);
-                in = new StringReader(DEFAULT_CONFIG);
-            }
-            try (Reader reader = in == null ? new InputStreamReader(Files.newInputStream(configFile)) : in) {
-                properties.load(reader);
-            }
-            properties.forEach((key, value) -> result.put(key.toString(), value.toString()));
-            result.put(CONFIG_FILE_KEY, configFile.toRealPath().toString());
-            return result;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+    /**
+     * System properties scope.
+     */
+    public static final class SystemPropertiesScope implements AutoCloseable {
+        private final Map<String, String> previous;
 
-    private Map<String, String> setSystemProperties() {
-        return properties().entrySet()
-                           .stream()
-                           .filter(e -> e.getKey().startsWith(SYSTEM_PROPERTY_PREFIX))
-                           .map(e -> Map.entry(e.getKey().substring(SYSTEM_PROPERTY_PREFIX.length()), e.getValue()))
-                           .peek(e -> System.setProperty(e.getKey(), e.getValue()))
-                           .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        private SystemPropertiesScope(Map<String, String> previous) {
+            this.previous = previous;
+        }
+
+        @Override
+        public void close() {
+            previous.forEach((key, value) -> {
+                if (value == null) {
+                    System.clearProperty(key);
+                } else {
+                    System.setProperty(key, value);
+                }
+            });
+        }
     }
 }

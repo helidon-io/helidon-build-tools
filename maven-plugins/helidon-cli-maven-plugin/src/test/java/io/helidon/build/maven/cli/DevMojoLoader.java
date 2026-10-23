@@ -36,7 +36,7 @@ import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 
-import static io.helidon.build.common.FileUtils.USER_HOME_DIR;
+import static io.helidon.build.common.FileUtils.userHome;
 import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.requireDirectory;
 import static java.util.Objects.requireNonNull;
@@ -219,7 +219,7 @@ public final class DevMojoLoader extends AbstractMojoTestCase {
         if (prop != null) {
             dir = Path.of(prop);
         } else {
-            dir = USER_HOME_DIR.resolve(DEFAULT_LOCAL_REPO_DIR);
+            dir = userHome().resolve(DEFAULT_LOCAL_REPO_DIR);
         }
         return requireDirectory(dir);
     }

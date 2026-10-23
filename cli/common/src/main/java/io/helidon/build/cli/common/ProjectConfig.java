@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.build.common.ConfigProperties;
 
@@ -68,11 +65,6 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_ARCHETYPE = "project.archetype";
 
     /**
-     * Prefix for all feature properties.
-     */
-    public static final String FEATURE_PREFIX = "feature.";
-
-    /**
      * Project's dependencies property.
      */
     public static final String PROJECT_DEPENDENCIES = "project.dependencies";
@@ -93,7 +85,7 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_SOURCE_EXCLUDES = "project.source.excludes";
 
     /**
-     * Project's class directories property.
+     * Project's classes directories property.
      */
     public static final String PROJECT_CLASSDIRS = "project.classdirs";
 
@@ -135,7 +127,7 @@ public class ProjectConfig extends ConfigProperties {
     public static final String PROJECT_LAST_BUILD_SUCCESS_TIME = "project.last.build.success.time";
 
     /**
-     * Tests whether or not the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
+     * Tests whether the configuration from the {@link #DOT_HELIDON} file in the given project directory exists.
      *
      * @param projectDir The project directory.
      * @return {@code true} if file exists.
@@ -197,7 +189,7 @@ public class ProjectConfig extends ConfigProperties {
 
 
     /**
-     * Retuns the {@code .helidon} file.
+     * Returns the {@code .helidon} file.
      *
      * @param projectDir The project directory.
      * @return The file.
@@ -235,41 +227,6 @@ public class ProjectConfig extends ConfigProperties {
      */
     public void projectDir(Path projectDir) {
         property(PROJECT_DIRECTORY, projectDir.toString());
-    }
-
-    /**
-     * List of features available to this project.
-     *
-     * @return List of features.
-     */
-    public List<String> listFeatures() {
-        return keySet().stream()
-                       .filter(k -> (k).startsWith(FEATURE_PREFIX))
-                       .map(k -> (k).substring(FEATURE_PREFIX.length()))
-                       .collect(Collectors.toList());
-    }
-
-    /**
-     * List of dependencies for a certain feature.
-     *
-     * @param feature The feature.
-     * @return List of deps.
-     */
-    public List<ProjectDependency> featureDeps(String feature) {
-        return entrySet()
-                .stream()
-                .filter(e -> {
-                    String s = e.getKey();
-                    return s.equals(FEATURE_PREFIX + feature);
-                })
-                .flatMap(e -> {
-                    String v = e.getValue();
-                    return Arrays.stream(v.split(","))
-                                 .map(d -> {
-                                     String[] ds = d.split(":");
-                                     return new ProjectDependency(ds[0], ds[1], ds.length > 2 ? ds[2] : null);
-                                 });
-                }).collect(Collectors.toList());
     }
 
     /**

@@ -410,7 +410,7 @@ public class AnsiTextStyle implements RichTextStyle {
             }
 
             // Is it just too long?
-            if (index >= buffer.length) {
+            if (pos >= buffer.length) {
                 sb.append(buffer, 0, pos);
                 pos = 0;
                 state = AnsiState.ESC1;

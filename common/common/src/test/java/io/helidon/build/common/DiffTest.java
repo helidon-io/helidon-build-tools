@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,7 +182,7 @@ class DiffTest {
     }
 
     @Test
-    void testApplyDupplicates() {
+    void testApplyDuplicates() {
         var list1 = new ArrayList<>(List.of("A", "A", "B", "B", "C", "C"));
         Diff.apply(List.of(
                 new Diff<>(1, -1),

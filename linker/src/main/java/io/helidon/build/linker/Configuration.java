@@ -29,7 +29,7 @@ import io.helidon.build.common.FileUtils;
 import io.helidon.build.common.Strings;
 import io.helidon.build.common.logging.LogLevel;
 
-import static io.helidon.build.common.FileUtils.WORKING_DIR;
+import static io.helidon.build.common.FileUtils.cwd;
 import static io.helidon.build.common.FileUtils.fileName;
 import static io.helidon.build.common.FileUtils.requireExistent;
 import static io.helidon.build.common.FileUtils.requireFile;
@@ -520,7 +520,7 @@ public final class Configuration {
             if (jriDirectory == null) {
                 String jarName = fileName(requireNonNull(mainJar));
                 String dirName = jarName.substring(0, jarName.lastIndexOf('.')) + "-jri";
-                jriDirectory = WORKING_DIR.resolve(dirName);
+                jriDirectory = cwd().resolve(dirName);
             }
             if (Files.exists(jriDirectory)) {
                 if (Files.isDirectory(jriDirectory)) {

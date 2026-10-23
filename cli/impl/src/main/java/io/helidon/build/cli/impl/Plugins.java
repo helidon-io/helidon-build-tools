@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.build.cli.common.ImageInfo;
 import io.helidon.build.cli.plugin.Plugin;
@@ -46,58 +45,24 @@ import static java.util.Objects.requireNonNull;
 public class Plugins {
 
     private static final String EOL = System.lineSeparator();
-    private static final AtomicReference<Path> PLUGINS_JAR = new AtomicReference<>();
-    private static final String JAR_NAME_PREFIX = "cli-plugins-";
-    private static final String JAR_NAME_SUFFIX = ".jar";
-    private static final String JAR_RESOURCE_DIR = "plugins";
-    private static final String DEBUG_PORT_PROPERTY = "plugin.debug.port";
-    private static final int DEFAULT_DEBUG_PORT = Integer.getInteger(DEBUG_PORT_PROPERTY, 0);
-    private static final String DEBUG_ARG_PREFIX = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:";
+    private static final int DEFAULT_DEBUG_PORT = Integer.getInteger("plugin.debug.port", 0);
     private static final boolean FORK = Boolean.getBoolean("plugin.fork");
-    private static final String JIT_LEVEL_ONE = "-XX:TieredStopAtLevel=1";
-    private static final String JIT_TWO_COMPILER_THREADS = "-XX:CICompilerCount=2";
-    private static final String TIMED_OUT_SUFFIX = " timed out";
-    private static final String UNSUPPORTED_CLASS_VERSION_ERROR = UnsupportedClassVersionError.class.getSimpleName();
 
-    private static Path pluginJar() {
-        Path pluginJar = PLUGINS_JAR.get();
-        if (pluginJar == null) {
-            final String cliVersion = Config.buildRevision();
-            final String jarName = JAR_NAME_PREFIX + cliVersion + JAR_NAME_SUFFIX;
-            pluginJar = Config.userConfig().pluginsDir().resolve(jarName);
-            if (!Files.exists(pluginJar)) {
-                final String resourcePath = JAR_RESOURCE_DIR + "/" + jarName;
-                final ClassLoader loader = Plugins.class.getClassLoader();
-                final InputStream input = requireNonNull(loader.getResourceAsStream(resourcePath), resourcePath + " not found!");
-                Log.debug("unpacked %s", pluginJar);
-                try {
-                    Files.copy(input, pluginJar);
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
+    static Path pluginJar() {
+        final String cliVersion = BuildProperties.buildRevision();
+        final String jarName = "cli-plugins-" + cliVersion + ".jar";
+        Path pluginJar = UserConfig.current().pluginsDir().resolve(jarName).toAbsolutePath();
+        if (!Files.exists(pluginJar)) {
+            final String resourcePath = "plugins" + "/" + jarName;
+            final ClassLoader loader = Plugins.class.getClassLoader();
+            Log.debug("unpacked %s", pluginJar);
+            try (InputStream input = requireNonNull(loader.getResourceAsStream(resourcePath), resourcePath + " not found!")) {
+                Files.copy(input, pluginJar);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
-            PLUGINS_JAR.set(pluginJar.toAbsolutePath());
         }
         return pluginJar;
-    }
-
-    /**
-     * Resets state.
-     *
-     * @param deleteJar {@code true} if plugin jar should be deleted if present.
-     */
-    static void reset(boolean deleteJar) {
-        if (deleteJar) {
-            final Path existing = PLUGINS_JAR.get();
-            if (existing != null && Files.exists(existing)) {
-                try {
-                    Files.delete(existing);
-                } catch (IOException e) {
-                    Log.warn("Could not delete %s: %s", existing, e.toString());
-                }
-            }
-        }
-        PLUGINS_JAR.set(null);
     }
 
     /**
@@ -175,10 +140,10 @@ public class Plugins {
         // Create the command
         final List<String> command = new ArrayList<>();
         command.add("java");
-        command.add(JIT_LEVEL_ONE);
-        command.add(JIT_TWO_COMPILER_THREADS);
+        command.add("-XX:TieredStopAtLevel=1");
+        command.add("-XX:CICompilerCount=2");
         if (DEFAULT_DEBUG_PORT > 0) {
-            command.add(DEBUG_ARG_PREFIX + DEFAULT_DEBUG_PORT);
+            command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:" + DEFAULT_DEBUG_PORT);
         }
         command.addAll(Proxies.javaProxyArgs());
         command.add("-jar");
@@ -198,7 +163,7 @@ public class Plugins {
             Log.debug("executing %s", command);
             process.execute(maxWaitSeconds, TimeUnit.SECONDS);
         } catch (ProcessFailedException error) {
-            if (process.stdErr().contains(UNSUPPORTED_CLASS_VERSION_ERROR)) {
+            if (process.stdErr().contains("UnsupportedClassVersionError")) {
                 unsupportedJavaVersion();
             } else {
                 StringBuilder b = new StringBuilder();
@@ -211,7 +176,7 @@ public class Plugins {
                 throw new PluginFailedUnchecked(b.toString());
             }
         } catch (ProcessTimeoutException error) {
-            throw new PluginFailed(pluginName + TIMED_OUT_SUFFIX);
+            throw new PluginFailed(pluginName + " timed out");
         } catch (Exception e) {
             if (process.stdErr().isEmpty()) {
                 throw new PluginFailed(e);
