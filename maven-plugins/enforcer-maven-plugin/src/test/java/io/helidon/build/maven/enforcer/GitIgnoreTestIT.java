@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,18 @@
 
 package io.helidon.build.maven.enforcer;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.JUnitLauncher;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
-import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
+import static io.helidon.build.common.test.utils.LogMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 /**
  * Integration test that verifies the projects under {@code src/it/projects}.
@@ -40,10 +38,20 @@ class GitIgnoreTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test1(String basedir) throws IOException {
-        BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
-        int index = buildLog.indexOf("BUILD SUCCESS", 0);
-        assertThat(index > 0, is(true));
-        List<String> diffs = buildLog.containsLines(new File(basedir, "expected.log"));
-        assertDiffs(diffs);
+        Path baseDir = Path.of(basedir);
+        String actual = Files.readString(baseDir.resolve("build.log"));
+        assertThat(actual, matches("""
+                ~...
+                Excluding dir/dir6/file6
+                Excluding dir/dir5/file5.txt
+                Excluding dir/file.ico
+                Excluding dir/dir7/file7.txt
+                Excluding dir/dir3/file3
+                Including dir/file.txt
+                Excluding dir/dir2/file2.txt
+                Excluding dir/dir4/file4
+                Including dir/file.txt
+                ~...
+                """));
     }
 }

@@ -32,6 +32,7 @@
 
     <properties>
         <spotbugs.skip>true</spotbugs.skip>
+        <maven.compiler.testRelease>17</maven.compiler.testRelease>
         <mainClass>io.helidon.build.maven.enforcer.copyright.Main</mainClass>
     </properties>
 

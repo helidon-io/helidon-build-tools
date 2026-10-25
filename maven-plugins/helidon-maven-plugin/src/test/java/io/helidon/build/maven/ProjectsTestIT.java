@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,18 @@
  */
 package io.helidon.build.maven;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.util.LinkedList;
-import java.util.List;
+import java.nio.file.Path;
 
-import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.JUnitLauncher;
 
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
-import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
+import static io.helidon.build.common.test.utils.LogMatchers.matches;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Integration test that verifies the projects under {@code src/it/projects}.
@@ -40,46 +37,54 @@ class ProjectsTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test1(String basedir) throws IOException {
-        File buildLog = new File(basedir, "build.log");
-        BuildLog log = new BuildLog(buildLog);
-        log.skipInvocations(1);
-        List<String> diffs = moduleAndClassPathContains(buildLog, new File(basedir, "expected1.log"));
-        assertDiffs(diffs);
-        diffs = moduleAndClassPathContains(buildLog, new File(basedir, "expected2.log"));
-        assertDiffs(diffs);
-        diffs = moduleAndClassPathContains(buildLog, new File(basedir, "expected3.log"));
-        assertDiffs(diffs);
-        diffs = log.containsLines(new File(basedir, "expected4.log"));
-        assertDiffs(diffs);
-        diffs = log.containsLines(new File(basedir, "expected5.log"));
-        assertDiffs(diffs);
-        diffs = log.containsLines(new File(basedir, "expected6.log"));
-        assertDiffs(diffs);
-    }
-
-    private static List<String> moduleAndClassPathContains(File log, File expected) {
-        List<String> errors = new LinkedList<>();
-        try {
-            boolean found = false;
-            int index = 0;
-            String[] content = Files.readAllLines(log.toPath()).toArray(new String[0]);
-            String[] expectedLines = Files.readAllLines(expected.toPath()).toArray(new String[0]);
-
-            while (!found && index < content.length - 1) {
-                if (content[index].contains("[DEBUG] Built module-path:")
-                        && content[index].contains(expectedLines[0])
-                        && content[index+1].contains("[DEBUG] Built class-path:")
-                        && content[index+1].contains(expectedLines[1])) {
-                    found = true;
-                }
-                index++;
-            }
-            if (!found) {
-                errors.add("build.log does not contain " + expected.getName());
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return errors;
+        Path baseDir = Path.of(basedir);
+        String actual = Files.readString(baseDir.resolve("build.log"));
+        assertThat(actual, matches("""
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Built module-path: ~.*jakarta.activation-api-2.1.0.jar
+                [DEBUG] Built class-path:~.*
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Built module-path: ~.*module-test-~.*.jar
+                [DEBUG] Built class-path: ~.*javax.annotation-api-1.2.jar
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Built module-path: ~.*jakarta.activation-api-2.1.0.jar
+                [DEBUG] Built class-path: ~.*javax.annotation-api-1.2.jar
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Built module-path: target/classes
+                [DEBUG] Built class-path: my/dummy/jar
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Module: my.own.module/my.own.module.Main
+                [DEBUG] Building module-path string
+                [DEBUG] Built module-path: target/module-test-~.*.jar
+                [DEBUG] Built class-path: my/dummy/jar
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                ~.* io.helidon.build-tools.module.tests:module-test ~.*
+                ~...
+                [DEBUG] Type: none
+                [DEBUG] Main class: null
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                """));
     }
 }
