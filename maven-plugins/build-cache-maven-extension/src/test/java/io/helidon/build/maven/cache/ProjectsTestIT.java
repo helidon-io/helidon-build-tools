@@ -15,7 +15,6 @@
  */
 package io.helidon.build.maven.cache;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.build.common.test.utils.BuildLog;
 import io.helidon.build.common.test.utils.ConfigurationParameterSource;
 import io.helidon.build.common.test.utils.JUnitLauncher;
 import io.helidon.build.common.xml.XMLElement;
@@ -31,8 +29,8 @@ import io.helidon.build.common.xml.XMLElement;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 
-import static io.helidon.build.common.test.utils.BuildLog.assertDiffs;
 import static io.helidon.build.common.test.utils.FileMatchers.fileExists;
+import static io.helidon.build.common.test.utils.LogMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -45,27 +43,44 @@ class ProjectsTestIT {
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test1(String basedir) throws IOException {
-        BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
-        int index = buildLog.indexOf("BUILD SUCCESS", 0);
-        assertThat(index > 0, is(true));
-        index = buildLog.indexOf("BUILD SUCCESS", index);
-        assertThat(index > 0, is(true));
-        List<String> diffs = buildLog.diff(new File(basedir, "expected.log"), index);
-        assertDiffs(diffs);
+        Path baseDir = Path.of(basedir);
+        String actual = Files.readString(baseDir.resolve("build.log"));
+        assertThat(actual, matches("""
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                [INFO] Cached | org.apache.maven.plugins:maven-resources-plugin:2.7:resources@default-resources
+                [INFO] Cached | org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile@default-compile
+                [INFO] Cached | org.apache.maven.plugins:maven-resources-plugin:2.7:testResources@default-testResources
+                [INFO] Cached | org.apache.maven.plugins:maven-compiler-plugin:3.13.0:testCompile@default-testCompile
+                [INFO] Diff   | org.apache.maven.plugins:maven-surefire-plugin:2.12.4:test@default-test
+                [INFO]            +- skipTests was 'true' but is now '${skipTests}'
+                [INFO] Cached | org.apache.maven.plugins:maven-jar-plugin:2.4:jar@default-jar
+                [INFO] Cached | org.apache.maven.plugins:maven-install-plugin:2.4:install@default-install
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                """));
     }
 
     @ParameterizedTest
     @ConfigurationParameterSource("basedir")
     void test2(String basedir) throws IOException {
-        BuildLog buildLog = new BuildLog(new File(basedir, "build.log"));
-        int index0 = buildLog.indexOf("BUILD SUCCESS", 0);
-        assertThat(index0 > 0, is(true));
-
-        int index1 = buildLog.indexOf("Cache is disabled", index0);
-        assertThat(index1 > 0, is(true));
-
-        int index2 = buildLog.indexOf("Downstream state(s) not available, state is ignored", index1);
-        assertThat(index2 > 0, is(true));
+        Path baseDir = Path.of(basedir);
+        String actual = Files.readString(baseDir.resolve("build.log"));
+        assertThat(actual, matches("""
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                [INFO] Cache is disabled
+                ~...
+                [INFO] Downstream state(s) not available, state is ignored
+                ~...
+                [INFO] BUILD SUCCESS
+                ~...
+                """));
     }
 
     @ParameterizedTest

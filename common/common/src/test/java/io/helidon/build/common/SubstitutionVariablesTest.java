@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.build.common;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ class SubstitutionVariablesTest {
     void missingClosingBrace() {
         SubstitutionVariables variables = SubstitutionVariables.of(emptyMap());
         assertThrows(IllegalArgumentException.class, () -> variables.resolve("roses are ${color and violets are blue"));
+        assertThrows(IllegalArgumentException.class, () -> variables.resolve("${outer:${inner}"));
     }
 
     @Test
@@ -54,6 +56,7 @@ class SubstitutionVariablesTest {
         SubstitutionVariables variables = SubstitutionVariables.of(AsIs, emptyMap());
         assertThat(variables, is(not(nullValue())));
         assertThat(variables.resolve("roses are ${color}"), is("roses are ${color}"));
+        assertThat(variables.resolve("value=${unknown:${nested}}"), is("value=${unknown:${nested}}"));
     }
 
     @Test
@@ -77,12 +80,51 @@ class SubstitutionVariablesTest {
     }
 
     @Test
+    void balancedNestedSubstitution() {
+        SubstitutionVariables variables = SubstitutionVariables.of(Map.of(
+                "outer:${inner}", "nested",
+                "outer:{ordinary", "ordinary"));
+
+        assertThat(variables.resolve("${outer:${inner}}"), is("nested"));
+        assertThat(variables.resolve("${outer:{ordinary}"), is("ordinary"));
+    }
+
+    @Test
+    void sourceReceivesCompleteRawExpression() {
+        AtomicReference<String> actual = new AtomicReference<>();
+        SubstitutionVariables variables = SubstitutionVariables.of(expression -> {
+            actual.set(expression);
+            return "resolved";
+        });
+
+        assertThat(variables.resolve("value=${path:C:/${workDir}/file}"), is("value=resolved"));
+        assertThat(actual.get(), is("path:C:/${workDir}/file"));
+    }
+
+    @Test
+    void handlerResolvesNestedSubstitution() {
+        SubstitutionVariables nested = SubstitutionVariables.of(Map.of("root", "base"));
+        SubstitutionVariables variables = SubstitutionVariables.of(expression -> {
+            int separator = expression.indexOf(':');
+            if (separator > 0 && expression.substring(0, separator).equals("path")) {
+                return nested.resolve(expression.substring(separator + 1)).replace('/', '|');
+            }
+            return null;
+        });
+
+        assertThat(variables.resolve("${path:${root}/nested/file}"), is("base|nested|file"));
+    }
+
+    @Test
     void escapedSubstitution() {
         SubstitutionVariables variables = SubstitutionVariables.of(Map.of("color", "red"));
+        assertThat(variables.resolve("\\${color}"), is("${color}"));
         assertThat(variables.resolve("vars start with '\\${'"), is("vars start with '${'"));
 
         assertThat(variables.resolve("vars start with '\\${' and roses are ${color}"),
                    is("vars start with '${' and roses are red"));
+        assertThat(variables.resolve("literal \\${color} and resolved ${color}"),
+                   is("literal ${color} and resolved red"));
     }
 
     @Test
@@ -109,6 +151,21 @@ class SubstitutionVariablesTest {
                                                                              "skyConditions", "${skyColor} and ${weather}"));
 
         assertThat(v3.resolve("the sky is ${skyDescription}"), is("the sky is  and "));
+    }
+
+    @Test
+    void substitutionReturnedFromHandlerIsResolved() {
+        SubstitutionVariables variables = SubstitutionVariables.of(expression -> {
+            if (expression.equals("first")) {
+                return "${second}";
+            }
+            if (expression.equals("second")) {
+                return "resolved";
+            }
+            return null;
+        });
+
+        assertThat(variables.resolve("value=${first}"), is("value=resolved"));
     }
 
     private static void assertMaxRecursion(final SubstitutionVariables.NotFoundAction action) {

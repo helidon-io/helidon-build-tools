@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import java.util.function.Function;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Provides substitution for strings containing one or more <code>${key}</code> blocks, using one or more variable sources.
- * Literal '${' sequences can be included by backslash escaping.
+ * Provides substitution for strings containing one or more <code>${expression}</code> blocks, using one or more variable sources.
+ * Expressions may contain balanced nested substitution blocks, which are passed unresolved to each source. Literal '${' sequences
+ * can be included by backslash escaping.
  */
 public class SubstitutionVariables {
     private static final String SUBSTITUTION_PREFIX = "${";
@@ -162,11 +163,11 @@ public class SubstitutionVariables {
         if (depth < MAX_RECURSION_DEPTH) {
             final int start = value.indexOf(SUBSTITUTION_PREFIX, startIndex);
             if (start >= 0) {
-                if (start > 1 && value.charAt(start - 1) == ESCAPE_CHAR) {
+                if (start > 0 && value.charAt(start - 1) == ESCAPE_CHAR) {
                     final String unescapedValue = value.substring(0, start - 1) + value.substring(start);
                     return resolve(start + 1, unescapedValue, originalValue, depth + 1);
                 } else {
-                    final int end = value.indexOf(SUBSTITUTION_SUFFIX, start);
+                    final int end = substitutionEnd(value, start);
                     if (end >= 0) {
                         final String key = value.substring(start + 2, end);
                         String substitute = substitutionValueFor(key);
@@ -195,6 +196,19 @@ public class SubstitutionVariables {
                                                + "for \"" + originalValue + "\"");
         }
         return value;
+    }
+
+    private static int substitutionEnd(final String value, final int start) {
+        int nesting = 1;
+        for (int index = start + SUBSTITUTION_PREFIX.length(); index < value.length(); index++) {
+            if (value.startsWith(SUBSTITUTION_PREFIX, index)) {
+                nesting++;
+                index += SUBSTITUTION_PREFIX.length() - 1;
+            } else if (value.charAt(index) == SUBSTITUTION_SUFFIX && --nesting == 0) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private String substitutionValueFor(final String key) {

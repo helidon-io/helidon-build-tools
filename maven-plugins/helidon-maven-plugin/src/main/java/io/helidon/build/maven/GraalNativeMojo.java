@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -433,23 +433,25 @@ public class GraalNativeMojo extends AbstractMojo {
             getLog().debug("Scanning project resources");
             for (Resource resource : project.getResources()) {
                 File resourcesDir = new File(resource.getDirectory());
-                Scanner scanner = buildContext.newScanner(resourcesDir);
-                String[] includes = null;
-                if (resource.getIncludes() != null
+                if (resourcesDir.exists()) {
+                    Scanner scanner = buildContext.newScanner(resourcesDir);
+                    String[] includes = null;
+                    if (resource.getIncludes() != null
                         && !resource.getIncludes().isEmpty()) {
-                    includes = resource.getIncludes().toArray(new String[0]);
-                }
-                scanner.setIncludes(includes);
-                String[] excludes = null;
-                if (resource.getExcludes() != null
+                        includes = resource.getIncludes().toArray(new String[0]);
+                    }
+                    scanner.setIncludes(includes);
+                    String[] excludes = null;
+                    if (resource.getExcludes() != null
                         && !resource.getExcludes().isEmpty()) {
-                    excludes = resource.getExcludes().toArray(new String[0]);
-                }
-                scanner.setExcludes(excludes);
-                scanner.scan();
-                for (String included : scanner.getIncludedFiles()) {
-                    getLog().debug("Found resource: " + included);
-                    resources.add(included.replaceAll("\\\\", "/"));
+                        excludes = resource.getExcludes().toArray(new String[0]);
+                    }
+                    scanner.setExcludes(excludes);
+                    scanner.scan();
+                    for (String included : scanner.getIncludedFiles()) {
+                        getLog().debug("Found resource: " + included);
+                        resources.add(included.replaceAll("\\\\", "/"));
+                    }
                 }
             }
         }
