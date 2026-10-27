@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import io.helidon.build.common.Strings;
 public class LogRecorder implements AutoCloseable {
 
     private static final String EOL = System.lineSeparator();
-    private static final ThreadLocal<Deque<LogLevel>> THREAD_LOCAL = ThreadLocal.withInitial(ArrayDeque::new);
+    private static final ThreadLocal<Deque<RecorderInfo>> THREAD_LOCAL = ThreadLocal.withInitial(ArrayDeque::new);
 
     private final List<String> entries = new LinkedList<>();
     private final LogLevel level;
@@ -49,9 +49,8 @@ public class LogRecorder implements AutoCloseable {
      * @return this instance
      */
     public LogRecorder start() {
-        THREAD_LOCAL.get().push(LogLevel.get());
+        THREAD_LOCAL.get().push(new RecorderInfo(this));
         LogLevel.set(level);
-        LogWriter.addRecorder(this);
         return this;
     }
 
@@ -106,7 +105,35 @@ public class LogRecorder implements AutoCloseable {
 
     @Override
     public void close() {
-        LogWriter.removeRecorder(this);
-        LogLevel.set(THREAD_LOCAL.get().pop());
+        RecorderInfo info = THREAD_LOCAL.get().pop();
+        LogLevel.set(info.initialLevel);
+    }
+
+    static void recordEntry(LogLevel level, String entry) {
+        for (RecorderInfo info : THREAD_LOCAL.get()) {
+            if (level.ordinal() >= info.recorder.level().ordinal()) {
+                info.recorder.entries.add(entry);
+            }
+        }
+    }
+
+    static LogLevel recordLevel() {
+        LogLevel level = LogLevel.INFO;
+        for (RecorderInfo info : THREAD_LOCAL.get()) {
+            if (level.ordinal() > info.recorder.level().ordinal()) {
+                level = info.recorder.level();
+            }
+        }
+        return level;
+    }
+
+    private static final class RecorderInfo {
+        private final LogLevel initialLevel;
+        private final LogRecorder recorder;
+
+        RecorderInfo(LogRecorder recorder) {
+            this.initialLevel = LogLevel.get();
+            this.recorder = recorder;
+        }
     }
 }

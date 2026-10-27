@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 package io.helidon.build.common.logging;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.ServiceLoader;
+
+import io.helidon.build.common.LazyValue;
 
 /**
  * The {@link Log} writer.
  */
 public abstract class LogWriter {
 
-    private final List<LogRecorder> recorders = Collections.synchronizedList(new ArrayList<>());
+    private static final LazyValue<LogWriter> INSTANCE = new LazyValue<>(LogWriter::load);
 
     /**
      * Create a new instance.
@@ -42,25 +41,7 @@ public abstract class LogWriter {
      * @param args    formatting arguments
      */
     public static void write(LogLevel level, Throwable thrown, String message, Object... args) {
-        Holder.INSTANCE.writeEntry(level, thrown, message, args);
-    }
-
-    /**
-     * Add a new log recorder.
-     *
-     * @param recorder log recorder
-     */
-    public static void addRecorder(LogRecorder recorder) {
-        Holder.INSTANCE.recorders.add(recorder);
-    }
-
-    /**
-     * Remove a log recorder.
-     *
-     * @param recorder log recorder
-     */
-    public static void removeRecorder(LogRecorder recorder) {
-        Holder.INSTANCE.recorders.remove(recorder);
+        INSTANCE.get().writeEntry(level, thrown, message, args);
     }
 
     /**
@@ -80,11 +61,7 @@ public abstract class LogWriter {
      * @param entry log entry
      */
     protected final void recordEntry(LogLevel level, String entry) {
-        for (LogRecorder recorder : recorders) {
-            if (level.ordinal() >= recorder.level().ordinal()) {
-                recorder.addEntry(entry);
-            }
-        }
+        LogRecorder.recordEntry(level, entry);
     }
 
     /**
@@ -93,13 +70,7 @@ public abstract class LogWriter {
      * @return level
      */
     protected LogLevel recordLevel() {
-        LogLevel level = LogLevel.INFO;
-        for (LogRecorder recorder : recorders) {
-            if (level.ordinal() > recorder.level().ordinal()) {
-                level = recorder.level();
-            }
-        }
-        return level;
+        return LogRecorder.recordLevel();
     }
 
     /**
@@ -108,17 +79,13 @@ public abstract class LogWriter {
      * @throws IllegalStateException if the loaded instance is {@code null}
      */
     static void init() throws IllegalStateException {
-        if (Holder.INSTANCE == null) {
+        if (INSTANCE.get() == null) {
             throw new IllegalStateException("Unable to load log writer");
         }
     }
 
-    private static final class Holder {
-
-        private Holder() {
-        }
-
-        static final LogWriter INSTANCE = ServiceLoader.load(LogWriter.class)
+    private static LogWriter load() {
+        return ServiceLoader.load(LogWriter.class)
                 .findFirst()
                 .orElse(SystemLogWriter.INSTANCE);
     }
