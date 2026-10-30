@@ -46,8 +46,6 @@ import static io.helidon.build.common.ansi.AnsiTextStyles.BoldBrightCyan;
  */
 @Command(name = "init", description = "Generate a new project")
 public final class InitCommand extends BaseCommand {
-    private static final String VERSION_NOT_FOUND_MESSAGE = "$(italic Helidon version $(red %s) not found.)";
-    private static final String SHOW_ALL_VERSIONS_MESSAGE = "Show all versions";
 
     private final CommonOptions commonOptions;
     private final InitOptions initOptions;
@@ -62,7 +60,7 @@ public final class InitCommand extends BaseCommand {
         this.initOptions = initOptions;
         this.batch = initOptions.batch();
         this.metadata = metadata();
-        this.config = Config.userConfig();
+        this.config = UserConfig.current();
     }
 
     @Override
@@ -136,10 +134,10 @@ public final class InitCommand extends BaseCommand {
         }
         int defaultOption = archetypesData.defaultVersionIndex(versions);
         if (showLatest) {
-            versions.add(SHOW_ALL_VERSIONS_MESSAGE);
+            versions.add("Show all versions");
         }
         var result = versions.get(prompter.prompt("Helidon versions", versions, defaultOption));
-        if (showLatest && SHOW_ALL_VERSIONS_MESSAGE.equals(result)) {
+        if (showLatest && "Show all versions".equals(result)) {
             return promptHelidonVersion(archetypesData, false, prompter);
         }
         return result;
@@ -181,6 +179,6 @@ public final class InitCommand extends BaseCommand {
         if (resolved != null) {
             return resolved.toString();
         }
-        throw new RequirementFailure(VERSION_NOT_FOUND_MESSAGE, helidonVersion);
+        throw new RequirementFailure("$(italic Helidon version $(red %s) not found.)", helidonVersion);
     }
 }

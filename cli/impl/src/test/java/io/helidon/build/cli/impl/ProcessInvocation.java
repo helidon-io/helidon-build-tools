@@ -31,7 +31,6 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
 import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.ansi.AnsiTextStyle;
-import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 
 import static io.helidon.build.common.FileUtils.ensureDirectory;
@@ -49,7 +48,7 @@ class ProcessInvocation {
     static final LazyValue<String> JAVA_BIN = new LazyValue<>(() -> requireJavaExecutable().toString());
 
     protected Path cwd;
-    protected Path stdIn;
+    protected String stdIn;
     protected List<String> args = List.of();
 
     ProcessInvocation args(String... args) {
@@ -62,30 +61,33 @@ class ProcessInvocation {
         return this;
     }
 
-    ProcessInvocation stdIn(Path stdIn) {
+    ProcessInvocation stdIn(String stdIn) {
         this.stdIn = stdIn;
         return this;
     }
 
     Monitor start() {
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(List.of(JAVA_BIN.get(), "-Xmx128M", "-jar", CLI_JAR.get()));
+        cmd.addAll(List.of(JAVA_BIN.get(), "-Xmx128M", "-Duser.home=" + cwd, "-jar", CLI_JAR.get()));
         cmd.addAll(args);
         ensureDirectory(cwd);
         Recorder recorder = new Recorder();
         Path logFile = unique(cwd, "cli", ".log");
         try {
             PrintStream printStream = new PrintStream(Files.newOutputStream(logFile));
+            Path stdInFile = null;
+            if (stdIn != null) {
+                stdInFile = Files.writeString(cwd.resolve("stdin.txt"), stdIn);
+            }
             ProcessMonitor processMonitor = ProcessMonitor.builder()
                     .processBuilder(new ProcessBuilder()
                             .command(cmd)
                             .directory(cwd.toFile()))
-                    .stdIn(stdIn != null ? stdIn.toFile() : null)
+                    .stdIn(stdInFile != null ? stdInFile.toFile() : null)
                     .stdOut(PrintStreams.accept(printStream, recorder::record))
                     .stdErr(PrintStreams.accept(printStream, recorder::record))
                     .capture(true)
                     .build();
-            Log.debug("Executing: " + String.join(" ", cmd));
             return new Monitor(processMonitor.start(), recorder, cwd);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
@@ -121,24 +123,10 @@ class ProcessInvocation {
         }
     }
 
-    static class Monitor implements AutoCloseable {
-        final ProcessMonitor monitor;
-        final Recorder recorder;
-        final Path cwd;
+    record Monitor(ProcessMonitor monitor, Recorder recorder, Path cwd) implements AutoCloseable {
 
-        Monitor(ProcessMonitor monitor, Recorder recorder, Path cwd) {
-            this.monitor = monitor;
-            this.recorder = recorder;
-            this.cwd = cwd;
-        }
-
-        @SuppressWarnings("unused")
         String output() {
             return AnsiTextStyle.strip(recorder.sb.toString());
-        }
-
-        Path cwd() {
-            return cwd;
         }
 
         @Override

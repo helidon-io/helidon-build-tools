@@ -292,6 +292,13 @@ class AnsiTextStyleTest {
     }
 
     @Test
+    void testStripLongInput() {
+        String prefix = "x".repeat(1024);
+        String styled = prefix + "\033[3msample\033[m";
+        assertThat(AnsiTextStyle.strip(styled), is(prefix + "sample"));
+    }
+
+    @Test
     void logTables() {
         AnsiTextStyle.logSummaryTables();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
 import io.helidon.build.common.maven.MavenVersion;
 
-import static io.helidon.build.common.FileUtils.WORKING_DIR;
+import static io.helidon.build.common.FileUtils.cwd;
 import static io.helidon.build.common.maven.MavenVersion.toMavenVersion;
 
 /**
@@ -49,7 +49,6 @@ final class CommonOptions {
      * Where to look for CLI update information.
      */
     private static final String UPDATE_URL = "https://github.com/oracle/helidon-build-tools/blob/master/cli/CHANGELOG.md";
-    private static final String MISMATCHED_PROJECT_DIRS = "Different project directories provided: '--project %s' and '%s'";
 
     private final boolean projectDirSpecified;
     private final Path projectDir;
@@ -67,9 +66,9 @@ final class CommonOptions {
                           visible = false) String since) {
         this.projectDirSpecified = projectDirOption != null || projectDirArgument != null;
         this.projectDir = projectDir(projectDirOption, projectDirArgument);
-        this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : Config.userConfig().updateUrl();
+        this.metadataUrl = Strings.isValid(metadataUrl) ? metadataUrl : UserConfig.current().updateUrl();
         this.resetCache = resetCache || since != null;
-        this.sinceCliVersion = toMavenVersion(since == null ? Config.buildVersion() : since);
+        this.sinceCliVersion = toMavenVersion(since == null ? BuildProperties.buildVersion() : since);
     }
 
     CommonOptions(Path projectDir, CommonOptions options) {
@@ -91,7 +90,7 @@ final class CommonOptions {
 
     Metadata metadata() {
         if (metadata == null) {
-            UserConfig config = Config.userConfig();
+            UserConfig config = UserConfig.current();
             if (resetCache) {
                 try {
                     Log.debug("clearing plugins and metadata cache");
@@ -160,7 +159,8 @@ final class CommonOptions {
                 // Both were passed, make sure they are equal
                 try {
                     if (!projectDirOption.getCanonicalPath().equals(projectDirArgument.getCanonicalPath())) {
-                        Requirements.failed(MISMATCHED_PROJECT_DIRS, projectDirOption, projectDirArgument);
+                        Requirements.failed("Different project directories provided: '--project %s' and '%s'",
+                                projectDirOption, projectDirArgument);
                     }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -170,7 +170,7 @@ final class CommonOptions {
         } else if (projectDirArgument != null) {
             return projectDirArgument.toPath().toAbsolutePath();
         } else {
-            return WORKING_DIR;
+            return cwd();
         }
     }
 }

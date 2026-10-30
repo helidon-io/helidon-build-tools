@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,14 +75,17 @@ public final class Helidon {
             Signal.handle(new Signal("INT"), sig -> System.exit(0));
         }
 
-        CommandRunner.builder()
-                     .args(args)
-                     .optionLookup(Config.userConfig()::property)
-                     .cliClass(Helidon.class)
-                     .embedded(embedded)
-                     .build()
-                     .initProxy()
-                     .execute()
-                     .runExitAction();
+        UserConfig config = UserConfig.current();
+        try (var ignored = config.applySystemProperties()) {
+            CommandRunner.builder()
+                         .args(args)
+                         .optionLookup(config::property)
+                         .cliClass(Helidon.class)
+                         .embedded(embedded)
+                         .build()
+                         .initProxy()
+                         .execute()
+                         .runExitAction();
+        }
     }
 }

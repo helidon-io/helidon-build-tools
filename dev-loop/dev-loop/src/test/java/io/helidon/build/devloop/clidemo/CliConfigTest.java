@@ -62,7 +62,7 @@ class CliConfigTest {
     void testCliConfigLoadStore1() {
         CliConfig config = new CliConfig(configFile);
         config.projectDir(Path.of("/usr/tmp"));
-        assertThat(normalizePath(config.projectDir().get()), is("/usr/tmp"));
+        assertThat(normalizePath(config.projectDir().orElseThrow()), is("/usr/tmp"));
         config.store();
     }
 
@@ -70,7 +70,7 @@ class CliConfigTest {
     @Order(3)
     void testCliConfigLoadStore2() {
         CliConfig config = new CliConfig(configFile);
-        assertThat(normalizePath(config.projectDir().get()), is("/usr/tmp"));
+        assertThat(normalizePath(config.projectDir().orElseThrow()), is("/usr/tmp"));
         config.clearProjectDir();
         config.store();
     }

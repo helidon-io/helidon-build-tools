@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,6 @@ import static io.helidon.build.cli.impl.CommandRequirements.requireValidMavenPro
  */
 @Command(name = "build", description = "Build the application")
 public final class BuildCommand extends BaseCommand {
-
-    private static final String HELIDON_CLI_PROPERTY = "helidon.cli";
-    private static final String ENABLE_HELIDON_CLI = "-D" + HELIDON_CLI_PROPERTY + "=true";
-    private static final String JLINK_OPTION = "-Pjlink-image";
-    private static final String NATIVE_OPTION = "-Pnative-image";
 
     private final CommonOptions commonOptions;
     private final boolean clean;
@@ -86,7 +81,7 @@ public final class BuildCommand extends BaseCommand {
                 HELIDON_CLI_PLUGIN_VERSION_PROPERTY,
                 cliVersion);
         MavenCommand.Builder builder = MavenCommand.builder()
-                                                   .addArgument(ENABLE_HELIDON_CLI)
+                                                   .addArgument("-Dhelidon.cli=true")
                                                    .addOptionalArgument(pluginVersionProperty)
                                                    .addOptionalArgument(cliPluginVersionProperty)
                                                    .addArguments(context.propertyArgs(true))
@@ -96,10 +91,10 @@ public final class BuildCommand extends BaseCommand {
             case PLAIN:
                 break;
             case JLINK:
-                builder.addArgument(JLINK_OPTION);
+                builder.addArgument("-Pjlink-image");
                 break;
             case NATIVE:
-                builder.addArgument(NATIVE_OPTION);
+                builder.addArgument("-Pnative-image");
                 break;
             default:
                 throw new IllegalStateException("Unknown build mode " + buildMode);

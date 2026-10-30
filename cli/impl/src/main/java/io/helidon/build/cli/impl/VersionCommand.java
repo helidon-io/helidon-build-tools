@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ final class VersionCommand extends BaseCommand {
     static void addProjectProperty(String key, String configKey, ProjectConfig config, Map<Object, Object> map) {
         String value = config.property(configKey);
         if (value != null) {
-            if (key.equals(FLAVOR)) {
+            if (key.equals("flavor")) {
                 value = value.toUpperCase();
             } else if (key.equals(PROJECT_RESOURCEDIRS)) {
                 value = value.split(RESOURCE_INCLUDE_EXCLUDE_SEPARATOR)[0];
@@ -100,6 +100,6 @@ final class VersionCommand extends BaseCommand {
      * @param map The map to add to.
      */
     static void addBuildProperties(Map<Object, Object> map) {
-        Config.buildProperties().forEach((k, v) -> map.put("build." + k, v.toString()));
+        BuildProperties.buildProperties().forEach((k, v) -> map.put("build." + k, v.toString()));
     }
 }

@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import io.helidon.build.archetype.engine.v2.InputResolver.BatchResolver;
 import io.helidon.build.archetype.engine.v2.InputResolver.InteractiveResolver;
 
-import static io.helidon.build.common.FileUtils.saveToPropertiesFile;
+import static io.helidon.build.common.FileUtils.writeProperties;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -93,7 +93,7 @@ public class ArchetypeEngineV2 {
 
         if (outputPropsFile != null) {
             Path propsFile = Path.of(outputPropsFile);
-            saveToPropertiesFile(context.toMap(), propsFile.isAbsolute() ? propsFile : directory.resolve(propsFile));
+            writeProperties(context.toMap(), propsFile.isAbsolute() ? propsFile : directory.resolve(propsFile));
         }
         return directory;
     }

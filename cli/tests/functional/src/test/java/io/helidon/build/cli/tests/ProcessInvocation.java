@@ -95,7 +95,6 @@ abstract class ProcessInvocation {
             this.cwd = cwd;
         }
 
-        @SuppressWarnings("unused")
         String output() {
             return AnsiTextStyle.strip(recorder.output());
         }

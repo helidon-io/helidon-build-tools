@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public abstract class BaseCommand implements CommandExecution {
      * @param commonOptions The common options.
      * @param quietCheckForUpdates {@code true} if check for updates should be quiet.
      */
-    protected BaseCommand(CommonOptions commonOptions, boolean quietCheckForUpdates) {
+    BaseCommand(CommonOptions commonOptions, boolean quietCheckForUpdates) {
         this.commonOptions = commonOptions;
         this.quietCheckForUpdates = quietCheckForUpdates;
     }
@@ -119,7 +119,7 @@ public abstract class BaseCommand implements CommandExecution {
      */
     protected static String defaultHelidonPluginVersion(String commandLinePluginVersion, boolean useCurrentPluginVersion) {
         if (commandLinePluginVersion == null && useCurrentPluginVersion) {
-            return Config.buildVersion();
+            return BuildProperties.buildVersion();
         } else {
             return commandLinePluginVersion;
         }
@@ -148,7 +148,7 @@ public abstract class BaseCommand implements CommandExecution {
             Metadata meta = metadata();
             ProjectConfig projectConfig = projectConfig();
             String helidonVersionProperty = projectConfig.property(ProjectConfig.HELIDON_VERSION);
-            String buildVersion = Config.buildVersion();
+            String buildVersion = BuildProperties.buildVersion();
             MavenVersion helidonVersion;
             if (helidonVersionProperty == null) {
                 try {

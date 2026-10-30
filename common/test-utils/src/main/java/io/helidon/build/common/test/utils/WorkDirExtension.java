@@ -75,7 +75,7 @@ public class WorkDirExtension implements ParameterResolver {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
             if (Character.isUpperCase(c)) {
-                if (sb.length() > 0) {
+                if (i > 0 && !Character.isUpperCase(str.charAt(i - 1))) {
                     sb.append('-');
                 }
                 sb.append(Character.toLowerCase(c));

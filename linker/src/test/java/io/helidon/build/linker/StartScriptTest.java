@@ -24,16 +24,15 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.build.common.InputStreams;
+import io.helidon.build.common.test.utils.WorkDirExtension;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.build.common.FileUtils.ensureDirectory;
-import static io.helidon.build.common.FileUtils.ensureFile;
 import static io.helidon.build.common.FileUtils.lastModifiedSeconds;
-import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.OSType.CURRENT_OS;
 import static io.helidon.build.common.OSType.Linux;
 import static io.helidon.build.common.OSType.Windows;
@@ -45,31 +44,40 @@ import static org.hamcrest.Matchers.not;
  * Unit test for class {@link StartScript}.
  */
 @Order(4)
+@ExtendWith(WorkDirExtension.class)
 class StartScriptTest {
 
-    private static final Path INSTALL_DIR = ensureDirectory(location(StartScriptTest.class).resolve("../script-home").normalize());
-    private static final Path BIN_DIR = ensureDirectory(INSTALL_DIR.resolve("bin"));
-    private static final Path LIB_DIR = ensureDirectory(INSTALL_DIR.resolve("lib"));
-    private static final Path APP_DIR = ensureDirectory(INSTALL_DIR.resolve("app"));
-    private static final Path INSTALLED_JAR_FILE = ensureFile(APP_DIR.resolve("main.jar"));
-    private static final Path INSTALLED_MODULES_FILE = ensureFile(LIB_DIR.resolve("modules"));
-    private static final String JAR_NAME = INSTALLED_JAR_FILE.getFileName().toString();
-    private static final String EXIT_ON_STARTED_VALUE = "!";
-    private static final String EXIT_ON_STARTED = "-Dexit.on.started=" + EXIT_ON_STARTED_VALUE;
-    private static final String NOT_EQUAL = CURRENT_OS == Windows ? "-ne" : "!=";
+    private final Path cwd;
+    private final Path binDir;
+    private final Path jarFile;
+    private final Path modulesFile;
+
+    StartScriptTest(Path cwd) {
+        this.cwd = cwd;
+        try {
+            binDir = Files.createDirectories(cwd.resolve("bin"));
+            Path appDir = Files.createDirectories(cwd.resolve("app"));
+            jarFile = Files.createFile(appDir.resolve("main.jar"));
+            Path libDir = Files.createDirectories(cwd.resolve("lib"));
+            modulesFile = Files.createFile(libDir.resolve("modules"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     void testExitOnStarted() {
         String script = builder().build().toString();
-        assertThat(script, containsString(EXIT_ON_STARTED));
+        assertThat(script, containsString("-Dexit.on.started=!"));
     }
 
     @Test
     void testJarName() {
         String script = builder().build().toString();
-        assertThat(script, containsString("Start " + JAR_NAME));
-        assertThat(script, containsString("passed as arguments to " + JAR_NAME));
-        assertThat(script, containsString("jarName=\"" + JAR_NAME + "\""));
+        String jarName = jarFile.getFileName().toString();
+        assertThat(script, containsString("Start " + jarName));
+        assertThat(script, containsString("passed as arguments to " + jarName));
+        assertThat(script, containsString("jarName=\"" + jarName + "\""));
     }
 
     @Test
@@ -127,7 +135,7 @@ class StartScriptTest {
         assertThat(script, containsString(jarTimeStampComparison()));
         assertThat(script, containsString("TimeStamp"));
 
-        assertThat(script, containsString(EXIT_ON_STARTED));
+        assertThat(script, containsString("-Dexit.on.started=!"));
     }
 
     @Test
@@ -152,7 +160,7 @@ class StartScriptTest {
         assertThat(script, not(containsString(jarTimeStampComparison())));
         assertThat(script, not(containsString("timeStamp")));
 
-        assertThat(script, containsString(EXIT_ON_STARTED));
+        assertThat(script, containsString("-Dexit.on.started=!"));
     }
 
     @Test
@@ -177,7 +185,7 @@ class StartScriptTest {
         assertThat(script, containsString(jarTimeStampComparison()));
         assertThat(script, containsString("TimeStamp"));
 
-        assertThat(script, containsString(EXIT_ON_STARTED));
+        assertThat(script, containsString("-Dexit.on.started=!"));
     }
 
     @Test
@@ -202,12 +210,12 @@ class StartScriptTest {
         assertThat(script, not(containsString(jarTimeStampComparison())));
         assertThat(script, not(containsString("timeStamp")));
 
-        assertThat(script, containsString(EXIT_ON_STARTED));
+        assertThat(script, containsString("-Dexit.on.started=!"));
     }
 
     @Test
     void testInstall() throws Exception {
-        Path installedScript = BIN_DIR.resolve(CURRENT_OS.withScriptExtension("start"));
+        Path installedScript = binDir.resolve(CURRENT_OS.withScriptExtension("start"));
         Files.deleteIfExists(installedScript);
         StartScript script = builder().build();
         Path scriptFile = script.install();
@@ -218,37 +226,38 @@ class StartScriptTest {
         assertThat(onDisk, is(script.toString()));
     }
 
-    private static void assertExecutable(Path file) throws IOException {
+    StartScript.Builder builder() {
+        return StartScript.builder()
+                .mainJar(jarFile)
+                .installHomeDirectory(cwd)
+                .exitOnStartedValue("!");
+    }
+
+    String modulesTimeStampComparison() {
+        return timeStampComparison("modules", modulesFile);
+    }
+
+    String jarTimeStampComparison() {
+        return timeStampComparison("jar", jarFile);
+    }
+
+    static void assertExecutable(Path file) throws IOException {
         if (CURRENT_OS.isPosix()) {
             Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
             assertThat(file.toString(), perms, is(Set.of(PosixFilePermission.OWNER_READ,
-                                                         PosixFilePermission.OWNER_EXECUTE,
-                                                         PosixFilePermission.OWNER_WRITE,
-                                                         PosixFilePermission.GROUP_READ,
-                                                         PosixFilePermission.GROUP_EXECUTE,
-                                                         PosixFilePermission.OTHERS_READ,
-                                                         PosixFilePermission.OTHERS_EXECUTE)));
+                    PosixFilePermission.OWNER_EXECUTE,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.GROUP_READ,
+                    PosixFilePermission.GROUP_EXECUTE,
+                    PosixFilePermission.OTHERS_READ,
+                    PosixFilePermission.OTHERS_EXECUTE)));
         }
     }
 
-    static StartScript.Builder builder() {
-        return StartScript.builder()
-                .mainJar(INSTALLED_JAR_FILE)
-                .installHomeDirectory(INSTALL_DIR)
-                .exitOnStartedValue(EXIT_ON_STARTED_VALUE);
-    }
-
-    static String modulesTimeStampComparison() {
-        return timeStampComparison("modules", INSTALLED_MODULES_FILE);
-    }
-
-    static String jarTimeStampComparison() {
-        return timeStampComparison("jar", INSTALLED_JAR_FILE);
-    }
-
     static String timeStampComparison(String name, Path file) {
-        final String timestamp = Long.toString(lastModifiedSeconds(file));
-        return "${" + name + "TimeStamp} " + NOT_EQUAL + " \"" + timestamp + "\"";
+        String timestamp = Long.toString(lastModifiedSeconds(file));
+        String notEqual = CURRENT_OS == Windows ? "-ne" : "!=";
+        return String.format("${%sTimeStamp} %s \"%s\"", name, notEqual, timestamp);
     }
 
     static Matcher<String> containsString(String substring) {

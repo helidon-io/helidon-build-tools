@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,9 @@ import static io.helidon.build.common.logging.Log.maxKeyWidth;
 @Command(name = "info", description = "Print project information")
 public final class InfoCommand extends BaseCommand {
     private static final int MIN_WIDTH = "plugin.build.revision".length();
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.lineSeparator();
     private static final int DEFAULT_BUILDER_SIZE = 2048;
     private static final int VERBOSE_BUILDER_SIZE = 16384;
-    private static final String EOL_MARKER = "~@~";
-    private static final String PAD = " ";
 
     @Creator
     InfoCommand(CommonOptions commonOptions) {
@@ -84,7 +82,7 @@ public final class InfoCommand extends BaseCommand {
         // User config
 
         Map<Object, Object> userConfigProps = new LinkedHashMap<>();
-        Map<String, String> properties = Config.userConfig().properties();
+        Map<String, String> properties = UserConfig.current().properties();
         properties.keySet()
                   .stream()
                   .filter(key -> !key.equals(DEFAULT_PROJECT_NAME_KEY))
@@ -180,7 +178,7 @@ public final class InfoCommand extends BaseCommand {
         append(builder, "General", buildProps, maxWidth);
 
         try {
-            PrintStream stdOut = PrintStreams.delegate(DEVNULL, (p, s) -> builder.append(s.replace(EOL_MARKER, EOL)));
+            PrintStream stdOut = PrintStreams.delegate(DEVNULL, (p, s) -> builder.append(s.replace("~@~", EOL)));
             Plugins.execute("GetInfo", pluginArgs(maxWidth, plain), 5, stdOut);
         } catch (Plugins.PluginFailed e) {
             Log.error(e, "Unable to get system info");
@@ -233,7 +231,7 @@ public final class InfoCommand extends BaseCommand {
             map.forEach((key, value) -> {
                 key = key.toString().replace("%", "%%");
                 value = value.toString().replace("%", "%%");
-                String padding = padding(PAD, maxKeyWidth, key.toString());
+                String padding = padding(" ", maxKeyWidth, key.toString());
                 appendLine(builder, "%s %s %s", Italic.apply(key), padding, BoldBlue.apply(value));
             });
         }

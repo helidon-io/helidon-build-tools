@@ -15,6 +15,7 @@
  */
 package io.helidon.build.common;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
@@ -57,6 +59,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import io.helidon.build.common.logging.Log;
 
@@ -81,19 +85,24 @@ public final class FileUtils {
     private static final Random RANDOM = new Random();
 
     /**
-     * The working directory.
+     * Returns the working directory.
+     *
+     * @return The working directory.
      */
-    public static final Path WORKING_DIR = requiredDirectoryFromProperty("user.dir", false);
+    public static Path cwd() {
+        return requiredDirectoryFromProperty("user.dir", false);
+    }
 
     /**
-     * The user home directory.
+     * Returns the user home directory.
+     *
+     * @return The user home directory.
      */
-    public static final Path USER_HOME_DIR = requiredDirectoryFromProperty("user.home", false);
+    public static Path userHome() {
+        return requiredDirectoryFromProperty("user.home", false);
+    }
 
     private static final String JAVA_BINARY_NAME = OSType.CURRENT_OS.javaExecutable();
-    private static final String JAVA_HOME_VAR = "JAVA_HOME";
-    private static final String PATH_VAR = "PATH";
-    private static final String BIN_DIR_NAME = "bin";
     private static final List<String> INCLUDES_ALL = List.of("**/*");
     private static final List<String> EXCLUDES_NONE = List.of();
 
@@ -130,7 +139,7 @@ public final class FileUtils {
      */
     public static Path fromWorking(Path path) {
         try {
-            Path relativePath = WORKING_DIR.relativize(path);
+            Path relativePath = cwd().relativize(path);
             if (relativePath.getName(0).toString().equals("..")) {
                 return path;
             } else {
@@ -642,7 +651,7 @@ public final class FileUtils {
      * @return The path.
      */
     public static Optional<Path> findExecutableInPath(String executableName) {
-        return Arrays.stream(requireNonNull(System.getenv(PATH_VAR)).split(File.pathSeparator))
+        return Arrays.stream(requireNonNull(System.getenv("PATH")).split(File.pathSeparator))
                 .map(Paths::get)
                 .map(path -> path.resolve(executableName))
                 .filter(Files::isExecutable)
@@ -691,7 +700,7 @@ public final class FileUtils {
      * @throws IllegalArgumentException If the provided path is not a directory.
      */
     public static Path javaExecutableInDir(Path dir) {
-        return requireDirectory(dir.resolve(BIN_DIR_NAME)).resolve(JAVA_BINARY_NAME);
+        return requireDirectory(dir.resolve("bin")).resolve(JAVA_BINARY_NAME);
     }
 
     /**
@@ -701,10 +710,10 @@ public final class FileUtils {
      * @return The path.
      */
     public static Optional<Path> findExecutableInJavaHome(String name) {
-        final String javaHomePath = System.getenv(JAVA_HOME_VAR);
+        final String javaHomePath = System.getenv("JAVA_HOME");
         if (javaHomePath != null) {
             final Path javaHome = Paths.get(javaHomePath);
-            final Path binary = javaHome.resolve(BIN_DIR_NAME).resolve(name);
+            final Path binary = javaHome.resolve("bin").resolve(name);
             if (Files.isExecutable(binary)) {
                 return Optional.of(binary);
             } else {
@@ -851,7 +860,8 @@ public final class FileUtils {
      * @return zip file
      */
     public static Path zip(Path zip, Path directory) {
-        return zip(zip, directory, path -> {});
+        return zip(zip, directory, path -> {
+        });
     }
 
     /**
@@ -917,6 +927,88 @@ public final class FileUtils {
     }
 
     /**
+     * Generate zip data for the given map.
+     *
+     * @param os      output stream
+     * @param entries entries to zip
+     */
+    public static void zip(OutputStream os, Map<?, ?> entries) {
+        try (ZipOutputStream zip = new ZipOutputStream(os, StandardCharsets.UTF_8)) {
+            for (Map.Entry<?, ?> e : entries.entrySet()) {
+                var entry = new ZipEntry(String.valueOf(e.getKey()));
+                zip.putNextEntry(entry);
+                Object value = e.getValue();
+                if (value instanceof String) {
+                    zip.write(((String) value).getBytes(StandardCharsets.UTF_8));
+                } else if (value instanceof byte[]) {
+                    zip.write((byte[]) value);
+                } else if (value instanceof Map<?, ?>) {
+                    zip.write(zip((Map<?, ?>) value));
+                }
+                zip.closeEntry();
+            }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
+     * Generate zip data for the given map.
+     *
+     * @param zip     zip file to create
+     * @param entries entries to zip
+     * @return zip file
+     */
+    public static Path zip(Path zip, Map<?, ?> entries) {
+        try {
+            zip(Files.newOutputStream(zip), entries);
+            return zip;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
+     * Generate zip data for the given entries.
+     *
+     * @param entries entries to zip
+     * @return zip bytes
+     */
+    public static byte[] zip(Map<?, ?> entries) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        zip(os, entries);
+        return os.toByteArray();
+    }
+
+    /**
+     * Generate a directory for the given entries.
+     *
+     * @param directory directory
+     * @param entries   entries to create
+     * @return directory
+     */
+    public static Path directory(Path directory, Map<?, ?> entries) {
+        ensureDirectory(directory);
+        try {
+            for (Map.Entry<?, ?> e : entries.entrySet()) {
+                Path entry = directory.resolve(e.getKey().toString());
+                ensureDirectory(entry.getParent());
+                Object value = e.getValue();
+                if (value instanceof String) {
+                    Files.writeString(entry, (String) value);
+                } else if (value instanceof byte[]) {
+                    Files.write(entry, (byte[]) value);
+                } else if (value instanceof Map<?, ?>) {
+                    directory(entry, (Map<?, ?>) value);
+                }
+            }
+            return directory;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
+    /**
      * Test if the given path supports POSIX file attributes.
      *
      * @param path path to test
@@ -942,9 +1034,9 @@ public final class FileUtils {
      *
      * @param zip       source file
      * @param directory target directory
-     * @param mapper mapper function
-     * @param includes include patterns
-     * @param excludes exclude patterns
+     * @param mapper    mapper function
+     * @param includes  include patterns
+     * @param excludes  exclude patterns
      * @return extracted entries
      */
     public static List<Path> unzip(Path zip,
@@ -1267,12 +1359,12 @@ public final class FileUtils {
     }
 
     /**
-     * Save the given data that is stored in Map {@code values} in a properties file.
+     * Write the given map into a properties file.
      *
      * @param values   data to store
      * @param filePath path to file
      */
-    public static void saveToPropertiesFile(Map<String, String> values, Path filePath) {
+    public static void writeProperties(Map<String, String> values, Path filePath) {
         try (OutputStream output = Files.newOutputStream(filePath)) {
             Properties props = new Properties();
             props.putAll(values);

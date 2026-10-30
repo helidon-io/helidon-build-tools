@@ -75,8 +75,6 @@ abstract class ArchetypeInvoker {
      */
     private static final MavenVersion HELIDON_V3 = toMavenVersion("3.0.0-alpha");
 
-    private static final String HELIDON_VERSION_NOT_FOUND = "$(red Helidon version) $(RED %s) $(red not found.)";
-
     private final Metadata metadata;
     private final InitOptions initOptions;
     private final Map<String, String> initProperties;
@@ -425,13 +423,6 @@ abstract class ArchetypeInvoker {
      */
     static class V2Invoker extends ArchetypeInvoker {
 
-        private static final String FLAVOR_PROPERTY = "flavor";
-        private static final String GROUP_ID_PROPERTY = "groupId";
-        private static final String ARTIFACT_ID_PROPERTY = "artifactId";
-        private static final String PACKAGE_NAME_PROPERTY = "package";
-        private static final String BUILD_SYSTEM_PROPERTY = "build-system";
-        private static final String ARCHETYPE_BASE_PROPERTY = "app-type";
-
         private V2Invoker(Builder builder) {
             super(builder);
         }
@@ -447,21 +438,21 @@ abstract class ArchetypeInvoker {
             Map<String, String> externalValues = new HashMap<>(initProperties());
 
             // Ensure that flavor is lower case if present.
-            externalValues.computeIfPresent(FLAVOR_PROPERTY, (key, value) -> value.toLowerCase());
+            externalValues.computeIfPresent("flavor", (key, value) -> value.toLowerCase());
 
             // Set build if provided on the command-line
             if (initOptions.buildOption() != null) {
-                externalValues.put(BUILD_SYSTEM_PROPERTY, initOptions.buildOption().toString());
+                externalValues.put("build-system", initOptions.buildOption().toString());
             }
 
             // Set flavor if provided on the command-line
             if (initOptions.flavorOption() != null) {
-                externalValues.put(FLAVOR_PROPERTY, initOptions.flavorOption().toString());
+                externalValues.put("flavor", initOptions.flavorOption().toString());
             }
 
             // Set base if provided on the command-line
             if (initOptions.archetypeNameOption() != null) {
-                externalValues.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeNameOption());
+                externalValues.put("app-type", initOptions.archetypeNameOption());
             }
 
             // Warn if name provided on command-line
@@ -472,29 +463,29 @@ abstract class ArchetypeInvoker {
             if (isInteractive()) {
                 // Set remaining command-line options as external values and user config as external defaults
                 if (initOptions.groupIdOption() != null) {
-                    externalValues.put(GROUP_ID_PROPERTY, initOptions.groupIdOption());
+                    externalValues.put("groupId", initOptions.groupIdOption());
                 } else {
-                    externalDefaults.put(GROUP_ID_PROPERTY, initOptions.groupId());
+                    externalDefaults.put("groupId", initOptions.groupId());
                 }
                 if (initOptions.artifactIdOption() != null) {
-                    externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactIdOption());
+                    externalValues.put("artifactId", initOptions.artifactIdOption());
                 } else {
-                    externalDefaults.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
+                    externalDefaults.put("artifactId", initOptions.artifactId());
                 }
                 if (initOptions.packageNameOption() != null) {
-                    externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageNameOption());
+                    externalValues.put("package", initOptions.packageNameOption());
                 } else {
-                    externalDefaults.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                    externalDefaults.put("package", initOptions.packageName());
                 }
             } else {
                 // Add defaults in case the user has not specified mandatory options
-                externalDefaults.put(ARCHETYPE_BASE_PROPERTY, initOptions.archetypeName());
-                externalDefaults.put(FLAVOR_PROPERTY, initOptions.flavor().toString());
+                externalDefaults.put("app-type", initOptions.archetypeName());
+                externalDefaults.put("flavor", initOptions.flavor().toString());
 
                 // Batch mode, so pass merged init options as external values
-                externalValues.put(GROUP_ID_PROPERTY, initOptions.groupId());
-                externalValues.put(ARTIFACT_ID_PROPERTY, initOptions.artifactId());
-                externalValues.put(PACKAGE_NAME_PROPERTY, initOptions.packageName());
+                externalValues.put("groupId", initOptions.groupId());
+                externalValues.put("artifactId", initOptions.artifactId());
+                externalValues.put("package", initOptions.packageName());
             }
 
             try (FileSystem fs = jarFileSystem()) {
@@ -541,7 +532,7 @@ abstract class ArchetypeInvoker {
                 Path archetype = metadata().archetypeV2Of(helidonVersion);
                 return FileSystems.newFileSystem(archetype, this.getClass().getClassLoader());
             } catch (Metadata.UpdateFailed | Plugins.PluginFailedUnchecked e) {
-                throw new RequirementFailure(HELIDON_VERSION_NOT_FOUND, helidonVersion);
+                throw new RequirementFailure("$(red Helidon version) $(RED %s) $(red not found.)", helidonVersion);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -555,17 +546,17 @@ abstract class ArchetypeInvoker {
 
         private static String optionName(String inputPath) {
             switch (inputPath) {
-                case FLAVOR_PROPERTY:
+                case "flavor":
                     return "--flavor";
-                case BUILD_SYSTEM_PROPERTY:
+                case "build-system":
                     return "--build";
-                case ARCHETYPE_BASE_PROPERTY:
+                case "app-type":
                     return "--archetype";
-                case GROUP_ID_PROPERTY:
+                case "groupId":
                     return "--groupId";
-                case ARTIFACT_ID_PROPERTY:
+                case "artifactId":
                     return "--artifactId";
-                case PACKAGE_NAME_PROPERTY:
+                case "package":
                     return "--package";
                 default:
                     return null;
