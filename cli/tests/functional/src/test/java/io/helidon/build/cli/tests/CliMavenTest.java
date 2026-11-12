@@ -165,16 +165,18 @@ class CliMavenTest {
                 .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                 .directory(workDir.resolve("bare-se"))
                 .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
-                .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
+                .stdErr(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                 .addOptionalArgument(LOCAL_REPO_ARG)
                 .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                 .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION + ":dev")
                 .build()
                 .start();
-        waitForApplication(port, capturedOutput::toString);
-        monitor.stop();
-
-        assertThat(capturedOutput.toString(), containsString("BUILD SUCCESS"));
+        try {
+            waitForApplication(port, capturedOutput::toString);
+            assertThat(capturedOutput.toString(), containsString("BUILD SUCCESS"));
+        } finally {
+            monitor.stop();
+        }
     }
 
     private String runCliMavenPluginJansiIssue(String pluginVersion) {
@@ -186,7 +188,7 @@ class CliMavenTest {
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("bare-se"))
                     .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
-                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
+                    .stdErr(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addArgument("-B")
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
@@ -210,7 +212,7 @@ class CliMavenTest {
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir.resolve("bare-se"))
                     .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
-                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
+                    .stdErr(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArgument("-Ddev.appJvmArgs=-Dserver.port=" + port)
                     .addArgument("io.helidon.build-tools:helidon-cli-maven-plugin:" + pluginVersion + ":dev")
@@ -255,7 +257,7 @@ class CliMavenTest {
                     .executable(mavenBinDir.resolve(FunctionalUtils.getMvnExecutable(mavenBinDir)))
                     .directory(workDir)
                     .stdOut(PrintStreams.delegate(PrintStreams.STDOUT, this::record))
-                    .stdOut(PrintStreams.delegate(PrintStreams.STDERR, this::record))
+                    .stdErr(PrintStreams.delegate(PrintStreams.STDERR, this::record))
                     .addOptionalArgument(LOCAL_REPO_ARG)
                     .addArguments(args)
                     .build()

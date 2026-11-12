@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,11 +87,11 @@ class LineReader {
             try {
                 while (reader.ready()) {
                     readLines(false);
-                    if (!remaining.isEmpty()) {
-                        String line = remaining;
-                        remaining = null;
-                        lineConsumer.accept(line);
-                    }
+                }
+                if (remaining != null && !remaining.isEmpty()) {
+                    String line = remaining;
+                    remaining = null;
+                    lineConsumer.accept(line);
                 }
             } finally {
                 try {
