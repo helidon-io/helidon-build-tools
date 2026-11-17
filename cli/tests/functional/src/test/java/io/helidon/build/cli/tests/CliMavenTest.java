@@ -75,7 +75,9 @@ class CliMavenTest {
     CliMavenTest() {
         try {
             Path codeSource = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
-            workDir = Files.createDirectories(unique(codeSource.resolve("../generated"), "cli-maven-test"));
+            Path generated = codeSource.resolve("../generated");
+            Files.createDirectories(generated.resolve(".mvn"));
+            workDir = Files.createDirectories(unique(generated, "cli-maven-test"));
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
