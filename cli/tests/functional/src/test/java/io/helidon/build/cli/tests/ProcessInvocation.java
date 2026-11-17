@@ -15,9 +15,6 @@
  */
 package io.helidon.build.cli.tests;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -27,10 +24,7 @@ import io.helidon.build.common.ProcessMonitor;
 import io.helidon.build.common.ProcessMonitor.ProcessFailedException;
 import io.helidon.build.common.ProcessMonitor.ProcessTimeoutException;
 import io.helidon.build.common.ansi.AnsiTextStyle;
-import io.helidon.build.common.logging.Log;
 import io.helidon.build.common.logging.LogLevel;
-
-import static java.lang.System.currentTimeMillis;
 
 abstract class ProcessInvocation {
 
@@ -108,6 +102,10 @@ abstract class ProcessInvocation {
             monitor.stop();
         }
 
+        boolean isAlive() {
+            return monitor.isAlive();
+        }
+
         void await() throws MonitorException {
             try {
                 monitor.waitForCompletion(10, TimeUnit.MINUTES);
@@ -118,59 +116,8 @@ abstract class ProcessInvocation {
             }
         }
 
-        @SuppressWarnings("BusyWait")
-        boolean waitForUrl(String rawUrl) {
-            long timeout = TimeUnit.MINUTES.toMillis(5);
-            long startTime = currentTimeMillis();
-            try {
-                URL url = new URL(rawUrl);
-                while (monitor.isAlive() && (currentTimeMillis() - startTime) <= timeout) {
-                    Thread.sleep(1000);
-                    HttpURLConnection conn = null;
-                    try {
-                        conn = (HttpURLConnection) url.openConnection();
-                        conn.setConnectTimeout(500);
-                        int status = conn.getResponseCode();
-                        if (status == 200) {
-                            return true;
-                        }
-                        Log.debug("Unexpected HTTP status %d from %s", status, rawUrl);
-                    } catch (Exception e) {
-                        Log.debug("Error checking %s: %s", rawUrl, e);
-                    } finally {
-                        if (conn != null) {
-                            conn.disconnect();
-                        }
-                    }
-                }
-                if (monitor.isAlive()) {
-                    throw new IllegalStateException("Timed-out waiting for URL: " + rawUrl);
-                } else {
-                    throw new IllegalStateException("Process is not alive");
-                }
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @SuppressWarnings("BusyWait")
-        String waitForOutput(int startIndex, String... expected) throws Exception {
-            long timeout = TimeUnit.MINUTES.toMillis(5);
-            long startTime = currentTimeMillis();
-            while (monitor.isAlive() && (currentTimeMillis() - startTime) <= timeout) {
-                Thread.sleep(1000);
-                String output = recorder.output().substring(startIndex);
-                for (String s : expected) {
-                    if (output.contains(s)) {
-                        return s;
-                    }
-                }
-            }
-            if (monitor.isAlive()) {
-                throw new IllegalStateException("Timed-out waiting for output: " + Arrays.toString(expected));
-            } else {
-                throw new IllegalStateException("Process is not alive");
-            }
+        void await(WaitStrategy strategy) {
+            strategy.await(this);
         }
     }
 }

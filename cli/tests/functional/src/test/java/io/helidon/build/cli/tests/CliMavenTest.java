@@ -17,7 +17,6 @@
 package io.helidon.build.cli.tests;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,6 @@ import java.util.stream.Stream;
 import io.helidon.build.cli.tests.ProcessInvocation.Monitor;
 import io.helidon.build.cli.tests.ProcessInvocation.MonitorException;
 import io.helidon.build.common.LazyValue;
-import io.helidon.build.common.NetworkConnection;
 import io.helidon.build.common.maven.MavenVersion;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -43,15 +41,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
+import static io.helidon.build.cli.tests.WaitStrategy.waitForPort;
+import static io.helidon.build.cli.tests.WaitStrategy.waitForUrl;
+import static io.helidon.build.common.FileUtils.copyDirectory;
 import static io.helidon.build.common.FileUtils.ensureDirectory;
 import static io.helidon.build.common.FileUtils.location;
 import static io.helidon.build.common.FileUtils.unique;
+import static java.util.function.Predicate.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -65,6 +65,7 @@ class CliMavenTest {
 
     @BeforeAll
     static void setUp() {
+        ensureDirectory(location(CliMavenTest.class).resolve("../.mvn"));
         System.setProperty("io.helidon.build.common.maven.url.localRepo", MAVEN_LOCAL_REPO.get());
     }
 
@@ -161,7 +162,7 @@ class CliMavenTest {
                 .start()) {
 
             String url = String.format("http://localhost:%d/greet", port);
-            assertThat(monitor.waitForUrl(url), is(true));
+            monitor.await(waitForUrl(url, body -> true));
             assertThat(monitor.output(), containsString("BUILD SUCCESS"));
         }
     }
@@ -182,8 +183,58 @@ class CliMavenTest {
                 .start()) {
 
             String url = String.format("http://localhost:%d/greet", port);
-            assertThat(monitor.waitForUrl(url), is(true));
+            monitor.await(waitForUrl(url, body -> true));
             assertThat(monitor.output(), containsString("BUILD SUCCESS"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"3.8.4", "3.9.16", "3.10.0"})
+    void testCliMavenPluginRebuild(String mavenVersion) throws IOException {
+        Path projectDir = workDir("test-cli-maven-plugin-rebuild-" + mavenVersion);
+        Files.copy(PROJECT1_DIR.get().resolve("pom.xml"), projectDir.resolve("pom.xml"));
+        Files.copy(PROJECT1_DIR.get().resolve(".helidon"), projectDir.resolve(".helidon"));
+        copyDirectory(PROJECT1_DIR.get().resolve("src"), projectDir.resolve("src"));
+        Path source = projectDir.resolve("src/main/java/com/acme/Main.java");
+        String originalSource = Files.readString(source);
+        Matcher matcher = HELLO_WORLD_PATTERN.matcher(originalSource);
+        assertThat(matcher.find(), is(true));
+        String originalGreeting = "Hello " + matcher.group(1) + "!";
+        Path resource = projectDir.resolve("src/main/resources/rebuild.txt");
+        Files.createDirectories(resource.getParent());
+        Files.writeString(resource, "World");
+
+        int port = freePort();
+        try (Monitor monitor = new MavenInvocation(mavenVersion)
+                .cwd(projectDir)
+                .args("-Ddev.clean=true",
+                        "-Ddev.appJvmArgs=-Dserver.port=" + port,
+                        "io.helidon.build-tools:helidon-cli-maven-plugin:" + CLI_VERSION.get() + ":dev")
+                .start()) {
+
+            monitor.await(waitForPort(port));
+            String url = "http://localhost:" + port + "/greet";
+            HttpClient client = new HttpClient(url);
+            String actual;
+            try (HttpClient.Response response = client.request()) {
+                assertThat(response.status(), is(200));
+                actual = response.body();
+                assertThat(actual, is(originalGreeting));
+            }
+
+            for (String name : List.of("John", "Jane")) {
+                Files.writeString(resource, name);
+                Files.writeString(source, originalSource.replace(originalGreeting, "Hello " + name + "!"));
+
+                monitor.await(waitForUrl(url, not(actual::equals)));
+
+                try (HttpClient.Response response = client.request()) {
+                    assertThat(response.status(), is(200));
+                    actual = response.body();
+                    assertThat(actual, is("Hello " + name + "!"));
+                    assertThat(Files.readString(projectDir.resolve("target/classes/rebuild.txt")), is(name));
+                }
+            }
         }
     }
 
@@ -203,10 +254,15 @@ class CliMavenTest {
             String url = String.format("http://localhost:%d/greet", port);
 
             // wait for the application to be running
-            assertThat(monitor.waitForUrl(url), is(true));
+            monitor.await(waitForPort(port));
 
             // make a request
-            String body = httpGet("http://localhost:" + port + "/greet");
+            HttpClient client = new HttpClient(url);
+            String body;
+            try (HttpClient.Response response = client.request()) {
+                assertThat(response.status(), is(200));
+                body = response.body();
+            }
 
             // extract greet name
             Matcher matcher = HELLO_WORLD_PATTERN.matcher(body);
@@ -230,21 +286,22 @@ class CliMavenTest {
             Files.write(PROJECT1_MAIN.get(), content.getBytes(StandardCharsets.UTF_8));
 
             // wait for incremental changes
-            assertThat(monitor.waitForOutput(cursor, "Changes detected - recompiling the module!"), is(not(nullValue())));
+            monitor.await(WaitStrategy.waitForOutput(cursor, "Changes detected - recompiling the module!"));
 
             // get incremental build status
-            String msg = monitor.waitForOutput(cursor, "rebuild completed", "build failed");
-            assertThat(msg, is(not(nullValue())));
-            if ("build failed".equals(msg)) {
+            monitor.await(WaitStrategy.waitForOutput(cursor, "rebuild completed", "build failed"));
+            if (monitor.output().indexOf("build failed", cursor) >= 0) {
                 return monitor.output();
             }
 
             // wait for the application to be running
-            assertThat(monitor.waitForUrl(url), is(true));
+            monitor.await(waitForUrl(url, it -> it.contains(updatedGreetName)));
 
             // make a request
-            body = httpGet("http://localhost:" + port + "/greet");
-            assertThat(body, containsString(updatedGreetName));
+            try (HttpClient.Response response = client.request()) {
+                assertThat(response.status(), is(200));
+                assertThat(response.body(), containsString(updatedGreetName));
+            }
 
             return monitor.output();
         }
@@ -326,18 +383,6 @@ class CliMavenTest {
             return s.getLocalPort();
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
-        }
-    }
-
-    static String httpGet(String url) {
-        try (InputStream is = NetworkConnection.builder()
-                .url(url)
-                .connectTimeout(100 * 60 * 1000)
-                .readTimeout(100 * 60 * 1000)
-                .open()) {
-            return new String(is.readAllBytes());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Download failed at URL : " + url, e);
         }
     }
 
