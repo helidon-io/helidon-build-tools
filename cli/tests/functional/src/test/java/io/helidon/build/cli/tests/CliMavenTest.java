@@ -41,6 +41,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.build.cli.tests.FunctionalUtils.CLI_VERSION;
 import static io.helidon.build.cli.tests.FunctionalUtils.MAVEN_LOCAL_REPO;
+import static io.helidon.build.cli.tests.WaitStrategy.waitForOutput;
 import static io.helidon.build.cli.tests.WaitStrategy.waitForPort;
 import static io.helidon.build.cli.tests.WaitStrategy.waitForUrl;
 import static io.helidon.build.common.FileUtils.copyDirectory;
@@ -286,10 +287,10 @@ class CliMavenTest {
             Files.write(PROJECT1_MAIN.get(), content.getBytes(StandardCharsets.UTF_8));
 
             // wait for incremental changes
-            monitor.await(WaitStrategy.waitForOutput(cursor, "Changes detected - recompiling the module!"));
+            monitor.await(waitForOutput(cursor, "Changes detected - recompiling the module!"));
 
             // get incremental build status
-            monitor.await(WaitStrategy.waitForOutput(cursor, "rebuild completed", "build failed"));
+            monitor.await(waitForOutput(cursor, "rebuild completed", "build failed"));
             if (monitor.output().indexOf("build failed", cursor) >= 0) {
                 return monitor.output();
             }
