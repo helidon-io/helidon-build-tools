@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
  * Since full/prime builds use a separate pathway to build (see {@link EmbeddedMavenExecutor}), changes to the pom.xml
  * (e.g. dependencies) will not be reflected in the initial {@code MavenSession} instance held here. To ensure that
  * such changes are seen by builds using this class, the session must be updated accordingly. To do this, we capture
- * the session used during the full build (see {@link MavenProjectConfigCollector}) and re-use it here.
+ * the session used during the full build (see {@link MavenProjectConfigCollector}).
  * <p></p>
  * To capture and pass the session, we must use an ugly hack. Using a static method to store the value does not work,
  * as the class loaders are isolated and therefore different class instances are seen by {@link MavenProjectConfigCollector})
@@ -76,8 +76,13 @@ class CurrentMavenSession {
 
             // Yes. Fix it up, store it as the current session and return it
 
-            MavenSession session = (MavenSession) fullBuildSession;
-            session.setCurrentProject(session.getAllProjects().get(0));
+            MavenSession fullBuild = (MavenSession) fullBuildSession;
+            MavenSession session = CURRENT_SESSION.get().clone();
+            session.setProjects(fullBuild.getProjects());
+            session.setAllProjects(fullBuild.getAllProjects());
+            session.setProjectMap(fullBuild.getProjectMap());
+            session.setProjectDependencyGraph(fullBuild.getProjectDependencyGraph());
+            session.setCurrentProject(fullBuild.getAllProjects().get(0));
             CURRENT_SESSION.set(session);
             systemProperties.remove(MAVEN_SESSION_PROPERTY);
             return session;

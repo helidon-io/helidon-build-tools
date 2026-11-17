@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -35,8 +34,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -93,33 +90,6 @@ class FunctionalUtils {
         } catch (IOException e) {
             throw new UncheckedIOException("Download failed at URL : " + url, e);
         }
-    }
-
-    static void waitForApplication(int port, Supplier<String> output) throws Exception {
-        long timeout = TimeUnit.MINUTES.toMillis(5);
-        long now = System.currentTimeMillis();
-        URL url = new URL("http://localhost:" + port + "/greet");
-
-        HttpURLConnection conn = null;
-        int responseCode;
-        do {
-            Thread.sleep(1000);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                throw new Exception(String.format("Application failed to start on port : %s\nProcess output:\n %s",
-                        port,
-                        output.get()));
-            }
-            try {
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(500);
-                responseCode = conn.getResponseCode();
-            } catch (Exception ex) {
-                responseCode = -1;
-            }
-            if (conn != null) {
-                conn.disconnect();
-            }
-        } while (responseCode != 200);
     }
 
     static int getAvailablePort() {
@@ -194,5 +164,4 @@ class FunctionalUtils {
             throw new RuntimeException(e);
         }
     }
-
 }
