@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,6 +142,140 @@ class ProxiesTest {
         assertThat(props.size(), is(2));
         assertThat(props.get("http.nonProxyHosts"), is("localhost|127.0.0.1|*.acmecorp.com|*.acme.com|*.jenkins|*.vault"));
         assertThat(props.get("https.nonProxyHosts"), is("localhost|127.0.0.1|*.acmecorp.com|*.acme.com|*.jenkins|*.vault"));
+    }
+
+    @Test
+    void testProxyUrlTrailingSlash() {
+        Map<String, String> env = Map.of("https_proxy", "http://www-proxy.us.acme.com:8080/");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("https.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("https.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyTrailingSlash() {
+        Map<String, String> env = Map.of("https_proxy", "www-proxy.us.acme.com:8080/");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("https.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("https.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyUrlPath() {
+        Map<String, String> env = Map.of("http_proxy", "http://www-proxy.us.acme.com:8080/some/path?q=1");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyUrlUserInfo() {
+        Map<String, String> env = Map.of("http_proxy", "http://user:secret@www-proxy.us.acme.com:8080");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyUrlUpperCaseScheme() {
+        Map<String, String> env = Map.of("http_proxy", "HTTP://www-proxy.us.acme.com:8080");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyWhitespace() {
+        Map<String, String> env = Map.of("http_proxy", " www-proxy.us.acme.com:8080 ");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("8080"));
+    }
+
+    @Test
+    void testProxyUrlNoPort() {
+        Map<String, String> env = Map.of("http_proxy", "http://www-proxy.us.acme.com");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("1080"));
+    }
+
+    @Test
+    void testHttpsProxyUrlNoPort() {
+        Map<String, String> env = Map.of("https_proxy", "https://www-proxy.us.acme.com/");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("https.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("https.proxyPort"), is("443"));
+    }
+
+    @Test
+    void testProxyNoPort() {
+        Map<String, String> env = Map.of("http_proxy", "www-proxy.us.acme.com");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("www-proxy.us.acme.com"));
+        assertThat(props.get("http.proxyPort"), is("1080"));
+    }
+
+    @Test
+    void testProxyUrlIpv6() {
+        Map<String, String> env = Map.of("http_proxy", "http://[::1]:3128/");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.proxyHost"), is("::1"));
+        assertThat(props.get("http.proxyPort"), is("3128"));
+    }
+
+    @Test
+    void testSocksProxyIgnored() {
+        Map<String, String> env = Map.of("http_proxy", "socks5://www-proxy.us.acme.com:1080");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(0));
+    }
+
+    @Test
+    void testInvalidPortIgnored() {
+        Map<String, String> env = Map.of("http_proxy", "www-proxy.us.acme.com:80x");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(0));
+    }
+
+    @Test
+    void testEmptyProxyIgnored() {
+        Map<String, String> env = Map.of("http_proxy", "");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(0));
+    }
+
+    @Test
+    void testNonProxyWhitespace() {
+        Map<String, String> env = Map.of("no_proxy", "localhost, 127.0.0.1 ,,.acme.com, ");
+        Properties props = new Properties();
+        Proxies.setProxyPropertiesFrom(env, props);
+        assertThat(props.size(), is(2));
+        assertThat(props.get("http.nonProxyHosts"), is("localhost|127.0.0.1|*.acme.com"));
+        assertThat(props.get("https.nonProxyHosts"), is("localhost|127.0.0.1|*.acme.com"));
     }
 
     @Test
