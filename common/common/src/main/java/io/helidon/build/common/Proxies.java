@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ public class Proxies {
     private static final String NO_PROXY_WILDCARD = "*";
     private static final String NO_PROXY_VAR_SEP = ",";
     private static final String NO_PROXY_PROP_SEP = "|";
+    private static final String SCHEME_SEP = "://";
+    private static final String AUTHORITY_END_CHARS = "/?#";
+    private static final String DEFAULT_PROXY_PORT = "1080";
+    private static final String DEFAULT_HTTPS_PROXY_PORT = "443";
     private static final String HTTP_NON_PROXY_PROP = "http.nonProxyHosts";
     private static final String HTTPS_NON_PROXY_PROP = "https.nonProxyHosts";
     private static final List<String> PROXY_PROPS = List.of(
@@ -130,43 +134,135 @@ public class Proxies {
     private static void setNoProxy(String envVarName, Map<String, String> env, Properties properties) {
         final String value = envVar(envVarName, env);
         if (value != null) {
-            final StringBuilder sb = new StringBuilder();
-            for (String host : value.split(NO_PROXY_VAR_SEP)) {
-                if (sb.length() > 0) {
-                    sb.append(NO_PROXY_PROP_SEP);
-                }
-                if (host.startsWith(NO_PROXY_NEEDS_WILDCARD_PREFIX)) {
-                    sb.append(NO_PROXY_WILDCARD);
-                }
-                sb.append(host);
-            }
-            setProperty(HTTP_NON_PROXY_PROP, sb.toString(), properties);
-            setProperty(HTTPS_NON_PROXY_PROP, sb.toString(), properties);
+            final String nonProxyHosts = parseNoProxy(value);
+            setProperty(HTTP_NON_PROXY_PROP, nonProxyHosts, properties);
+            setProperty(HTTPS_NON_PROXY_PROP, nonProxyHosts, properties);
         }
     }
 
     private static void setProxy(String envVarName, Map<String, String> env, Properties properties) {
         final String value = envVar(envVarName, env);
         if (value != null) {
-            final String[] split = value.split(":");
-            String host = null;
-            String port = null;
-            if (split.length == 3) {
-                host = split[1];
-                port = split[2];
-                if (host.startsWith("//")) {
-                    host = host.substring(2);
-                }
-            } else if (split.length == 2) {
-                host = split[0];
-                port = split[1];
-            }
-            if (host != null && port != null) {
+            final HostAndPort proxy = parseProxy(value);
+            if (proxy != null) {
                 final String protocol = envVarName.startsWith(HTTPS_PREFIX) ? HTTPS_PROP_PREFIX : HTTP_PROP_PREFIX;
-                setProperty(protocol + PROXY_HOST_PROP_SUFFIX, host, properties);
-                setProperty(protocol + PROXY_PORT_PROP_SUFFIX, port, properties);
+                setProperty(protocol + PROXY_HOST_PROP_SUFFIX, proxy.host(), properties);
+                setProperty(protocol + PROXY_PORT_PROP_SUFFIX, proxy.port(), properties);
+            } else {
+                Log.debug("Ignoring environment variable \"%s\", not a supported HTTP proxy", envVarName);
             }
         }
+    }
+
+    /**
+     * Parse the value of a {@code NO_PROXY} environment variable into the format of the
+     * {@code http.nonProxyHosts} system property.
+     * Entries are trimmed, empty entries are skipped, and a leading {@code .} is turned into {@code *.}.
+     *
+     * @param value environment variable value, e.g. {@code "localhost, .acme.com"}
+     * @return property value, e.g. {@code "localhost|*.acme.com"}
+     */
+    static String parseNoProxy(String value) {
+        final StringBuilder sb = new StringBuilder();
+        for (String entry : value.split(NO_PROXY_VAR_SEP)) {
+            final String host = entry.trim();
+            if (host.isEmpty()) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append(NO_PROXY_PROP_SEP);
+            }
+            if (host.startsWith(NO_PROXY_NEEDS_WILDCARD_PREFIX)) {
+                sb.append(NO_PROXY_WILDCARD);
+            }
+            sb.append(host);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Parse the value of an {@code HTTP_PROXY} or {@code HTTPS_PROXY} environment variable.
+     * <p>
+     * There is no formal standard for these variables. This follows what curl accepts, see
+     * <a href="https://curl.se/libcurl/c/CURLOPT_PROXY.html">CURLOPT_PROXY</a> and
+     * <a href="https://everything.curl.dev/usingcurl/proxies/env.html">Proxy environment variables</a>;
+     * <a href="https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/">this comparison</a>
+     * describes how other tools differ:
+     * <ul>
+     * <li>{@code [scheme://][user[:password]@]host[:port][/]}, where host may be a bracketed IPv6 address</li>
+     * <li>the scheme is {@code http} if missing; {@code https} is accepted as well</li>
+     * <li>other schemes (e.g. {@code socks5://}) are not HTTP proxies and are ignored</li>
+     * <li>anything after the authority (e.g. a trailing {@code /}) is ignored</li>
+     * <li>the user info is ignored</li>
+     * <li>the port defaults to {@code 443} for {@code https://}, and to {@code 1080} otherwise</li>
+     * </ul>
+     *
+     * @param value environment variable value
+     * @return host and port, or {@code null} if the value is not a supported HTTP proxy
+     */
+    static HostAndPort parseProxy(String value) {
+        String authority = value.trim();
+        String scheme = HTTP_PROP_PREFIX;
+        final int schemeEnd = authority.indexOf(SCHEME_SEP);
+        if (schemeEnd >= 0) {
+            scheme = authority.substring(0, schemeEnd).toLowerCase(Locale.ENGLISH);
+            authority = authority.substring(schemeEnd + SCHEME_SEP.length());
+        }
+        if (!scheme.equals(HTTP_PROP_PREFIX) && !scheme.equals(HTTPS_PROP_PREFIX)) {
+            return null;
+        }
+        for (int i = 0; i < authority.length(); i++) {
+            if (AUTHORITY_END_CHARS.indexOf(authority.charAt(i)) >= 0) {
+                authority = authority.substring(0, i);
+                break;
+            }
+        }
+        authority = authority.substring(authority.lastIndexOf('@') + 1);
+        final String host;
+        String port = null;
+        if (authority.startsWith("[")) {
+            final int hostEnd = authority.indexOf(']');
+            if (hostEnd < 0) {
+                return null;
+            }
+            host = authority.substring(1, hostEnd);
+            final String rest = authority.substring(hostEnd + 1);
+            if (rest.startsWith(":")) {
+                port = rest.substring(1);
+            } else if (!rest.isEmpty()) {
+                return null;
+            }
+        } else {
+            final int portSep = authority.lastIndexOf(':');
+            if (portSep >= 0) {
+                host = authority.substring(0, portSep);
+                port = authority.substring(portSep + 1);
+            } else {
+                host = authority;
+            }
+        }
+        if (host.isEmpty()) {
+            return null;
+        }
+        if (port == null || port.isEmpty()) {
+            port = scheme.equals(HTTPS_PROP_PREFIX) ? DEFAULT_HTTPS_PROXY_PORT : DEFAULT_PROXY_PORT;
+        } else if (!isPort(port)) {
+            return null;
+        }
+        return new HostAndPort(host, port);
+    }
+
+    private static boolean isPort(String value) {
+        if (value.length() > 5) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) < '0' || value.charAt(i) > '9') {
+                return false;
+            }
+        }
+        final int port = Integer.parseInt(value);
+        return port > 0 && port <= 65535;
     }
 
     private static void setProperty(String name, String value, Properties properties) {
@@ -188,5 +284,27 @@ public class Proxies {
     }
 
     private Proxies() {
+    }
+
+    /**
+     * Proxy host and port.
+     */
+    static final class HostAndPort {
+
+        private final String host;
+        private final String port;
+
+        HostAndPort(String host, String port) {
+            this.host = host;
+            this.port = port;
+        }
+
+        String host() {
+            return host;
+        }
+
+        String port() {
+            return port;
+        }
     }
 }
